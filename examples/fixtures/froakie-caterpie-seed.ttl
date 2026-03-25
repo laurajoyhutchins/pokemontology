@@ -57,54 +57,54 @@ pkm:Gen6XY a pkm:Ruleset ; pkm:hasName "Gen6XY" .
 
 pkm:TA_Froakie_Water
     a pkm:TypingAssignment ;
-    pkm:aboutEntity pkm:FroakieDefault ;
+    pkm:aboutVariant pkm:FroakieDefault ;
     pkm:aboutType   pkm:TypeWater ;
     pkm:hasContext  pkm:Gen6XY .
 
 pkm:TA_Caterpie_Bug
     a pkm:TypingAssignment ;
-    pkm:aboutEntity pkm:CaterpieDefault ;
+    pkm:aboutVariant pkm:CaterpieDefault ;
     pkm:aboutType   pkm:TypeBug ;
     pkm:hasContext  pkm:Gen6XY .
 
 pkm:SA_Froakie_HP
     a pkm:StatAssignment ;
-    pkm:aboutEntity pkm:FroakieDefault ;
+    pkm:aboutVariant pkm:FroakieDefault ;
     pkm:aboutStat   pkm:StatHP ;
     pkm:hasValue    41 ;
     pkm:hasContext  pkm:Gen6XY .
 
 pkm:SA_Froakie_SpAtk
     a pkm:StatAssignment ;
-    pkm:aboutEntity pkm:FroakieDefault ;
+    pkm:aboutVariant pkm:FroakieDefault ;
     pkm:aboutStat   pkm:StatSpAtk ;
     pkm:hasValue    71 ;
     pkm:hasContext  pkm:Gen6XY .
 
 pkm:SA_Froakie_Spd
     a pkm:StatAssignment ;
-    pkm:aboutEntity pkm:FroakieDefault ;
+    pkm:aboutVariant pkm:FroakieDefault ;
     pkm:aboutStat   pkm:StatSpd ;
     pkm:hasValue    71 ;
     pkm:hasContext  pkm:Gen6XY .
 
 pkm:SA_Caterpie_HP
     a pkm:StatAssignment ;
-    pkm:aboutEntity pkm:CaterpieDefault ;
+    pkm:aboutVariant pkm:CaterpieDefault ;
     pkm:aboutStat   pkm:StatHP ;
     pkm:hasValue    45 ;
     pkm:hasContext  pkm:Gen6XY .
 
 pkm:AA_Froakie_Torrent
     a pkm:AbilityAssignment ;
-    pkm:aboutEntity    pkm:FroakieDefault ;
+    pkm:aboutVariant   pkm:FroakieDefault ;
     pkm:aboutAbility   pkm:AbilityTorrent ;
     pkm:isHiddenAbility false ;
     pkm:hasContext     pkm:Gen6XY .
 
 pkm:AA_Froakie_Protean
     a pkm:AbilityAssignment ;
-    pkm:aboutEntity    pkm:FroakieDefault ;
+    pkm:aboutVariant   pkm:FroakieDefault ;
     pkm:aboutAbility   pkm:AbilityProtean ;
     pkm:isHiddenAbility true ;
     pkm:hasContext     pkm:Gen6XY .

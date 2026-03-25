@@ -8,6 +8,7 @@ RDF/OWL + SHACL project for modeling Pokémon battles as replay-backed state tra
 pokemontology/
 ├── build/
 │   └── ontology.ttl
+│   └── shapes.ttl
 ├── ontology/
 │   └── modules/
 │       ├── 00-header.ttl
@@ -15,7 +16,8 @@ pokemontology/
 │       ├── ...
 │       └── 80-materialized-state.ttl
 ├── shapes/
-│   └── pokemon-mechanics-shapes.ttl
+│   └── modules/
+│       └── shapes.ttl
 ├── examples/
 │   ├── fixtures/
 │   │   └── froakie-caterpie-seed.ttl
@@ -47,6 +49,7 @@ pokemontology/
 
 - Modular ontology source fragments under `ontology/modules/`
 - Built consumer ontology at `build/ontology.ttl`
+- Built consumer shapes at `build/shapes.ttl`
 - Published Pages ontology at `https://laurajoyhutchins.github.io/pokemontology/ontology.ttl`
 - Canonical SHACL shapes TTL
 - Published Pages shapes at `https://laurajoyhutchins.github.io/pokemontology/shapes.ttl`
@@ -86,7 +89,7 @@ python scripts/replay_to_ttl_builder.py       examples/replays/gen9vgc2025regjbo
 ```
 
 ```bash
-python3 scripts/check_ttl_parse.py       build/ontology.ttl       shapes/pokemon-mechanics-shapes.ttl       examples/fixtures/froakie-caterpie-seed.ttl       examples/slices/showdown-finals-game1-slice.ttl
+python3 scripts/check_ttl_parse.py       build/ontology.ttl       build/shapes.ttl       examples/fixtures/froakie-caterpie-seed.ttl       examples/slices/showdown-finals-game1-slice.ttl
 ```
 
 ## Notes

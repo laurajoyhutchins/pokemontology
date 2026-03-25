@@ -14,9 +14,10 @@ This project is easiest to maintain if it keeps three layers separate:
 ## Current directories
 
 - `build/` — consumer-facing built ontology artifact
+- `build/` — consumer-facing built ontology and shapes artifacts
 - `docs/` — GitHub Pages site plus published `ontology.ttl` / `shapes.ttl`
 - `ontology/modules/` — modular ontology source fragments
-- `shapes/` — SHACL constraints
+- `shapes/modules/` — SHACL source fragments
 - `examples/fixtures/` — seed/example RDF fixtures kept out of the ontology schema
 - `examples/replays/` — source replay payloads
 - `examples/slices/` — replay-derived RDF examples

@@ -7,5 +7,6 @@ venv/
 dist/
 build/*
 !build/ontology.ttl
+!build/shapes.ttl
 *.zip
 .DS_Store

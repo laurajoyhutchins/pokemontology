@@ -10,7 +10,7 @@ from rdflib import Graph
 REPO = Path(__file__).parent.parent
 
 ONTOLOGY = REPO / "build" / "ontology.ttl"
-SHAPES = REPO / "shapes" / "pokemon-mechanics-shapes.ttl"
+SHAPES = REPO / "build" / "shapes.ttl"
 SLICE = REPO / "examples" / "slices" / "showdown-finals-game1-slice.ttl"
 
 

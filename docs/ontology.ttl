@@ -357,7 +357,7 @@ pkm:TypingAssignment
     rdfs:comment "Assigns a type to a variant within a ruleset." ;
     rdfs:subClassOf [
         a owl:Restriction ;
-        owl:onProperty pkm:aboutEntity ;
+        owl:onProperty pkm:aboutVariant ;
         owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
         owl:onClass pkm:Variant
     ] ;
@@ -381,7 +381,7 @@ pkm:StatAssignment
     rdfs:comment "Assigns a base stat value to a variant within a ruleset." ;
     rdfs:subClassOf [
         a owl:Restriction ;
-        owl:onProperty pkm:aboutEntity ;
+        owl:onProperty pkm:aboutVariant ;
         owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
         owl:onClass pkm:Variant
     ] ;
@@ -411,7 +411,7 @@ pkm:AbilityAssignment
     rdfs:comment "Assigns an ability to a variant within a ruleset." ;
     rdfs:subClassOf [
         a owl:Restriction ;
-        owl:onProperty pkm:aboutEntity ;
+        owl:onProperty pkm:aboutVariant ;
         owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
         owl:onClass pkm:Variant
     ] ;
@@ -435,7 +435,7 @@ pkm:MoveLearnRecord
     rdfs:comment "Records whether a variant can learn a move within a ruleset." ;
     rdfs:subClassOf [
         a owl:Restriction ;
-        owl:onProperty pkm:aboutEntity ;
+        owl:onProperty pkm:aboutVariant ;
         owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
         owl:onClass pkm:Variant
     ] ;
@@ -451,13 +451,6 @@ pkm:MoveLearnRecord
         owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
         owl:onClass pkm:Ruleset
     ] .
-
-pkm:MoveLearnability
-    a owl:Class ;
-    rdfs:label "MoveLearnability" ;
-    owl:equivalentClass pkm:MoveLearnRecord ;
-    owl:deprecated "true"^^xsd:boolean ;
-    rdfs:comment "Deprecated compatibility alias for MoveLearnRecord." .
 
 pkm:MovePropertyAssignment
     a owl:Class ;
@@ -543,12 +536,11 @@ pkm:TypeEffectivenessAssignment
 # MODULE 2: RULESET MECHANICS — Object Properties
 # =============================================================================
 
-pkm:aboutEntity
+pkm:aboutVariant
     a owl:ObjectProperty ;
     a owl:FunctionalProperty ;
-    rdfs:label "aboutEntity" ;
-    rdfs:domain pkm:ContextualFact ;
-    rdfs:range pkm:Entity .
+    rdfs:label "aboutVariant" ;
+    rdfs:range pkm:Variant .
 
 pkm:aboutMove
     a owl:ObjectProperty ;
@@ -674,15 +666,6 @@ pkm:isLearnableInRuleset
     rdfs:label "isLearnableInRuleset" ;
     rdfs:domain pkm:MoveLearnRecord ;
     rdfs:range xsd:boolean .
-
-pkm:isLearnable
-    a owl:DatatypeProperty ;
-    owl:deprecated "true"^^xsd:boolean ;
-    rdfs:label "isLearnable" ;
-    rdfs:subPropertyOf pkm:isLearnableInRuleset ;
-    rdfs:domain pkm:MoveLearnRecord ;
-    rdfs:range xsd:boolean ;
-    rdfs:comment "Deprecated compatibility alias for isLearnableInRuleset." .
 
 pkm:hasTypeSlot
     a owl:DatatypeProperty ;

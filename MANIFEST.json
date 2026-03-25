@@ -10,6 +10,7 @@
     ".github/workflows/pages.yml",
     "README.md",
     "build/ontology.ttl",
+    "build/shapes.ttl",
     "docs/.nojekyll",
     "docs/index.html",
     "docs/ontology.ttl",
@@ -36,7 +37,7 @@
     "scripts/parse_showdown_replay.py",
     "scripts/replay_to_ttl_builder.py",
     "scripts/summarize_showdown_replay.py",
-    "shapes/pokemon-mechanics-shapes.ttl",
+    "shapes/modules/shapes.ttl",
     "tests/README.md"
   ]
 }

@@ -10,9 +10,9 @@ REPO = Path(__file__).parent.parent
 
 TTL_FILES = [
     REPO / "build" / "ontology.ttl",
+    REPO / "build" / "shapes.ttl",
     REPO / "docs" / "ontology.ttl",
     REPO / "docs" / "shapes.ttl",
-    REPO / "shapes" / "pokemon-mechanics-shapes.ttl",
     REPO / "examples" / "fixtures" / "froakie-caterpie-seed.ttl",
     REPO / "examples" / "slices" / "showdown-finals-game1-slice.ttl",
 ]
