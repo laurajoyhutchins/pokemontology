@@ -1,0 +1,30 @@
+# Repository Structure
+
+This project is easiest to maintain if it keeps three layers separate:
+
+1. **Ontology layer**  
+   Stable RDF/OWL vocabulary for battle entities, transitions, materialized assignments, and provenance.
+
+2. **Validation layer**  
+   SHACL constraints for structure, cardinality, and replay-state consistency.
+
+3. **Corpus layer**  
+   Raw replay JSON plus replay-derived RDF slices and test fixtures.
+
+## Current directories
+
+- `ontology/` — canonical ontology file
+- `shapes/` — SHACL constraints
+- `examples/replays/` — source replay payloads
+- `examples/slices/` — replay-derived RDF examples
+- `scripts/` — utility scripts
+- `docs/` — project notes
+- `tests/` — validation/regression test area
+
+## Recommended next additions
+
+- `scripts/validate_with_shacl.py`
+- `scripts/enrich_slice_state.py`
+- `tests/test_shapes_conformance.py`
+- `docs/modeling-decisions.md`
+- `docs/epistemic-status.md`

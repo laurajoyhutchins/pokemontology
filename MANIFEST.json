@@ -1,0 +1,25 @@
+{
+  "repo_name": "pokemon-battle-mechanics-ontology",
+  "source_versions_included": {
+    "ontology": "pokemon-mechanics-ontology-v1.1.ttl",
+    "shapes": "pokemon-mechanics-shapes-v0.7.ttl",
+    "replay_slice": "pokemon-showdown-finals-game1-replay-slice-v0.7.ttl"
+  },
+  "included_files": [
+    ".gitignore",
+    "README.md",
+    "docs/repo-structure.md",
+    "docs/roadmap.md",
+    "examples/replays/gen9vgc2025regjbo3-2414024536-ey54jc53vyjqy20sq0ww1l5nd3bq5qhpw.json",
+    "examples/slices/showdown-finals-game1-slice.ttl",
+    "ontology/pokemon-mechanics-ontology.ttl",
+    "pyproject.toml",
+    "requirements.txt",
+    "scripts/check_ttl_parse.py",
+    "scripts/parse_showdown_replay.py",
+    "scripts/replay_to_ttl_builder.py",
+    "scripts/summarize_showdown_replay.py",
+    "shapes/pokemon-mechanics-shapes.ttl",
+    "tests/README.md"
+  ]
+}

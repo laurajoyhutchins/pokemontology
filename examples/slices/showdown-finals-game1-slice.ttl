@@ -1,0 +1,2004 @@
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix pkm:  <http://example.org/pokemon-ontology#> .
+
+<http://example.org/pokemon-replay-backed-slice-v0.7>
+    rdfs:label "Replay-backed VGC slice with cleaned materialized state assignments" ;
+    rdfs:comment "Replay-backed validation slice grounded in a public Pokémon Showdown finals replay. Unlike the earlier EUIC synthetic slice, every modeled action below is backed by an actual replay log. This revision preserves the replay-backed action trace while cleaning the materialized state layer so participant, field, and side assignments can be queried directly with less reliance on subclass inference." .
+
+# -----------------------------------------------------------------------------
+# Replay artifact and battle metadata
+# -----------------------------------------------------------------------------
+
+pkm:ReplayArtifact_Lycopoky_Finals_Game1
+    a pkm:ReplayArtifact ;
+    pkm:hasReplayIdentifier "gen9vgc2025regjbo3-2414024536" ;
+    pkm:hasSourceURL "https://replay.pokemonshowdown.com/gen9vgc2025regjbo3-2414024536-ey54jc53vyjqy20sq0ww1l5nd3bq5qhpw.json"^^xsd:anyURI ;
+    pkm:hasName "[Gen 9] VGC 2025 Reg J (Bo3): kilenget vs. Lycopoky — Game 1" ;
+    rdfs:comment "Replay-backed source artifact for the finals set linked in Lycopoky's Eternal Flame team breakdown." .
+
+pkm:VGC_RegulationJ_2025 a pkm:Ruleset ; pkm:hasName "VGC Regulation J 2025" .
+
+pkm:Battle_Lycopoky_Finals_Game1
+    a pkm:Battle ;
+    pkm:operatesUnderRuleset pkm:VGC_RegulationJ_2025 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 1 ;
+    pkm:hasReplayStepLabel "battle-root" ;
+    rdfs:comment "Replay-backed battle slice for Game 1 of the finals set. This slice does not attempt to encode the full hidden-information state; it models only facts directly visible in the replay plus explicitly labeled inferred-complete RNG branch sets." .
+
+pkm:Side_kilenget a pkm:BattleSide ; pkm:hasSideIndex 0 ; pkm:sideOccursInBattle pkm:Battle_Lycopoky_Finals_Game1 .
+pkm:Side_Lycopoky a pkm:BattleSide ; pkm:hasSideIndex 1 ; pkm:sideOccursInBattle pkm:Battle_Lycopoky_Finals_Game1 .
+
+# -----------------------------------------------------------------------------
+# Selected combatants visible in the replayed game
+# -----------------------------------------------------------------------------
+
+pkm:Combatant_kilenget_DeoxysA a pkm:BattleParticipant, pkm:TransientCombatant ;
+    pkm:participatesInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:onSide pkm:Side_kilenget ; pkm:isActive true ; pkm:hasTeamPosition 1 ; pkm:hasCombatantLabel "kilenget Deoxys-Attack" .
+pkm:Combatant_kilenget_IndeedeeF a pkm:BattleParticipant, pkm:TransientCombatant ;
+    pkm:participatesInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:onSide pkm:Side_kilenget ; pkm:isActive true ; pkm:hasTeamPosition 2 ; pkm:hasCombatantLabel "kilenget Indeedee-F" .
+pkm:Combatant_kilenget_Whimsicott a pkm:BattleParticipant, pkm:TransientCombatant ;
+    pkm:participatesInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:onSide pkm:Side_kilenget ; pkm:isActive true ; pkm:hasTeamPosition 3 ; pkm:hasCombatantLabel "kilenget Whimsicott" .
+pkm:Combatant_kilenget_Landorus a pkm:BattleParticipant, pkm:TransientCombatant ;
+    pkm:participatesInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:onSide pkm:Side_kilenget ; pkm:isActive true ; pkm:hasTeamPosition 4 ; pkm:hasCombatantLabel "kilenget Landorus" .
+
+pkm:Combatant_Lycopoky_ArceusFire a pkm:BattleParticipant, pkm:TransientCombatant ;
+    pkm:participatesInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:onSide pkm:Side_Lycopoky ; pkm:isActive true ; pkm:hasTeamPosition 1 ; pkm:hasCombatantLabel "Lycopoky Arceus-Fire" .
+pkm:Combatant_Lycopoky_Volcarona a pkm:BattleParticipant, pkm:TransientCombatant ;
+    pkm:participatesInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:onSide pkm:Side_Lycopoky ; pkm:isActive true ; pkm:hasTeamPosition 2 ; pkm:hasCombatantLabel "Lycopoky Volcarona" .
+pkm:Combatant_Lycopoky_Rillaboom a pkm:BattleParticipant, pkm:TransientCombatant ;
+    pkm:participatesInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:onSide pkm:Side_Lycopoky ; pkm:isActive true ; pkm:hasTeamPosition 3 ; pkm:hasCombatantLabel "Lycopoky Rillaboom" .
+pkm:Combatant_Lycopoky_Koraidon a pkm:BattleParticipant, pkm:TransientCombatant ;
+    pkm:participatesInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:onSide pkm:Side_Lycopoky ; pkm:isActive true ; pkm:hasTeamPosition 4 ; pkm:hasCombatantLabel "Lycopoky Koraidon" .
+
+# -----------------------------------------------------------------------------
+# Minimal move/stat/transformation vocabulary used in the replay slice
+# -----------------------------------------------------------------------------
+
+pkm:MoveExpandingForce a pkm:Move ; pkm:hasName "Expanding Force" .
+pkm:MoveCalmMind a pkm:Move ; pkm:hasName "Calm Mind" .
+pkm:MoveFieryDance a pkm:Move ; pkm:hasName "Fiery Dance" .
+pkm:MoveProtect a pkm:Move ; pkm:hasName "Protect" .
+pkm:MovePsychoBoost a pkm:Move ; pkm:hasName "Psycho Boost" .
+pkm:MoveUTurn a pkm:Move ; pkm:hasName "U-turn" .
+pkm:MoveTailwind a pkm:Move ; pkm:hasName "Tailwind" .
+pkm:MovePsychic a pkm:Move ; pkm:hasName "Psychic" .
+pkm:MoveFlameCharge a pkm:Move ; pkm:hasName "Flame Charge" .
+pkm:MoveHeatWave a pkm:Move ; pkm:hasName "Heat Wave" .
+pkm:MoveFlareBlitz a pkm:Move ; pkm:hasName "Flare Blitz" .
+
+pkm:StatSpAtk a pkm:Stat ; pkm:hasName "SpAtk" .
+pkm:StatSpDef a pkm:Stat ; pkm:hasName "SpDef" .
+pkm:StatSpeed a pkm:Stat ; pkm:hasName "Speed" .
+
+pkm:TeraPsychic a pkm:TransformationState ; pkm:hasName "Terastallized Psychic" .
+pkm:TeraFire a pkm:TransformationState ; pkm:hasName "Terastallized Fire" .
+
+pkm:VolatileCondition_Protecting a pkm:VolatileCondition ; pkm:hasName "Protecting" .
+pkm:Terrain_PsychicTerrain a pkm:TerrainCondition ; pkm:hasName "Psychic Terrain" .
+pkm:Weather_HarshSunlight a pkm:WeatherCondition ; pkm:hasName "Harsh Sunlight" .
+pkm:SideCondition_Tailwind a pkm:SideCondition ; pkm:hasName "Tailwind" .
+
+# -----------------------------------------------------------------------------
+# Instantaneous checkpoints, one per modeled replay step
+# -----------------------------------------------------------------------------
+
+pkm:I_0 a pkm:Instantaneous ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasTurnIndex 1 ; pkm:hasStepIndex 0 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 1 ; pkm:hasReplayEventOrder 0 ; pkm:hasReplayStepLabel "turn-1-pre-expanding-force" .
+pkm:I_1 a pkm:Instantaneous ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstantaneous pkm:I_0 ; pkm:hasTurnIndex 1 ; pkm:hasStepIndex 1 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 1 ; pkm:hasReplayEventOrder 1 ; pkm:hasReplayStepLabel "turn-1-after-expanding-force" .
+pkm:I_2 a pkm:Instantaneous ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstantaneous pkm:I_1 ; pkm:hasTurnIndex 1 ; pkm:hasStepIndex 2 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 1 ; pkm:hasReplayEventOrder 2 ; pkm:hasReplayStepLabel "turn-1-after-calm-mind" .
+pkm:I_3 a pkm:Instantaneous ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstantaneous pkm:I_2 ; pkm:hasTurnIndex 1 ; pkm:hasStepIndex 3 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 1 ; pkm:hasReplayEventOrder 3 ; pkm:hasReplayStepLabel "turn-1-after-fiery-dance" .
+pkm:I_4 a pkm:Instantaneous ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstantaneous pkm:I_3 ; pkm:hasTurnIndex 2 ; pkm:hasStepIndex 0 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 2 ; pkm:hasReplayEventOrder 0 ; pkm:hasReplayStepLabel "turn-2-pre-protects" .
+pkm:I_5 a pkm:Instantaneous ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstantaneous pkm:I_4 ; pkm:hasTurnIndex 2 ; pkm:hasStepIndex 1 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 2 ; pkm:hasReplayEventOrder 1 ; pkm:hasReplayStepLabel "turn-2-after-deoxys-protect" .
+pkm:I_6 a pkm:Instantaneous ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstantaneous pkm:I_5 ; pkm:hasTurnIndex 2 ; pkm:hasStepIndex 2 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 2 ; pkm:hasReplayEventOrder 2 ; pkm:hasReplayStepLabel "turn-2-after-arceus-protect-fail" .
+pkm:I_7 a pkm:Instantaneous ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstantaneous pkm:I_6 ; pkm:hasTurnIndex 3 ; pkm:hasStepIndex 0 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 3 ; pkm:hasReplayEventOrder 0 ; pkm:hasReplayStepLabel "turn-3-pre-actions" .
+pkm:I_8 a pkm:Instantaneous ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstantaneous pkm:I_7 ; pkm:hasTurnIndex 3 ; pkm:hasStepIndex 1 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 3 ; pkm:hasReplayEventOrder 1 ; pkm:hasReplayStepLabel "turn-3-after-arceus-protect" .
+pkm:I_9 a pkm:Instantaneous ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstantaneous pkm:I_8 ; pkm:hasTurnIndex 3 ; pkm:hasStepIndex 2 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 3 ; pkm:hasReplayEventOrder 2 ; pkm:hasReplayStepLabel "turn-3-after-psycho-boost" .
+pkm:I_10 a pkm:Instantaneous ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstantaneous pkm:I_9 ; pkm:hasTurnIndex 3 ; pkm:hasStepIndex 3 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 3 ; pkm:hasReplayEventOrder 3 ; pkm:hasReplayStepLabel "turn-3-after-u-turn-and-koraidon-switch" .
+pkm:I_11 a pkm:Instantaneous ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstantaneous pkm:I_10 ; pkm:hasTurnIndex 4 ; pkm:hasStepIndex 0 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 4 ; pkm:hasReplayEventOrder 0 ; pkm:hasReplayStepLabel "turn-4-pre-actions" .
+pkm:I_12 a pkm:Instantaneous ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstantaneous pkm:I_11 ; pkm:hasTurnIndex 4 ; pkm:hasStepIndex 1 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 4 ; pkm:hasReplayEventOrder 1 ; pkm:hasReplayStepLabel "turn-4-after-tailwind" .
+pkm:I_13 a pkm:Instantaneous ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstantaneous pkm:I_12 ; pkm:hasTurnIndex 4 ; pkm:hasStepIndex 2 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 4 ; pkm:hasReplayEventOrder 2 ; pkm:hasReplayStepLabel "turn-4-after-psychic" .
+pkm:I_14 a pkm:Instantaneous ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstantaneous pkm:I_13 ; pkm:hasTurnIndex 4 ; pkm:hasStepIndex 3 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 4 ; pkm:hasReplayEventOrder 3 ; pkm:hasReplayStepLabel "turn-4-after-flame-charge" .
+pkm:I_15 a pkm:Instantaneous ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstantaneous pkm:I_14 ; pkm:hasTurnIndex 4 ; pkm:hasStepIndex 4 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 4 ; pkm:hasReplayEventOrder 4 ; pkm:hasReplayStepLabel "turn-4-after-heat-wave" .
+pkm:I_16 a pkm:Instantaneous ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstantaneous pkm:I_15 ; pkm:hasTurnIndex 5 ; pkm:hasStepIndex 0 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 5 ; pkm:hasReplayEventOrder 0 ; pkm:hasReplayStepLabel "turn-5-pre-flare-blitz" .
+pkm:I_17 a pkm:Instantaneous ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstantaneous pkm:I_16 ; pkm:hasTurnIndex 5 ; pkm:hasStepIndex 1 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 5 ; pkm:hasReplayEventOrder 1 ; pkm:hasReplayStepLabel "turn-5-after-flare-blitz" .
+
+# -----------------------------------------------------------------------------
+# Transformation assignments directly visible in the replay
+# -----------------------------------------------------------------------------
+
+pkm:CTA_Deoxys_TeraPsychic
+    a pkm:CurrentTransformationAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_DeoxysA ;
+    pkm:hasTransformationState pkm:TeraPsychic ;
+    pkm:hasContext pkm:I_0 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 1 ;
+    pkm:hasReplayEventOrder 0 ;
+    pkm:hasReplayStepLabel "turn-1-terastallize-deoxys" .
+
+pkm:CTA_Koraidon_TeraFire
+    a pkm:CurrentTransformationAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_Koraidon ;
+    pkm:hasTransformationState pkm:TeraFire ;
+    pkm:hasContext pkm:I_11 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 4 ;
+    pkm:hasReplayEventOrder 0 ;
+    pkm:hasReplayStepLabel "turn-4-terastallize-koraidon" .
+
+# -----------------------------------------------------------------------------
+# Battle actions anchored to the replay
+# -----------------------------------------------------------------------------
+
+pkm:Action_T1_ExpandingForce a pkm:MoveUseAction ;
+    pkm:actor pkm:Combatant_kilenget_DeoxysA ;
+    pkm:usesMove pkm:MoveExpandingForce ;
+    pkm:declaredInInstantaneous pkm:I_0 ;
+    pkm:initiatedInInstantaneous pkm:I_1 ;
+    pkm:hasPriorityBracket 0 ;
+    pkm:hasResolutionIndex 0 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 1 ;
+    pkm:hasReplayEventOrder 1 ;
+    pkm:hasReplayStepLabel "turn-1-expanding-force" .
+
+pkm:Action_T1_CalmMind a pkm:MoveUseAction ;
+    pkm:actor pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:usesMove pkm:MoveCalmMind ;
+    pkm:declaredInInstantaneous pkm:I_0 ;
+    pkm:initiatedInInstantaneous pkm:I_2 ;
+    pkm:hasPriorityBracket 0 ;
+    pkm:hasResolutionIndex 1 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 1 ;
+    pkm:hasReplayEventOrder 2 ;
+    pkm:hasReplayStepLabel "turn-1-calm-mind" .
+
+pkm:Action_T1_FieryDance a pkm:MoveUseAction ;
+    pkm:actor pkm:Combatant_Lycopoky_Volcarona ;
+    pkm:usesMove pkm:MoveFieryDance ;
+    pkm:declaredInInstantaneous pkm:I_0 ;
+    pkm:initiatedInInstantaneous pkm:I_3 ;
+    pkm:hasPriorityBracket 0 ;
+    pkm:hasResolutionIndex 2 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 1 ;
+    pkm:hasReplayEventOrder 3 ;
+    pkm:hasReplayStepLabel "turn-1-fiery-dance" .
+
+pkm:Action_T2_DeoxysProtect a pkm:MoveUseAction ;
+    pkm:actor pkm:Combatant_kilenget_DeoxysA ;
+    pkm:usesMove pkm:MoveProtect ;
+    pkm:declaredInInstantaneous pkm:I_4 ;
+    pkm:initiatedInInstantaneous pkm:I_5 ;
+    pkm:hasPriorityBracket 4 ;
+    pkm:hasResolutionIndex 0 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 2 ;
+    pkm:hasReplayEventOrder 1 ;
+    pkm:hasReplayStepLabel "turn-2-deoxys-protect" .
+
+pkm:Action_T2_ArceusProtectFail a pkm:MoveUseAction ;
+    pkm:actor pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:usesMove pkm:MoveProtect ;
+    pkm:declaredInInstantaneous pkm:I_4 ;
+    pkm:initiatedInInstantaneous pkm:I_6 ;
+    pkm:hasPriorityBracket 4 ;
+    pkm:hasResolutionIndex 1 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 2 ;
+    pkm:hasReplayEventOrder 2 ;
+    pkm:hasReplayStepLabel "turn-2-arceus-protect-fail" .
+
+pkm:Action_T3_ArceusProtect a pkm:MoveUseAction ;
+    pkm:actor pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:usesMove pkm:MoveProtect ;
+    pkm:declaredInInstantaneous pkm:I_8 ;
+    pkm:initiatedInInstantaneous pkm:I_8 ;
+    pkm:hasPriorityBracket 4 ;
+    pkm:hasResolutionIndex 0 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 3 ;
+    pkm:hasReplayEventOrder 1 ;
+    pkm:hasReplayStepLabel "turn-3-arceus-protect" .
+
+pkm:Action_T3_PsychoBoost a pkm:MoveUseAction ;
+    pkm:actor pkm:Combatant_kilenget_DeoxysA ;
+    pkm:usesMove pkm:MovePsychoBoost ;
+    pkm:declaredInInstantaneous pkm:I_8 ;
+    pkm:initiatedInInstantaneous pkm:I_9 ;
+    pkm:hasPriorityBracket 0 ;
+    pkm:hasResolutionIndex 1 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 3 ;
+    pkm:hasReplayEventOrder 2 ;
+    pkm:hasReplayStepLabel "turn-3-psycho-boost" .
+
+pkm:Action_T3_UTurn a pkm:MoveUseAction ;
+    pkm:actor pkm:Combatant_Lycopoky_Rillaboom ;
+    pkm:usesMove pkm:MoveUTurn ;
+    pkm:declaredInInstantaneous pkm:I_8 ;
+    pkm:initiatedInInstantaneous pkm:I_10 ;
+    pkm:hasPriorityBracket 0 ;
+    pkm:hasResolutionIndex 2 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 3 ;
+    pkm:hasReplayEventOrder 3 ;
+    pkm:hasReplayStepLabel "turn-3-u-turn" .
+
+pkm:Action_T4_Tailwind a pkm:MoveUseAction ;
+    pkm:actor pkm:Combatant_kilenget_Whimsicott ;
+    pkm:usesMove pkm:MoveTailwind ;
+    pkm:declaredInInstantaneous pkm:I_12 ;
+    pkm:initiatedInInstantaneous pkm:I_12 ;
+    pkm:hasPriorityBracket 1 ;
+    pkm:hasResolutionIndex 0 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 4 ;
+    pkm:hasReplayEventOrder 1 ;
+    pkm:hasReplayStepLabel "turn-4-tailwind" .
+
+pkm:Action_T4_Psychic a pkm:MoveUseAction ;
+    pkm:actor pkm:Combatant_kilenget_IndeedeeF ;
+    pkm:usesMove pkm:MovePsychic ;
+    pkm:declaredInInstantaneous pkm:I_12 ;
+    pkm:initiatedInInstantaneous pkm:I_13 ;
+    pkm:hasPriorityBracket 0 ;
+    pkm:hasResolutionIndex 1 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 4 ;
+    pkm:hasReplayEventOrder 2 ;
+    pkm:hasReplayStepLabel "turn-4-psychic" .
+
+pkm:Action_T4_FlameCharge a pkm:MoveUseAction ;
+    pkm:actor pkm:Combatant_Lycopoky_Koraidon ;
+    pkm:usesMove pkm:MoveFlameCharge ;
+    pkm:declaredInInstantaneous pkm:I_12 ;
+    pkm:initiatedInInstantaneous pkm:I_14 ;
+    pkm:hasPriorityBracket 0 ;
+    pkm:hasResolutionIndex 2 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 4 ;
+    pkm:hasReplayEventOrder 3 ;
+    pkm:hasReplayStepLabel "turn-4-flame-charge" .
+
+pkm:Action_T4_HeatWave a pkm:MoveUseAction ;
+    pkm:actor pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:usesMove pkm:MoveHeatWave ;
+    pkm:declaredInInstantaneous pkm:I_12 ;
+    pkm:initiatedInInstantaneous pkm:I_15 ;
+    pkm:hasPriorityBracket 0 ;
+    pkm:hasResolutionIndex 3 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 4 ;
+    pkm:hasReplayEventOrder 4 ;
+    pkm:hasReplayStepLabel "turn-4-heat-wave" .
+
+pkm:Action_T5_FlareBlitz a pkm:MoveUseAction ;
+    pkm:actor pkm:Combatant_Lycopoky_Koraidon ;
+    pkm:usesMove pkm:MoveFlareBlitz ;
+    pkm:declaredInInstantaneous pkm:I_16 ;
+    pkm:initiatedInInstantaneous pkm:I_17 ;
+    pkm:hasPriorityBracket 0 ;
+    pkm:hasResolutionIndex 0 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 5 ;
+    pkm:hasReplayEventOrder 1 ;
+    pkm:hasReplayStepLabel "turn-5-flare-blitz" .
+
+
+# -----------------------------------------------------------------------------
+# Target-resolution states visible in the replay
+# -----------------------------------------------------------------------------
+
+pkm:TRS_T1_ExpandingForce_Arceus a pkm:TargetResolutionState ; pkm:aboutAction pkm:Action_T1_ExpandingForce ; pkm:aboutTarget pkm:Combatant_Lycopoky_ArceusFire ; pkm:hasResolutionOutcome "resolved" ; pkm:hasContext pkm:I_1 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 1 ; pkm:hasReplayEventOrder 1 .
+pkm:TRS_T1_ExpandingForce_Volcarona a pkm:TargetResolutionState ; pkm:aboutAction pkm:Action_T1_ExpandingForce ; pkm:aboutTarget pkm:Combatant_Lycopoky_Volcarona ; pkm:hasResolutionOutcome "resolved" ; pkm:hasContext pkm:I_1 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 1 ; pkm:hasReplayEventOrder 1 .
+pkm:TRS_T1_CalmMind_Arceus a pkm:TargetResolutionState ; pkm:aboutAction pkm:Action_T1_CalmMind ; pkm:aboutTarget pkm:Combatant_Lycopoky_ArceusFire ; pkm:hasResolutionOutcome "resolved" ; pkm:hasContext pkm:I_2 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 1 ; pkm:hasReplayEventOrder 2 .
+pkm:TRS_T1_FieryDance_Deoxys a pkm:TargetResolutionState ; pkm:aboutAction pkm:Action_T1_FieryDance ; pkm:aboutTarget pkm:Combatant_kilenget_DeoxysA ; pkm:hasResolutionOutcome "resolved" ; pkm:hasContext pkm:I_3 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 1 ; pkm:hasReplayEventOrder 3 .
+
+pkm:TRS_T2_DeoxysProtect_Self a pkm:TargetResolutionState ; pkm:aboutAction pkm:Action_T2_DeoxysProtect ; pkm:aboutTarget pkm:Combatant_kilenget_DeoxysA ; pkm:hasResolutionOutcome "resolved" ; pkm:hasContext pkm:I_5 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 2 ; pkm:hasReplayEventOrder 1 .
+pkm:TRS_T2_ArceusProtect_Self a pkm:TargetResolutionState ; pkm:aboutAction pkm:Action_T2_ArceusProtectFail ; pkm:aboutTarget pkm:Combatant_Lycopoky_ArceusFire ; pkm:hasResolutionOutcome "failed" ; pkm:hasContext pkm:I_6 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 2 ; pkm:hasReplayEventOrder 2 .
+
+pkm:TRS_T3_ArceusProtect_Self a pkm:TargetResolutionState ; pkm:aboutAction pkm:Action_T3_ArceusProtect ; pkm:aboutTarget pkm:Combatant_Lycopoky_ArceusFire ; pkm:hasResolutionOutcome "resolved" ; pkm:hasContext pkm:I_8 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 3 ; pkm:hasReplayEventOrder 1 .
+pkm:TRS_T3_PsychoBoost_Rillaboom a pkm:TargetResolutionState ; pkm:aboutAction pkm:Action_T3_PsychoBoost ; pkm:aboutTarget pkm:Combatant_Lycopoky_Rillaboom ; pkm:hasResolutionOutcome "resolved" ; pkm:hasContext pkm:I_9 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 3 ; pkm:hasReplayEventOrder 2 .
+pkm:TRS_T3_UTurn_Deoxys a pkm:TargetResolutionState ; pkm:aboutAction pkm:Action_T3_UTurn ; pkm:aboutTarget pkm:Combatant_kilenget_DeoxysA ; pkm:hasResolutionOutcome "resolved" ; pkm:hasContext pkm:I_10 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 3 ; pkm:hasReplayEventOrder 3 .
+
+pkm:TRS_T4_Psychic_Koraidon a pkm:TargetResolutionState ; pkm:aboutAction pkm:Action_T4_Psychic ; pkm:aboutTarget pkm:Combatant_Lycopoky_Koraidon ; pkm:hasResolutionOutcome "resolved" ; pkm:hasContext pkm:I_13 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 4 ; pkm:hasReplayEventOrder 2 .
+pkm:TRS_T4_FlameCharge_Indeedee a pkm:TargetResolutionState ; pkm:aboutAction pkm:Action_T4_FlameCharge ; pkm:aboutTarget pkm:Combatant_kilenget_IndeedeeF ; pkm:hasResolutionOutcome "resolved" ; pkm:hasContext pkm:I_14 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 4 ; pkm:hasReplayEventOrder 3 .
+pkm:TRS_T4_HeatWave_Whimsicott a pkm:TargetResolutionState ; pkm:aboutAction pkm:Action_T4_HeatWave ; pkm:aboutTarget pkm:Combatant_kilenget_Whimsicott ; pkm:hasResolutionOutcome "resolved" ; pkm:hasContext pkm:I_15 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 4 ; pkm:hasReplayEventOrder 4 .
+pkm:TRS_T4_HeatWave_Indeedee a pkm:TargetResolutionState ; pkm:aboutAction pkm:Action_T4_HeatWave ; pkm:aboutTarget pkm:Combatant_kilenget_IndeedeeF ; pkm:hasResolutionOutcome "resolved" ; pkm:hasContext pkm:I_15 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 4 ; pkm:hasReplayEventOrder 4 .
+
+pkm:TRS_T5_FlareBlitz_Landorus a pkm:TargetResolutionState ; pkm:aboutAction pkm:Action_T5_FlareBlitz ; pkm:aboutTarget pkm:Combatant_kilenget_Landorus ; pkm:hasResolutionOutcome "resolved" ; pkm:hasContext pkm:I_17 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 5 ; pkm:hasReplayEventOrder 1 .
+
+# -----------------------------------------------------------------------------
+# Replay-visible event layer
+# -----------------------------------------------------------------------------
+
+pkm:Event_T1_CalmMind_SpAtk a pkm:StatStageChangeEvent ; pkm:occursInInstantaneous pkm:I_2 ; pkm:causedByAction pkm:Action_T1_CalmMind ; pkm:affectsCombatant pkm:Combatant_Lycopoky_ArceusFire ; pkm:aboutStat pkm:StatSpAtk ; pkm:hasStageDelta 1 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 1 ; pkm:hasReplayEventOrder 2 .
+pkm:Event_T1_CalmMind_SpDef a pkm:StatStageChangeEvent ; pkm:occursInInstantaneous pkm:I_2 ; pkm:causedByAction pkm:Action_T1_CalmMind ; pkm:affectsCombatant pkm:Combatant_Lycopoky_ArceusFire ; pkm:aboutStat pkm:StatSpDef ; pkm:hasStageDelta 1 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 1 ; pkm:hasReplayEventOrder 2 .
+pkm:Event_T1_FieryDance_SpAtkBoost a pkm:StatStageChangeEvent ; pkm:occursInInstantaneous pkm:I_3 ; pkm:causedByAction pkm:Action_T1_FieryDance ; pkm:affectsCombatant pkm:Combatant_Lycopoky_Volcarona ; pkm:aboutStat pkm:StatSpAtk ; pkm:hasStageDelta 1 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 1 ; pkm:hasReplayEventOrder 3 .
+pkm:Event_T3_PsychoBoost_SpAtkDrop a pkm:StatStageChangeEvent ; pkm:occursInInstantaneous pkm:I_9 ; pkm:causedByAction pkm:Action_T3_PsychoBoost ; pkm:affectsCombatant pkm:Combatant_kilenget_DeoxysA ; pkm:aboutStat pkm:StatSpAtk ; pkm:hasStageDelta -2 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 3 ; pkm:hasReplayEventOrder 2 .
+pkm:Event_T4_FlameCharge_SpeedBoost a pkm:StatStageChangeEvent ; pkm:occursInInstantaneous pkm:I_14 ; pkm:causedByAction pkm:Action_T4_FlameCharge ; pkm:affectsCombatant pkm:Combatant_Lycopoky_Koraidon ; pkm:aboutStat pkm:StatSpeed ; pkm:hasStageDelta 1 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 4 ; pkm:hasReplayEventOrder 3 .
+
+pkm:Event_T3_Deoxys_Faints a pkm:FaintEvent ; pkm:occursInInstantaneous pkm:I_10 ; pkm:causedByAction pkm:Action_T3_UTurn ; pkm:affectsCombatant pkm:Combatant_kilenget_DeoxysA ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 3 ; pkm:hasReplayEventOrder 3 .
+pkm:Event_T4_Whimsicott_Faints a pkm:FaintEvent ; pkm:occursInInstantaneous pkm:I_15 ; pkm:causedByAction pkm:Action_T4_HeatWave ; pkm:affectsCombatant pkm:Combatant_kilenget_Whimsicott ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 4 ; pkm:hasReplayEventOrder 4 .
+pkm:Event_T4_Indeedee_Faints a pkm:FaintEvent ; pkm:occursInInstantaneous pkm:I_15 ; pkm:causedByAction pkm:Action_T4_HeatWave ; pkm:affectsCombatant pkm:Combatant_kilenget_IndeedeeF ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 4 ; pkm:hasReplayEventOrder 4 .
+pkm:Event_T5_Landorus_Faints a pkm:FaintEvent ; pkm:occursInInstantaneous pkm:I_17 ; pkm:causedByAction pkm:Action_T5_FlareBlitz ; pkm:affectsCombatant pkm:Combatant_kilenget_Landorus ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 5 ; pkm:hasReplayEventOrder 1 .
+
+
+
+
+# -----------------------------------------------------------------------------
+# Partial forward-projected stat-stage materializations
+# -----------------------------------------------------------------------------
+
+pkm:ReplayStatProjectionPolicy
+    rdfs:comment "This replay slice materializes selected stat stages as a query surface. The stage layer is intentionally partial: it covers query-critical visible combatants and stats, but is not exhaustive for every combatant/stat pair at every Instantaneous." .
+
+pkm:SSA_ArceusFire_SpAtk_I_0 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_0 ;
+    pkm:hasStageValue 0 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 1 ;
+    pkm:hasReplayEventOrder 0 .
+
+pkm:SSA_ArceusFire_SpDef_I_0 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutStat pkm:StatSpDef ;
+    pkm:hasContext pkm:I_0 ;
+    pkm:hasStageValue 0 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 1 ;
+    pkm:hasReplayEventOrder 0 .
+
+pkm:SSA_ArceusFire_SpAtk_I_1 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_1 ;
+    pkm:hasStageValue 0 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_0 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 1 ;
+    pkm:hasReplayEventOrder 1 .
+
+pkm:SSA_ArceusFire_SpDef_I_1 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutStat pkm:StatSpDef ;
+    pkm:hasContext pkm:I_1 ;
+    pkm:hasStageValue 0 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_0 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 1 ;
+    pkm:hasReplayEventOrder 1 .
+
+pkm:SSA_ArceusFire_SpAtk_I_2 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_2 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromEvent pkm:Event_T1_CalmMind_SpAtk ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 1 ;
+    pkm:hasReplayEventOrder 2 .
+
+pkm:SSA_ArceusFire_SpDef_I_2 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutStat pkm:StatSpDef ;
+    pkm:hasContext pkm:I_2 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromEvent pkm:Event_T1_CalmMind_SpDef ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 1 ;
+    pkm:hasReplayEventOrder 2 .
+
+pkm:SSA_ArceusFire_SpAtk_I_3 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_3 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_2 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 1 ;
+    pkm:hasReplayEventOrder 3 .
+
+pkm:SSA_ArceusFire_SpDef_I_3 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutStat pkm:StatSpDef ;
+    pkm:hasContext pkm:I_3 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_2 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 1 ;
+    pkm:hasReplayEventOrder 3 .
+
+pkm:SSA_ArceusFire_SpAtk_I_4 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_4 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_3 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 2 ;
+    pkm:hasReplayEventOrder 0 .
+
+pkm:SSA_ArceusFire_SpDef_I_4 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutStat pkm:StatSpDef ;
+    pkm:hasContext pkm:I_4 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_3 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 2 ;
+    pkm:hasReplayEventOrder 0 .
+
+pkm:SSA_ArceusFire_SpAtk_I_5 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_5 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_4 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 2 ;
+    pkm:hasReplayEventOrder 1 .
+
+pkm:SSA_ArceusFire_SpDef_I_5 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutStat pkm:StatSpDef ;
+    pkm:hasContext pkm:I_5 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_4 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 2 ;
+    pkm:hasReplayEventOrder 1 .
+
+pkm:SSA_ArceusFire_SpAtk_I_6 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_6 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_5 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 2 ;
+    pkm:hasReplayEventOrder 2 .
+
+pkm:SSA_ArceusFire_SpDef_I_6 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutStat pkm:StatSpDef ;
+    pkm:hasContext pkm:I_6 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_5 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 2 ;
+    pkm:hasReplayEventOrder 2 .
+
+pkm:SSA_ArceusFire_SpAtk_I_7 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_7 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_6 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 3 ;
+    pkm:hasReplayEventOrder 0 .
+
+pkm:SSA_ArceusFire_SpDef_I_7 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutStat pkm:StatSpDef ;
+    pkm:hasContext pkm:I_7 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_6 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 3 ;
+    pkm:hasReplayEventOrder 0 .
+
+pkm:SSA_ArceusFire_SpAtk_I_8 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_8 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_7 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 3 ;
+    pkm:hasReplayEventOrder 1 .
+
+pkm:SSA_ArceusFire_SpDef_I_8 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutStat pkm:StatSpDef ;
+    pkm:hasContext pkm:I_8 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_7 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 3 ;
+    pkm:hasReplayEventOrder 1 .
+
+pkm:SSA_ArceusFire_SpAtk_I_9 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_9 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_8 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 3 ;
+    pkm:hasReplayEventOrder 2 .
+
+pkm:SSA_ArceusFire_SpDef_I_9 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutStat pkm:StatSpDef ;
+    pkm:hasContext pkm:I_9 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_8 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 3 ;
+    pkm:hasReplayEventOrder 2 .
+
+pkm:SSA_ArceusFire_SpAtk_I_10 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_10 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_9 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 3 ;
+    pkm:hasReplayEventOrder 3 .
+
+pkm:SSA_ArceusFire_SpDef_I_10 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutStat pkm:StatSpDef ;
+    pkm:hasContext pkm:I_10 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_9 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 3 ;
+    pkm:hasReplayEventOrder 3 .
+
+pkm:SSA_ArceusFire_SpAtk_I_11 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_11 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_10 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 4 ;
+    pkm:hasReplayEventOrder 0 .
+
+pkm:SSA_ArceusFire_SpDef_I_11 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutStat pkm:StatSpDef ;
+    pkm:hasContext pkm:I_11 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_10 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 4 ;
+    pkm:hasReplayEventOrder 0 .
+
+pkm:SSA_ArceusFire_SpAtk_I_12 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_12 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_11 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 4 ;
+    pkm:hasReplayEventOrder 1 .
+
+pkm:SSA_ArceusFire_SpDef_I_12 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutStat pkm:StatSpDef ;
+    pkm:hasContext pkm:I_12 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_11 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 4 ;
+    pkm:hasReplayEventOrder 1 .
+
+pkm:SSA_ArceusFire_SpAtk_I_13 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_13 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_12 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 4 ;
+    pkm:hasReplayEventOrder 2 .
+
+pkm:SSA_ArceusFire_SpDef_I_13 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutStat pkm:StatSpDef ;
+    pkm:hasContext pkm:I_13 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_12 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 4 ;
+    pkm:hasReplayEventOrder 2 .
+
+pkm:SSA_ArceusFire_SpAtk_I_14 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_14 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_13 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 4 ;
+    pkm:hasReplayEventOrder 3 .
+
+pkm:SSA_ArceusFire_SpDef_I_14 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutStat pkm:StatSpDef ;
+    pkm:hasContext pkm:I_14 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_13 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 4 ;
+    pkm:hasReplayEventOrder 3 .
+
+pkm:SSA_ArceusFire_SpAtk_I_15 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_15 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_14 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 4 ;
+    pkm:hasReplayEventOrder 4 .
+
+pkm:SSA_ArceusFire_SpDef_I_15 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutStat pkm:StatSpDef ;
+    pkm:hasContext pkm:I_15 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_14 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 4 ;
+    pkm:hasReplayEventOrder 4 .
+
+pkm:SSA_ArceusFire_SpAtk_I_16 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_16 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_15 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 5 ;
+    pkm:hasReplayEventOrder 0 .
+
+pkm:SSA_ArceusFire_SpDef_I_16 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutStat pkm:StatSpDef ;
+    pkm:hasContext pkm:I_16 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_15 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 5 ;
+    pkm:hasReplayEventOrder 0 .
+
+pkm:SSA_ArceusFire_SpAtk_I_17 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_17 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_16 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 5 ;
+    pkm:hasReplayEventOrder 1 .
+
+pkm:SSA_ArceusFire_SpDef_I_17 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutStat pkm:StatSpDef ;
+    pkm:hasContext pkm:I_17 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_16 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 5 ;
+    pkm:hasReplayEventOrder 1 .
+
+pkm:SSA_Volcarona_SpAtk_I_0 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_Volcarona ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_0 ;
+    pkm:hasStageValue 0 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 1 ;
+    pkm:hasReplayEventOrder 0 .
+
+pkm:SSA_Volcarona_SpAtk_I_1 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_Volcarona ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_1 ;
+    pkm:hasStageValue 0 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_0 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 1 ;
+    pkm:hasReplayEventOrder 1 .
+
+pkm:SSA_Volcarona_SpAtk_I_2 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_Volcarona ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_2 ;
+    pkm:hasStageValue 0 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_1 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 1 ;
+    pkm:hasReplayEventOrder 2 .
+
+pkm:SSA_Volcarona_SpAtk_I_3 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_Volcarona ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_3 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromEvent pkm:Event_T1_FieryDance_SpAtkBoost ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 1 ;
+    pkm:hasReplayEventOrder 3 .
+
+pkm:SSA_Volcarona_SpAtk_I_4 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_Volcarona ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_4 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_3 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 2 ;
+    pkm:hasReplayEventOrder 0 .
+
+pkm:SSA_Volcarona_SpAtk_I_5 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_Volcarona ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_5 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_4 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 2 ;
+    pkm:hasReplayEventOrder 1 .
+
+pkm:SSA_Volcarona_SpAtk_I_6 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_Volcarona ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_6 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_5 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 2 ;
+    pkm:hasReplayEventOrder 2 .
+
+pkm:SSA_Volcarona_SpAtk_I_7 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_Volcarona ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_7 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_6 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 3 ;
+    pkm:hasReplayEventOrder 0 .
+
+pkm:SSA_Volcarona_SpAtk_I_8 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_Volcarona ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_8 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_7 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 3 ;
+    pkm:hasReplayEventOrder 1 .
+
+pkm:SSA_Volcarona_SpAtk_I_9 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_Volcarona ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_9 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_8 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 3 ;
+    pkm:hasReplayEventOrder 2 .
+
+pkm:SSA_Volcarona_SpAtk_I_10 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_Volcarona ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_10 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_9 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 3 ;
+    pkm:hasReplayEventOrder 3 .
+
+pkm:SSA_Volcarona_SpAtk_I_11 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_Volcarona ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_11 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_10 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 4 ;
+    pkm:hasReplayEventOrder 0 .
+
+pkm:SSA_Volcarona_SpAtk_I_12 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_Volcarona ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_12 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_11 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 4 ;
+    pkm:hasReplayEventOrder 1 .
+
+pkm:SSA_Volcarona_SpAtk_I_13 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_Volcarona ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_13 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_12 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 4 ;
+    pkm:hasReplayEventOrder 2 .
+
+pkm:SSA_Volcarona_SpAtk_I_14 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_Volcarona ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_14 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_13 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 4 ;
+    pkm:hasReplayEventOrder 3 .
+
+pkm:SSA_Volcarona_SpAtk_I_15 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_Volcarona ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_15 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_14 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 4 ;
+    pkm:hasReplayEventOrder 4 .
+
+pkm:SSA_Volcarona_SpAtk_I_16 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_Volcarona ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_16 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_15 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 5 ;
+    pkm:hasReplayEventOrder 0 .
+
+pkm:SSA_Volcarona_SpAtk_I_17 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_Volcarona ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_17 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_16 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 5 ;
+    pkm:hasReplayEventOrder 1 .
+
+pkm:SSA_DeoxysA_SpAtk_I_0 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_DeoxysA ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_0 ;
+    pkm:hasStageValue 0 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 1 ;
+    pkm:hasReplayEventOrder 0 .
+
+pkm:SSA_DeoxysA_SpAtk_I_1 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_DeoxysA ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_1 ;
+    pkm:hasStageValue 0 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_0 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 1 ;
+    pkm:hasReplayEventOrder 1 .
+
+pkm:SSA_DeoxysA_SpAtk_I_2 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_DeoxysA ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_2 ;
+    pkm:hasStageValue 0 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_1 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 1 ;
+    pkm:hasReplayEventOrder 2 .
+
+pkm:SSA_DeoxysA_SpAtk_I_3 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_DeoxysA ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_3 ;
+    pkm:hasStageValue 0 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_2 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 1 ;
+    pkm:hasReplayEventOrder 3 .
+
+pkm:SSA_DeoxysA_SpAtk_I_4 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_DeoxysA ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_4 ;
+    pkm:hasStageValue 0 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_3 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 2 ;
+    pkm:hasReplayEventOrder 0 .
+
+pkm:SSA_DeoxysA_SpAtk_I_5 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_DeoxysA ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_5 ;
+    pkm:hasStageValue 0 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_4 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 2 ;
+    pkm:hasReplayEventOrder 1 .
+
+pkm:SSA_DeoxysA_SpAtk_I_6 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_DeoxysA ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_6 ;
+    pkm:hasStageValue 0 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_5 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 2 ;
+    pkm:hasReplayEventOrder 2 .
+
+pkm:SSA_DeoxysA_SpAtk_I_7 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_DeoxysA ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_7 ;
+    pkm:hasStageValue 0 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_6 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 3 ;
+    pkm:hasReplayEventOrder 0 .
+
+pkm:SSA_DeoxysA_SpAtk_I_8 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_DeoxysA ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_8 ;
+    pkm:hasStageValue 0 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_7 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 3 ;
+    pkm:hasReplayEventOrder 1 .
+
+pkm:SSA_DeoxysA_SpAtk_I_9 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_DeoxysA ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_9 ;
+    pkm:hasStageValue -2 ;
+    pkm:materializedFromEvent pkm:Event_T3_PsychoBoost_SpAtkDrop ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 3 ;
+    pkm:hasReplayEventOrder 2 .
+
+pkm:SSA_DeoxysA_SpAtk_I_10 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_DeoxysA ;
+    pkm:aboutStat pkm:StatSpAtk ;
+    pkm:hasContext pkm:I_10 ;
+    pkm:hasStageValue -2 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_9 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 3 ;
+    pkm:hasReplayEventOrder 3 .
+
+pkm:SSA_Koraidon_Speed_I_11 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_Koraidon ;
+    pkm:aboutStat pkm:StatSpeed ;
+    pkm:hasContext pkm:I_11 ;
+    pkm:hasStageValue 0 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 4 ;
+    pkm:hasReplayEventOrder 0 .
+
+pkm:SSA_Koraidon_Speed_I_12 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_Koraidon ;
+    pkm:aboutStat pkm:StatSpeed ;
+    pkm:hasContext pkm:I_12 ;
+    pkm:hasStageValue 0 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_11 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 4 ;
+    pkm:hasReplayEventOrder 1 .
+
+pkm:SSA_Koraidon_Speed_I_13 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_Koraidon ;
+    pkm:aboutStat pkm:StatSpeed ;
+    pkm:hasContext pkm:I_13 ;
+    pkm:hasStageValue 0 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_12 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 4 ;
+    pkm:hasReplayEventOrder 2 .
+
+pkm:SSA_Koraidon_Speed_I_14 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_Koraidon ;
+    pkm:aboutStat pkm:StatSpeed ;
+    pkm:hasContext pkm:I_14 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromEvent pkm:Event_T4_FlameCharge_SpeedBoost ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 4 ;
+    pkm:hasReplayEventOrder 3 .
+
+pkm:SSA_Koraidon_Speed_I_15 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_Koraidon ;
+    pkm:aboutStat pkm:StatSpeed ;
+    pkm:hasContext pkm:I_15 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_14 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 4 ;
+    pkm:hasReplayEventOrder 4 .
+
+pkm:SSA_Koraidon_Speed_I_16 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_Koraidon ;
+    pkm:aboutStat pkm:StatSpeed ;
+    pkm:hasContext pkm:I_16 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_15 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 5 ;
+    pkm:hasReplayEventOrder 0 .
+
+pkm:SSA_Koraidon_Speed_I_17 a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_Koraidon ;
+    pkm:aboutStat pkm:StatSpeed ;
+    pkm:hasContext pkm:I_17 ;
+    pkm:hasStageValue 1 ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_16 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 5 ;
+    pkm:hasReplayEventOrder 1 .
+# -----------------------------------------------------------------------------
+# Explicit post-faint HP assignments observable from the replay
+# -----------------------------------------------------------------------------
+
+pkm:HP_T3_Deoxys_Zero a pkm:CurrentHPAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_DeoxysA ;
+    pkm:hasContext pkm:I_10 ;
+    pkm:hasCurrentHPValue 0 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 3 ;
+    pkm:hasReplayEventOrder 3 ;
+    pkm:hasReplayStepLabel "turn-3-after-deoxys-faints" .
+
+pkm:HP_T4_Whimsicott_Zero a pkm:CurrentHPAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_Whimsicott ;
+    pkm:hasContext pkm:I_15 ;
+    pkm:hasCurrentHPValue 0 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 4 ;
+    pkm:hasReplayEventOrder 4 ;
+    pkm:hasReplayStepLabel "turn-4-after-whimsicott-faints" .
+
+pkm:HP_T4_Indeedee_Zero a pkm:CurrentHPAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_IndeedeeF ;
+    pkm:hasContext pkm:I_15 ;
+    pkm:hasCurrentHPValue 0 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 4 ;
+    pkm:hasReplayEventOrder 4 ;
+    pkm:hasReplayStepLabel "turn-4-after-indeedee-faints" .
+
+pkm:HP_T5_Landorus_Zero a pkm:CurrentHPAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_Landorus ;
+    pkm:hasContext pkm:I_17 ;
+    pkm:hasCurrentHPValue 0 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 5 ;
+    pkm:hasReplayEventOrder 1 ;
+    pkm:hasReplayStepLabel "turn-5-after-landorus-faints" .
+
+# -----------------------------------------------------------------------------
+# Replay-backed stochastic modeling: Fiery Dance's observed secondary boost
+# -----------------------------------------------------------------------------
+
+pkm:SR_T1_FieryDance_SecondaryBoost
+    a pkm:StochasticResolution ;
+    pkm:stochasticOccursInBattle pkm:Battle_Lycopoky_Finals_Game1 ;
+    pkm:realizedInInstantaneous pkm:I_3 ;
+    pkm:associatedWithAction pkm:Action_T1_FieryDance ;
+    pkm:hasRandomMechanic pkm:RandomMechanic_SecondaryEffectCheck ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredCompleteBranchSet ;
+    pkm:hasPossibleBranch pkm:Branch_T1_FieryDance_Boost , pkm:Branch_T1_FieryDance_NoBoost ;
+    pkm:hasRealizedBranch pkm:Branch_T1_FieryDance_Boost ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
+    pkm:hasReplayTurnIndex 1 ;
+    pkm:hasReplayEventOrder 3 ;
+    pkm:hasReplayStepLabel "turn-1-fiery-dance-secondary-effect" .
+
+pkm:Branch_T1_FieryDance_Boost
+    a pkm:OutcomeBranch ;
+    pkm:branchOfResolution pkm:SR_T1_FieryDance_SecondaryBoost ;
+    pkm:hasBranchLabel "boost" ;
+    pkm:hasBranchProbability 0.5 ;
+    pkm:resultsInEvent pkm:Event_T1_FieryDance_SpAtkBoost .
+
+pkm:Branch_T1_FieryDance_NoBoost
+    a pkm:OutcomeBranch ;
+    pkm:branchOfResolution pkm:SR_T1_FieryDance_SecondaryBoost ;
+    pkm:hasBranchLabel "no-boost" ;
+    pkm:hasBranchProbability 0.5 .
+
+
+# -----------------------------------------------------------------------------
+# Materialized battle-state extensions: field, side, volatile, and active-slot state
+# -----------------------------------------------------------------------------
+
+pkm:ReplayBattleStateProjectionPolicy
+    rdfs:comment "This replay slice materializes a broader but still partial battle-state surface: selected stat stages, replay-visible active-slot occupancy, selected field and side conditions, and short-lived volatile states. Hidden information and exact HP values remain intentionally sparse unless directly visible or forced by a faint." .
+
+# Field-wide state
+pkm:Terrain_PsychicTerrain_I_0 a pkm:CurrentTerrainAssignment ;
+    pkm:aboutField pkm:Battle_Lycopoky_Finals_Game1 ;
+    pkm:hasTerrainCondition pkm:Terrain_PsychicTerrain ;
+    pkm:hasContext pkm:I_0 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_ObservedRealized ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:Terrain_PsychicTerrain_I_1 a pkm:CurrentTerrainAssignment ;
+    pkm:aboutField pkm:Battle_Lycopoky_Finals_Game1 ;
+    pkm:hasTerrainCondition pkm:Terrain_PsychicTerrain ;
+    pkm:hasContext pkm:I_1 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_0 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:Terrain_PsychicTerrain_I_2 a pkm:CurrentTerrainAssignment ;
+    pkm:aboutField pkm:Battle_Lycopoky_Finals_Game1 ;
+    pkm:hasTerrainCondition pkm:Terrain_PsychicTerrain ;
+    pkm:hasContext pkm:I_2 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_1 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:Terrain_PsychicTerrain_I_3 a pkm:CurrentTerrainAssignment ;
+    pkm:aboutField pkm:Battle_Lycopoky_Finals_Game1 ;
+    pkm:hasTerrainCondition pkm:Terrain_PsychicTerrain ;
+    pkm:hasContext pkm:I_3 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_2 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:Terrain_PsychicTerrain_I_4 a pkm:CurrentTerrainAssignment ;
+    pkm:aboutField pkm:Battle_Lycopoky_Finals_Game1 ;
+    pkm:hasTerrainCondition pkm:Terrain_PsychicTerrain ;
+    pkm:hasContext pkm:I_4 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_3 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:Terrain_PsychicTerrain_I_5 a pkm:CurrentTerrainAssignment ;
+    pkm:aboutField pkm:Battle_Lycopoky_Finals_Game1 ;
+    pkm:hasTerrainCondition pkm:Terrain_PsychicTerrain ;
+    pkm:hasContext pkm:I_5 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_4 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:Terrain_PsychicTerrain_I_6 a pkm:CurrentTerrainAssignment ;
+    pkm:aboutField pkm:Battle_Lycopoky_Finals_Game1 ;
+    pkm:hasTerrainCondition pkm:Terrain_PsychicTerrain ;
+    pkm:hasContext pkm:I_6 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_5 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:Terrain_PsychicTerrain_I_7 a pkm:CurrentTerrainAssignment ;
+    pkm:aboutField pkm:Battle_Lycopoky_Finals_Game1 ;
+    pkm:hasTerrainCondition pkm:Terrain_PsychicTerrain ;
+    pkm:hasContext pkm:I_7 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_6 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:Terrain_PsychicTerrain_I_8 a pkm:CurrentTerrainAssignment ;
+    pkm:aboutField pkm:Battle_Lycopoky_Finals_Game1 ;
+    pkm:hasTerrainCondition pkm:Terrain_PsychicTerrain ;
+    pkm:hasContext pkm:I_8 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_7 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:Terrain_PsychicTerrain_I_9 a pkm:CurrentTerrainAssignment ;
+    pkm:aboutField pkm:Battle_Lycopoky_Finals_Game1 ;
+    pkm:hasTerrainCondition pkm:Terrain_PsychicTerrain ;
+    pkm:hasContext pkm:I_9 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_8 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:Terrain_PsychicTerrain_I_10 a pkm:CurrentTerrainAssignment ;
+    pkm:aboutField pkm:Battle_Lycopoky_Finals_Game1 ;
+    pkm:hasTerrainCondition pkm:Terrain_PsychicTerrain ;
+    pkm:hasContext pkm:I_10 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_9 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:Terrain_PsychicTerrain_I_11 a pkm:CurrentTerrainAssignment ;
+    pkm:aboutField pkm:Battle_Lycopoky_Finals_Game1 ;
+    pkm:hasTerrainCondition pkm:Terrain_PsychicTerrain ;
+    pkm:hasContext pkm:I_11 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_10 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:Terrain_PsychicTerrain_I_12 a pkm:CurrentTerrainAssignment ;
+    pkm:aboutField pkm:Battle_Lycopoky_Finals_Game1 ;
+    pkm:hasTerrainCondition pkm:Terrain_PsychicTerrain ;
+    pkm:hasContext pkm:I_12 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_11 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:Terrain_PsychicTerrain_I_13 a pkm:CurrentTerrainAssignment ;
+    pkm:aboutField pkm:Battle_Lycopoky_Finals_Game1 ;
+    pkm:hasTerrainCondition pkm:Terrain_PsychicTerrain ;
+    pkm:hasContext pkm:I_13 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_12 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:Terrain_PsychicTerrain_I_14 a pkm:CurrentTerrainAssignment ;
+    pkm:aboutField pkm:Battle_Lycopoky_Finals_Game1 ;
+    pkm:hasTerrainCondition pkm:Terrain_PsychicTerrain ;
+    pkm:hasContext pkm:I_14 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_13 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:Terrain_PsychicTerrain_I_15 a pkm:CurrentTerrainAssignment ;
+    pkm:aboutField pkm:Battle_Lycopoky_Finals_Game1 ;
+    pkm:hasTerrainCondition pkm:Terrain_PsychicTerrain ;
+    pkm:hasContext pkm:I_15 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_14 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:Terrain_PsychicTerrain_I_16 a pkm:CurrentTerrainAssignment ;
+    pkm:aboutField pkm:Battle_Lycopoky_Finals_Game1 ;
+    pkm:hasTerrainCondition pkm:Terrain_PsychicTerrain ;
+    pkm:hasContext pkm:I_16 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_15 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:Terrain_PsychicTerrain_I_17 a pkm:CurrentTerrainAssignment ;
+    pkm:aboutField pkm:Battle_Lycopoky_Finals_Game1 ;
+    pkm:hasTerrainCondition pkm:Terrain_PsychicTerrain ;
+    pkm:hasContext pkm:I_17 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_16 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:Weather_HarshSunlight_I_10 a pkm:CurrentWeatherAssignment ;
+    pkm:aboutField pkm:Battle_Lycopoky_Finals_Game1 ;
+    pkm:hasWeatherCondition pkm:Weather_HarshSunlight ;
+    pkm:hasContext pkm:I_10 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_ObservedRealized ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:Weather_HarshSunlight_I_11 a pkm:CurrentWeatherAssignment ;
+    pkm:aboutField pkm:Battle_Lycopoky_Finals_Game1 ;
+    pkm:hasWeatherCondition pkm:Weather_HarshSunlight ;
+    pkm:hasContext pkm:I_11 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_10 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:Weather_HarshSunlight_I_12 a pkm:CurrentWeatherAssignment ;
+    pkm:aboutField pkm:Battle_Lycopoky_Finals_Game1 ;
+    pkm:hasWeatherCondition pkm:Weather_HarshSunlight ;
+    pkm:hasContext pkm:I_12 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_11 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:Weather_HarshSunlight_I_13 a pkm:CurrentWeatherAssignment ;
+    pkm:aboutField pkm:Battle_Lycopoky_Finals_Game1 ;
+    pkm:hasWeatherCondition pkm:Weather_HarshSunlight ;
+    pkm:hasContext pkm:I_13 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_12 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:Weather_HarshSunlight_I_14 a pkm:CurrentWeatherAssignment ;
+    pkm:aboutField pkm:Battle_Lycopoky_Finals_Game1 ;
+    pkm:hasWeatherCondition pkm:Weather_HarshSunlight ;
+    pkm:hasContext pkm:I_14 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_13 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:Weather_HarshSunlight_I_15 a pkm:CurrentWeatherAssignment ;
+    pkm:aboutField pkm:Battle_Lycopoky_Finals_Game1 ;
+    pkm:hasWeatherCondition pkm:Weather_HarshSunlight ;
+    pkm:hasContext pkm:I_15 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_14 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:Weather_HarshSunlight_I_16 a pkm:CurrentWeatherAssignment ;
+    pkm:aboutField pkm:Battle_Lycopoky_Finals_Game1 ;
+    pkm:hasWeatherCondition pkm:Weather_HarshSunlight ;
+    pkm:hasContext pkm:I_16 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_15 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:Weather_HarshSunlight_I_17 a pkm:CurrentWeatherAssignment ;
+    pkm:aboutField pkm:Battle_Lycopoky_Finals_Game1 ;
+    pkm:hasWeatherCondition pkm:Weather_HarshSunlight ;
+    pkm:hasContext pkm:I_17 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_16 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:SideCond_Tailwind_kilenget_I_12 a pkm:SideConditionAssignment ;
+    pkm:aboutSide pkm:Side_kilenget ;
+    pkm:hasSideCondition pkm:SideCondition_Tailwind ;
+    pkm:hasContext pkm:I_12 ;
+    pkm:hasRemainingDuration 6 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_ObservedRealized ;
+    pkm:materializedFromEvent pkm:Action_T4_Tailwind ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:SideCond_Tailwind_kilenget_I_13 a pkm:SideConditionAssignment ;
+    pkm:aboutSide pkm:Side_kilenget ;
+    pkm:hasSideCondition pkm:SideCondition_Tailwind ;
+    pkm:hasContext pkm:I_13 ;
+    pkm:hasRemainingDuration 5 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_12 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:SideCond_Tailwind_kilenget_I_14 a pkm:SideConditionAssignment ;
+    pkm:aboutSide pkm:Side_kilenget ;
+    pkm:hasSideCondition pkm:SideCondition_Tailwind ;
+    pkm:hasContext pkm:I_14 ;
+    pkm:hasRemainingDuration 4 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_13 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:SideCond_Tailwind_kilenget_I_15 a pkm:SideConditionAssignment ;
+    pkm:aboutSide pkm:Side_kilenget ;
+    pkm:hasSideCondition pkm:SideCondition_Tailwind ;
+    pkm:hasContext pkm:I_15 ;
+    pkm:hasRemainingDuration 3 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_14 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:SideCond_Tailwind_kilenget_I_16 a pkm:SideConditionAssignment ;
+    pkm:aboutSide pkm:Side_kilenget ;
+    pkm:hasSideCondition pkm:SideCondition_Tailwind ;
+    pkm:hasContext pkm:I_16 ;
+    pkm:hasRemainingDuration 2 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_15 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:SideCond_Tailwind_kilenget_I_17 a pkm:SideConditionAssignment ;
+    pkm:aboutSide pkm:Side_kilenget ;
+    pkm:hasSideCondition pkm:SideCondition_Tailwind ;
+    pkm:hasContext pkm:I_17 ;
+    pkm:hasRemainingDuration 1 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_16 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:Volatile_Protecting_DeoxysA_I_5 a pkm:VolatileStatusAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_DeoxysA ;
+    pkm:hasVolatileCondition pkm:VolatileCondition_Protecting ;
+    pkm:hasContext pkm:I_5 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_ObservedRealized ;
+    pkm:materializedFromEvent pkm:Action_T2_DeoxysProtect ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:Volatile_Protecting_ArceusFire_I_8 a pkm:VolatileStatusAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:hasVolatileCondition pkm:VolatileCondition_Protecting ;
+    pkm:hasContext pkm:I_8 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_ObservedRealized ;
+    pkm:materializedFromEvent pkm:Action_T3_ArceusProtect ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_kilenget_DeoxysA_I_0_S1 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_DeoxysA ;
+    pkm:aboutSide pkm:Side_kilenget ;
+    pkm:hasActiveSlotIndex 1 ;
+    pkm:hasContext pkm:I_0 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_ObservedRealized ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_kilenget_IndeedeeF_I_0_S2 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_IndeedeeF ;
+    pkm:aboutSide pkm:Side_kilenget ;
+    pkm:hasActiveSlotIndex 2 ;
+    pkm:hasContext pkm:I_0 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_ObservedRealized ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_Lycopoky_ArceusFire_I_0_S1 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutSide pkm:Side_Lycopoky ;
+    pkm:hasActiveSlotIndex 1 ;
+    pkm:hasContext pkm:I_0 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_ObservedRealized ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_Lycopoky_Volcarona_I_0_S2 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_Volcarona ;
+    pkm:aboutSide pkm:Side_Lycopoky ;
+    pkm:hasActiveSlotIndex 2 ;
+    pkm:hasContext pkm:I_0 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_ObservedRealized ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_kilenget_DeoxysA_I_1_S1 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_DeoxysA ;
+    pkm:aboutSide pkm:Side_kilenget ;
+    pkm:hasActiveSlotIndex 1 ;
+    pkm:hasContext pkm:I_1 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_0 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_kilenget_IndeedeeF_I_1_S2 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_IndeedeeF ;
+    pkm:aboutSide pkm:Side_kilenget ;
+    pkm:hasActiveSlotIndex 2 ;
+    pkm:hasContext pkm:I_1 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_0 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_Lycopoky_ArceusFire_I_1_S1 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutSide pkm:Side_Lycopoky ;
+    pkm:hasActiveSlotIndex 1 ;
+    pkm:hasContext pkm:I_1 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_0 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_Lycopoky_Volcarona_I_1_S2 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_Volcarona ;
+    pkm:aboutSide pkm:Side_Lycopoky ;
+    pkm:hasActiveSlotIndex 2 ;
+    pkm:hasContext pkm:I_1 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_0 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_kilenget_DeoxysA_I_2_S1 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_DeoxysA ;
+    pkm:aboutSide pkm:Side_kilenget ;
+    pkm:hasActiveSlotIndex 1 ;
+    pkm:hasContext pkm:I_2 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_1 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_kilenget_IndeedeeF_I_2_S2 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_IndeedeeF ;
+    pkm:aboutSide pkm:Side_kilenget ;
+    pkm:hasActiveSlotIndex 2 ;
+    pkm:hasContext pkm:I_2 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_1 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_Lycopoky_ArceusFire_I_2_S1 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutSide pkm:Side_Lycopoky ;
+    pkm:hasActiveSlotIndex 1 ;
+    pkm:hasContext pkm:I_2 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_1 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_Lycopoky_Volcarona_I_2_S2 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_Volcarona ;
+    pkm:aboutSide pkm:Side_Lycopoky ;
+    pkm:hasActiveSlotIndex 2 ;
+    pkm:hasContext pkm:I_2 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_1 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_kilenget_DeoxysA_I_3_S1 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_DeoxysA ;
+    pkm:aboutSide pkm:Side_kilenget ;
+    pkm:hasActiveSlotIndex 1 ;
+    pkm:hasContext pkm:I_3 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_2 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_kilenget_IndeedeeF_I_3_S2 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_IndeedeeF ;
+    pkm:aboutSide pkm:Side_kilenget ;
+    pkm:hasActiveSlotIndex 2 ;
+    pkm:hasContext pkm:I_3 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_2 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_Lycopoky_ArceusFire_I_3_S1 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutSide pkm:Side_Lycopoky ;
+    pkm:hasActiveSlotIndex 1 ;
+    pkm:hasContext pkm:I_3 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_2 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_Lycopoky_Volcarona_I_3_S2 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_Volcarona ;
+    pkm:aboutSide pkm:Side_Lycopoky ;
+    pkm:hasActiveSlotIndex 2 ;
+    pkm:hasContext pkm:I_3 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_2 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_kilenget_DeoxysA_I_4_S1 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_DeoxysA ;
+    pkm:aboutSide pkm:Side_kilenget ;
+    pkm:hasActiveSlotIndex 1 ;
+    pkm:hasContext pkm:I_4 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_3 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_kilenget_IndeedeeF_I_4_S2 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_IndeedeeF ;
+    pkm:aboutSide pkm:Side_kilenget ;
+    pkm:hasActiveSlotIndex 2 ;
+    pkm:hasContext pkm:I_4 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_3 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_Lycopoky_ArceusFire_I_4_S1 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutSide pkm:Side_Lycopoky ;
+    pkm:hasActiveSlotIndex 1 ;
+    pkm:hasContext pkm:I_4 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_3 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_Lycopoky_Volcarona_I_4_S2 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_Volcarona ;
+    pkm:aboutSide pkm:Side_Lycopoky ;
+    pkm:hasActiveSlotIndex 2 ;
+    pkm:hasContext pkm:I_4 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_3 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_kilenget_DeoxysA_I_5_S1 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_DeoxysA ;
+    pkm:aboutSide pkm:Side_kilenget ;
+    pkm:hasActiveSlotIndex 1 ;
+    pkm:hasContext pkm:I_5 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_4 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_kilenget_IndeedeeF_I_5_S2 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_IndeedeeF ;
+    pkm:aboutSide pkm:Side_kilenget ;
+    pkm:hasActiveSlotIndex 2 ;
+    pkm:hasContext pkm:I_5 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_4 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_Lycopoky_ArceusFire_I_5_S1 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutSide pkm:Side_Lycopoky ;
+    pkm:hasActiveSlotIndex 1 ;
+    pkm:hasContext pkm:I_5 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_4 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_Lycopoky_Volcarona_I_5_S2 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_Volcarona ;
+    pkm:aboutSide pkm:Side_Lycopoky ;
+    pkm:hasActiveSlotIndex 2 ;
+    pkm:hasContext pkm:I_5 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_4 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_kilenget_DeoxysA_I_6_S1 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_DeoxysA ;
+    pkm:aboutSide pkm:Side_kilenget ;
+    pkm:hasActiveSlotIndex 1 ;
+    pkm:hasContext pkm:I_6 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_5 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_kilenget_IndeedeeF_I_6_S2 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_IndeedeeF ;
+    pkm:aboutSide pkm:Side_kilenget ;
+    pkm:hasActiveSlotIndex 2 ;
+    pkm:hasContext pkm:I_6 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_5 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_Lycopoky_ArceusFire_I_6_S1 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutSide pkm:Side_Lycopoky ;
+    pkm:hasActiveSlotIndex 1 ;
+    pkm:hasContext pkm:I_6 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_5 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_Lycopoky_Volcarona_I_6_S2 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_Volcarona ;
+    pkm:aboutSide pkm:Side_Lycopoky ;
+    pkm:hasActiveSlotIndex 2 ;
+    pkm:hasContext pkm:I_6 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_5 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_kilenget_DeoxysA_I_7_S1 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_DeoxysA ;
+    pkm:aboutSide pkm:Side_kilenget ;
+    pkm:hasActiveSlotIndex 1 ;
+    pkm:hasContext pkm:I_7 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_6 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_kilenget_IndeedeeF_I_7_S2 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_IndeedeeF ;
+    pkm:aboutSide pkm:Side_kilenget ;
+    pkm:hasActiveSlotIndex 2 ;
+    pkm:hasContext pkm:I_7 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_6 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_Lycopoky_ArceusFire_I_7_S1 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutSide pkm:Side_Lycopoky ;
+    pkm:hasActiveSlotIndex 1 ;
+    pkm:hasContext pkm:I_7 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_6 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_Lycopoky_Volcarona_I_7_S2 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_Volcarona ;
+    pkm:aboutSide pkm:Side_Lycopoky ;
+    pkm:hasActiveSlotIndex 2 ;
+    pkm:hasContext pkm:I_7 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_6 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_kilenget_DeoxysA_I_8_S1 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_DeoxysA ;
+    pkm:aboutSide pkm:Side_kilenget ;
+    pkm:hasActiveSlotIndex 1 ;
+    pkm:hasContext pkm:I_8 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_7 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_kilenget_IndeedeeF_I_8_S2 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_IndeedeeF ;
+    pkm:aboutSide pkm:Side_kilenget ;
+    pkm:hasActiveSlotIndex 2 ;
+    pkm:hasContext pkm:I_8 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_7 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_Lycopoky_ArceusFire_I_8_S1 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutSide pkm:Side_Lycopoky ;
+    pkm:hasActiveSlotIndex 1 ;
+    pkm:hasContext pkm:I_8 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_7 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_Lycopoky_Volcarona_I_8_S2 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_Volcarona ;
+    pkm:aboutSide pkm:Side_Lycopoky ;
+    pkm:hasActiveSlotIndex 2 ;
+    pkm:hasContext pkm:I_8 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_7 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_kilenget_DeoxysA_I_9_S1 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_DeoxysA ;
+    pkm:aboutSide pkm:Side_kilenget ;
+    pkm:hasActiveSlotIndex 1 ;
+    pkm:hasContext pkm:I_9 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_8 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_kilenget_IndeedeeF_I_9_S2 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_IndeedeeF ;
+    pkm:aboutSide pkm:Side_kilenget ;
+    pkm:hasActiveSlotIndex 2 ;
+    pkm:hasContext pkm:I_9 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_8 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_Lycopoky_ArceusFire_I_9_S1 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutSide pkm:Side_Lycopoky ;
+    pkm:hasActiveSlotIndex 1 ;
+    pkm:hasContext pkm:I_9 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_8 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_Lycopoky_Volcarona_I_9_S2 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_Volcarona ;
+    pkm:aboutSide pkm:Side_Lycopoky ;
+    pkm:hasActiveSlotIndex 2 ;
+    pkm:hasContext pkm:I_9 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_8 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_kilenget_IndeedeeF_I_10_S2 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_IndeedeeF ;
+    pkm:aboutSide pkm:Side_kilenget ;
+    pkm:hasActiveSlotIndex 2 ;
+    pkm:hasContext pkm:I_10 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_ObservedRealized ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_Lycopoky_ArceusFire_I_10_S1 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutSide pkm:Side_Lycopoky ;
+    pkm:hasActiveSlotIndex 1 ;
+    pkm:hasContext pkm:I_10 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_ObservedRealized ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_Lycopoky_Koraidon_I_10_S2 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_Koraidon ;
+    pkm:aboutSide pkm:Side_Lycopoky ;
+    pkm:hasActiveSlotIndex 2 ;
+    pkm:hasContext pkm:I_10 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_ObservedRealized ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_kilenget_Whimsicott_I_11_S1 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_Whimsicott ;
+    pkm:aboutSide pkm:Side_kilenget ;
+    pkm:hasActiveSlotIndex 1 ;
+    pkm:hasContext pkm:I_11 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_ObservedRealized ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_kilenget_IndeedeeF_I_11_S2 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_IndeedeeF ;
+    pkm:aboutSide pkm:Side_kilenget ;
+    pkm:hasActiveSlotIndex 2 ;
+    pkm:hasContext pkm:I_11 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_ObservedRealized ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_Lycopoky_ArceusFire_I_11_S1 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutSide pkm:Side_Lycopoky ;
+    pkm:hasActiveSlotIndex 1 ;
+    pkm:hasContext pkm:I_11 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_ObservedRealized ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_Lycopoky_Koraidon_I_11_S2 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_Koraidon ;
+    pkm:aboutSide pkm:Side_Lycopoky ;
+    pkm:hasActiveSlotIndex 2 ;
+    pkm:hasContext pkm:I_11 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_ObservedRealized ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_kilenget_Whimsicott_I_12_S1 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_Whimsicott ;
+    pkm:aboutSide pkm:Side_kilenget ;
+    pkm:hasActiveSlotIndex 1 ;
+    pkm:hasContext pkm:I_12 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_11 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_kilenget_IndeedeeF_I_12_S2 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_IndeedeeF ;
+    pkm:aboutSide pkm:Side_kilenget ;
+    pkm:hasActiveSlotIndex 2 ;
+    pkm:hasContext pkm:I_12 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_11 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_Lycopoky_ArceusFire_I_12_S1 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutSide pkm:Side_Lycopoky ;
+    pkm:hasActiveSlotIndex 1 ;
+    pkm:hasContext pkm:I_12 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_11 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_Lycopoky_Koraidon_I_12_S2 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_Koraidon ;
+    pkm:aboutSide pkm:Side_Lycopoky ;
+    pkm:hasActiveSlotIndex 2 ;
+    pkm:hasContext pkm:I_12 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_11 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_kilenget_Whimsicott_I_13_S1 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_Whimsicott ;
+    pkm:aboutSide pkm:Side_kilenget ;
+    pkm:hasActiveSlotIndex 1 ;
+    pkm:hasContext pkm:I_13 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_12 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_kilenget_IndeedeeF_I_13_S2 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_IndeedeeF ;
+    pkm:aboutSide pkm:Side_kilenget ;
+    pkm:hasActiveSlotIndex 2 ;
+    pkm:hasContext pkm:I_13 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_12 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_Lycopoky_ArceusFire_I_13_S1 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutSide pkm:Side_Lycopoky ;
+    pkm:hasActiveSlotIndex 1 ;
+    pkm:hasContext pkm:I_13 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_12 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_Lycopoky_Koraidon_I_13_S2 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_Koraidon ;
+    pkm:aboutSide pkm:Side_Lycopoky ;
+    pkm:hasActiveSlotIndex 2 ;
+    pkm:hasContext pkm:I_13 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_12 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_kilenget_Whimsicott_I_14_S1 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_Whimsicott ;
+    pkm:aboutSide pkm:Side_kilenget ;
+    pkm:hasActiveSlotIndex 1 ;
+    pkm:hasContext pkm:I_14 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_13 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_kilenget_IndeedeeF_I_14_S2 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_IndeedeeF ;
+    pkm:aboutSide pkm:Side_kilenget ;
+    pkm:hasActiveSlotIndex 2 ;
+    pkm:hasContext pkm:I_14 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_13 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_Lycopoky_ArceusFire_I_14_S1 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutSide pkm:Side_Lycopoky ;
+    pkm:hasActiveSlotIndex 1 ;
+    pkm:hasContext pkm:I_14 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_13 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_Lycopoky_Koraidon_I_14_S2 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_Koraidon ;
+    pkm:aboutSide pkm:Side_Lycopoky ;
+    pkm:hasActiveSlotIndex 2 ;
+    pkm:hasContext pkm:I_14 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_13 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_kilenget_Whimsicott_I_15_S1 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_Whimsicott ;
+    pkm:aboutSide pkm:Side_kilenget ;
+    pkm:hasActiveSlotIndex 1 ;
+    pkm:hasContext pkm:I_15 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_14 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_kilenget_IndeedeeF_I_15_S2 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_IndeedeeF ;
+    pkm:aboutSide pkm:Side_kilenget ;
+    pkm:hasActiveSlotIndex 2 ;
+    pkm:hasContext pkm:I_15 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_14 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_Lycopoky_ArceusFire_I_15_S1 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutSide pkm:Side_Lycopoky ;
+    pkm:hasActiveSlotIndex 1 ;
+    pkm:hasContext pkm:I_15 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_14 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_Lycopoky_Koraidon_I_15_S2 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_Koraidon ;
+    pkm:aboutSide pkm:Side_Lycopoky ;
+    pkm:hasActiveSlotIndex 2 ;
+    pkm:hasContext pkm:I_15 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
+    pkm:materializedFromPreviousInstantaneous pkm:I_14 ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_kilenget_Landorus_I_16_S1 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_kilenget_Landorus ;
+    pkm:aboutSide pkm:Side_kilenget ;
+    pkm:hasActiveSlotIndex 1 ;
+    pkm:hasContext pkm:I_16 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_ObservedRealized ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_Lycopoky_ArceusFire_I_16_S1 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutSide pkm:Side_Lycopoky ;
+    pkm:hasActiveSlotIndex 1 ;
+    pkm:hasContext pkm:I_16 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_ObservedRealized ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_Lycopoky_Koraidon_I_16_S2 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_Koraidon ;
+    pkm:aboutSide pkm:Side_Lycopoky ;
+    pkm:hasActiveSlotIndex 2 ;
+    pkm:hasContext pkm:I_16 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_ObservedRealized ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_Lycopoky_ArceusFire_I_17_S1 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
+    pkm:aboutSide pkm:Side_Lycopoky ;
+    pkm:hasActiveSlotIndex 1 ;
+    pkm:hasContext pkm:I_17 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_ObservedRealized ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
+
+pkm:ActiveSlot_Lycopoky_Koraidon_I_17_S2 a pkm:ActiveSlotAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Lycopoky_Koraidon ;
+    pkm:aboutSide pkm:Side_Lycopoky ;
+    pkm:hasActiveSlotIndex 2 ;
+    pkm:hasContext pkm:I_17 ;
+    pkm:hasKnowledgeStatus pkm:KnowledgeStatus_ObservedRealized ;
+    pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .

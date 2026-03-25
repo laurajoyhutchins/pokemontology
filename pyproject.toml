@@ -1,0 +1,12 @@
+[project]
+name = "pokemon-battle-mechanics-ontology"
+version = "0.1.0"
+description = "Replay-backed Pokémon battle mechanics ontology with SHACL validation."
+requires-python = ">=3.11"
+dependencies = [
+  "rdflib>=7.0",
+  "pyshacl>=0.30",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

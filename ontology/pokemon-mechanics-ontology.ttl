@@ -1,0 +1,2439 @@
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix pkm:  <http://example.org/pokemon-ontology#> .
+
+# =============================================================================
+# Pokémon Mechanics Ontology
+# Version 1.1
+# Scope: Ontology → Ruleset → SaveFile → Battle → Instantaneous
+# =============================================================================
+
+<http://example.org/pokemon-ontology>
+    a owl:Ontology ;
+    rdfs:label "Pokémon Mechanics Ontology" ;
+    rdfs:comment "Context-sensitive mechanics ontology for Pokémon. Models identity, ruleset truth, save state, battle state, and instantaneous state as distinct scopes, with explicit battle participants, replay provenance, and state transitions." ;
+    owl:versionInfo "1.1" .
+
+
+# =============================================================================
+# MODULE 1: CORE — Abstract Classes
+# =============================================================================
+
+pkm:Entity
+    a owl:Class ;
+    rdfs:label "Entity" ;
+    rdfs:comment "Top-level class for all ontological entities in the Pokémon universe." .
+
+pkm:Context
+    a owl:Class ;
+    rdfs:label "Context" ;
+    rdfs:comment "Top-level class for all contextual scopes within which facts are true." .
+
+pkm:ContextualFact
+    a owl:Class ;
+    rdfs:label "ContextualFact" ;
+    rdfs:comment "A reified fact that is true within exactly one context." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasContext ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Context
+    ] .
+
+pkm:Action
+    a owl:Class ;
+    rdfs:label "Action" ;
+    rdfs:comment "A declared action during battle." .
+
+pkm:Event
+    a owl:Class ;
+    rdfs:label "Event" ;
+    rdfs:comment "A resolved event during battle." .
+
+
+# =============================================================================
+# MODULE 1: CORE — Entity Classes
+# =============================================================================
+
+pkm:Species
+    a owl:Class ;
+    rdfs:label "Species" ;
+    rdfs:subClassOf pkm:Entity ;
+    rdfs:comment "Canonical ontological species identity (e.g. Pikachu, Froakie)." .
+
+pkm:Variant
+    a owl:Class ;
+    rdfs:label "Variant" ;
+    rdfs:subClassOf pkm:Entity ;
+    rdfs:comment "A mechanics-relevant manifestation of a species (e.g. Pikachu-Default, Pikachu-Alolan)." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:belongsToSpecies ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Species
+    ] .
+
+pkm:Move
+    a owl:Class ;
+    rdfs:label "Move" ;
+    rdfs:subClassOf pkm:Entity ;
+    rdfs:comment "A move that can be used in battle." .
+
+pkm:Ability
+    a owl:Class ;
+    rdfs:label "Ability" ;
+    rdfs:subClassOf pkm:Entity ;
+    rdfs:comment "An ability that can be possessed by a Pokémon variant." .
+
+pkm:Item
+    a owl:Class ;
+    rdfs:label "Item" ;
+    rdfs:subClassOf pkm:Entity ;
+    rdfs:comment "An item that can be held or used." .
+
+pkm:Type
+    a owl:Class ;
+    rdfs:label "Type" ;
+    rdfs:subClassOf pkm:Entity ;
+    rdfs:comment "A elemental type (e.g. Water, Fire, Bug)." .
+
+pkm:Stat
+    a owl:Class ;
+    rdfs:label "Stat" ;
+    rdfs:subClassOf pkm:Entity ;
+    rdfs:comment "A base stat dimension (HP, Attack, Defense, SpAtk, SpDef, Speed)." .
+
+pkm:Nature
+    a owl:Class ;
+    rdfs:label "Nature" ;
+    rdfs:subClassOf pkm:Entity ;
+    rdfs:comment "A nature that modifies stat growth (e.g. Timid, Adamant)." .
+
+pkm:Trainer
+    a owl:Class ;
+    rdfs:label "Trainer" ;
+    rdfs:subClassOf pkm:Entity ;
+    rdfs:comment "A trainer who owns Pokémon and participates in battles." .
+
+pkm:StatusCondition
+    a owl:Class ;
+    rdfs:label "StatusCondition" ;
+    rdfs:subClassOf pkm:Entity ;
+    rdfs:comment "A non-volatile status condition (e.g. Burn, Paralysis, Poison). Exists as an ontological entity; applied via SaveStatusAssignment or CurrentStatusAssignment." .
+
+pkm:TransformationState
+    a owl:Class ;
+    rdfs:label "TransformationState" ;
+    rdfs:subClassOf pkm:Entity ;
+    rdfs:comment "A temporary battle-only transformation mode layered onto a combatant without changing the underlying species identity (e.g. Mega Evolution, Battle Bond, Dynamax, Terastallization)." .
+
+
+# =============================================================================
+# MODULE 1: CORE — Context Classes
+# =============================================================================
+
+pkm:Ruleset
+    a owl:Class ;
+    rdfs:label "Ruleset" ;
+    rdfs:subClassOf pkm:Context ;
+    rdfs:comment "A mechanics context defining what is true under a game version or competitive format." .
+
+pkm:VersionGroup
+    a owl:Class ;
+    rdfs:label "VersionGroup" ;
+    rdfs:subClassOf pkm:Context ;
+    rdfs:comment "A game version group (e.g. X/Y, Sword/Shield). May be associated with one or more Rulesets." .
+
+pkm:SaveFile
+    a owl:Class ;
+    rdfs:label "SaveFile" ;
+    rdfs:subClassOf pkm:Context ;
+    rdfs:comment "A persistent playthrough save state." .
+
+pkm:Battle
+    a owl:Class ;
+    rdfs:label "Battle" ;
+    rdfs:subClassOf pkm:Context ;
+    rdfs:comment "An encounter-local context." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:operatesUnderRuleset ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Ruleset
+    ] .
+
+pkm:Instantaneous
+    a owl:Class ;
+    rdfs:label "Instantaneous" ;
+    rdfs:subClassOf pkm:Context ;
+    rdfs:comment "An instantaneous state snapshot during battle execution." .
+
+
+# =============================================================================
+# MODULE 1: CORE — Disjointness: Entity types
+# =============================================================================
+
+[ a owl:AllDisjointClasses ;
+  owl:members (
+    pkm:Species pkm:Variant pkm:Move pkm:Ability
+    pkm:Item pkm:Type pkm:Stat pkm:Nature pkm:Trainer
+    pkm:StatusCondition pkm:TransformationState
+  )
+] .
+
+# Entity and Context are disjoint top-level branches
+pkm:Entity owl:disjointWith pkm:Context .
+pkm:Entity owl:disjointWith pkm:ContextualFact .
+pkm:Context owl:disjointWith pkm:ContextualFact .
+
+
+# =============================================================================
+# MODULE 1: CORE — Disjointness: Context types
+# =============================================================================
+
+[ a owl:AllDisjointClasses ;
+  owl:members (
+    pkm:Ruleset pkm:VersionGroup pkm:SaveFile pkm:Battle pkm:Instantaneous
+  )
+] .
+
+
+# =============================================================================
+# MODULE 1: CORE — Object Properties
+# =============================================================================
+
+pkm:belongsToSpecies
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "belongsToSpecies" ;
+    rdfs:domain pkm:Variant ;
+    rdfs:range pkm:Species .
+
+pkm:hasContext
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasContext" ;
+    rdfs:domain pkm:ContextualFact ;
+    rdfs:range pkm:Context .
+
+pkm:operatesUnderRuleset
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "operatesUnderRuleset" ;
+    rdfs:domain pkm:Battle ;
+    rdfs:range pkm:Ruleset .
+
+pkm:hasVersionGroup
+    a owl:ObjectProperty ;
+    rdfs:label "hasVersionGroup" ;
+    rdfs:domain pkm:Ruleset ;
+    rdfs:range pkm:VersionGroup .
+
+pkm:hasPreviousInstantaneous
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    a owl:InverseFunctionalProperty ;
+    rdfs:label "hasPreviousInstantaneous" ;
+    rdfs:domain pkm:Instantaneous ;
+    rdfs:range pkm:Instantaneous .
+
+pkm:hasNextInstantaneous
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    a owl:InverseFunctionalProperty ;
+    rdfs:label "hasNextInstantaneous" ;
+    rdfs:domain pkm:Instantaneous ;
+    rdfs:range pkm:Instantaneous ;
+    owl:inverseOf pkm:hasPreviousInstantaneous .
+
+pkm:occursInBattle
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "occursInBattle" ;
+    rdfs:domain pkm:Instantaneous ;
+    rdfs:range pkm:Battle .
+
+pkm:resultsFromTransition
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "resultsFromTransition" ;
+    rdfs:domain pkm:Instantaneous ;
+    rdfs:range pkm:StateTransition .
+
+
+# =============================================================================
+# MODULE 1: CORE — Data Properties
+# =============================================================================
+
+pkm:hasIdentifier
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasIdentifier" ;
+    rdfs:domain pkm:Entity ;
+    rdfs:range xsd:string .
+
+pkm:hasName
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasName" ;
+    rdfs:domain pkm:Entity ;
+    rdfs:range xsd:string .
+
+pkm:hasCombatantLabel
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasCombatantLabel" ;
+    rdfs:domain pkm:BattleParticipant ;
+    rdfs:range xsd:string ;
+    rdfs:comment "A replay-facing or battle-facing label for a battle participant. This is distinct from the canonical hasName property used for ontology entities such as species, moves, items, and rulesets." .
+
+
+pkm:hasProjectionProfile
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasProjectionProfile" ;
+    rdfs:domain pkm:Instantaneous ;
+    rdfs:range pkm:ProjectionProfile ;
+    rdfs:comment "Declares which projection policy is intended for the materialized state attached to an Instantaneous." .
+
+pkm:materializedFromPreviousInstantaneous
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "materializedFromPreviousInstantaneous" ;
+    rdfs:domain pkm:MaterializedStateAssignment ;
+    rdfs:range pkm:Instantaneous ;
+    rdfs:comment "Indicates that a materialized assignment was forward-projected from the immediately preceding Instantaneous." .
+
+pkm:materializedFromEvent
+    a owl:ObjectProperty ;
+    rdfs:label "materializedFromEvent" ;
+    rdfs:domain pkm:MaterializedStateAssignment ;
+    rdfs:range pkm:Event ;
+    rdfs:comment "Indicates that a materialized assignment is justified directly by an event resolved at or before the assignment's Instantaneous." .
+
+pkm:ProjectionProfile_ReplayObservedOnly
+    a pkm:ProjectionProfile ;
+    rdfs:label "ReplayObservedOnly" ;
+    rdfs:comment "Only directly observed state is attached to each Instantaneous; consumers must reconstruct omitted dimensions by replaying events." .
+
+pkm:ProjectionProfile_PartialMaterializedStages
+    a pkm:ProjectionProfile ;
+    rdfs:label "PartialMaterializedStages" ;
+    rdfs:comment "Selected stat-stage assignments are forward-projected on each Instantaneous for query convenience, but the stage layer is not claimed to be exhaustive for every combatant and stat." .
+
+pkm:hasDexNumber
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasDexNumber" ;
+    rdfs:domain pkm:Species ;
+    rdfs:range xsd:integer .
+
+
+# =============================================================================
+# MODULE 2: RULESET MECHANICS — Contextual Fact Classes
+# =============================================================================
+
+pkm:TypingAssignment
+    a owl:Class ;
+    rdfs:label "TypingAssignment" ;
+    rdfs:subClassOf pkm:ContextualFact ;
+    rdfs:subClassOf pkm:MaterializedStateAssignment ;
+    rdfs:comment "Assigns a type to a variant within a ruleset." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:aboutEntity ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Variant
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:aboutType ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Type
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasContext ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Ruleset
+    ] .
+
+pkm:StatAssignment
+    a owl:Class ;
+    rdfs:label "StatAssignment" ;
+    rdfs:subClassOf pkm:ContextualFact ;
+    rdfs:comment "Assigns a base stat value to a variant within a ruleset." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:aboutEntity ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Variant
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:aboutStat ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Stat
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasValue ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onDataRange xsd:integer
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasContext ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Ruleset
+    ] .
+
+pkm:AbilityAssignment
+    a owl:Class ;
+    rdfs:label "AbilityAssignment" ;
+    rdfs:subClassOf pkm:ContextualFact ;
+    rdfs:comment "Assigns an ability to a variant within a ruleset." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:aboutEntity ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Variant
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:aboutAbility ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Ability
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasContext ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Ruleset
+    ] .
+
+pkm:MoveLearnability
+    a owl:Class ;
+    rdfs:label "MoveLearnability" ;
+    rdfs:subClassOf pkm:ContextualFact ;
+    rdfs:comment "Records that a variant can learn a move within a ruleset." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:aboutEntity ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Variant
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:learnableMove ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Move
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasContext ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Ruleset
+    ] .
+
+pkm:MovePropertyAssignment
+    a owl:Class ;
+    rdfs:label "MovePropertyAssignment" ;
+    rdfs:subClassOf pkm:ContextualFact ;
+    rdfs:comment "Records mechanical properties of a move within a ruleset." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:aboutMove ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Move
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasContext ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Ruleset
+    ] .
+
+pkm:ItemPropertyAssignment
+    a owl:Class ;
+    rdfs:label "ItemPropertyAssignment" ;
+    rdfs:subClassOf pkm:ContextualFact ;
+    rdfs:comment "Records mechanical properties of an item within a ruleset." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:aboutItem ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Item
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasContext ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Ruleset
+    ] .
+
+pkm:TypeEffectivenessAssignment
+    a owl:Class ;
+    rdfs:label "TypeEffectivenessAssignment" ;
+    rdfs:subClassOf pkm:ContextualFact ;
+    rdfs:comment "Records the damage multiplier for an attacker type against a defender type within a ruleset." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:attackerType ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Type
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:defenderType ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Type
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasDamageFactor ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onDataRange xsd:decimal
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasContext ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Ruleset
+    ] .
+
+
+# =============================================================================
+# MODULE 2: RULESET MECHANICS — Disjointness
+# =============================================================================
+
+[ a owl:AllDisjointClasses ;
+  owl:members (
+    pkm:TypingAssignment pkm:StatAssignment pkm:AbilityAssignment
+    pkm:MoveLearnability pkm:MovePropertyAssignment
+    pkm:ItemPropertyAssignment pkm:TypeEffectivenessAssignment
+  )
+] .
+
+
+# =============================================================================
+# MODULE 2: RULESET MECHANICS — Object Properties
+# =============================================================================
+
+pkm:aboutEntity
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "aboutEntity" ;
+    rdfs:domain pkm:ContextualFact ;
+    rdfs:range pkm:Entity .
+
+pkm:aboutMove
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "aboutMove" ;
+    rdfs:range pkm:Move .
+
+pkm:aboutItem
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "aboutItem" ;
+    rdfs:range pkm:Item .
+
+pkm:aboutType
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "aboutType" ;
+    rdfs:range pkm:Type .
+
+pkm:aboutStat
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "aboutStat" ;
+    rdfs:range pkm:Stat .
+
+pkm:aboutAbility
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "aboutAbility" ;
+    rdfs:range pkm:Ability .
+
+pkm:attackerType
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "attackerType" ;
+    rdfs:domain pkm:TypeEffectivenessAssignment ;
+    rdfs:range pkm:Type .
+
+pkm:defenderType
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "defenderType" ;
+    rdfs:domain pkm:TypeEffectivenessAssignment ;
+    rdfs:range pkm:Type .
+
+pkm:learnableMove
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "learnableMove" ;
+    rdfs:domain pkm:MoveLearnability ;
+    rdfs:range pkm:Move .
+
+
+# =============================================================================
+# MODULE 2: RULESET MECHANICS — Data Properties
+# =============================================================================
+
+pkm:hasSlot
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasSlot" ;
+    rdfs:range xsd:integer .
+
+pkm:hasValue
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasValue" ;
+    rdfs:domain pkm:StatAssignment ;
+    rdfs:range xsd:integer .
+
+pkm:hasBasePower
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasBasePower" ;
+    rdfs:domain pkm:MovePropertyAssignment ;
+    rdfs:range xsd:integer .
+
+pkm:hasAccuracy
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasAccuracy" ;
+    rdfs:domain pkm:MovePropertyAssignment ;
+    rdfs:range xsd:integer .
+
+pkm:hasPP
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasPP" ;
+    rdfs:domain pkm:MovePropertyAssignment ;
+    rdfs:range xsd:integer .
+
+pkm:hasPriority
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasPriority" ;
+    rdfs:domain pkm:MovePropertyAssignment ;
+    rdfs:range xsd:integer .
+
+pkm:hasDamageFactor
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasDamageFactor" ;
+    rdfs:domain pkm:TypeEffectivenessAssignment ;
+    rdfs:range xsd:decimal .
+
+pkm:isHiddenAbility
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "isHiddenAbility" ;
+    rdfs:domain pkm:AbilityAssignment ;
+    rdfs:range xsd:boolean .
+
+pkm:isLearnable
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "isLearnable" ;
+    rdfs:domain pkm:MoveLearnability ;
+    rdfs:range xsd:boolean .
+
+pkm:hasTypeSlot
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasTypeSlot" ;
+    rdfs:domain pkm:TypingAssignment ;
+    rdfs:range xsd:integer ;
+    rdfs:comment "Ordinality of a typing: 1 = primary, 2 = secondary. Enables deterministic type-slot manipulation (e.g. Burn Up, Roost). Uniqueness per variant per ruleset enforced in SHACL." .
+
+
+# =============================================================================
+# MODULE 3: SAVE STATE — Classes
+# =============================================================================
+
+pkm:OwnedPokemon
+    a owl:Class ;
+    rdfs:label "OwnedPokemon" ;
+    rdfs:comment "An instantiated persistent Pokémon individual within a save file." ;
+    owl:disjointWith pkm:Entity ;
+    owl:disjointWith pkm:Context ;
+    owl:disjointWith pkm:ContextualFact ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:representsVariant ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Variant
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:storedInSaveFile ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:SaveFile
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:ownedByTrainer ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Trainer
+    ] .
+
+pkm:OwnedMoveSlot
+    a owl:Class ;
+    rdfs:label "OwnedMoveSlot" ;
+    rdfs:comment "A move slot belonging to a specific OwnedPokemon in a save file." ;
+    owl:disjointWith pkm:Entity ;
+    owl:disjointWith pkm:Context ;
+    owl:disjointWith pkm:ContextualFact ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:ownedBy ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:OwnedPokemon
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:storedInSaveFile ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:SaveFile
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:knowsMove ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Move
+    ] .
+
+pkm:IVAssignment
+    a owl:Class ;
+    rdfs:label "IVAssignment" ;
+    rdfs:subClassOf pkm:ContextualFact ;
+    rdfs:comment "Records the IV value for one stat of one OwnedPokemon." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:aboutOwnedPokemon ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:OwnedPokemon
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:aboutStat ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Stat
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasIVValue ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onDataRange xsd:integer
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasContext ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:SaveFile
+    ] .
+
+pkm:EVAssignment
+    a owl:Class ;
+    rdfs:label "EVAssignment" ;
+    rdfs:subClassOf pkm:ContextualFact ;
+    rdfs:comment "Records the EV value for one stat of one OwnedPokemon. Total EVs across all six stats must not exceed 510 — enforce in SHACL." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:aboutOwnedPokemon ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:OwnedPokemon
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:aboutStat ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Stat
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasEVValue ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onDataRange xsd:integer
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasContext ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:SaveFile
+    ] .
+
+pkm:InventoryEntry
+    a owl:Class ;
+    rdfs:label "InventoryEntry" ;
+    rdfs:comment "A quantity of an item held in a save file inventory." ;
+    owl:disjointWith pkm:Entity ;
+    owl:disjointWith pkm:Context ;
+    owl:disjointWith pkm:ContextualFact .
+
+pkm:DexRecord
+    a owl:Class ;
+    rdfs:label "DexRecord" ;
+    rdfs:comment "A Pokédex entry recording seen/caught status for a species in a save file." ;
+    owl:disjointWith pkm:Entity ;
+    owl:disjointWith pkm:Context ;
+    owl:disjointWith pkm:ContextualFact .
+
+pkm:SaveFlag
+    a owl:Class ;
+    rdfs:label "SaveFlag" ;
+    rdfs:comment "A boolean game progress flag within a save file." ;
+    owl:disjointWith pkm:Entity ;
+    owl:disjointWith pkm:Context ;
+    owl:disjointWith pkm:ContextualFact .
+
+pkm:SaveStatusAssignment
+    a owl:Class ;
+    rdfs:label "SaveStatusAssignment" ;
+    rdfs:subClassOf pkm:ContextualFact ;
+    rdfs:comment "Persists a non-volatile status condition on an OwnedPokemon in the save file (i.e. outside of battle)." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:aboutOwnedPokemon ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:OwnedPokemon
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasStatusCondition ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:StatusCondition
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasContext ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:SaveFile
+    ] .
+
+
+# =============================================================================
+# MODULE 3: SAVE STATE — Disjointness
+# =============================================================================
+
+[ a owl:AllDisjointClasses ;
+  owl:members (
+    pkm:IVAssignment pkm:EVAssignment pkm:StatAssignment
+    pkm:SaveStatusAssignment
+  )
+] .
+
+pkm:IVAssignment owl:disjointWith pkm:EVAssignment .
+pkm:SaveStatusAssignment owl:disjointWith pkm:IVAssignment .
+pkm:SaveStatusAssignment owl:disjointWith pkm:EVAssignment .
+
+
+# =============================================================================
+# MODULE 3: SAVE STATE — Object Properties
+# =============================================================================
+
+pkm:representsVariant
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "representsVariant" ;
+    rdfs:domain pkm:OwnedPokemon ;
+    rdfs:range pkm:Variant .
+
+pkm:storedInSaveFile
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "storedInSaveFile" ;
+    rdfs:range pkm:SaveFile .
+
+pkm:ownedByTrainer
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "ownedByTrainer" ;
+    rdfs:domain pkm:OwnedPokemon ;
+    rdfs:range pkm:Trainer .
+
+pkm:ownedBy
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "ownedBy" ;
+    rdfs:domain pkm:OwnedMoveSlot ;
+    rdfs:range pkm:OwnedPokemon .
+
+pkm:knowsMove
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "knowsMove" ;
+    rdfs:domain pkm:OwnedMoveSlot ;
+    rdfs:range pkm:Move .
+
+pkm:hasNature
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasNature" ;
+    rdfs:domain pkm:OwnedPokemon ;
+    rdfs:range pkm:Nature .
+
+pkm:holdsItem
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "holdsItem" ;
+    rdfs:domain pkm:OwnedPokemon ;
+    rdfs:range pkm:Item .
+
+pkm:aboutOwnedPokemon
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "aboutOwnedPokemon" ;
+    rdfs:range pkm:OwnedPokemon .
+
+pkm:inventoryItem
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "inventoryItem" ;
+    rdfs:domain pkm:InventoryEntry ;
+    rdfs:range pkm:Item .
+
+pkm:originatesFromVersionGroup
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "originatesFromVersionGroup" ;
+    rdfs:domain pkm:SaveFile ;
+    rdfs:range pkm:VersionGroup ;
+    rdfs:comment "Links a SaveFile to its governing VersionGroup. Traversal path to applicable Ruleset: SaveFile → VersionGroup → Ruleset → StatAssignment. Note: a VersionGroup may map to multiple Rulesets (e.g. different competitive formats); resolve the applicable Ruleset at the Battle level via operatesUnderRuleset." .
+
+pkm:hasStatusCondition
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasStatusCondition" ;
+    rdfs:range pkm:StatusCondition ;
+    rdfs:comment "Links a SaveStatusAssignment or CurrentStatusAssignment to the StatusCondition entity it applies." .
+
+
+# =============================================================================
+# MODULE 3: SAVE STATE — Data Properties
+# =============================================================================
+
+pkm:hasLevel
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasLevel" ;
+    rdfs:domain pkm:OwnedPokemon ;
+    rdfs:range xsd:integer .
+
+pkm:hasExperience
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasExperience" ;
+    rdfs:domain pkm:OwnedPokemon ;
+    rdfs:range xsd:integer .
+
+pkm:hasIVValue
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasIVValue" ;
+    rdfs:domain pkm:IVAssignment ;
+    rdfs:range xsd:integer ;
+    rdfs:comment "Range: 0–31. Enforce upper bound in SHACL." .
+
+pkm:hasEVValue
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasEVValue" ;
+    rdfs:domain pkm:EVAssignment ;
+    rdfs:range xsd:integer ;
+    rdfs:comment "Range: 0–252 per stat. Total across six stats must not exceed 510. Enforce in SHACL." .
+
+pkm:hasBoxIndex
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasBoxIndex" ;
+    rdfs:domain pkm:OwnedPokemon ;
+    rdfs:range xsd:integer .
+
+pkm:hasPartySlot
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasPartySlot" ;
+    rdfs:domain pkm:OwnedPokemon ;
+    rdfs:range xsd:integer .
+
+pkm:hasQuantity
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasQuantity" ;
+    rdfs:domain pkm:InventoryEntry ;
+    rdfs:range xsd:integer .
+
+pkm:isSeen
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "isSeen" ;
+    rdfs:domain pkm:DexRecord ;
+    rdfs:range xsd:boolean .
+
+pkm:isCaught
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "isCaught" ;
+    rdfs:domain pkm:DexRecord ;
+    rdfs:range xsd:boolean .
+
+
+# =============================================================================
+# MODULE 4: BATTLE — Classes
+# =============================================================================
+
+pkm:BattleSide
+    a owl:Class ;
+    rdfs:label "BattleSide" ;
+    rdfs:comment "One side of a battle (player side or opponent side)." ;
+    owl:disjointWith pkm:Entity ;
+    owl:disjointWith pkm:Context ;
+    owl:disjointWith pkm:ContextualFact ;
+    owl:disjointWith pkm:OwnedPokemon .
+
+pkm:BattleParticipant
+    a owl:Class ;
+    rdfs:label "BattleParticipant" ;
+    rdfs:comment "An encounter-local participant identity. All battle-state facts attach to this layer rather than directly to species or save entities." ;
+    owl:disjointWith pkm:Entity ;
+    owl:disjointWith pkm:Context ;
+    owl:disjointWith pkm:ContextualFact ;
+    owl:disjointWith pkm:OwnedPokemon ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:participatesInBattle ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Battle
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:onSide ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:BattleSide
+    ] .
+
+pkm:BattleCombatant
+    a owl:Class ;
+    rdfs:label "BattleCombatant" ;
+    owl:equivalentClass pkm:BattleParticipant ;
+    owl:deprecated "true"^^xsd:boolean ;
+    rdfs:comment "Deprecated compatibility alias for BattleParticipant. It remains only for legacy interoperability and should not be used in new data or shapes." .
+
+pkm:OwnedCombatant
+    a owl:Class ;
+    rdfs:label "OwnedCombatant" ;
+    rdfs:subClassOf pkm:BattleParticipant ;
+    rdfs:comment "A combatant that instantiates an OwnedPokemon from a save file." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:instantiatesOwnedPokemon ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:OwnedPokemon
+    ] .
+
+pkm:TransientCombatant
+    a owl:Class ;
+    rdfs:label "TransientCombatant" ;
+    rdfs:subClassOf pkm:BattleParticipant ;
+    rdfs:comment "A combatant with no OwnedPokemon backing (e.g. wild Pokémon, NPC trainer Pokémon not tracked in a save file)." .
+
+pkm:OwnedCombatant owl:disjointWith pkm:TransientCombatant .
+
+pkm:FieldEffect
+    a owl:Class ;
+    rdfs:label "FieldEffect" ;
+    rdfs:comment "A global field effect active during a battle (e.g. weather, terrain)." ;
+    owl:disjointWith pkm:Entity ;
+    owl:disjointWith pkm:Context ;
+    owl:disjointWith pkm:ContextualFact .
+
+pkm:SideEffect
+    a owl:Class ;
+    rdfs:label "SideEffect" ;
+    rdfs:comment "A side-specific effect active during a battle (e.g. Reflect, Spikes)." ;
+    owl:disjointWith pkm:Entity ;
+    owl:disjointWith pkm:Context ;
+    owl:disjointWith pkm:ContextualFact .
+
+pkm:BattleAction
+    a owl:Class ;
+    rdfs:label "BattleAction" ;
+    rdfs:subClassOf pkm:Action ;
+    rdfs:comment "A declared action within a battle turn." .
+
+pkm:StateTransition
+    a owl:Class ;
+    rdfs:label "StateTransition" ;
+    rdfs:comment "A directed transition from one instantaneous battle state to the next, optionally triggered by an action." ;
+    owl:disjointWith pkm:Entity ;
+    owl:disjointWith pkm:Context ;
+    owl:disjointWith pkm:ContextualFact ;
+    owl:disjointWith pkm:OwnedPokemon ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:fromInstantaneous ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Instantaneous
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:toInstantaneous ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Instantaneous
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:transitionOccursInBattle ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Battle
+    ] .
+
+
+# =============================================================================
+# MODULE 4: BATTLE — Object Properties
+# =============================================================================
+
+pkm:participatesInBattle
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "participatesInBattle" ;
+    rdfs:domain pkm:BattleParticipant ;
+    rdfs:range pkm:Battle .
+
+pkm:onSide
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "onSide" ;
+    rdfs:domain pkm:BattleParticipant ;
+    rdfs:range pkm:BattleSide .
+
+pkm:instantiatesOwnedPokemon
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "instantiatesOwnedPokemon" ;
+    rdfs:comment "Inverse functional only within a single battle — enforce per-battle uniqueness in SHACL." ;
+    rdfs:domain pkm:OwnedCombatant ;
+    rdfs:range pkm:OwnedPokemon .
+
+pkm:hasActiveCombatant
+    a owl:ObjectProperty ;
+    rdfs:label "hasActiveCombatant" ;
+    rdfs:domain pkm:BattleSide ;
+    rdfs:range pkm:BattleParticipant .
+
+pkm:hasFieldEffect
+    a owl:ObjectProperty ;
+    rdfs:label "hasFieldEffect" ;
+    rdfs:domain pkm:Battle ;
+    rdfs:range pkm:FieldEffect .
+
+pkm:hasSideEffect
+    a owl:ObjectProperty ;
+    rdfs:label "hasSideEffect" ;
+    rdfs:domain pkm:BattleSide ;
+    rdfs:range pkm:SideEffect .
+
+pkm:declaresAction
+    a owl:ObjectProperty ;
+    rdfs:label "declaresAction" ;
+    rdfs:domain pkm:BattleParticipant ;
+    rdfs:range pkm:BattleAction .
+
+pkm:fromInstantaneous
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "fromInstantaneous" ;
+    rdfs:domain pkm:StateTransition ;
+    rdfs:range pkm:Instantaneous .
+
+pkm:toInstantaneous
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "toInstantaneous" ;
+    rdfs:domain pkm:StateTransition ;
+    rdfs:range pkm:Instantaneous .
+
+pkm:triggeredByAction
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "triggeredByAction" ;
+    rdfs:domain pkm:StateTransition ;
+    rdfs:range pkm:BattleAction .
+
+pkm:transitionOccursInBattle
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "transitionOccursInBattle" ;
+    rdfs:domain pkm:StateTransition ;
+    rdfs:range pkm:Battle .
+
+
+# =============================================================================
+# MODULE 4: BATTLE — Data Properties
+# =============================================================================
+
+pkm:hasSideIndex
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasSideIndex" ;
+    rdfs:domain pkm:BattleSide ;
+    rdfs:range xsd:integer .
+
+pkm:isActive
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "isActive" ;
+    rdfs:domain pkm:BattleParticipant ;
+    rdfs:range xsd:boolean .
+
+pkm:hasTeamPosition
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasTeamPosition" ;
+    rdfs:domain pkm:BattleParticipant ;
+    rdfs:range xsd:integer .
+
+
+# =============================================================================
+# MODULE 5: INSTANTANEOUS STATE — Classes
+# =============================================================================
+
+pkm:CombatantState
+    a owl:Class ;
+    rdfs:label "CombatantState" ;
+    rdfs:subClassOf pkm:ContextualFact ;
+    rdfs:comment "Aggregate state container for a combatant at an instantaneous snapshot. Optional convenience class." .
+
+
+pkm:MaterializedStateAssignment
+    a owl:Class ;
+    rdfs:label "MaterializedStateAssignment" ;
+    rdfs:subClassOf pkm:ContextualFact ;
+    rdfs:comment "A forward-projected or directly observed state assignment attached to an Instantaneous so queries can read current state without replaying the full event history." .
+
+pkm:ProjectionProfile
+    a owl:Class ;
+    rdfs:label "ProjectionProfile" ;
+    rdfs:comment "A named profile describing which state dimensions are intended to be materialized on an Instantaneous and whether the projection is sparse, partial, or complete for those dimensions." ;
+    owl:disjointWith pkm:Entity ;
+    owl:disjointWith pkm:Context ;
+    owl:disjointWith pkm:ContextualFact .
+
+pkm:ParticipantStateAssignment
+    a owl:Class ;
+    rdfs:label "ParticipantStateAssignment" ;
+    rdfs:subClassOf pkm:ContextualFact ;
+    rdfs:subClassOf pkm:MaterializedStateAssignment ;
+    rdfs:comment "Abstract superclass for materialized instantaneous assignments whose subject is a BattleParticipant." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:aboutCombatant ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:BattleParticipant
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasContext ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Instantaneous
+    ] .
+
+pkm:FieldStateAssignment
+    a owl:Class ;
+    rdfs:label "FieldStateAssignment" ;
+    rdfs:subClassOf pkm:FieldState ;
+    rdfs:comment "Abstract superclass for materialized instantaneous assignments whose subject is the battle field as a whole." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:aboutField ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Battle
+    ] .
+
+pkm:SideStateAssignment
+    a owl:Class ;
+    rdfs:label "SideStateAssignment" ;
+    rdfs:subClassOf pkm:SideState ;
+    rdfs:comment "Abstract superclass for materialized instantaneous assignments whose subject is a single BattleSide." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:aboutSide ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:BattleSide
+    ] .
+
+pkm:CurrentHPAssignment
+    a owl:Class ;
+    rdfs:label "CurrentHPAssignment" ;
+    rdfs:subClassOf pkm:ParticipantStateAssignment ;
+    rdfs:comment "Records the current HP of a battle participant at an instantaneous state." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasCurrentHPValue ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onDataRange xsd:integer
+    ] .
+
+pkm:CurrentPPAssignment
+    a owl:Class ;
+    rdfs:label "CurrentPPAssignment" ;
+    rdfs:subClassOf pkm:ContextualFact ;
+    rdfs:subClassOf pkm:MaterializedStateAssignment ;
+    rdfs:comment "Records the current PP of a move slot at an instantaneous state." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:aboutMoveSlot ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:OwnedMoveSlot
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasCurrentPPValue ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onDataRange xsd:integer
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasContext ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Instantaneous
+    ] .
+
+pkm:StatStageAssignment
+    a owl:Class ;
+    rdfs:label "StatStageAssignment" ;
+    rdfs:subClassOf pkm:ParticipantStateAssignment ;
+    rdfs:comment "Records the current stat stage modifier for one stat of one battle participant at an instantaneous state." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:aboutStat ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Stat
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasStageValue ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onDataRange xsd:integer
+    ] .
+
+pkm:VolatileStatusAssignment
+    a owl:Class ;
+    rdfs:label "VolatileStatusAssignment" ;
+    rdfs:subClassOf pkm:ParticipantStateAssignment ;
+    rdfs:comment "Records a volatile status condition on a battle participant at an instantaneous state." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasVolatileCondition ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:VolatileCondition
+    ] .
+
+pkm:FieldState
+    a owl:Class ;
+    rdfs:label "FieldState" ;
+    rdfs:subClassOf pkm:ContextualFact ;
+    rdfs:subClassOf pkm:MaterializedStateAssignment ;
+    rdfs:comment "Records field-wide state (weather, terrain) at an instantaneous snapshot." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasContext ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Instantaneous
+    ] .
+
+pkm:SideState
+    a owl:Class ;
+    rdfs:label "SideState" ;
+    rdfs:subClassOf pkm:ContextualFact ;
+    rdfs:subClassOf pkm:MaterializedStateAssignment ;
+    rdfs:comment "Records side-specific state at an instantaneous snapshot." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasContext ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Instantaneous
+    ] .
+
+pkm:PendingAction
+    a owl:Class ;
+    rdfs:label "PendingAction" ;
+    rdfs:subClassOf pkm:ContextualFact ;
+    rdfs:comment "Records a declared but not yet resolved action at an instantaneous state." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasContext ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Instantaneous
+    ] .
+
+pkm:CurrentTransformationAssignment
+    a owl:Class ;
+    rdfs:label "CurrentTransformationAssignment" ;
+    rdfs:subClassOf pkm:ParticipantStateAssignment ;
+    rdfs:comment "Assigns a temporary transformation state to a battle participant at one instantaneous state. This captures battle-only overlays without mutating the underlying OwnedPokemon or base Variant." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasTransformationState ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:TransformationState
+    ] .
+
+pkm:CurrentStatusAssignment
+    a owl:Class ;
+    rdfs:label "CurrentStatusAssignment" ;
+    rdfs:subClassOf pkm:ParticipantStateAssignment ;
+    rdfs:comment "Records a non-volatile status condition on a battle participant at an instantaneous state." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasStatusCondition ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:StatusCondition
+    ] .
+
+pkm:StatStageAssignment owl:disjointWith pkm:StatAssignment .
+pkm:CurrentHPAssignment owl:disjointWith pkm:StatStageAssignment .
+pkm:CurrentStatusAssignment owl:disjointWith pkm:SaveStatusAssignment .
+
+
+# =============================================================================
+# MODULE 5: INSTANTANEOUS STATE — Object Properties
+# =============================================================================
+
+pkm:aboutCombatant
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "aboutCombatant" ;
+    rdfs:range pkm:BattleParticipant .
+
+pkm:aboutMoveSlot
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "aboutMoveSlot" ;
+    rdfs:range pkm:OwnedMoveSlot .
+
+pkm:aboutField
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "aboutField" ;
+    rdfs:domain pkm:FieldState ;
+    rdfs:range pkm:Battle .
+
+pkm:aboutSide
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "aboutSide" ;
+    rdfs:domain pkm:SideState ;
+    rdfs:range pkm:BattleSide .
+
+pkm:hasTransformationState
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasTransformationState" ;
+    rdfs:domain pkm:CurrentTransformationAssignment ;
+    rdfs:range pkm:TransformationState ;
+    rdfs:comment "The active temporary transformation applied to a battle participant at a given instantaneous state." .
+
+
+# =============================================================================
+# MODULE 5: INSTANTANEOUS STATE — Data Properties
+# =============================================================================
+
+pkm:hasCurrentHPValue
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasCurrentHPValue" ;
+    rdfs:domain pkm:CurrentHPAssignment ;
+    rdfs:range xsd:integer .
+
+pkm:hasCurrentPPValue
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasCurrentPPValue" ;
+    rdfs:domain pkm:CurrentPPAssignment ;
+    rdfs:range xsd:integer .
+
+pkm:hasStageValue
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasStageValue" ;
+    rdfs:domain pkm:StatStageAssignment ;
+    rdfs:range xsd:integer ;
+    rdfs:comment "Range: -6 to +6. Enforce bounds in SHACL." .
+
+pkm:hasRemainingDuration
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasRemainingDuration" ;
+    rdfs:range xsd:integer .
+
+pkm:hasTurnIndex
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasTurnIndex" ;
+    rdfs:domain pkm:Instantaneous ;
+    rdfs:range xsd:integer .
+
+pkm:hasStepIndex
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasStepIndex" ;
+    rdfs:domain pkm:Instantaneous ;
+    rdfs:range xsd:integer .
+
+
+# =============================================================================
+# MODULE 6: ACTIONS AND EVENTS
+# =============================================================================
+
+pkm:MoveUseAction
+    a owl:Class ;
+    rdfs:label "MoveUseAction" ;
+    rdfs:subClassOf pkm:BattleAction .
+
+pkm:SwitchAction
+    a owl:Class ;
+    rdfs:label "SwitchAction" ;
+    rdfs:subClassOf pkm:BattleAction .
+
+pkm:ItemUseAction
+    a owl:Class ;
+    rdfs:label "ItemUseAction" ;
+    rdfs:subClassOf pkm:BattleAction .
+
+[ a owl:AllDisjointClasses ;
+  owl:members ( pkm:MoveUseAction pkm:SwitchAction pkm:ItemUseAction )
+] .
+
+# TargetResolutionState: per-target, per-step outcome fact.
+# Replaces the former per-action functional properties
+# resolvedInInstantaneous / failedInInstantaneous / abortedInInstantaneous,
+# which could not model partial resolution across multiple targets (e.g. Earthquake).
+# Each spread move hit produces one TargetResolutionState individual per target per step.
+pkm:TargetResolutionState
+    a owl:Class ;
+    rdfs:label "TargetResolutionState" ;
+    rdfs:subClassOf pkm:ContextualFact ;
+    rdfs:comment "Records the execution outcome of a BattleAction against one specific target at one Instantaneous step. Enables per-target resolution modeling for spread moves and multi-hit sequences." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:aboutAction ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:BattleAction
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:aboutTarget ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:BattleParticipant
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasResolutionOutcome ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onDataRange xsd:string
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasContext ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Instantaneous
+    ] .
+
+pkm:DamageEvent
+    a owl:Class ;
+    rdfs:label "DamageEvent" ;
+    rdfs:subClassOf pkm:Event .
+
+pkm:HealingEvent
+    a owl:Class ;
+    rdfs:label "HealingEvent" ;
+    rdfs:subClassOf pkm:Event .
+
+pkm:StatusInflictionEvent
+    a owl:Class ;
+    rdfs:label "StatusInflictionEvent" ;
+    rdfs:subClassOf pkm:Event .
+
+pkm:FaintEvent
+    a owl:Class ;
+    rdfs:label "FaintEvent" ;
+    rdfs:subClassOf pkm:Event .
+
+pkm:SwitchEvent
+    a owl:Class ;
+    rdfs:label "SwitchEvent" ;
+    rdfs:subClassOf pkm:Event .
+
+[ a owl:AllDisjointClasses ;
+  owl:members (
+    pkm:DamageEvent pkm:HealingEvent pkm:StatusInflictionEvent
+    pkm:FaintEvent pkm:SwitchEvent
+  )
+] .
+
+pkm:TargetResolutionState owl:disjointWith pkm:CurrentHPAssignment .
+pkm:TargetResolutionState owl:disjointWith pkm:StatStageAssignment .
+pkm:TargetResolutionState owl:disjointWith pkm:CurrentStatusAssignment .
+
+# Action properties
+pkm:actor
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "actor" ;
+    rdfs:domain pkm:BattleAction ;
+    rdfs:range pkm:BattleParticipant .
+
+# Deprecated: pkm:target (single-target assumption).
+# Replaced by hasDeclaredTarget and hasResolvedTarget to model
+# redirection mechanics (Follow Me, Storm Drain, Ally Switch).
+# hasDeclaredTarget: player intent at declaration time (PendingAction phase).
+# hasResolvedTarget: final calculated target at execution time.
+# Neither is functional — spread moves have multiple targets.
+pkm:hasDeclaredTarget
+    a owl:ObjectProperty ;
+    rdfs:label "hasDeclaredTarget" ;
+    rdfs:domain pkm:BattleAction ;
+    rdfs:range pkm:BattleParticipant ;
+    rdfs:comment "The target selected by the player during the declaration phase. May differ from hasResolvedTarget if redirection occurs (e.g. Follow Me, Storm Drain)." .
+
+pkm:hasResolvedTarget
+    a owl:ObjectProperty ;
+    rdfs:label "hasResolvedTarget" ;
+    rdfs:domain pkm:BattleAction ;
+    rdfs:range pkm:BattleParticipant ;
+    rdfs:comment "The final target evaluated at execution time after all redirection mechanics have been applied." .
+
+pkm:usesMove
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "usesMove" ;
+    rdfs:domain pkm:MoveUseAction ;
+    rdfs:range pkm:Move .
+
+pkm:usesItem
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "usesItem" ;
+    rdfs:domain pkm:ItemUseAction ;
+    rdfs:range pkm:Item .
+
+pkm:declaredInInstantaneous
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "declaredInInstantaneous" ;
+    rdfs:domain pkm:BattleAction ;
+    rdfs:range pkm:Instantaneous .
+
+# initiatedInInstantaneous: replaces the former binary resolved/aborted
+# distinction on BattleAction. The action is marked initiated at the step
+# where execution begins. Subsequent step indices in the event log determine
+# whether the action completed, partially completed (multi-hit abort via
+# FaintEvent on attacker), or was aborted before any execution.
+pkm:initiatedInInstantaneous
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "initiatedInInstantaneous" ;
+    rdfs:domain pkm:BattleAction ;
+    rdfs:range pkm:Instantaneous ;
+    rdfs:comment "The Instantaneous state at which this action began execution. Use the event log at subsequent hasStepIndex values to determine completion vs. mid-execution abort." .
+
+# TargetResolutionState properties
+pkm:aboutAction
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "aboutAction" ;
+    rdfs:domain pkm:TargetResolutionState ;
+    rdfs:range pkm:BattleAction .
+
+pkm:aboutTarget
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "aboutTarget" ;
+    rdfs:domain pkm:TargetResolutionState ;
+    rdfs:range pkm:BattleParticipant .
+
+pkm:hasResolutionOutcome
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasResolutionOutcome" ;
+    rdfs:domain pkm:TargetResolutionState ;
+    rdfs:range xsd:string ;
+    rdfs:comment "Outcome of this action against this specific target. Recommended values: 'resolved', 'failed', 'aborted'. Enforce controlled vocabulary in SHACL." .
+
+# Event properties
+pkm:causedByAction
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "causedByAction" ;
+    rdfs:domain pkm:Event ;
+    rdfs:range pkm:BattleAction .
+
+pkm:affectsCombatant
+    a owl:ObjectProperty ;
+    rdfs:label "affectsCombatant" ;
+    rdfs:domain pkm:Event ;
+    rdfs:range pkm:BattleParticipant .
+
+pkm:occursInInstantaneous
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "occursInInstantaneous" ;
+    rdfs:domain pkm:Event ;
+    rdfs:range pkm:Instantaneous .
+
+
+# =============================================================================
+# EXAMPLE INDIVIDUALS: Gen 6 XY — Froakie vs Caterpie slice
+# =============================================================================
+
+# --- Ontology layer ---
+
+pkm:FroakieSpecies
+    a pkm:Species ;
+    pkm:hasName "Froakie" ;
+    pkm:hasDexNumber 656 .
+
+pkm:FroakieDefault
+    a pkm:Variant ;
+    pkm:hasName "Froakie-Default" ;
+    pkm:belongsToSpecies pkm:FroakieSpecies .
+
+pkm:CaterpieSpecies
+    a pkm:Species ;
+    pkm:hasName "Caterpie" ;
+    pkm:hasDexNumber 10 .
+
+pkm:CaterpieDefault
+    a pkm:Variant ;
+    pkm:hasName "Caterpie-Default" ;
+    pkm:belongsToSpecies pkm:CaterpieSpecies .
+
+pkm:TypeWater   a pkm:Type ; pkm:hasName "Water" .
+pkm:TypeBug     a pkm:Type ; pkm:hasName "Bug" .
+pkm:TypeNormal  a pkm:Type ; pkm:hasName "Normal" .
+
+pkm:StatHP      a pkm:Stat ; pkm:hasName "HP" .
+pkm:StatAtk     a pkm:Stat ; pkm:hasName "Attack" .
+pkm:StatDef     a pkm:Stat ; pkm:hasName "Defense" .
+pkm:StatSpAtk   a pkm:Stat ; pkm:hasName "SpecialAttack" .
+pkm:StatSpDef   a pkm:Stat ; pkm:hasName "SpecialDefense" .
+pkm:StatSpd     a pkm:Stat ; pkm:hasName "Speed" .
+
+pkm:MoveGrowl         a pkm:Move ; pkm:hasName "Growl" .
+pkm:MovePound         a pkm:Move ; pkm:hasName "Pound" .
+pkm:MoveBubble        a pkm:Move ; pkm:hasName "Bubble" .
+pkm:MoveTackle        a pkm:Move ; pkm:hasName "Tackle" .
+pkm:MoveStringShot    a pkm:Move ; pkm:hasName "StringShot" .
+
+pkm:AbilityTorrent    a pkm:Ability ; pkm:hasName "Torrent" .
+pkm:AbilityProtean    a pkm:Ability ; pkm:hasName "Protean" .
+pkm:AbilityShieldDust a pkm:Ability ; pkm:hasName "ShieldDust" .
+
+pkm:NatureTimid   a pkm:Nature ; pkm:hasName "Timid" .
+
+pkm:TrainerPlayer a pkm:Trainer ; pkm:hasName "Player" .
+
+# --- Ruleset layer ---
+
+pkm:Gen6XY a pkm:Ruleset ; pkm:hasName "Gen6XY" .
+
+pkm:TA_Froakie_Water
+    a pkm:TypingAssignment ;
+    pkm:aboutEntity pkm:FroakieDefault ;
+    pkm:aboutType   pkm:TypeWater ;
+    pkm:hasContext  pkm:Gen6XY .
+
+pkm:TA_Caterpie_Bug
+    a pkm:TypingAssignment ;
+    pkm:aboutEntity pkm:CaterpieDefault ;
+    pkm:aboutType   pkm:TypeBug ;
+    pkm:hasContext  pkm:Gen6XY .
+
+pkm:SA_Froakie_HP
+    a pkm:StatAssignment ;
+    pkm:aboutEntity pkm:FroakieDefault ;
+    pkm:aboutStat   pkm:StatHP ;
+    pkm:hasValue    41 ;
+    pkm:hasContext  pkm:Gen6XY .
+
+pkm:SA_Froakie_SpAtk
+    a pkm:StatAssignment ;
+    pkm:aboutEntity pkm:FroakieDefault ;
+    pkm:aboutStat   pkm:StatSpAtk ;
+    pkm:hasValue    71 ;
+    pkm:hasContext  pkm:Gen6XY .
+
+pkm:SA_Froakie_Spd
+    a pkm:StatAssignment ;
+    pkm:aboutEntity pkm:FroakieDefault ;
+    pkm:aboutStat   pkm:StatSpd ;
+    pkm:hasValue    71 ;
+    pkm:hasContext  pkm:Gen6XY .
+
+pkm:SA_Caterpie_HP
+    a pkm:StatAssignment ;
+    pkm:aboutEntity pkm:CaterpieDefault ;
+    pkm:aboutStat   pkm:StatHP ;
+    pkm:hasValue    45 ;
+    pkm:hasContext  pkm:Gen6XY .
+
+pkm:AA_Froakie_Torrent
+    a pkm:AbilityAssignment ;
+    pkm:aboutEntity    pkm:FroakieDefault ;
+    pkm:aboutAbility   pkm:AbilityTorrent ;
+    pkm:isHiddenAbility false ;
+    pkm:hasContext     pkm:Gen6XY .
+
+pkm:AA_Froakie_Protean
+    a pkm:AbilityAssignment ;
+    pkm:aboutEntity    pkm:FroakieDefault ;
+    pkm:aboutAbility   pkm:AbilityProtean ;
+    pkm:isHiddenAbility true ;
+    pkm:hasContext     pkm:Gen6XY .
+
+pkm:MPA_Bubble
+    a pkm:MovePropertyAssignment ;
+    pkm:aboutMove    pkm:MoveBubble ;
+    pkm:hasBasePower 40 ;
+    pkm:hasAccuracy  100 ;
+    pkm:hasPP        30 ;
+    pkm:hasPriority  0 ;
+    pkm:hasContext   pkm:Gen6XY .
+
+pkm:MPA_Pound
+    a pkm:MovePropertyAssignment ;
+    pkm:aboutMove    pkm:MovePound ;
+    pkm:hasBasePower 40 ;
+    pkm:hasAccuracy  100 ;
+    pkm:hasPP        35 ;
+    pkm:hasPriority  0 ;
+    pkm:hasContext   pkm:Gen6XY .
+
+pkm:TEA_Water_Bug
+    a pkm:TypeEffectivenessAssignment ;
+    pkm:attackerType    pkm:TypeWater ;
+    pkm:defenderType    pkm:TypeBug ;
+    pkm:hasDamageFactor 1.0 ;
+    pkm:hasContext      pkm:Gen6XY .
+
+pkm:TEA_Bug_Water
+    a pkm:TypeEffectivenessAssignment ;
+    pkm:attackerType    pkm:TypeBug ;
+    pkm:defenderType    pkm:TypeWater ;
+    pkm:hasDamageFactor 1.0 ;
+    pkm:hasContext      pkm:Gen6XY .
+
+# --- Save layer ---
+
+pkm:SaveFile_A a pkm:SaveFile ; pkm:hasName "SaveFile-A" .
+
+pkm:OwnedPokemon_1
+    a pkm:OwnedPokemon ;
+    pkm:representsVariant  pkm:FroakieDefault ;
+    pkm:storedInSaveFile   pkm:SaveFile_A ;
+    pkm:ownedByTrainer     pkm:TrainerPlayer ;
+    pkm:hasNature          pkm:NatureTimid ;
+    pkm:hasLevel           5 ;
+    pkm:hasExperience      0 .
+
+pkm:MoveSlot_1_1
+    a pkm:OwnedMoveSlot ;
+    pkm:ownedBy        pkm:OwnedPokemon_1 ;
+    pkm:storedInSaveFile pkm:SaveFile_A ;
+    pkm:knowsMove      pkm:MovePound ;
+    pkm:hasSlot        1 .
+
+pkm:MoveSlot_1_2
+    a pkm:OwnedMoveSlot ;
+    pkm:ownedBy        pkm:OwnedPokemon_1 ;
+    pkm:storedInSaveFile pkm:SaveFile_A ;
+    pkm:knowsMove      pkm:MoveGrowl ;
+    pkm:hasSlot        2 .
+
+pkm:MoveSlot_1_3
+    a pkm:OwnedMoveSlot ;
+    pkm:ownedBy        pkm:OwnedPokemon_1 ;
+    pkm:storedInSaveFile pkm:SaveFile_A ;
+    pkm:knowsMove      pkm:MoveBubble ;
+    pkm:hasSlot        3 .
+
+pkm:IV_Froakie_HP
+    a pkm:IVAssignment ;
+    pkm:aboutOwnedPokemon pkm:OwnedPokemon_1 ;
+    pkm:aboutStat         pkm:StatHP ;
+    pkm:hasIVValue        31 ;
+    pkm:hasContext        pkm:SaveFile_A .
+
+pkm:IV_Froakie_SpAtk
+    a pkm:IVAssignment ;
+    pkm:aboutOwnedPokemon pkm:OwnedPokemon_1 ;
+    pkm:aboutStat         pkm:StatSpAtk ;
+    pkm:hasIVValue        31 ;
+    pkm:hasContext        pkm:SaveFile_A .
+
+pkm:EV_Froakie_SpAtk
+    a pkm:EVAssignment ;
+    pkm:aboutOwnedPokemon pkm:OwnedPokemon_1 ;
+    pkm:aboutStat         pkm:StatSpAtk ;
+    pkm:hasEVValue        0 ;
+    pkm:hasContext        pkm:SaveFile_A .
+
+# --- Battle layer ---
+
+pkm:Battle_1
+    a pkm:Battle ;
+    pkm:operatesUnderRuleset pkm:Gen6XY .
+
+pkm:Side_Player
+    a pkm:BattleSide ;
+    pkm:hasSideIndex 0 .
+
+pkm:Side_Wild
+    a pkm:BattleSide ;
+    pkm:hasSideIndex 1 .
+
+pkm:Combatant_Froakie
+    a pkm:OwnedCombatant ;
+    pkm:participatesInBattle     pkm:Battle_1 ;
+    pkm:onSide                   pkm:Side_Player ;
+    pkm:instantiatesOwnedPokemon pkm:OwnedPokemon_1 ;
+    pkm:isActive                 true ;
+    pkm:hasTeamPosition          1 .
+
+pkm:Combatant_Caterpie
+    a pkm:TransientCombatant ;
+    pkm:participatesInBattle pkm:Battle_1 ;
+    pkm:onSide               pkm:Side_Wild ;
+    pkm:isActive             true .
+
+# --- Instantaneous layer ---
+
+pkm:Instantaneous_1_0
+    a pkm:Instantaneous ;
+    pkm:occursInBattle pkm:Battle_1 ;
+    pkm:hasTurnIndex  1 ;
+    pkm:hasStepIndex  0 .
+
+pkm:HPFact_Froakie
+    a pkm:CurrentHPAssignment ;
+    pkm:aboutCombatant    pkm:Combatant_Froakie ;
+    pkm:hasCurrentHPValue 20 ;
+    pkm:hasContext        pkm:Instantaneous_1_0 .
+
+pkm:HPFact_Caterpie
+    a pkm:CurrentHPAssignment ;
+    pkm:aboutCombatant    pkm:Combatant_Caterpie ;
+    pkm:hasCurrentHPValue 11 ;
+    pkm:hasContext        pkm:Instantaneous_1_0 .
+
+pkm:Stage_Froakie_SpAtk
+    a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Froakie ;
+    pkm:aboutStat      pkm:StatSpAtk ;
+    pkm:hasStageValue  0 ;
+    pkm:hasContext     pkm:Instantaneous_1_0 .
+
+pkm:Stage_Caterpie_Atk
+    a pkm:StatStageAssignment ;
+    pkm:aboutCombatant pkm:Combatant_Caterpie ;
+    pkm:aboutStat      pkm:StatAtk ;
+    pkm:hasStageValue  0 ;
+    pkm:hasContext     pkm:Instantaneous_1_0 .
+
+pkm:PP_MoveSlot_1_3
+    a pkm:CurrentPPAssignment ;
+    pkm:aboutMoveSlot     pkm:MoveSlot_1_3 ;
+    pkm:hasCurrentPPValue 30 ;
+    pkm:hasContext        pkm:Instantaneous_1_0 .
+
+pkm:Transition_1_0_to_1_1
+    a pkm:StateTransition ;
+    pkm:fromInstantaneous       pkm:Instantaneous_1_0 ;
+    pkm:toInstantaneous         pkm:Instantaneous_1_1 ;
+    pkm:transitionOccursInBattle pkm:Battle_1 .
+
+pkm:Instantaneous_1_1
+    a pkm:Instantaneous ;
+    pkm:occursInBattle         pkm:Battle_1 ;
+    pkm:resultsFromTransition  pkm:Transition_1_0_to_1_1 ;
+    pkm:hasPreviousInstantaneous pkm:Instantaneous_1_0 ;
+    pkm:hasTurnIndex  1 ;
+    pkm:hasStepIndex  1 .
+
+
+# =============================================================================
+# MODULE 4B: BATTLE STRUCTURE AND STOCHASTIC RESOLUTION — Version 0.6 Additions
+# =============================================================================
+
+<http://example.org/pokemon-ontology>
+    owl:versionInfo "0.6" .
+
+# BattleSide anchoring
+pkm:BattleSide
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:sideOccursInBattle ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Battle
+    ] .
+
+pkm:sideOccursInBattle
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "sideOccursInBattle" ;
+    rdfs:domain pkm:BattleSide ;
+    rdfs:range pkm:Battle .
+
+# Ordered action execution
+pkm:BattleAction
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasPriorityBracket ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onDataRange xsd:integer
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasResolutionIndex ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onDataRange xsd:integer
+    ] .
+
+pkm:hasPriorityBracket
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasPriorityBracket" ;
+    rdfs:comment "Action ordering bracket after all deterministic priority modifiers have been applied for this battle state." ;
+    rdfs:domain pkm:BattleAction ;
+    rdfs:range xsd:integer .
+
+pkm:hasResolutionIndex
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasResolutionIndex" ;
+    rdfs:comment "Total order within a priority bracket for this concrete action resolution." ;
+    rdfs:domain pkm:BattleAction ;
+    rdfs:range xsd:integer .
+
+# Pseudo-RNG / stochastic resolution vocabulary
+pkm:RandomMechanic
+    a owl:Class ;
+    rdfs:label "RandomMechanic" ;
+    rdfs:subClassOf pkm:Entity ;
+    rdfs:comment "A mechanics-level category of pseudo-random choice, such as an accuracy check, damage roll, secondary-effect roll, critical-hit roll, or multi-hit-count roll." .
+
+pkm:StochasticResolution
+    a owl:Class ;
+    rdfs:label "StochasticResolution" ;
+    rdfs:comment "A battle-local pseudo-random choice point encountered during action resolution. This models the game-engine RNG interface, not metaphysical indeterminism." ;
+    owl:disjointWith pkm:Entity ;
+    owl:disjointWith pkm:Context ;
+    owl:disjointWith pkm:ContextualFact ;
+    owl:disjointWith pkm:OwnedPokemon ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:stochasticOccursInBattle ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Battle
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:realizedInInstantaneous ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Instantaneous
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:associatedWithAction ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:BattleAction
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasRandomMechanic ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:RandomMechanic
+    ] .
+
+pkm:OutcomeBranch
+    a owl:Class ;
+    rdfs:label "OutcomeBranch" ;
+    rdfs:comment "One explicitly modeled branch of a stochastic resolution, with an as-if probability under the applicable ruleset and local battle state." ;
+    owl:disjointWith pkm:Entity ;
+    owl:disjointWith pkm:Context ;
+    owl:disjointWith pkm:ContextualFact ;
+    owl:disjointWith pkm:OwnedPokemon ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:branchOfResolution ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:StochasticResolution
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasBranchProbability ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onDataRange xsd:decimal
+    ] .
+
+pkm:associatedWithAction
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "associatedWithAction" ;
+    rdfs:domain pkm:StochasticResolution ;
+    rdfs:range pkm:BattleAction .
+
+pkm:hasRandomMechanic
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasRandomMechanic" ;
+    rdfs:domain pkm:StochasticResolution ;
+    rdfs:range pkm:RandomMechanic .
+
+pkm:stochasticOccursInBattle
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "stochasticOccursInBattle" ;
+    rdfs:domain pkm:StochasticResolution ;
+    rdfs:range pkm:Battle .
+
+pkm:realizedInInstantaneous
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "realizedInInstantaneous" ;
+    rdfs:domain pkm:StochasticResolution ;
+    rdfs:range pkm:Instantaneous .
+
+pkm:hasPossibleBranch
+    a owl:ObjectProperty ;
+    rdfs:label "hasPossibleBranch" ;
+    rdfs:domain pkm:StochasticResolution ;
+    rdfs:range pkm:OutcomeBranch .
+
+pkm:hasRealizedBranch
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasRealizedBranch" ;
+    rdfs:domain pkm:StochasticResolution ;
+    rdfs:range pkm:OutcomeBranch .
+
+pkm:branchOfResolution
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "branchOfResolution" ;
+    rdfs:domain pkm:OutcomeBranch ;
+    rdfs:range pkm:StochasticResolution .
+
+pkm:branchAppliesToTarget
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "branchAppliesToTarget" ;
+    rdfs:comment "Optional target scoping for per-target RNG such as spread-move accuracy or per-target secondary effects." ;
+    rdfs:domain pkm:OutcomeBranch ;
+    rdfs:range pkm:BattleParticipant .
+
+pkm:resultsInTargetResolution
+    a owl:ObjectProperty ;
+    rdfs:label "resultsInTargetResolution" ;
+    rdfs:domain pkm:OutcomeBranch ;
+    rdfs:range pkm:TargetResolutionState .
+
+pkm:hasBranchProbability
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasBranchProbability" ;
+    rdfs:domain pkm:OutcomeBranch ;
+    rdfs:range xsd:decimal .
+
+pkm:hasBranchLabel
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasBranchLabel" ;
+    rdfs:domain pkm:OutcomeBranch ;
+    rdfs:range xsd:string .
+
+# Canonical random mechanic individuals for reuse
+pkm:RandomMechanic_AccuracyCheck
+    a pkm:RandomMechanic ;
+    pkm:hasName "AccuracyCheck" .
+
+pkm:RandomMechanic_DamageRoll
+    a pkm:RandomMechanic ;
+    pkm:hasName "DamageRoll" .
+
+pkm:RandomMechanic_CriticalHitCheck
+    a pkm:RandomMechanic ;
+    pkm:hasName "CriticalHitCheck" .
+
+pkm:RandomMechanic_SecondaryEffectCheck
+    a pkm:RandomMechanic ;
+    pkm:hasName "SecondaryEffectCheck" .
+
+pkm:RandomMechanic_MultiHitCountCheck
+    a pkm:RandomMechanic ;
+    pkm:hasName "MultiHitCountCheck" .
+
+
+# =============================================================================
+# MODULE 4C: REPLAY PROVENANCE AND OBSERVATION STATUS — Version 0.7 Additions
+# =============================================================================
+
+<http://example.org/pokemon-ontology>
+    owl:versionInfo "0.7" .
+
+pkm:EvidenceArtifact
+    a owl:Class ;
+    rdfs:label "EvidenceArtifact" ;
+    rdfs:subClassOf pkm:Entity ;
+    rdfs:comment "A source artifact used to justify modeled battle facts, such as a replay log or official battle video." .
+
+pkm:ReplayArtifact
+    a owl:Class ;
+    rdfs:label "ReplayArtifact" ;
+    rdfs:subClassOf pkm:EvidenceArtifact ;
+    rdfs:comment "A machine-readable replay source, such as a Pokémon Showdown replay JSON or log." .
+
+pkm:KnowledgeStatus
+    a owl:Class ;
+    rdfs:label "KnowledgeStatus" ;
+    rdfs:subClassOf pkm:Entity ;
+    rdfs:comment "Epistemic status for a modeled stochastic resolution or branch set." .
+
+pkm:StatStageChangeEvent
+    a owl:Class ;
+    rdfs:label "StatStageChangeEvent" ;
+    rdfs:subClassOf pkm:Event ;
+    rdfs:comment "An event that changes one combatant's stage modifier for a specific stat." .
+
+pkm:supportedByArtifact
+    a owl:ObjectProperty ;
+    rdfs:label "supportedByArtifact" ;
+    rdfs:range pkm:EvidenceArtifact ;
+    rdfs:comment "Links a modeled node to an evidence artifact supporting it." .
+
+pkm:hasKnowledgeStatus
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasKnowledgeStatus" ;
+    rdfs:comment "Marks whether a stochastic resolution is merely observed, inferred as a complete branch set, or only partially modeled." ;
+    rdfs:range pkm:KnowledgeStatus .
+
+pkm:hasReplayIdentifier
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasReplayIdentifier" ;
+    rdfs:domain pkm:ReplayArtifact ;
+    rdfs:range xsd:string .
+
+pkm:hasSourceURL
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasSourceURL" ;
+    rdfs:domain pkm:EvidenceArtifact ;
+    rdfs:range xsd:anyURI .
+
+pkm:hasReplayTurnIndex
+    a owl:DatatypeProperty ;
+    rdfs:label "hasReplayTurnIndex" ;
+    rdfs:range xsd:integer ;
+    rdfs:comment "Turn number in the replay log to which a modeled node is anchored." .
+
+pkm:hasReplayEventOrder
+    a owl:DatatypeProperty ;
+    rdfs:label "hasReplayEventOrder" ;
+    rdfs:range xsd:integer ;
+    rdfs:comment "Order of the anchored event within one replay turn." .
+
+pkm:hasReplayStepLabel
+    a owl:DatatypeProperty ;
+    rdfs:label "hasReplayStepLabel" ;
+    rdfs:range xsd:string ;
+    rdfs:comment "Human-readable replay anchor, such as turn-4-action-3 or post-turn-3-switch." .
+
+pkm:resultsInEvent
+    a owl:ObjectProperty ;
+    rdfs:label "resultsInEvent" ;
+    rdfs:domain pkm:OutcomeBranch ;
+    rdfs:range pkm:Event ;
+    rdfs:comment "Links an outcome branch to a non-target-resolution event such as a stat-stage change or faint." .
+
+pkm:hasStageDelta
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasStageDelta" ;
+    rdfs:domain pkm:StatStageChangeEvent ;
+    rdfs:range xsd:integer ;
+    rdfs:comment "Signed change to a stage-modified stat, typically in the range -6 to +6 in one event." .
+
+pkm:KnowledgeStatus_ObservedRealized
+    a pkm:KnowledgeStatus ;
+    pkm:hasName "ObservedRealized" ;
+    rdfs:comment "The replay directly shows which branch occurred, but the model does not claim an exhaustive latent branch set." .
+
+pkm:KnowledgeStatus_InferredCompleteBranchSet
+    a pkm:KnowledgeStatus ;
+    pkm:hasName "InferredCompleteBranchSet" ;
+    rdfs:comment "The model asserts that the enumerated branches are exhaustive under the relevant ruleset and local battle state." .
+
+pkm:KnowledgeStatus_InferredPartialBranchSet
+    a pkm:KnowledgeStatus ;
+    pkm:hasName "InferredPartialBranchSet" ;
+    rdfs:comment "The model includes only some branches, typically because the replay does not reveal all hidden state needed for exhaustive expansion." .
+
+[ a owl:AllDisjointClasses ;
+  owl:members ( pkm:EvidenceArtifact pkm:KnowledgeStatus pkm:StatStageChangeEvent )
+] .
+
+
+# =============================================================================
+# MODULE 5B: MATERIALIZED BATTLE-STATE EXTENSIONS
+# =============================================================================
+
+
+pkm:VolatileCondition
+    a owl:Class ;
+    rdfs:label "VolatileCondition" ;
+    rdfs:subClassOf pkm:Entity ;
+    rdfs:comment "A volatile battle condition that can apply transiently to a battle participant (e.g. Protecting, Flinched, Taunted)." .
+
+pkm:WeatherCondition
+    a owl:Class ;
+    rdfs:label "WeatherCondition" ;
+    rdfs:subClassOf pkm:Entity ;
+    rdfs:comment "A field-wide weather state such as Harsh Sunlight or Rain." .
+
+pkm:TerrainCondition
+    a owl:Class ;
+    rdfs:label "TerrainCondition" ;
+    rdfs:subClassOf pkm:Entity ;
+    rdfs:comment "A field-wide terrain state such as Psychic Terrain." .
+
+pkm:SideCondition
+    a owl:Class ;
+    rdfs:label "SideCondition" ;
+    rdfs:subClassOf pkm:Entity ;
+    rdfs:comment "A condition scoped to one battle side, such as Tailwind, Reflect, or Light Screen." .
+
+pkm:CurrentWeatherAssignment
+    a owl:Class ;
+    rdfs:label "CurrentWeatherAssignment" ;
+    rdfs:subClassOf pkm:FieldStateAssignment ;
+    rdfs:comment "Materialized weather state for a battle field at an instantaneous snapshot." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasWeatherCondition ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:WeatherCondition
+    ] .
+
+pkm:CurrentTerrainAssignment
+    a owl:Class ;
+    rdfs:label "CurrentTerrainAssignment" ;
+    rdfs:subClassOf pkm:FieldStateAssignment ;
+    rdfs:comment "Materialized terrain state for a battle field at an instantaneous snapshot." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasTerrainCondition ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:TerrainCondition
+    ] .
+
+pkm:SideConditionAssignment
+    a owl:Class ;
+    rdfs:label "SideConditionAssignment" ;
+    rdfs:subClassOf pkm:SideStateAssignment ;
+    rdfs:comment "Materialized side-condition state for one battle side at an instantaneous snapshot." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasSideCondition ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:SideCondition
+    ] .
+
+pkm:ActiveSlotAssignment
+    a owl:Class ;
+    rdfs:label "ActiveSlotAssignment" ;
+    rdfs:subClassOf pkm:ParticipantStateAssignment ;
+    rdfs:comment "Materializes which battle participant occupies a specific active slot on a specific side at an instantaneous snapshot." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:aboutSide ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:BattleSide
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasActiveSlotIndex ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onDataRange xsd:integer
+    ] .
+
+pkm:hasVolatileCondition
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasVolatileCondition" ;
+    rdfs:domain pkm:VolatileStatusAssignment ;
+    rdfs:range pkm:VolatileCondition .
+
+pkm:hasWeatherCondition
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasWeatherCondition" ;
+    rdfs:domain pkm:CurrentWeatherAssignment ;
+    rdfs:range pkm:WeatherCondition .
+
+pkm:hasTerrainCondition
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasTerrainCondition" ;
+    rdfs:domain pkm:CurrentTerrainAssignment ;
+    rdfs:range pkm:TerrainCondition .
+
+pkm:hasSideCondition
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasSideCondition" ;
+    rdfs:domain pkm:SideConditionAssignment ;
+    rdfs:range pkm:SideCondition .
+
+pkm:hasActiveSlotIndex
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasActiveSlotIndex" ;
+    rdfs:domain pkm:ActiveSlotAssignment ;
+    rdfs:range xsd:integer .
+
+pkm:ProjectionProfile_PartialMaterializedBattleState
+    a pkm:ProjectionProfile ;
+    rdfs:comment "Projection profile for replay slices that materialize selected forward-projected battle state dimensions beyond stages, including active slots and a limited set of field, side, and volatile states." .
+
+pkm:VolatileCondition_Protecting
+    a pkm:VolatileCondition ;
+    pkm:hasName "Protecting" .
+
+pkm:Weather_HarshSunlight
+    a pkm:WeatherCondition ;
+    pkm:hasName "Harsh Sunlight" .
+
+pkm:Terrain_PsychicTerrain
+    a pkm:TerrainCondition ;
+    pkm:hasName "Psychic Terrain" .
+
+pkm:SideCondition_Tailwind
+    a pkm:SideCondition ;
+    pkm:hasName "Tailwind" .
+
+[ a owl:AllDisjointClasses ;
+  owl:members ( pkm:VolatileCondition pkm:WeatherCondition pkm:TerrainCondition pkm:SideCondition )
+] .
