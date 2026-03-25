@@ -1,34 +1,18 @@
 """Semantic regression tests against the example slice."""
 from __future__ import annotations
 
-from pathlib import Path
-
-import pytest
 from rdflib import Graph, Namespace, RDF
 
-REPO = Path(__file__).parent.parent
-
-ONTOLOGY = REPO / "ontology" / "pokemon-mechanics-ontology.ttl"
-SLICE = REPO / "examples" / "slices" / "showdown-finals-game1-slice.ttl"
-
 PKM = Namespace("http://example.org/pokemon-ontology#")
-
-
-def _graph() -> Graph:
-    g = Graph()
-    g.parse(ONTOLOGY, format="turtle")
-    g.parse(SLICE, format="turtle")
-    return g
 
 
 # ---------------------------------------------------------------------------
 # Faint events → HP=0
 # ---------------------------------------------------------------------------
 
-def test_faint_events_have_hp_zero_assignment() -> None:
+def test_faint_events_have_hp_zero_assignment(combined_graph: Graph) -> None:
     """Every FaintEvent must have a corresponding CurrentHPAssignment of 0
     for the affected combatant at the same Instantaneous."""
-    g = _graph()
     query = """
     PREFIX pkm: <http://example.org/pokemon-ontology#>
 
@@ -45,17 +29,16 @@ def test_faint_events_have_hp_zero_assignment() -> None:
         }
     }
     """
-    missing = list(g.query(query))
+    missing = list(combined_graph.query(query))
     assert missing == [], (
         "FaintEvent(s) missing a HP=0 CurrentHPAssignment at their instantaneous:\n"
         + "\n".join(f"  {row.faintEvent} → {row.combatant} @ {row.instant}" for row in missing)
     )
 
 
-def test_faint_hp_assignments_are_zero() -> None:
+def test_faint_hp_assignments_are_zero(combined_graph: Graph) -> None:
     """All CurrentHPAssignments at a FaintEvent instantaneous for the fainted
     combatant must have value 0 (no non-zero HP recorded at faint)."""
-    g = _graph()
     query = """
     PREFIX pkm: <http://example.org/pokemon-ontology#>
 
@@ -70,7 +53,7 @@ def test_faint_hp_assignments_are_zero() -> None:
         FILTER (?value != 0)
     }
     """
-    bad = list(g.query(query))
+    bad = list(combined_graph.query(query))
     assert bad == [], (
         "Non-zero HP recorded at faint instantaneous:\n"
         + "\n".join(f"  {row.hp} = {row.value} for {row.combatant} @ {row.instant}" for row in bad)
@@ -81,9 +64,8 @@ def test_faint_hp_assignments_are_zero() -> None:
 # StatStageAssignment uniqueness
 # ---------------------------------------------------------------------------
 
-def test_stat_stage_uniqueness() -> None:
+def test_stat_stage_uniqueness(combined_graph: Graph) -> None:
     """At most one StatStageAssignment per (combatant, stat, instantaneous)."""
-    g = _graph()
     query = """
     PREFIX pkm: <http://example.org/pokemon-ontology#>
 
@@ -96,7 +78,7 @@ def test_stat_stage_uniqueness() -> None:
     GROUP BY ?combatant ?stat ?instant
     HAVING (COUNT(?ssa) > 1)
     """
-    duplicates = list(g.query(query))
+    duplicates = list(combined_graph.query(query))
     assert duplicates == [], (
         "Duplicate StatStageAssignments found (combatant, stat, instant):\n"
         + "\n".join(
@@ -110,9 +92,8 @@ def test_stat_stage_uniqueness() -> None:
 # Instantaneous chain integrity
 # ---------------------------------------------------------------------------
 
-def test_instantaneous_chain_is_acyclic() -> None:
+def test_instantaneous_chain_is_acyclic(combined_graph: Graph) -> None:
     """hasPreviousInstantaneous must form a DAG (no cycles)."""
-    g = _graph()
     query = """
     PREFIX pkm: <http://example.org/pokemon-ontology#>
 
@@ -120,16 +101,15 @@ def test_instantaneous_chain_is_acyclic() -> None:
         ?instant pkm:hasPreviousInstantaneous+ ?instant .
     }
     """
-    cycles = list(g.query(query))
+    cycles = list(combined_graph.query(query))
     assert cycles == [], (
         "Cycles detected in hasPreviousInstantaneous chain:\n"
         + "\n".join(f"  {row.instant}" for row in cycles)
     )
 
 
-def test_each_instantaneous_has_at_most_one_predecessor() -> None:
+def test_each_instantaneous_has_at_most_one_predecessor(combined_graph: Graph) -> None:
     """Each Instantaneous must have at most one hasPreviousInstantaneous."""
-    g = _graph()
     query = """
     PREFIX pkm: <http://example.org/pokemon-ontology#>
 
@@ -140,7 +120,7 @@ def test_each_instantaneous_has_at_most_one_predecessor() -> None:
     GROUP BY ?instant
     HAVING (COUNT(?prev) > 1)
     """
-    bad = list(g.query(query))
+    bad = list(combined_graph.query(query))
     assert bad == [], (
         "Instantaneous nodes with multiple predecessors:\n"
         + "\n".join(f"  {row.instant} has {row['count']} predecessors" for row in bad)
@@ -151,9 +131,8 @@ def test_each_instantaneous_has_at_most_one_predecessor() -> None:
 # Battle participant membership
 # ---------------------------------------------------------------------------
 
-def test_all_combatants_belong_to_a_battle() -> None:
+def test_all_combatants_belong_to_a_battle(combined_graph: Graph) -> None:
     """Every BattleParticipant must participate in exactly one Battle."""
-    g = _graph()
     query = """
     PREFIX pkm: <http://example.org/pokemon-ontology#>
 
@@ -164,7 +143,7 @@ def test_all_combatants_belong_to_a_battle() -> None:
     GROUP BY ?combatant
     HAVING (COUNT(DISTINCT ?battle) != 1)
     """
-    bad = list(g.query(query))
+    bad = list(combined_graph.query(query))
     assert bad == [], (
         "BattleParticipants not in exactly one Battle:\n"
         + "\n".join(f"  {row.combatant} (battles: {row['count']})" for row in bad)
