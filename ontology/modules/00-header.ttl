@@ -2,7 +2,7 @@
 @prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
-@prefix pkm:  <http://example.org/pokemon-ontology#> .
+@prefix pkm:  <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#> .
 
 # =============================================================================
 # Pokémon Mechanics Ontology
@@ -10,7 +10,7 @@
 # Scope: Ontology → Ruleset → SaveFile → Battle → Instantaneous
 # =============================================================================
 
-<http://example.org/pokemon-ontology>
+<https://laurajoyhutchins.github.io/pokemontology/ontology.ttl>
     a owl:Ontology ;
     rdfs:label "Pokémon Mechanics Ontology" ;
     rdfs:comment "Context-sensitive mechanics ontology for Pokémon. Models identity, ruleset truth, save state, battle state, and instantaneous state as distinct scopes, with explicit battle participants, replay provenance, and state transitions." ;

@@ -15,7 +15,7 @@ from replay_to_ttl_builder import build_graph
 
 REPO = Path(__file__).parent.parent
 REPLAY_JSON = REPO / "examples" / "replays" / "gen9vgc2025regjbo3-2414024536-ey54jc53vyjqy20sq0ww1l5nd3bq5qhpw.json"
-PKM = Namespace("http://example.org/pokemon-ontology#")
+PKM = Namespace("https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#")
 
 
 @pytest.fixture(scope="module")

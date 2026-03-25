@@ -12,6 +12,11 @@ pkm:Context
     rdfs:label "Context" ;
     rdfs:comment "Top-level class for all contextual scopes within which facts are true." .
 
+pkm:MetadataEntity
+    a owl:Class ;
+    rdfs:label "MetadataEntity" ;
+    rdfs:comment "Top-level class for provenance and epistemic-status resources that support the ontology but are not in-universe game entities." .
+
 pkm:ContextualFact
     a owl:Class ;
     rdfs:label "ContextualFact" ;
@@ -161,12 +166,17 @@ pkm:Instantaneous
     pkm:Species pkm:Variant pkm:Move pkm:Ability
     pkm:Item pkm:Type pkm:Stat pkm:Nature pkm:Trainer
     pkm:StatusCondition pkm:TransformationState
+    pkm:VolatileCondition pkm:WeatherCondition
+    pkm:TerrainCondition pkm:SideCondition
   )
 ] .
 
-# Entity and Context are disjoint top-level branches
+# Entity, metadata, context, and contextual facts are disjoint top-level branches
 pkm:Entity owl:disjointWith pkm:Context .
+pkm:Entity owl:disjointWith pkm:MetadataEntity .
 pkm:Entity owl:disjointWith pkm:ContextualFact .
+pkm:MetadataEntity owl:disjointWith pkm:Context .
+pkm:MetadataEntity owl:disjointWith pkm:ContextualFact .
 pkm:Context owl:disjointWith pkm:ContextualFact .
 
 
@@ -252,14 +262,20 @@ pkm:hasIdentifier
     a owl:DatatypeProperty ;
     a owl:FunctionalProperty ;
     rdfs:label "hasIdentifier" ;
-    rdfs:domain pkm:Entity ;
+    rdfs:domain [
+        a owl:Class ;
+        owl:unionOf ( pkm:Entity pkm:MetadataEntity )
+    ] ;
     rdfs:range xsd:string .
 
 pkm:hasName
     a owl:DatatypeProperty ;
     a owl:FunctionalProperty ;
     rdfs:label "hasName" ;
-    rdfs:domain pkm:Entity ;
+    rdfs:domain [
+        a owl:Class ;
+        owl:unionOf ( pkm:Entity pkm:MetadataEntity )
+    ] ;
     rdfs:range xsd:string .
 
 pkm:hasCombatantLabel

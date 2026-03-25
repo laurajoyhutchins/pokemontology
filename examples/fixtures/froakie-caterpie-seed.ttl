@@ -1,4 +1,4 @@
-@prefix pkm:  <http://example.org/pokemon-ontology#> .
+@prefix pkm:  <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#> .
 
 # =============================================================================
 # EXAMPLE INDIVIDUALS: Gen 6 XY — Froakie vs Caterpie slice
@@ -112,6 +112,7 @@ pkm:AA_Froakie_Protean
 pkm:MPA_Bubble
     a pkm:MovePropertyAssignment ;
     pkm:aboutMove    pkm:MoveBubble ;
+    pkm:hasMoveType  pkm:TypeWater ;
     pkm:hasBasePower 40 ;
     pkm:hasAccuracy  100 ;
     pkm:hasPP        30 ;
@@ -121,6 +122,7 @@ pkm:MPA_Bubble
 pkm:MPA_Pound
     a pkm:MovePropertyAssignment ;
     pkm:aboutMove    pkm:MovePound ;
+    pkm:hasMoveType  pkm:TypeNormal ;
     pkm:hasBasePower 40 ;
     pkm:hasAccuracy  100 ;
     pkm:hasPP        35 ;
@@ -215,14 +217,13 @@ pkm:Combatant_Froakie
     pkm:participatesInBattle     pkm:Battle_1 ;
     pkm:onSide                   pkm:Side_Player ;
     pkm:instantiatesOwnedPokemon pkm:OwnedPokemon_1 ;
-    pkm:isActive                 true ;
     pkm:hasTeamPosition          1 .
 
 pkm:Combatant_Caterpie
     a pkm:TransientCombatant ;
     pkm:participatesInBattle pkm:Battle_1 ;
     pkm:onSide               pkm:Side_Wild ;
-    pkm:isActive             true .
+    pkm:hasTeamPosition      1 .
 
 # --- Instantaneous layer ---
 

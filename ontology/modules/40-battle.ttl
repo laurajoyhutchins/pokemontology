@@ -199,13 +199,6 @@ pkm:hasSideIndex
     rdfs:domain pkm:BattleSide ;
     rdfs:range xsd:integer .
 
-pkm:isActive
-    a owl:DatatypeProperty ;
-    a owl:FunctionalProperty ;
-    rdfs:label "isActive" ;
-    rdfs:domain pkm:BattleParticipant ;
-    rdfs:range xsd:boolean .
-
 pkm:hasTeamPosition
     a owl:DatatypeProperty ;
     a owl:FunctionalProperty ;

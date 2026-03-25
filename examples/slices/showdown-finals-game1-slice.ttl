@@ -1,7 +1,7 @@
 @prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
-@prefix pkm:  <http://example.org/pokemon-ontology#> .
+@prefix pkm:  <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#> .
 
 <http://example.org/pokemon-replay-backed-slice-v0.7>
     rdfs:label "Replay-backed VGC slice with cleaned materialized state assignments" ;
@@ -36,22 +36,22 @@ pkm:Side_Lycopoky a pkm:BattleSide ; pkm:hasSideIndex 1 ; pkm:sideOccursInBattle
 # -----------------------------------------------------------------------------
 
 pkm:Combatant_kilenget_DeoxysA a pkm:BattleParticipant, pkm:TransientCombatant ;
-    pkm:participatesInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:onSide pkm:Side_kilenget ; pkm:isActive true ; pkm:hasTeamPosition 1 ; pkm:hasCombatantLabel "kilenget Deoxys-Attack" .
+    pkm:participatesInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:onSide pkm:Side_kilenget ; pkm:hasTeamPosition 1 ; pkm:hasCombatantLabel "kilenget Deoxys-Attack" .
 pkm:Combatant_kilenget_IndeedeeF a pkm:BattleParticipant, pkm:TransientCombatant ;
-    pkm:participatesInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:onSide pkm:Side_kilenget ; pkm:isActive true ; pkm:hasTeamPosition 2 ; pkm:hasCombatantLabel "kilenget Indeedee-F" .
+    pkm:participatesInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:onSide pkm:Side_kilenget ; pkm:hasTeamPosition 2 ; pkm:hasCombatantLabel "kilenget Indeedee-F" .
 pkm:Combatant_kilenget_Whimsicott a pkm:BattleParticipant, pkm:TransientCombatant ;
-    pkm:participatesInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:onSide pkm:Side_kilenget ; pkm:isActive true ; pkm:hasTeamPosition 3 ; pkm:hasCombatantLabel "kilenget Whimsicott" .
+    pkm:participatesInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:onSide pkm:Side_kilenget ; pkm:hasTeamPosition 3 ; pkm:hasCombatantLabel "kilenget Whimsicott" .
 pkm:Combatant_kilenget_Landorus a pkm:BattleParticipant, pkm:TransientCombatant ;
-    pkm:participatesInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:onSide pkm:Side_kilenget ; pkm:isActive true ; pkm:hasTeamPosition 4 ; pkm:hasCombatantLabel "kilenget Landorus" .
+    pkm:participatesInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:onSide pkm:Side_kilenget ; pkm:hasTeamPosition 4 ; pkm:hasCombatantLabel "kilenget Landorus" .
 
 pkm:Combatant_Lycopoky_ArceusFire a pkm:BattleParticipant, pkm:TransientCombatant ;
-    pkm:participatesInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:onSide pkm:Side_Lycopoky ; pkm:isActive true ; pkm:hasTeamPosition 1 ; pkm:hasCombatantLabel "Lycopoky Arceus-Fire" .
+    pkm:participatesInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:onSide pkm:Side_Lycopoky ; pkm:hasTeamPosition 1 ; pkm:hasCombatantLabel "Lycopoky Arceus-Fire" .
 pkm:Combatant_Lycopoky_Volcarona a pkm:BattleParticipant, pkm:TransientCombatant ;
-    pkm:participatesInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:onSide pkm:Side_Lycopoky ; pkm:isActive true ; pkm:hasTeamPosition 2 ; pkm:hasCombatantLabel "Lycopoky Volcarona" .
+    pkm:participatesInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:onSide pkm:Side_Lycopoky ; pkm:hasTeamPosition 2 ; pkm:hasCombatantLabel "Lycopoky Volcarona" .
 pkm:Combatant_Lycopoky_Rillaboom a pkm:BattleParticipant, pkm:TransientCombatant ;
-    pkm:participatesInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:onSide pkm:Side_Lycopoky ; pkm:isActive true ; pkm:hasTeamPosition 3 ; pkm:hasCombatantLabel "Lycopoky Rillaboom" .
+    pkm:participatesInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:onSide pkm:Side_Lycopoky ; pkm:hasTeamPosition 3 ; pkm:hasCombatantLabel "Lycopoky Rillaboom" .
 pkm:Combatant_Lycopoky_Koraidon a pkm:BattleParticipant, pkm:TransientCombatant ;
-    pkm:participatesInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:onSide pkm:Side_Lycopoky ; pkm:isActive true ; pkm:hasTeamPosition 4 ; pkm:hasCombatantLabel "Lycopoky Koraidon" .
+    pkm:participatesInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:onSide pkm:Side_Lycopoky ; pkm:hasTeamPosition 4 ; pkm:hasCombatantLabel "Lycopoky Koraidon" .
 
 # -----------------------------------------------------------------------------
 # Minimal move/stat/transformation vocabulary used in the replay slice

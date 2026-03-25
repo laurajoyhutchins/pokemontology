@@ -45,25 +45,39 @@ pkm:ParticipantStateAssignment
 pkm:FieldStateAssignment
     a owl:Class ;
     rdfs:label "FieldStateAssignment" ;
-    rdfs:subClassOf pkm:FieldState ;
+    rdfs:subClassOf pkm:ContextualFact ;
+    rdfs:subClassOf pkm:MaterializedStateAssignment ;
     rdfs:comment "Abstract superclass for materialized instantaneous assignments whose subject is the battle field as a whole." ;
     rdfs:subClassOf [
         a owl:Restriction ;
         owl:onProperty pkm:aboutField ;
         owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
         owl:onClass pkm:Battle
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasContext ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Instantaneous
     ] .
 
 pkm:SideStateAssignment
     a owl:Class ;
     rdfs:label "SideStateAssignment" ;
-    rdfs:subClassOf pkm:SideState ;
+    rdfs:subClassOf pkm:ContextualFact ;
+    rdfs:subClassOf pkm:MaterializedStateAssignment ;
     rdfs:comment "Abstract superclass for materialized instantaneous assignments whose subject is a single BattleSide." ;
     rdfs:subClassOf [
         a owl:Restriction ;
         owl:onProperty pkm:aboutSide ;
         owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
         owl:onClass pkm:BattleSide
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasContext ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Instantaneous
     ] .
 
 pkm:CurrentHPAssignment
@@ -83,7 +97,7 @@ pkm:CurrentPPAssignment
     rdfs:label "CurrentPPAssignment" ;
     rdfs:subClassOf pkm:ContextualFact ;
     rdfs:subClassOf pkm:MaterializedStateAssignment ;
-    rdfs:comment "Records the current PP of a move slot at an instantaneous state." ;
+    rdfs:comment "Records the current PP of a move slot at an instantaneous state. This vocabulary currently scopes PP tracking to OwnedMoveSlot-backed combatants; transient replay combatants need a future battle-local move-slot model." ;
     rdfs:subClassOf [
         a owl:Restriction ;
         owl:onProperty pkm:aboutMoveSlot ;
@@ -136,28 +150,14 @@ pkm:VolatileStatusAssignment
 pkm:FieldState
     a owl:Class ;
     rdfs:label "FieldState" ;
-    rdfs:subClassOf pkm:ContextualFact ;
-    rdfs:subClassOf pkm:MaterializedStateAssignment ;
-    rdfs:comment "Records field-wide state (weather, terrain) at an instantaneous snapshot." ;
-    rdfs:subClassOf [
-        a owl:Restriction ;
-        owl:onProperty pkm:hasContext ;
-        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
-        owl:onClass pkm:Instantaneous
-    ] .
+    rdfs:subClassOf pkm:FieldStateAssignment ;
+    rdfs:comment "Aggregate field-state record at an instantaneous snapshot. Concrete field assignments should usually subclass FieldStateAssignment directly." .
 
 pkm:SideState
     a owl:Class ;
     rdfs:label "SideState" ;
-    rdfs:subClassOf pkm:ContextualFact ;
-    rdfs:subClassOf pkm:MaterializedStateAssignment ;
-    rdfs:comment "Records side-specific state at an instantaneous snapshot." ;
-    rdfs:subClassOf [
-        a owl:Restriction ;
-        owl:onProperty pkm:hasContext ;
-        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
-        owl:onClass pkm:Instantaneous
-    ] .
+    rdfs:subClassOf pkm:SideStateAssignment ;
+    rdfs:comment "Aggregate side-state record at an instantaneous snapshot. Concrete side assignments should usually subclass SideStateAssignment directly." .
 
 pkm:PendingAction
     a owl:Class ;
@@ -269,6 +269,7 @@ pkm:hasRemainingDuration
     a owl:DatatypeProperty ;
     a owl:FunctionalProperty ;
     rdfs:label "hasRemainingDuration" ;
+    rdfs:domain pkm:MaterializedStateAssignment ;
     rdfs:range xsd:integer .
 
 pkm:hasTurnIndex

@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from typing import Iterable
 
 
-PKM_PREFIX = "http://example.org/pokemon-ontology#"
+PKM_PREFIX = "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#"
 
 
 def sanitize_identifier(text: str) -> str:

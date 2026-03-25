@@ -2,13 +2,10 @@
 # MODULE 4C: REPLAY PROVENANCE AND OBSERVATION STATUS — Version 0.7 Additions
 # =============================================================================
 
-<http://example.org/pokemon-ontology>
-    owl:versionInfo "0.7" .
-
 pkm:EvidenceArtifact
     a owl:Class ;
     rdfs:label "EvidenceArtifact" ;
-    rdfs:subClassOf pkm:Entity ;
+    rdfs:subClassOf pkm:MetadataEntity ;
     rdfs:comment "A source artifact used to justify modeled battle facts, such as a replay log or official battle video." .
 
 pkm:ReplayArtifact
@@ -20,7 +17,7 @@ pkm:ReplayArtifact
 pkm:KnowledgeStatus
     a owl:Class ;
     rdfs:label "KnowledgeStatus" ;
-    rdfs:subClassOf pkm:Entity ;
+    rdfs:subClassOf pkm:MetadataEntity ;
     rdfs:comment "Epistemic status for a modeled stochastic resolution or branch set." .
 
 pkm:StatStageChangeEvent
@@ -105,5 +102,5 @@ pkm:KnowledgeStatus_InferredPartialBranchSet
     rdfs:comment "The model includes only some branches, typically because the replay does not reveal all hidden state needed for exhaustive expansion." .
 
 [ a owl:AllDisjointClasses ;
-  owl:members ( pkm:EvidenceArtifact pkm:KnowledgeStatus pkm:StatStageChangeEvent )
+  owl:members ( pkm:EvidenceArtifact pkm:KnowledgeStatus )
 ] .

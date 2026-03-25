@@ -2,9 +2,6 @@
 # MODULE 4B: BATTLE STRUCTURE AND STOCHASTIC RESOLUTION — Version 0.6 Additions
 # =============================================================================
 
-<http://example.org/pokemon-ontology>
-    owl:versionInfo "0.6" .
-
 # BattleSide anchoring
 pkm:BattleSide
     rdfs:subClassOf [

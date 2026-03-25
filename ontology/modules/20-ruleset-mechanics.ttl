@@ -81,11 +81,11 @@ pkm:AbilityAssignment
         owl:onClass pkm:Ruleset
     ] .
 
-pkm:MoveLearnability
+pkm:MoveLearnRecord
     a owl:Class ;
-    rdfs:label "MoveLearnability" ;
+    rdfs:label "MoveLearnRecord" ;
     rdfs:subClassOf pkm:ContextualFact ;
-    rdfs:comment "Records that a variant can learn a move within a ruleset." ;
+    rdfs:comment "Records whether a variant can learn a move within a ruleset." ;
     rdfs:subClassOf [
         a owl:Restriction ;
         owl:onProperty pkm:aboutEntity ;
@@ -104,6 +104,13 @@ pkm:MoveLearnability
         owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
         owl:onClass pkm:Ruleset
     ] .
+
+pkm:MoveLearnability
+    a owl:Class ;
+    rdfs:label "MoveLearnability" ;
+    owl:equivalentClass pkm:MoveLearnRecord ;
+    owl:deprecated "true"^^xsd:boolean ;
+    rdfs:comment "Deprecated compatibility alias for MoveLearnRecord." .
 
 pkm:MovePropertyAssignment
     a owl:Class ;
@@ -179,7 +186,7 @@ pkm:TypeEffectivenessAssignment
 [ a owl:AllDisjointClasses ;
   owl:members (
     pkm:TypingAssignment pkm:StatAssignment pkm:AbilityAssignment
-    pkm:MoveLearnability pkm:MovePropertyAssignment
+    pkm:MoveLearnRecord pkm:MovePropertyAssignment
     pkm:ItemPropertyAssignment pkm:TypeEffectivenessAssignment
   )
 ] .
@@ -244,7 +251,7 @@ pkm:learnableMove
     a owl:ObjectProperty ;
     a owl:FunctionalProperty ;
     rdfs:label "learnableMove" ;
-    rdfs:domain pkm:MoveLearnability ;
+    rdfs:domain pkm:MoveLearnRecord ;
     rdfs:range pkm:Move .
 
 
@@ -293,6 +300,13 @@ pkm:hasPriority
     rdfs:domain pkm:MovePropertyAssignment ;
     rdfs:range xsd:integer .
 
+pkm:hasMoveType
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasMoveType" ;
+    rdfs:domain pkm:MovePropertyAssignment ;
+    rdfs:range pkm:Type .
+
 pkm:hasDamageFactor
     a owl:DatatypeProperty ;
     a owl:FunctionalProperty ;
@@ -307,12 +321,21 @@ pkm:isHiddenAbility
     rdfs:domain pkm:AbilityAssignment ;
     rdfs:range xsd:boolean .
 
-pkm:isLearnable
+pkm:isLearnableInRuleset
     a owl:DatatypeProperty ;
     a owl:FunctionalProperty ;
-    rdfs:label "isLearnable" ;
-    rdfs:domain pkm:MoveLearnability ;
+    rdfs:label "isLearnableInRuleset" ;
+    rdfs:domain pkm:MoveLearnRecord ;
     rdfs:range xsd:boolean .
+
+pkm:isLearnable
+    a owl:DatatypeProperty ;
+    owl:deprecated "true"^^xsd:boolean ;
+    rdfs:label "isLearnable" ;
+    rdfs:subPropertyOf pkm:isLearnableInRuleset ;
+    rdfs:domain pkm:MoveLearnRecord ;
+    rdfs:range xsd:boolean ;
+    rdfs:comment "Deprecated compatibility alias for isLearnableInRuleset." .
 
 pkm:hasTypeSlot
     a owl:DatatypeProperty ;

@@ -30,6 +30,9 @@ pokemontology/
 │   ├── replay_to_ttl_builder.py
 │   └── summarize_showdown_replay.py
 ├── docs/
+│   ├── index.html
+│   ├── ontology.ttl
+│   ├── shapes.ttl
 │   ├── repo-structure.md
 │   └── roadmap.md
 ├── tests/
@@ -44,7 +47,9 @@ pokemontology/
 
 - Modular ontology source fragments under `ontology/modules/`
 - Built consumer ontology at `build/ontology.ttl`
+- Published Pages ontology at `https://laurajoyhutchins.github.io/pokemontology/ontology.ttl`
 - Canonical SHACL shapes TTL
+- Published Pages shapes at `https://laurajoyhutchins.github.io/pokemontology/shapes.ttl`
 - Seed/example fixture extracted from the ontology source
 - Replay JSON used as source corpus
 - Replay-backed TTL slice
@@ -63,6 +68,8 @@ Rebuild the consumer ontology after editing source modules:
 ```bash
 python3 scripts/build_ontology.py
 ```
+
+This also refreshes the GitHub Pages artifacts under `docs/`.
 
 ## Example commands
 

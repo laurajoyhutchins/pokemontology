@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pokemontology Namespace</title>
+  <style>
+    :root {
+      --bg: #f3efe4;
+      --fg: #1f2a30;
+      --muted: #5a6a70;
+      --card: #fffaf1;
+      --line: #d9ccb4;
+      --accent: #0d6b6f;
+      --accent-2: #bc5c26;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Iowan Old Style", "Palatino Linotype", serif;
+      color: var(--fg);
+      background:
+        radial-gradient(circle at top left, rgba(13,107,111,0.12), transparent 28rem),
+        radial-gradient(circle at bottom right, rgba(188,92,38,0.12), transparent 26rem),
+        var(--bg);
+    }
+    main {
+      max-width: 58rem;
+      margin: 0 auto;
+      padding: 3rem 1.25rem 4rem;
+    }
+    h1 {
+      margin: 0 0 0.75rem;
+      font-size: clamp(2.2rem, 5vw, 4rem);
+      line-height: 0.95;
+      letter-spacing: -0.03em;
+    }
+    p {
+      font-size: 1.05rem;
+      line-height: 1.6;
+      color: var(--muted);
+      max-width: 48rem;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+      gap: 1rem;
+      margin: 2rem 0;
+    }
+    .card {
+      padding: 1.1rem 1.15rem;
+      border: 1px solid var(--line);
+      background: var(--card);
+      border-radius: 1rem;
+      box-shadow: 0 10px 30px rgba(31, 42, 48, 0.06);
+    }
+    .card h2 {
+      margin: 0 0 0.55rem;
+      font-size: 1.05rem;
+    }
+    a {
+      color: var(--accent);
+      text-decoration-thickness: 0.08em;
+      text-underline-offset: 0.14em;
+    }
+    code {
+      font-family: "IBM Plex Mono", "SFMono-Regular", monospace;
+      font-size: 0.92em;
+      color: var(--accent-2);
+    }
+    .small {
+      font-size: 0.95rem;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Pokemontology Namespace</h1>
+    <p>
+      This site publishes the canonical namespace and validation artifacts for the
+      Pokémon battle mechanics ontology.
+    </p>
+    <div class="grid">
+      <section class="card">
+        <h2>Ontology Namespace</h2>
+        <p class="small">
+          Base IRI: <code>https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#</code>
+        </p>
+        <p><a href="./ontology.ttl">Download ontology.ttl</a></p>
+      </section>
+      <section class="card">
+        <h2>SHACL Shapes</h2>
+        <p class="small">
+          Base IRI: <code>https://laurajoyhutchins.github.io/pokemontology/shapes.ttl#</code>
+        </p>
+        <p><a href="./shapes.ttl">Download shapes.ttl</a></p>
+      </section>
+      <section class="card">
+        <h2>Repository</h2>
+        <p><a href="https://github.com/laurajoyhutchins/pokemontology">View source on GitHub</a></p>
+      </section>
+    </div>
+    <p class="small">
+      The published <code>.ttl</code> files are generated from the modular sources in
+      <code>ontology/modules/</code> and copied into this Pages artifact directory by
+      <code>scripts/build_ontology.py</code>.
+    </p>
+  </main>
+</body>
+</html>

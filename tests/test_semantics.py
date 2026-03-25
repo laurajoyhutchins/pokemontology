@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from rdflib import Graph, Namespace, RDF
 
-PKM = Namespace("http://example.org/pokemon-ontology#")
+PKM = Namespace("https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#")
 
 
 # ---------------------------------------------------------------------------
@@ -14,7 +14,7 @@ def test_faint_events_have_hp_zero_assignment(combined_graph: Graph) -> None:
     """Every FaintEvent must have a corresponding CurrentHPAssignment of 0
     for the affected combatant at the same Instantaneous."""
     query = """
-    PREFIX pkm: <http://example.org/pokemon-ontology#>
+    PREFIX pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#>
 
     SELECT ?faintEvent ?combatant ?instant WHERE {
         ?faintEvent a pkm:FaintEvent ;
@@ -40,7 +40,7 @@ def test_faint_hp_assignments_are_zero(combined_graph: Graph) -> None:
     """All CurrentHPAssignments at a FaintEvent instantaneous for the fainted
     combatant must have value 0 (no non-zero HP recorded at faint)."""
     query = """
-    PREFIX pkm: <http://example.org/pokemon-ontology#>
+    PREFIX pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#>
 
     SELECT ?hp ?combatant ?instant ?value WHERE {
         ?faintEvent a pkm:FaintEvent ;
@@ -67,7 +67,7 @@ def test_faint_hp_assignments_are_zero(combined_graph: Graph) -> None:
 def test_stat_stage_uniqueness(combined_graph: Graph) -> None:
     """At most one StatStageAssignment per (combatant, stat, instantaneous)."""
     query = """
-    PREFIX pkm: <http://example.org/pokemon-ontology#>
+    PREFIX pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#>
 
     SELECT ?combatant ?stat ?instant (COUNT(?ssa) AS ?count) WHERE {
         ?ssa a pkm:StatStageAssignment ;
@@ -95,7 +95,7 @@ def test_stat_stage_uniqueness(combined_graph: Graph) -> None:
 def test_instantaneous_chain_is_acyclic(combined_graph: Graph) -> None:
     """hasPreviousInstantaneous must form a DAG (no cycles)."""
     query = """
-    PREFIX pkm: <http://example.org/pokemon-ontology#>
+    PREFIX pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#>
 
     SELECT ?instant WHERE {
         ?instant pkm:hasPreviousInstantaneous+ ?instant .
@@ -111,7 +111,7 @@ def test_instantaneous_chain_is_acyclic(combined_graph: Graph) -> None:
 def test_each_instantaneous_has_at_most_one_predecessor(combined_graph: Graph) -> None:
     """Each Instantaneous must have at most one hasPreviousInstantaneous."""
     query = """
-    PREFIX pkm: <http://example.org/pokemon-ontology#>
+    PREFIX pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#>
 
     SELECT ?instant (COUNT(?prev) AS ?count) WHERE {
         ?instant a pkm:Instantaneous ;
@@ -134,7 +134,7 @@ def test_each_instantaneous_has_at_most_one_predecessor(combined_graph: Graph) -
 def test_all_combatants_belong_to_a_battle(combined_graph: Graph) -> None:
     """Every BattleParticipant must participate in exactly one Battle."""
     query = """
-    PREFIX pkm: <http://example.org/pokemon-ontology#>
+    PREFIX pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#>
 
     SELECT ?combatant (COUNT(DISTINCT ?battle) AS ?count) WHERE {
         ?combatant a pkm:BattleParticipant .

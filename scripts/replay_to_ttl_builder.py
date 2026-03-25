@@ -36,6 +36,7 @@ from replay_parser import (
 )
 
 PKM = Namespace(PKM_PREFIX)
+SITE_BASE = "https://laurajoyhutchins.github.io/pokemontology"
 
 
 def build_graph(payload: dict) -> Graph:
@@ -58,7 +59,7 @@ def build_graph(payload: dict) -> Graph:
     ruleset_iri = PKM[f"Ruleset_{sanitize_identifier(fmt)}"]
 
     # Slice header
-    slice_uri = URIRef(f"http://example.org/replay-slice/{battle_slug}")
+    slice_uri = URIRef(f"{SITE_BASE}/data/replay-slice/{battle_slug}")
     g.add((slice_uri, RDFS.label, Literal(f"Replay-backed slice for {replay_id}")))
     g.add((
         slice_uri,
@@ -105,7 +106,6 @@ def build_graph(payload: dict) -> Graph:
         g.add((combatant, PKM.participatesInBattle, battle_iri))
         g.add((combatant, PKM.onSide, side_iri))
         g.add((combatant, PKM.hasCombatantLabel, Literal(info["label"])))
-        g.add((combatant, PKM.isActive, Literal(True)))
 
     # Moves
     for move_iri, move_name in moves.items():
