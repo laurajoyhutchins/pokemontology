@@ -78,6 +78,90 @@ pkmsh:ParticipantStateAssignmentShape
         sh:message "A ParticipantStateAssignment must be scoped to exactly one Instantaneous."
     ] .
 
+pkmsh:IVAssignmentShape
+    a sh:NodeShape ;
+    sh:targetClass pkm:IVAssignment ;
+    sh:property [
+        sh:path pkm:aboutOwnedPokemon ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class pkm:OwnedPokemon ;
+        sh:message "An IVAssignment must reference exactly one OwnedPokemon."
+    ] ;
+    sh:property [
+        sh:path pkm:aboutStat ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class pkm:Stat ;
+        sh:message "An IVAssignment must reference exactly one Stat."
+    ] ;
+    sh:property [
+        sh:path pkm:hasContext ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class pkm:SaveFile ;
+        sh:message "An IVAssignment must be scoped to exactly one SaveFile."
+    ] ;
+    sh:property [
+        sh:path pkm:hasIVValue ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+        sh:minInclusive 0 ;
+        sh:maxInclusive 31 ;
+        sh:message "An IVAssignment must have an integer IV value in [0, 31]."
+    ] .
+
+pkmsh:EVAssignmentShape
+    a sh:NodeShape ;
+    sh:targetClass pkm:EVAssignment ;
+    sh:property [
+        sh:path pkm:aboutOwnedPokemon ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class pkm:OwnedPokemon ;
+        sh:message "An EVAssignment must reference exactly one OwnedPokemon."
+    ] ;
+    sh:property [
+        sh:path pkm:aboutStat ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class pkm:Stat ;
+        sh:message "An EVAssignment must reference exactly one Stat."
+    ] ;
+    sh:property [
+        sh:path pkm:hasContext ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class pkm:SaveFile ;
+        sh:message "An EVAssignment must be scoped to exactly one SaveFile."
+    ] ;
+    sh:property [
+        sh:path pkm:hasEVValue ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+        sh:minInclusive 0 ;
+        sh:maxInclusive 252 ;
+        sh:message "An EVAssignment must have an integer EV value in [0, 252]."
+    ] ;
+    sh:sparql [
+        sh:message "Total EVs for one OwnedPokemon in one SaveFile must not exceed 510." ;
+        sh:select """
+            SELECT $this
+            WHERE {
+              $this pkm:aboutOwnedPokemon ?ownedPokemon ;
+                    pkm:hasContext ?saveFile .
+              ?assignment a pkm:EVAssignment ;
+                         pkm:aboutOwnedPokemon ?ownedPokemon ;
+                         pkm:hasContext ?saveFile ;
+                         pkm:hasEVValue ?evValue .
+            }
+            GROUP BY $this ?ownedPokemon ?saveFile
+            HAVING (SUM(?evValue) > 510)
+        """
+    ] .
+
 pkmsh:FieldStateAssignmentShape
     a sh:NodeShape ;
     sh:targetClass pkm:FieldStateAssignment ;
@@ -450,6 +534,54 @@ pkmsh:BattleActionShape
               ?decl pkm:occursInBattle ?battle1 .
               ?init pkm:occursInBattle ?battle2 .
               FILTER (?battle1 != ?battle2)
+            }
+        """
+    ] .
+
+pkmsh:TypingAssignmentShape
+    a sh:NodeShape ;
+    sh:targetClass pkm:TypingAssignment ;
+    sh:property [
+        sh:path pkm:aboutVariant ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class pkm:Variant ;
+        sh:message "A TypingAssignment must reference exactly one Variant."
+    ] ;
+    sh:property [
+        sh:path pkm:aboutType ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class pkm:Type ;
+        sh:message "A TypingAssignment must reference exactly one Type."
+    ] ;
+    sh:property [
+        sh:path pkm:hasContext ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class pkm:Ruleset ;
+        sh:message "A TypingAssignment must be scoped to exactly one Ruleset."
+    ] ;
+    sh:property [
+        sh:path pkm:hasTypeSlot ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+        sh:message "A TypingAssignment must declare exactly one integer hasTypeSlot value."
+    ] ;
+    sh:sparql [
+        sh:message "There must be at most one TypingAssignment per variant/ruleset/type-slot." ;
+        sh:select """
+            SELECT $this
+            WHERE {
+              $this pkm:aboutVariant ?variant ;
+                    pkm:hasContext ?ruleset ;
+                    pkm:hasTypeSlot ?slot .
+              ?other a pkm:TypingAssignment ;
+                     pkm:aboutVariant ?variant ;
+                     pkm:hasContext ?ruleset ;
+                     pkm:hasTypeSlot ?slot .
+              FILTER (?other != $this)
             }
         """
     ] .

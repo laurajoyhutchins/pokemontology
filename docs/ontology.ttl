@@ -1645,14 +1645,14 @@ pkm:aboutField
     a owl:ObjectProperty ;
     a owl:FunctionalProperty ;
     rdfs:label "aboutField" ;
-    rdfs:domain pkm:FieldState ;
+    rdfs:domain pkm:FieldStateAssignment ;
     rdfs:range pkm:Battle .
 
 pkm:aboutSide
     a owl:ObjectProperty ;
     a owl:FunctionalProperty ;
     rdfs:label "aboutSide" ;
-    rdfs:domain pkm:SideState ;
+    rdfs:domain pkm:SideStateAssignment ;
     rdfs:range pkm:BattleSide .
 
 pkm:hasTransformationState
