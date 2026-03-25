@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
 from pyshacl import validate
 from rdflib import Graph
 
@@ -20,14 +19,6 @@ def _load(path: Path) -> Graph:
     return g
 
 
-@pytest.mark.xfail(
-    strict=False,
-    reason=(
-        "The current slice is a partial state reconstruction (v0.7). Known gaps: "
-        "Actions missing pkm:occursInInstantaneous, ActiveSlot nodes missing "
-        "pkm:hasReplayTurnIndex. Remove xfail when the slice is complete."
-    ),
-)
 def test_slice_conforms_to_shapes() -> None:
     conforms, results_graph, results_text = validate(
         data_graph=_load(SLICE),
