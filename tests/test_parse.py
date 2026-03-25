@@ -9,8 +9,9 @@ from rdflib import Graph
 REPO = Path(__file__).parent.parent
 
 TTL_FILES = [
-    REPO / "ontology" / "pokemon-mechanics-ontology.ttl",
+    REPO / "build" / "ontology.ttl",
     REPO / "shapes" / "pokemon-mechanics-shapes.ttl",
+    REPO / "examples" / "fixtures" / "froakie-caterpie-seed.ttl",
     REPO / "examples" / "slices" / "showdown-finals-game1-slice.ttl",
 ]
 

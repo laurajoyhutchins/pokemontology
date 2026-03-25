@@ -1,0 +1,141 @@
+# =============================================================================
+# MODULE 5B: MATERIALIZED BATTLE-STATE EXTENSIONS
+# =============================================================================
+
+
+pkm:VolatileCondition
+    a owl:Class ;
+    rdfs:label "VolatileCondition" ;
+    rdfs:subClassOf pkm:Entity ;
+    rdfs:comment "A volatile battle condition that can apply transiently to a battle participant (e.g. Protecting, Flinched, Taunted)." .
+
+pkm:WeatherCondition
+    a owl:Class ;
+    rdfs:label "WeatherCondition" ;
+    rdfs:subClassOf pkm:Entity ;
+    rdfs:comment "A field-wide weather state such as Harsh Sunlight or Rain." .
+
+pkm:TerrainCondition
+    a owl:Class ;
+    rdfs:label "TerrainCondition" ;
+    rdfs:subClassOf pkm:Entity ;
+    rdfs:comment "A field-wide terrain state such as Psychic Terrain." .
+
+pkm:SideCondition
+    a owl:Class ;
+    rdfs:label "SideCondition" ;
+    rdfs:subClassOf pkm:Entity ;
+    rdfs:comment "A condition scoped to one battle side, such as Tailwind, Reflect, or Light Screen." .
+
+pkm:CurrentWeatherAssignment
+    a owl:Class ;
+    rdfs:label "CurrentWeatherAssignment" ;
+    rdfs:subClassOf pkm:FieldStateAssignment ;
+    rdfs:comment "Materialized weather state for a battle field at an instantaneous snapshot." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasWeatherCondition ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:WeatherCondition
+    ] .
+
+pkm:CurrentTerrainAssignment
+    a owl:Class ;
+    rdfs:label "CurrentTerrainAssignment" ;
+    rdfs:subClassOf pkm:FieldStateAssignment ;
+    rdfs:comment "Materialized terrain state for a battle field at an instantaneous snapshot." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasTerrainCondition ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:TerrainCondition
+    ] .
+
+pkm:SideConditionAssignment
+    a owl:Class ;
+    rdfs:label "SideConditionAssignment" ;
+    rdfs:subClassOf pkm:SideStateAssignment ;
+    rdfs:comment "Materialized side-condition state for one battle side at an instantaneous snapshot." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasSideCondition ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:SideCondition
+    ] .
+
+pkm:ActiveSlotAssignment
+    a owl:Class ;
+    rdfs:label "ActiveSlotAssignment" ;
+    rdfs:subClassOf pkm:ParticipantStateAssignment ;
+    rdfs:comment "Materializes which battle participant occupies a specific active slot on a specific side at an instantaneous snapshot." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:aboutSide ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:BattleSide
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasActiveSlotIndex ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onDataRange xsd:integer
+    ] .
+
+pkm:hasVolatileCondition
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasVolatileCondition" ;
+    rdfs:domain pkm:VolatileStatusAssignment ;
+    rdfs:range pkm:VolatileCondition .
+
+pkm:hasWeatherCondition
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasWeatherCondition" ;
+    rdfs:domain pkm:CurrentWeatherAssignment ;
+    rdfs:range pkm:WeatherCondition .
+
+pkm:hasTerrainCondition
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasTerrainCondition" ;
+    rdfs:domain pkm:CurrentTerrainAssignment ;
+    rdfs:range pkm:TerrainCondition .
+
+pkm:hasSideCondition
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasSideCondition" ;
+    rdfs:domain pkm:SideConditionAssignment ;
+    rdfs:range pkm:SideCondition .
+
+pkm:hasActiveSlotIndex
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasActiveSlotIndex" ;
+    rdfs:domain pkm:ActiveSlotAssignment ;
+    rdfs:range xsd:integer .
+
+pkm:ProjectionProfile_PartialMaterializedBattleState
+    a pkm:ProjectionProfile ;
+    rdfs:comment "Projection profile for replay slices that materialize selected forward-projected battle state dimensions beyond stages, including active slots and a limited set of field, side, and volatile states." .
+
+pkm:VolatileCondition_Protecting
+    a pkm:VolatileCondition ;
+    pkm:hasName "Protecting" .
+
+pkm:Weather_HarshSunlight
+    a pkm:WeatherCondition ;
+    pkm:hasName "Harsh Sunlight" .
+
+pkm:Terrain_PsychicTerrain
+    a pkm:TerrainCondition ;
+    pkm:hasName "Psychic Terrain" .
+
+pkm:SideCondition_Tailwind
+    a pkm:SideCondition ;
+    pkm:hasName "Tailwind" .
+
+[ a owl:AllDisjointClasses ;
+  owl:members ( pkm:VolatileCondition pkm:WeatherCondition pkm:TerrainCondition pkm:SideCondition )
+] .

@@ -6,16 +6,25 @@ RDF/OWL + SHACL project for modeling Pokémon battles as replay-backed state tra
 
 ```text
 pokemontology/
+├── build/
+│   └── ontology.ttl
 ├── ontology/
-│   └── pokemon-mechanics-ontology.ttl
+│   └── modules/
+│       ├── 00-header.ttl
+│       ├── 10-core.ttl
+│       ├── ...
+│       └── 80-materialized-state.ttl
 ├── shapes/
 │   └── pokemon-mechanics-shapes.ttl
 ├── examples/
+│   ├── fixtures/
+│   │   └── froakie-caterpie-seed.ttl
 │   ├── replays/
 │   │   └── gen9vgc2025regjbo3-2414024536-ey54jc53vyjqy20sq0ww1l5nd3bq5qhpw.json
 │   └── slices/
 │       └── showdown-finals-game1-slice.ttl
 ├── scripts/
+│   ├── build_ontology.py
 │   ├── check_ttl_parse.py
 │   ├── parse_showdown_replay.py
 │   ├── replay_to_ttl_builder.py
@@ -33,8 +42,10 @@ pokemontology/
 
 ## Included files
 
-- Canonical ontology TTL
+- Modular ontology source fragments under `ontology/modules/`
+- Built consumer ontology at `build/ontology.ttl`
 - Canonical SHACL shapes TTL
+- Seed/example fixture extracted from the ontology source
 - Replay JSON used as source corpus
 - Replay-backed TTL slice
 - Utility scripts for replay parsing, summary, slice building, and TTL syntax checking
@@ -46,6 +57,12 @@ pokemontology/
 3. Enrich the slice with materialized state assignments where needed.
 4. Validate ontology + shapes + slice together.
 5. Add regression tests for each modeling extension.
+
+Rebuild the consumer ontology after editing source modules:
+
+```bash
+python3 scripts/build_ontology.py
+```
 
 ## Example commands
 
@@ -62,12 +79,13 @@ python scripts/replay_to_ttl_builder.py       examples/replays/gen9vgc2025regjbo
 ```
 
 ```bash
-python scripts/check_ttl_parse.py       ontology/pokemon-mechanics-ontology.ttl       shapes/pokemon-mechanics-shapes.ttl       examples/slices/showdown-finals-game1-slice.ttl
+python3 scripts/check_ttl_parse.py       build/ontology.ttl       shapes/pokemon-mechanics-shapes.ttl       examples/fixtures/froakie-caterpie-seed.ttl       examples/slices/showdown-finals-game1-slice.ttl
 ```
 
 ## Notes
 
 - The included replay-backed slice is still a partial state reconstruction, not a dense full-state model.
+- The built consumer ontology is generated from modular source fragments under `ontology/modules/`.
 - This repo sketch packages the latest files actually present in the workspace:
   - ontology v1.1
   - shapes v0.7

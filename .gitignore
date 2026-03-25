@@ -5,6 +5,7 @@ __pycache__/
 .venv/
 venv/
 dist/
-build/
+build/*
+!build/ontology.ttl
 *.zip
 .DS_Store

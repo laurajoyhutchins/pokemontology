@@ -1,0 +1,323 @@
+# =============================================================================
+# MODULE 2: RULESET MECHANICS — Contextual Fact Classes
+# =============================================================================
+
+pkm:TypingAssignment
+    a owl:Class ;
+    rdfs:label "TypingAssignment" ;
+    rdfs:subClassOf pkm:ContextualFact ;
+    rdfs:subClassOf pkm:MaterializedStateAssignment ;
+    rdfs:comment "Assigns a type to a variant within a ruleset." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:aboutEntity ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Variant
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:aboutType ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Type
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasContext ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Ruleset
+    ] .
+
+pkm:StatAssignment
+    a owl:Class ;
+    rdfs:label "StatAssignment" ;
+    rdfs:subClassOf pkm:ContextualFact ;
+    rdfs:comment "Assigns a base stat value to a variant within a ruleset." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:aboutEntity ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Variant
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:aboutStat ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Stat
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasValue ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onDataRange xsd:integer
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasContext ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Ruleset
+    ] .
+
+pkm:AbilityAssignment
+    a owl:Class ;
+    rdfs:label "AbilityAssignment" ;
+    rdfs:subClassOf pkm:ContextualFact ;
+    rdfs:comment "Assigns an ability to a variant within a ruleset." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:aboutEntity ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Variant
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:aboutAbility ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Ability
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasContext ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Ruleset
+    ] .
+
+pkm:MoveLearnability
+    a owl:Class ;
+    rdfs:label "MoveLearnability" ;
+    rdfs:subClassOf pkm:ContextualFact ;
+    rdfs:comment "Records that a variant can learn a move within a ruleset." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:aboutEntity ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Variant
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:learnableMove ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Move
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasContext ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Ruleset
+    ] .
+
+pkm:MovePropertyAssignment
+    a owl:Class ;
+    rdfs:label "MovePropertyAssignment" ;
+    rdfs:subClassOf pkm:ContextualFact ;
+    rdfs:comment "Records mechanical properties of a move within a ruleset." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:aboutMove ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Move
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasContext ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Ruleset
+    ] .
+
+pkm:ItemPropertyAssignment
+    a owl:Class ;
+    rdfs:label "ItemPropertyAssignment" ;
+    rdfs:subClassOf pkm:ContextualFact ;
+    rdfs:comment "Records mechanical properties of an item within a ruleset." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:aboutItem ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Item
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasContext ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Ruleset
+    ] .
+
+pkm:TypeEffectivenessAssignment
+    a owl:Class ;
+    rdfs:label "TypeEffectivenessAssignment" ;
+    rdfs:subClassOf pkm:ContextualFact ;
+    rdfs:comment "Records the damage multiplier for an attacker type against a defender type within a ruleset." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:attackerType ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Type
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:defenderType ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Type
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasDamageFactor ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onDataRange xsd:decimal
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasContext ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Ruleset
+    ] .
+
+
+# =============================================================================
+# MODULE 2: RULESET MECHANICS — Disjointness
+# =============================================================================
+
+[ a owl:AllDisjointClasses ;
+  owl:members (
+    pkm:TypingAssignment pkm:StatAssignment pkm:AbilityAssignment
+    pkm:MoveLearnability pkm:MovePropertyAssignment
+    pkm:ItemPropertyAssignment pkm:TypeEffectivenessAssignment
+  )
+] .
+
+
+# =============================================================================
+# MODULE 2: RULESET MECHANICS — Object Properties
+# =============================================================================
+
+pkm:aboutEntity
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "aboutEntity" ;
+    rdfs:domain pkm:ContextualFact ;
+    rdfs:range pkm:Entity .
+
+pkm:aboutMove
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "aboutMove" ;
+    rdfs:range pkm:Move .
+
+pkm:aboutItem
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "aboutItem" ;
+    rdfs:range pkm:Item .
+
+pkm:aboutType
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "aboutType" ;
+    rdfs:range pkm:Type .
+
+pkm:aboutStat
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "aboutStat" ;
+    rdfs:range pkm:Stat .
+
+pkm:aboutAbility
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "aboutAbility" ;
+    rdfs:range pkm:Ability .
+
+pkm:attackerType
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "attackerType" ;
+    rdfs:domain pkm:TypeEffectivenessAssignment ;
+    rdfs:range pkm:Type .
+
+pkm:defenderType
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "defenderType" ;
+    rdfs:domain pkm:TypeEffectivenessAssignment ;
+    rdfs:range pkm:Type .
+
+pkm:learnableMove
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "learnableMove" ;
+    rdfs:domain pkm:MoveLearnability ;
+    rdfs:range pkm:Move .
+
+
+# =============================================================================
+# MODULE 2: RULESET MECHANICS — Data Properties
+# =============================================================================
+
+pkm:hasSlot
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasSlot" ;
+    rdfs:range xsd:integer .
+
+pkm:hasValue
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasValue" ;
+    rdfs:domain pkm:StatAssignment ;
+    rdfs:range xsd:integer .
+
+pkm:hasBasePower
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasBasePower" ;
+    rdfs:domain pkm:MovePropertyAssignment ;
+    rdfs:range xsd:integer .
+
+pkm:hasAccuracy
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasAccuracy" ;
+    rdfs:domain pkm:MovePropertyAssignment ;
+    rdfs:range xsd:integer .
+
+pkm:hasPP
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasPP" ;
+    rdfs:domain pkm:MovePropertyAssignment ;
+    rdfs:range xsd:integer .
+
+pkm:hasPriority
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasPriority" ;
+    rdfs:domain pkm:MovePropertyAssignment ;
+    rdfs:range xsd:integer .
+
+pkm:hasDamageFactor
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasDamageFactor" ;
+    rdfs:domain pkm:TypeEffectivenessAssignment ;
+    rdfs:range xsd:decimal .
+
+pkm:isHiddenAbility
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "isHiddenAbility" ;
+    rdfs:domain pkm:AbilityAssignment ;
+    rdfs:range xsd:boolean .
+
+pkm:isLearnable
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "isLearnable" ;
+    rdfs:domain pkm:MoveLearnability ;
+    rdfs:range xsd:boolean .
+
+pkm:hasTypeSlot
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasTypeSlot" ;
+    rdfs:domain pkm:TypingAssignment ;
+    rdfs:range xsd:integer ;
+    rdfs:comment "Ordinality of a typing: 1 = primary, 2 = secondary. Enables deterministic type-slot manipulation (e.g. Burn Up, Roost). Uniqueness per variant per ruleset enforced in SHACL." .

@@ -16,7 +16,6 @@
     rdfs:comment "Context-sensitive mechanics ontology for Pokémon. Models identity, ruleset truth, save state, battle state, and instantaneous state as distinct scopes, with explicit battle participants, replay provenance, and state transitions." ;
     owl:versionInfo "1.1" .
 
-
 # =============================================================================
 # MODULE 1: CORE — Abstract Classes
 # =============================================================================
@@ -329,7 +328,6 @@ pkm:hasDexNumber
     rdfs:label "hasDexNumber" ;
     rdfs:domain pkm:Species ;
     rdfs:range xsd:integer .
-
 
 # =============================================================================
 # MODULE 2: RULESET MECHANICS — Contextual Fact Classes
@@ -654,7 +652,6 @@ pkm:hasTypeSlot
     rdfs:domain pkm:TypingAssignment ;
     rdfs:range xsd:integer ;
     rdfs:comment "Ordinality of a typing: 1 = primary, 2 = secondary. Enables deterministic type-slot manipulation (e.g. Burn Up, Roost). Uniqueness per variant per ruleset enforced in SHACL." .
-
 
 # =============================================================================
 # MODULE 3: SAVE STATE — Classes
@@ -987,7 +984,6 @@ pkm:isCaught
     rdfs:domain pkm:DexRecord ;
     rdfs:range xsd:boolean .
 
-
 # =============================================================================
 # MODULE 4: BATTLE — Classes
 # =============================================================================
@@ -1203,6 +1199,217 @@ pkm:hasTeamPosition
     rdfs:domain pkm:BattleParticipant ;
     rdfs:range xsd:integer .
 
+# =============================================================================
+# MODULE 4B: BATTLE STRUCTURE AND STOCHASTIC RESOLUTION — Version 0.6 Additions
+# =============================================================================
+
+<http://example.org/pokemon-ontology>
+    owl:versionInfo "0.6" .
+
+# BattleSide anchoring
+pkm:BattleSide
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:sideOccursInBattle ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Battle
+    ] .
+
+pkm:sideOccursInBattle
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "sideOccursInBattle" ;
+    rdfs:domain pkm:BattleSide ;
+    rdfs:range pkm:Battle .
+
+# Ordered action execution
+pkm:BattleAction
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasPriorityBracket ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onDataRange xsd:integer
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasResolutionIndex ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onDataRange xsd:integer
+    ] .
+
+pkm:hasPriorityBracket
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasPriorityBracket" ;
+    rdfs:comment "Action ordering bracket after all deterministic priority modifiers have been applied for this battle state." ;
+    rdfs:domain pkm:BattleAction ;
+    rdfs:range xsd:integer .
+
+pkm:hasResolutionIndex
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasResolutionIndex" ;
+    rdfs:comment "Total order within a priority bracket for this concrete action resolution." ;
+    rdfs:domain pkm:BattleAction ;
+    rdfs:range xsd:integer .
+
+# Pseudo-RNG / stochastic resolution vocabulary
+pkm:RandomMechanic
+    a owl:Class ;
+    rdfs:label "RandomMechanic" ;
+    rdfs:subClassOf pkm:Entity ;
+    rdfs:comment "A mechanics-level category of pseudo-random choice, such as an accuracy check, damage roll, secondary-effect roll, critical-hit roll, or multi-hit-count roll." .
+
+pkm:StochasticResolution
+    a owl:Class ;
+    rdfs:label "StochasticResolution" ;
+    rdfs:comment "A battle-local pseudo-random choice point encountered during action resolution. This models the game-engine RNG interface, not metaphysical indeterminism." ;
+    owl:disjointWith pkm:Entity ;
+    owl:disjointWith pkm:Context ;
+    owl:disjointWith pkm:ContextualFact ;
+    owl:disjointWith pkm:OwnedPokemon ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:stochasticOccursInBattle ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Battle
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:realizedInInstantaneous ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Instantaneous
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:associatedWithAction ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:BattleAction
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasRandomMechanic ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:RandomMechanic
+    ] .
+
+pkm:OutcomeBranch
+    a owl:Class ;
+    rdfs:label "OutcomeBranch" ;
+    rdfs:comment "One explicitly modeled branch of a stochastic resolution, with an as-if probability under the applicable ruleset and local battle state." ;
+    owl:disjointWith pkm:Entity ;
+    owl:disjointWith pkm:Context ;
+    owl:disjointWith pkm:ContextualFact ;
+    owl:disjointWith pkm:OwnedPokemon ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:branchOfResolution ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:StochasticResolution
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasBranchProbability ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onDataRange xsd:decimal
+    ] .
+
+pkm:associatedWithAction
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "associatedWithAction" ;
+    rdfs:domain pkm:StochasticResolution ;
+    rdfs:range pkm:BattleAction .
+
+pkm:hasRandomMechanic
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasRandomMechanic" ;
+    rdfs:domain pkm:StochasticResolution ;
+    rdfs:range pkm:RandomMechanic .
+
+pkm:stochasticOccursInBattle
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "stochasticOccursInBattle" ;
+    rdfs:domain pkm:StochasticResolution ;
+    rdfs:range pkm:Battle .
+
+pkm:realizedInInstantaneous
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "realizedInInstantaneous" ;
+    rdfs:domain pkm:StochasticResolution ;
+    rdfs:range pkm:Instantaneous .
+
+pkm:hasPossibleBranch
+    a owl:ObjectProperty ;
+    rdfs:label "hasPossibleBranch" ;
+    rdfs:domain pkm:StochasticResolution ;
+    rdfs:range pkm:OutcomeBranch .
+
+pkm:hasRealizedBranch
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasRealizedBranch" ;
+    rdfs:domain pkm:StochasticResolution ;
+    rdfs:range pkm:OutcomeBranch .
+
+pkm:branchOfResolution
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "branchOfResolution" ;
+    rdfs:domain pkm:OutcomeBranch ;
+    rdfs:range pkm:StochasticResolution .
+
+pkm:branchAppliesToTarget
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "branchAppliesToTarget" ;
+    rdfs:comment "Optional target scoping for per-target RNG such as spread-move accuracy or per-target secondary effects." ;
+    rdfs:domain pkm:OutcomeBranch ;
+    rdfs:range pkm:BattleParticipant .
+
+pkm:resultsInTargetResolution
+    a owl:ObjectProperty ;
+    rdfs:label "resultsInTargetResolution" ;
+    rdfs:domain pkm:OutcomeBranch ;
+    rdfs:range pkm:TargetResolutionState .
+
+pkm:hasBranchProbability
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasBranchProbability" ;
+    rdfs:domain pkm:OutcomeBranch ;
+    rdfs:range xsd:decimal .
+
+pkm:hasBranchLabel
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasBranchLabel" ;
+    rdfs:domain pkm:OutcomeBranch ;
+    rdfs:range xsd:string .
+
+# Canonical random mechanic individuals for reuse
+pkm:RandomMechanic_AccuracyCheck
+    a pkm:RandomMechanic ;
+    pkm:hasName "AccuracyCheck" .
+
+pkm:RandomMechanic_DamageRoll
+    a pkm:RandomMechanic ;
+    pkm:hasName "DamageRoll" .
+
+pkm:RandomMechanic_CriticalHitCheck
+    a pkm:RandomMechanic ;
+    pkm:hasName "CriticalHitCheck" .
+
+pkm:RandomMechanic_SecondaryEffectCheck
+    a pkm:RandomMechanic ;
+    pkm:hasName "SecondaryEffectCheck" .
+
+pkm:RandomMechanic_MultiHitCountCheck
+    a pkm:RandomMechanic ;
+    pkm:hasName "MultiHitCountCheck" .
 
 # =============================================================================
 # MODULE 5: INSTANTANEOUS STATE — Classes
@@ -1491,7 +1698,6 @@ pkm:hasStepIndex
     rdfs:domain pkm:Instantaneous ;
     rdfs:range xsd:integer .
 
-
 # =============================================================================
 # MODULE 6: ACTIONS AND EVENTS
 # =============================================================================
@@ -1692,499 +1898,6 @@ pkm:occursInInstantaneous
     rdfs:domain pkm:Event ;
     rdfs:range pkm:Instantaneous .
 
-
-# =============================================================================
-# EXAMPLE INDIVIDUALS: Gen 6 XY — Froakie vs Caterpie slice
-# =============================================================================
-
-# --- Ontology layer ---
-
-pkm:FroakieSpecies
-    a pkm:Species ;
-    pkm:hasName "Froakie" ;
-    pkm:hasDexNumber 656 .
-
-pkm:FroakieDefault
-    a pkm:Variant ;
-    pkm:hasName "Froakie-Default" ;
-    pkm:belongsToSpecies pkm:FroakieSpecies .
-
-pkm:CaterpieSpecies
-    a pkm:Species ;
-    pkm:hasName "Caterpie" ;
-    pkm:hasDexNumber 10 .
-
-pkm:CaterpieDefault
-    a pkm:Variant ;
-    pkm:hasName "Caterpie-Default" ;
-    pkm:belongsToSpecies pkm:CaterpieSpecies .
-
-pkm:TypeWater   a pkm:Type ; pkm:hasName "Water" .
-pkm:TypeBug     a pkm:Type ; pkm:hasName "Bug" .
-pkm:TypeNormal  a pkm:Type ; pkm:hasName "Normal" .
-
-pkm:StatHP      a pkm:Stat ; pkm:hasName "HP" .
-pkm:StatAtk     a pkm:Stat ; pkm:hasName "Attack" .
-pkm:StatDef     a pkm:Stat ; pkm:hasName "Defense" .
-pkm:StatSpAtk   a pkm:Stat ; pkm:hasName "SpecialAttack" .
-pkm:StatSpDef   a pkm:Stat ; pkm:hasName "SpecialDefense" .
-pkm:StatSpd     a pkm:Stat ; pkm:hasName "Speed" .
-
-pkm:MoveGrowl         a pkm:Move ; pkm:hasName "Growl" .
-pkm:MovePound         a pkm:Move ; pkm:hasName "Pound" .
-pkm:MoveBubble        a pkm:Move ; pkm:hasName "Bubble" .
-pkm:MoveTackle        a pkm:Move ; pkm:hasName "Tackle" .
-pkm:MoveStringShot    a pkm:Move ; pkm:hasName "StringShot" .
-
-pkm:AbilityTorrent    a pkm:Ability ; pkm:hasName "Torrent" .
-pkm:AbilityProtean    a pkm:Ability ; pkm:hasName "Protean" .
-pkm:AbilityShieldDust a pkm:Ability ; pkm:hasName "ShieldDust" .
-
-pkm:NatureTimid   a pkm:Nature ; pkm:hasName "Timid" .
-
-pkm:TrainerPlayer a pkm:Trainer ; pkm:hasName "Player" .
-
-# --- Ruleset layer ---
-
-pkm:Gen6XY a pkm:Ruleset ; pkm:hasName "Gen6XY" .
-
-pkm:TA_Froakie_Water
-    a pkm:TypingAssignment ;
-    pkm:aboutEntity pkm:FroakieDefault ;
-    pkm:aboutType   pkm:TypeWater ;
-    pkm:hasContext  pkm:Gen6XY .
-
-pkm:TA_Caterpie_Bug
-    a pkm:TypingAssignment ;
-    pkm:aboutEntity pkm:CaterpieDefault ;
-    pkm:aboutType   pkm:TypeBug ;
-    pkm:hasContext  pkm:Gen6XY .
-
-pkm:SA_Froakie_HP
-    a pkm:StatAssignment ;
-    pkm:aboutEntity pkm:FroakieDefault ;
-    pkm:aboutStat   pkm:StatHP ;
-    pkm:hasValue    41 ;
-    pkm:hasContext  pkm:Gen6XY .
-
-pkm:SA_Froakie_SpAtk
-    a pkm:StatAssignment ;
-    pkm:aboutEntity pkm:FroakieDefault ;
-    pkm:aboutStat   pkm:StatSpAtk ;
-    pkm:hasValue    71 ;
-    pkm:hasContext  pkm:Gen6XY .
-
-pkm:SA_Froakie_Spd
-    a pkm:StatAssignment ;
-    pkm:aboutEntity pkm:FroakieDefault ;
-    pkm:aboutStat   pkm:StatSpd ;
-    pkm:hasValue    71 ;
-    pkm:hasContext  pkm:Gen6XY .
-
-pkm:SA_Caterpie_HP
-    a pkm:StatAssignment ;
-    pkm:aboutEntity pkm:CaterpieDefault ;
-    pkm:aboutStat   pkm:StatHP ;
-    pkm:hasValue    45 ;
-    pkm:hasContext  pkm:Gen6XY .
-
-pkm:AA_Froakie_Torrent
-    a pkm:AbilityAssignment ;
-    pkm:aboutEntity    pkm:FroakieDefault ;
-    pkm:aboutAbility   pkm:AbilityTorrent ;
-    pkm:isHiddenAbility false ;
-    pkm:hasContext     pkm:Gen6XY .
-
-pkm:AA_Froakie_Protean
-    a pkm:AbilityAssignment ;
-    pkm:aboutEntity    pkm:FroakieDefault ;
-    pkm:aboutAbility   pkm:AbilityProtean ;
-    pkm:isHiddenAbility true ;
-    pkm:hasContext     pkm:Gen6XY .
-
-pkm:MPA_Bubble
-    a pkm:MovePropertyAssignment ;
-    pkm:aboutMove    pkm:MoveBubble ;
-    pkm:hasBasePower 40 ;
-    pkm:hasAccuracy  100 ;
-    pkm:hasPP        30 ;
-    pkm:hasPriority  0 ;
-    pkm:hasContext   pkm:Gen6XY .
-
-pkm:MPA_Pound
-    a pkm:MovePropertyAssignment ;
-    pkm:aboutMove    pkm:MovePound ;
-    pkm:hasBasePower 40 ;
-    pkm:hasAccuracy  100 ;
-    pkm:hasPP        35 ;
-    pkm:hasPriority  0 ;
-    pkm:hasContext   pkm:Gen6XY .
-
-pkm:TEA_Water_Bug
-    a pkm:TypeEffectivenessAssignment ;
-    pkm:attackerType    pkm:TypeWater ;
-    pkm:defenderType    pkm:TypeBug ;
-    pkm:hasDamageFactor 1.0 ;
-    pkm:hasContext      pkm:Gen6XY .
-
-pkm:TEA_Bug_Water
-    a pkm:TypeEffectivenessAssignment ;
-    pkm:attackerType    pkm:TypeBug ;
-    pkm:defenderType    pkm:TypeWater ;
-    pkm:hasDamageFactor 1.0 ;
-    pkm:hasContext      pkm:Gen6XY .
-
-# --- Save layer ---
-
-pkm:SaveFile_A a pkm:SaveFile ; pkm:hasName "SaveFile-A" .
-
-pkm:OwnedPokemon_1
-    a pkm:OwnedPokemon ;
-    pkm:representsVariant  pkm:FroakieDefault ;
-    pkm:storedInSaveFile   pkm:SaveFile_A ;
-    pkm:ownedByTrainer     pkm:TrainerPlayer ;
-    pkm:hasNature          pkm:NatureTimid ;
-    pkm:hasLevel           5 ;
-    pkm:hasExperience      0 .
-
-pkm:MoveSlot_1_1
-    a pkm:OwnedMoveSlot ;
-    pkm:ownedBy        pkm:OwnedPokemon_1 ;
-    pkm:storedInSaveFile pkm:SaveFile_A ;
-    pkm:knowsMove      pkm:MovePound ;
-    pkm:hasSlot        1 .
-
-pkm:MoveSlot_1_2
-    a pkm:OwnedMoveSlot ;
-    pkm:ownedBy        pkm:OwnedPokemon_1 ;
-    pkm:storedInSaveFile pkm:SaveFile_A ;
-    pkm:knowsMove      pkm:MoveGrowl ;
-    pkm:hasSlot        2 .
-
-pkm:MoveSlot_1_3
-    a pkm:OwnedMoveSlot ;
-    pkm:ownedBy        pkm:OwnedPokemon_1 ;
-    pkm:storedInSaveFile pkm:SaveFile_A ;
-    pkm:knowsMove      pkm:MoveBubble ;
-    pkm:hasSlot        3 .
-
-pkm:IV_Froakie_HP
-    a pkm:IVAssignment ;
-    pkm:aboutOwnedPokemon pkm:OwnedPokemon_1 ;
-    pkm:aboutStat         pkm:StatHP ;
-    pkm:hasIVValue        31 ;
-    pkm:hasContext        pkm:SaveFile_A .
-
-pkm:IV_Froakie_SpAtk
-    a pkm:IVAssignment ;
-    pkm:aboutOwnedPokemon pkm:OwnedPokemon_1 ;
-    pkm:aboutStat         pkm:StatSpAtk ;
-    pkm:hasIVValue        31 ;
-    pkm:hasContext        pkm:SaveFile_A .
-
-pkm:EV_Froakie_SpAtk
-    a pkm:EVAssignment ;
-    pkm:aboutOwnedPokemon pkm:OwnedPokemon_1 ;
-    pkm:aboutStat         pkm:StatSpAtk ;
-    pkm:hasEVValue        0 ;
-    pkm:hasContext        pkm:SaveFile_A .
-
-# --- Battle layer ---
-
-pkm:Battle_1
-    a pkm:Battle ;
-    pkm:operatesUnderRuleset pkm:Gen6XY .
-
-pkm:Side_Player
-    a pkm:BattleSide ;
-    pkm:hasSideIndex 0 .
-
-pkm:Side_Wild
-    a pkm:BattleSide ;
-    pkm:hasSideIndex 1 .
-
-pkm:Combatant_Froakie
-    a pkm:OwnedCombatant ;
-    pkm:participatesInBattle     pkm:Battle_1 ;
-    pkm:onSide                   pkm:Side_Player ;
-    pkm:instantiatesOwnedPokemon pkm:OwnedPokemon_1 ;
-    pkm:isActive                 true ;
-    pkm:hasTeamPosition          1 .
-
-pkm:Combatant_Caterpie
-    a pkm:TransientCombatant ;
-    pkm:participatesInBattle pkm:Battle_1 ;
-    pkm:onSide               pkm:Side_Wild ;
-    pkm:isActive             true .
-
-# --- Instantaneous layer ---
-
-pkm:Instantaneous_1_0
-    a pkm:Instantaneous ;
-    pkm:occursInBattle pkm:Battle_1 ;
-    pkm:hasTurnIndex  1 ;
-    pkm:hasStepIndex  0 .
-
-pkm:HPFact_Froakie
-    a pkm:CurrentHPAssignment ;
-    pkm:aboutCombatant    pkm:Combatant_Froakie ;
-    pkm:hasCurrentHPValue 20 ;
-    pkm:hasContext        pkm:Instantaneous_1_0 .
-
-pkm:HPFact_Caterpie
-    a pkm:CurrentHPAssignment ;
-    pkm:aboutCombatant    pkm:Combatant_Caterpie ;
-    pkm:hasCurrentHPValue 11 ;
-    pkm:hasContext        pkm:Instantaneous_1_0 .
-
-pkm:Stage_Froakie_SpAtk
-    a pkm:StatStageAssignment ;
-    pkm:aboutCombatant pkm:Combatant_Froakie ;
-    pkm:aboutStat      pkm:StatSpAtk ;
-    pkm:hasStageValue  0 ;
-    pkm:hasContext     pkm:Instantaneous_1_0 .
-
-pkm:Stage_Caterpie_Atk
-    a pkm:StatStageAssignment ;
-    pkm:aboutCombatant pkm:Combatant_Caterpie ;
-    pkm:aboutStat      pkm:StatAtk ;
-    pkm:hasStageValue  0 ;
-    pkm:hasContext     pkm:Instantaneous_1_0 .
-
-pkm:PP_MoveSlot_1_3
-    a pkm:CurrentPPAssignment ;
-    pkm:aboutMoveSlot     pkm:MoveSlot_1_3 ;
-    pkm:hasCurrentPPValue 30 ;
-    pkm:hasContext        pkm:Instantaneous_1_0 .
-
-pkm:Transition_1_0_to_1_1
-    a pkm:StateTransition ;
-    pkm:fromInstantaneous       pkm:Instantaneous_1_0 ;
-    pkm:toInstantaneous         pkm:Instantaneous_1_1 ;
-    pkm:transitionOccursInBattle pkm:Battle_1 .
-
-pkm:Instantaneous_1_1
-    a pkm:Instantaneous ;
-    pkm:occursInBattle         pkm:Battle_1 ;
-    pkm:resultsFromTransition  pkm:Transition_1_0_to_1_1 ;
-    pkm:hasPreviousInstantaneous pkm:Instantaneous_1_0 ;
-    pkm:hasTurnIndex  1 ;
-    pkm:hasStepIndex  1 .
-
-
-# =============================================================================
-# MODULE 4B: BATTLE STRUCTURE AND STOCHASTIC RESOLUTION — Version 0.6 Additions
-# =============================================================================
-
-<http://example.org/pokemon-ontology>
-    owl:versionInfo "0.6" .
-
-# BattleSide anchoring
-pkm:BattleSide
-    rdfs:subClassOf [
-        a owl:Restriction ;
-        owl:onProperty pkm:sideOccursInBattle ;
-        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
-        owl:onClass pkm:Battle
-    ] .
-
-pkm:sideOccursInBattle
-    a owl:ObjectProperty ;
-    a owl:FunctionalProperty ;
-    rdfs:label "sideOccursInBattle" ;
-    rdfs:domain pkm:BattleSide ;
-    rdfs:range pkm:Battle .
-
-# Ordered action execution
-pkm:BattleAction
-    rdfs:subClassOf [
-        a owl:Restriction ;
-        owl:onProperty pkm:hasPriorityBracket ;
-        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
-        owl:onDataRange xsd:integer
-    ] ;
-    rdfs:subClassOf [
-        a owl:Restriction ;
-        owl:onProperty pkm:hasResolutionIndex ;
-        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
-        owl:onDataRange xsd:integer
-    ] .
-
-pkm:hasPriorityBracket
-    a owl:DatatypeProperty ;
-    a owl:FunctionalProperty ;
-    rdfs:label "hasPriorityBracket" ;
-    rdfs:comment "Action ordering bracket after all deterministic priority modifiers have been applied for this battle state." ;
-    rdfs:domain pkm:BattleAction ;
-    rdfs:range xsd:integer .
-
-pkm:hasResolutionIndex
-    a owl:DatatypeProperty ;
-    a owl:FunctionalProperty ;
-    rdfs:label "hasResolutionIndex" ;
-    rdfs:comment "Total order within a priority bracket for this concrete action resolution." ;
-    rdfs:domain pkm:BattleAction ;
-    rdfs:range xsd:integer .
-
-# Pseudo-RNG / stochastic resolution vocabulary
-pkm:RandomMechanic
-    a owl:Class ;
-    rdfs:label "RandomMechanic" ;
-    rdfs:subClassOf pkm:Entity ;
-    rdfs:comment "A mechanics-level category of pseudo-random choice, such as an accuracy check, damage roll, secondary-effect roll, critical-hit roll, or multi-hit-count roll." .
-
-pkm:StochasticResolution
-    a owl:Class ;
-    rdfs:label "StochasticResolution" ;
-    rdfs:comment "A battle-local pseudo-random choice point encountered during action resolution. This models the game-engine RNG interface, not metaphysical indeterminism." ;
-    owl:disjointWith pkm:Entity ;
-    owl:disjointWith pkm:Context ;
-    owl:disjointWith pkm:ContextualFact ;
-    owl:disjointWith pkm:OwnedPokemon ;
-    rdfs:subClassOf [
-        a owl:Restriction ;
-        owl:onProperty pkm:stochasticOccursInBattle ;
-        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
-        owl:onClass pkm:Battle
-    ] ;
-    rdfs:subClassOf [
-        a owl:Restriction ;
-        owl:onProperty pkm:realizedInInstantaneous ;
-        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
-        owl:onClass pkm:Instantaneous
-    ] ;
-    rdfs:subClassOf [
-        a owl:Restriction ;
-        owl:onProperty pkm:associatedWithAction ;
-        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
-        owl:onClass pkm:BattleAction
-    ] ;
-    rdfs:subClassOf [
-        a owl:Restriction ;
-        owl:onProperty pkm:hasRandomMechanic ;
-        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
-        owl:onClass pkm:RandomMechanic
-    ] .
-
-pkm:OutcomeBranch
-    a owl:Class ;
-    rdfs:label "OutcomeBranch" ;
-    rdfs:comment "One explicitly modeled branch of a stochastic resolution, with an as-if probability under the applicable ruleset and local battle state." ;
-    owl:disjointWith pkm:Entity ;
-    owl:disjointWith pkm:Context ;
-    owl:disjointWith pkm:ContextualFact ;
-    owl:disjointWith pkm:OwnedPokemon ;
-    rdfs:subClassOf [
-        a owl:Restriction ;
-        owl:onProperty pkm:branchOfResolution ;
-        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
-        owl:onClass pkm:StochasticResolution
-    ] ;
-    rdfs:subClassOf [
-        a owl:Restriction ;
-        owl:onProperty pkm:hasBranchProbability ;
-        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
-        owl:onDataRange xsd:decimal
-    ] .
-
-pkm:associatedWithAction
-    a owl:ObjectProperty ;
-    a owl:FunctionalProperty ;
-    rdfs:label "associatedWithAction" ;
-    rdfs:domain pkm:StochasticResolution ;
-    rdfs:range pkm:BattleAction .
-
-pkm:hasRandomMechanic
-    a owl:ObjectProperty ;
-    a owl:FunctionalProperty ;
-    rdfs:label "hasRandomMechanic" ;
-    rdfs:domain pkm:StochasticResolution ;
-    rdfs:range pkm:RandomMechanic .
-
-pkm:stochasticOccursInBattle
-    a owl:ObjectProperty ;
-    a owl:FunctionalProperty ;
-    rdfs:label "stochasticOccursInBattle" ;
-    rdfs:domain pkm:StochasticResolution ;
-    rdfs:range pkm:Battle .
-
-pkm:realizedInInstantaneous
-    a owl:ObjectProperty ;
-    a owl:FunctionalProperty ;
-    rdfs:label "realizedInInstantaneous" ;
-    rdfs:domain pkm:StochasticResolution ;
-    rdfs:range pkm:Instantaneous .
-
-pkm:hasPossibleBranch
-    a owl:ObjectProperty ;
-    rdfs:label "hasPossibleBranch" ;
-    rdfs:domain pkm:StochasticResolution ;
-    rdfs:range pkm:OutcomeBranch .
-
-pkm:hasRealizedBranch
-    a owl:ObjectProperty ;
-    a owl:FunctionalProperty ;
-    rdfs:label "hasRealizedBranch" ;
-    rdfs:domain pkm:StochasticResolution ;
-    rdfs:range pkm:OutcomeBranch .
-
-pkm:branchOfResolution
-    a owl:ObjectProperty ;
-    a owl:FunctionalProperty ;
-    rdfs:label "branchOfResolution" ;
-    rdfs:domain pkm:OutcomeBranch ;
-    rdfs:range pkm:StochasticResolution .
-
-pkm:branchAppliesToTarget
-    a owl:ObjectProperty ;
-    a owl:FunctionalProperty ;
-    rdfs:label "branchAppliesToTarget" ;
-    rdfs:comment "Optional target scoping for per-target RNG such as spread-move accuracy or per-target secondary effects." ;
-    rdfs:domain pkm:OutcomeBranch ;
-    rdfs:range pkm:BattleParticipant .
-
-pkm:resultsInTargetResolution
-    a owl:ObjectProperty ;
-    rdfs:label "resultsInTargetResolution" ;
-    rdfs:domain pkm:OutcomeBranch ;
-    rdfs:range pkm:TargetResolutionState .
-
-pkm:hasBranchProbability
-    a owl:DatatypeProperty ;
-    a owl:FunctionalProperty ;
-    rdfs:label "hasBranchProbability" ;
-    rdfs:domain pkm:OutcomeBranch ;
-    rdfs:range xsd:decimal .
-
-pkm:hasBranchLabel
-    a owl:DatatypeProperty ;
-    a owl:FunctionalProperty ;
-    rdfs:label "hasBranchLabel" ;
-    rdfs:domain pkm:OutcomeBranch ;
-    rdfs:range xsd:string .
-
-# Canonical random mechanic individuals for reuse
-pkm:RandomMechanic_AccuracyCheck
-    a pkm:RandomMechanic ;
-    pkm:hasName "AccuracyCheck" .
-
-pkm:RandomMechanic_DamageRoll
-    a pkm:RandomMechanic ;
-    pkm:hasName "DamageRoll" .
-
-pkm:RandomMechanic_CriticalHitCheck
-    a pkm:RandomMechanic ;
-    pkm:hasName "CriticalHitCheck" .
-
-pkm:RandomMechanic_SecondaryEffectCheck
-    a pkm:RandomMechanic ;
-    pkm:hasName "SecondaryEffectCheck" .
-
-pkm:RandomMechanic_MultiHitCountCheck
-    a pkm:RandomMechanic ;
-    pkm:hasName "MultiHitCountCheck" .
-
-
 # =============================================================================
 # MODULE 4C: REPLAY PROVENANCE AND OBSERVATION STATUS — Version 0.7 Additions
 # =============================================================================
@@ -2294,7 +2007,6 @@ pkm:KnowledgeStatus_InferredPartialBranchSet
 [ a owl:AllDisjointClasses ;
   owl:members ( pkm:EvidenceArtifact pkm:KnowledgeStatus pkm:StatStageChangeEvent )
 ] .
-
 
 # =============================================================================
 # MODULE 5B: MATERIALIZED BATTLE-STATE EXTENSIONS

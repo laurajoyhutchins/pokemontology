@@ -1,0 +1,330 @@
+# =============================================================================
+# MODULE 3: SAVE STATE — Classes
+# =============================================================================
+
+pkm:OwnedPokemon
+    a owl:Class ;
+    rdfs:label "OwnedPokemon" ;
+    rdfs:comment "An instantiated persistent Pokémon individual within a save file." ;
+    owl:disjointWith pkm:Entity ;
+    owl:disjointWith pkm:Context ;
+    owl:disjointWith pkm:ContextualFact ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:representsVariant ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Variant
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:storedInSaveFile ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:SaveFile
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:ownedByTrainer ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Trainer
+    ] .
+
+pkm:OwnedMoveSlot
+    a owl:Class ;
+    rdfs:label "OwnedMoveSlot" ;
+    rdfs:comment "A move slot belonging to a specific OwnedPokemon in a save file." ;
+    owl:disjointWith pkm:Entity ;
+    owl:disjointWith pkm:Context ;
+    owl:disjointWith pkm:ContextualFact ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:ownedBy ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:OwnedPokemon
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:storedInSaveFile ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:SaveFile
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:knowsMove ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Move
+    ] .
+
+pkm:IVAssignment
+    a owl:Class ;
+    rdfs:label "IVAssignment" ;
+    rdfs:subClassOf pkm:ContextualFact ;
+    rdfs:comment "Records the IV value for one stat of one OwnedPokemon." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:aboutOwnedPokemon ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:OwnedPokemon
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:aboutStat ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Stat
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasIVValue ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onDataRange xsd:integer
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasContext ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:SaveFile
+    ] .
+
+pkm:EVAssignment
+    a owl:Class ;
+    rdfs:label "EVAssignment" ;
+    rdfs:subClassOf pkm:ContextualFact ;
+    rdfs:comment "Records the EV value for one stat of one OwnedPokemon. Total EVs across all six stats must not exceed 510 — enforce in SHACL." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:aboutOwnedPokemon ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:OwnedPokemon
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:aboutStat ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Stat
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasEVValue ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onDataRange xsd:integer
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasContext ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:SaveFile
+    ] .
+
+pkm:InventoryEntry
+    a owl:Class ;
+    rdfs:label "InventoryEntry" ;
+    rdfs:comment "A quantity of an item held in a save file inventory." ;
+    owl:disjointWith pkm:Entity ;
+    owl:disjointWith pkm:Context ;
+    owl:disjointWith pkm:ContextualFact .
+
+pkm:DexRecord
+    a owl:Class ;
+    rdfs:label "DexRecord" ;
+    rdfs:comment "A Pokédex entry recording seen/caught status for a species in a save file." ;
+    owl:disjointWith pkm:Entity ;
+    owl:disjointWith pkm:Context ;
+    owl:disjointWith pkm:ContextualFact .
+
+pkm:SaveFlag
+    a owl:Class ;
+    rdfs:label "SaveFlag" ;
+    rdfs:comment "A boolean game progress flag within a save file." ;
+    owl:disjointWith pkm:Entity ;
+    owl:disjointWith pkm:Context ;
+    owl:disjointWith pkm:ContextualFact .
+
+pkm:SaveStatusAssignment
+    a owl:Class ;
+    rdfs:label "SaveStatusAssignment" ;
+    rdfs:subClassOf pkm:ContextualFact ;
+    rdfs:comment "Persists a non-volatile status condition on an OwnedPokemon in the save file (i.e. outside of battle)." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:aboutOwnedPokemon ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:OwnedPokemon
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasStatusCondition ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:StatusCondition
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasContext ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:SaveFile
+    ] .
+
+
+# =============================================================================
+# MODULE 3: SAVE STATE — Disjointness
+# =============================================================================
+
+[ a owl:AllDisjointClasses ;
+  owl:members (
+    pkm:IVAssignment pkm:EVAssignment pkm:StatAssignment
+    pkm:SaveStatusAssignment
+  )
+] .
+
+pkm:IVAssignment owl:disjointWith pkm:EVAssignment .
+pkm:SaveStatusAssignment owl:disjointWith pkm:IVAssignment .
+pkm:SaveStatusAssignment owl:disjointWith pkm:EVAssignment .
+
+
+# =============================================================================
+# MODULE 3: SAVE STATE — Object Properties
+# =============================================================================
+
+pkm:representsVariant
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "representsVariant" ;
+    rdfs:domain pkm:OwnedPokemon ;
+    rdfs:range pkm:Variant .
+
+pkm:storedInSaveFile
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "storedInSaveFile" ;
+    rdfs:range pkm:SaveFile .
+
+pkm:ownedByTrainer
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "ownedByTrainer" ;
+    rdfs:domain pkm:OwnedPokemon ;
+    rdfs:range pkm:Trainer .
+
+pkm:ownedBy
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "ownedBy" ;
+    rdfs:domain pkm:OwnedMoveSlot ;
+    rdfs:range pkm:OwnedPokemon .
+
+pkm:knowsMove
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "knowsMove" ;
+    rdfs:domain pkm:OwnedMoveSlot ;
+    rdfs:range pkm:Move .
+
+pkm:hasNature
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasNature" ;
+    rdfs:domain pkm:OwnedPokemon ;
+    rdfs:range pkm:Nature .
+
+pkm:holdsItem
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "holdsItem" ;
+    rdfs:domain pkm:OwnedPokemon ;
+    rdfs:range pkm:Item .
+
+pkm:aboutOwnedPokemon
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "aboutOwnedPokemon" ;
+    rdfs:range pkm:OwnedPokemon .
+
+pkm:inventoryItem
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "inventoryItem" ;
+    rdfs:domain pkm:InventoryEntry ;
+    rdfs:range pkm:Item .
+
+pkm:originatesFromVersionGroup
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "originatesFromVersionGroup" ;
+    rdfs:domain pkm:SaveFile ;
+    rdfs:range pkm:VersionGroup ;
+    rdfs:comment "Links a SaveFile to its governing VersionGroup. Traversal path to applicable Ruleset: SaveFile → VersionGroup → Ruleset → StatAssignment. Note: a VersionGroup may map to multiple Rulesets (e.g. different competitive formats); resolve the applicable Ruleset at the Battle level via operatesUnderRuleset." .
+
+pkm:hasStatusCondition
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasStatusCondition" ;
+    rdfs:range pkm:StatusCondition ;
+    rdfs:comment "Links a SaveStatusAssignment or CurrentStatusAssignment to the StatusCondition entity it applies." .
+
+
+# =============================================================================
+# MODULE 3: SAVE STATE — Data Properties
+# =============================================================================
+
+pkm:hasLevel
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasLevel" ;
+    rdfs:domain pkm:OwnedPokemon ;
+    rdfs:range xsd:integer .
+
+pkm:hasExperience
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasExperience" ;
+    rdfs:domain pkm:OwnedPokemon ;
+    rdfs:range xsd:integer .
+
+pkm:hasIVValue
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasIVValue" ;
+    rdfs:domain pkm:IVAssignment ;
+    rdfs:range xsd:integer ;
+    rdfs:comment "Range: 0–31. Enforce upper bound in SHACL." .
+
+pkm:hasEVValue
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasEVValue" ;
+    rdfs:domain pkm:EVAssignment ;
+    rdfs:range xsd:integer ;
+    rdfs:comment "Range: 0–252 per stat. Total across six stats must not exceed 510. Enforce in SHACL." .
+
+pkm:hasBoxIndex
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasBoxIndex" ;
+    rdfs:domain pkm:OwnedPokemon ;
+    rdfs:range xsd:integer .
+
+pkm:hasPartySlot
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasPartySlot" ;
+    rdfs:domain pkm:OwnedPokemon ;
+    rdfs:range xsd:integer .
+
+pkm:hasQuantity
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasQuantity" ;
+    rdfs:domain pkm:InventoryEntry ;
+    rdfs:range xsd:integer .
+
+pkm:isSeen
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "isSeen" ;
+    rdfs:domain pkm:DexRecord ;
+    rdfs:range xsd:boolean .
+
+pkm:isCaught
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "isCaught" ;
+    rdfs:domain pkm:DexRecord ;
+    rdfs:range xsd:boolean .

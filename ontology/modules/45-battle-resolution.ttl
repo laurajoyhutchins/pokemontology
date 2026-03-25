@@ -1,0 +1,211 @@
+# =============================================================================
+# MODULE 4B: BATTLE STRUCTURE AND STOCHASTIC RESOLUTION — Version 0.6 Additions
+# =============================================================================
+
+<http://example.org/pokemon-ontology>
+    owl:versionInfo "0.6" .
+
+# BattleSide anchoring
+pkm:BattleSide
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:sideOccursInBattle ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Battle
+    ] .
+
+pkm:sideOccursInBattle
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "sideOccursInBattle" ;
+    rdfs:domain pkm:BattleSide ;
+    rdfs:range pkm:Battle .
+
+# Ordered action execution
+pkm:BattleAction
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasPriorityBracket ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onDataRange xsd:integer
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasResolutionIndex ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onDataRange xsd:integer
+    ] .
+
+pkm:hasPriorityBracket
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasPriorityBracket" ;
+    rdfs:comment "Action ordering bracket after all deterministic priority modifiers have been applied for this battle state." ;
+    rdfs:domain pkm:BattleAction ;
+    rdfs:range xsd:integer .
+
+pkm:hasResolutionIndex
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasResolutionIndex" ;
+    rdfs:comment "Total order within a priority bracket for this concrete action resolution." ;
+    rdfs:domain pkm:BattleAction ;
+    rdfs:range xsd:integer .
+
+# Pseudo-RNG / stochastic resolution vocabulary
+pkm:RandomMechanic
+    a owl:Class ;
+    rdfs:label "RandomMechanic" ;
+    rdfs:subClassOf pkm:Entity ;
+    rdfs:comment "A mechanics-level category of pseudo-random choice, such as an accuracy check, damage roll, secondary-effect roll, critical-hit roll, or multi-hit-count roll." .
+
+pkm:StochasticResolution
+    a owl:Class ;
+    rdfs:label "StochasticResolution" ;
+    rdfs:comment "A battle-local pseudo-random choice point encountered during action resolution. This models the game-engine RNG interface, not metaphysical indeterminism." ;
+    owl:disjointWith pkm:Entity ;
+    owl:disjointWith pkm:Context ;
+    owl:disjointWith pkm:ContextualFact ;
+    owl:disjointWith pkm:OwnedPokemon ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:stochasticOccursInBattle ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Battle
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:realizedInInstantaneous ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Instantaneous
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:associatedWithAction ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:BattleAction
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasRandomMechanic ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:RandomMechanic
+    ] .
+
+pkm:OutcomeBranch
+    a owl:Class ;
+    rdfs:label "OutcomeBranch" ;
+    rdfs:comment "One explicitly modeled branch of a stochastic resolution, with an as-if probability under the applicable ruleset and local battle state." ;
+    owl:disjointWith pkm:Entity ;
+    owl:disjointWith pkm:Context ;
+    owl:disjointWith pkm:ContextualFact ;
+    owl:disjointWith pkm:OwnedPokemon ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:branchOfResolution ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:StochasticResolution
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasBranchProbability ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onDataRange xsd:decimal
+    ] .
+
+pkm:associatedWithAction
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "associatedWithAction" ;
+    rdfs:domain pkm:StochasticResolution ;
+    rdfs:range pkm:BattleAction .
+
+pkm:hasRandomMechanic
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasRandomMechanic" ;
+    rdfs:domain pkm:StochasticResolution ;
+    rdfs:range pkm:RandomMechanic .
+
+pkm:stochasticOccursInBattle
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "stochasticOccursInBattle" ;
+    rdfs:domain pkm:StochasticResolution ;
+    rdfs:range pkm:Battle .
+
+pkm:realizedInInstantaneous
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "realizedInInstantaneous" ;
+    rdfs:domain pkm:StochasticResolution ;
+    rdfs:range pkm:Instantaneous .
+
+pkm:hasPossibleBranch
+    a owl:ObjectProperty ;
+    rdfs:label "hasPossibleBranch" ;
+    rdfs:domain pkm:StochasticResolution ;
+    rdfs:range pkm:OutcomeBranch .
+
+pkm:hasRealizedBranch
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasRealizedBranch" ;
+    rdfs:domain pkm:StochasticResolution ;
+    rdfs:range pkm:OutcomeBranch .
+
+pkm:branchOfResolution
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "branchOfResolution" ;
+    rdfs:domain pkm:OutcomeBranch ;
+    rdfs:range pkm:StochasticResolution .
+
+pkm:branchAppliesToTarget
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "branchAppliesToTarget" ;
+    rdfs:comment "Optional target scoping for per-target RNG such as spread-move accuracy or per-target secondary effects." ;
+    rdfs:domain pkm:OutcomeBranch ;
+    rdfs:range pkm:BattleParticipant .
+
+pkm:resultsInTargetResolution
+    a owl:ObjectProperty ;
+    rdfs:label "resultsInTargetResolution" ;
+    rdfs:domain pkm:OutcomeBranch ;
+    rdfs:range pkm:TargetResolutionState .
+
+pkm:hasBranchProbability
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasBranchProbability" ;
+    rdfs:domain pkm:OutcomeBranch ;
+    rdfs:range xsd:decimal .
+
+pkm:hasBranchLabel
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasBranchLabel" ;
+    rdfs:domain pkm:OutcomeBranch ;
+    rdfs:range xsd:string .
+
+# Canonical random mechanic individuals for reuse
+pkm:RandomMechanic_AccuracyCheck
+    a pkm:RandomMechanic ;
+    pkm:hasName "AccuracyCheck" .
+
+pkm:RandomMechanic_DamageRoll
+    a pkm:RandomMechanic ;
+    pkm:hasName "DamageRoll" .
+
+pkm:RandomMechanic_CriticalHitCheck
+    a pkm:RandomMechanic ;
+    pkm:hasName "CriticalHitCheck" .
+
+pkm:RandomMechanic_SecondaryEffectCheck
+    a pkm:RandomMechanic ;
+    pkm:hasName "SecondaryEffectCheck" .
+
+pkm:RandomMechanic_MultiHitCountCheck
+    a pkm:RandomMechanic ;
+    pkm:hasName "MultiHitCountCheck" .

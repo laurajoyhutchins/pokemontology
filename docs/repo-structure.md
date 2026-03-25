@@ -13,8 +13,10 @@ This project is easiest to maintain if it keeps three layers separate:
 
 ## Current directories
 
-- `ontology/` — canonical ontology file
+- `build/` — consumer-facing built ontology artifact
+- `ontology/modules/` — modular ontology source fragments
 - `shapes/` — SHACL constraints
+- `examples/fixtures/` — seed/example RDF fixtures kept out of the ontology schema
 - `examples/replays/` — source replay payloads
 - `examples/slices/` — replay-derived RDF examples
 - `scripts/` — utility scripts

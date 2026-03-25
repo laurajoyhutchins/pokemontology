@@ -1,0 +1,286 @@
+# =============================================================================
+# MODULE 5: INSTANTANEOUS STATE — Classes
+# =============================================================================
+
+pkm:CombatantState
+    a owl:Class ;
+    rdfs:label "CombatantState" ;
+    rdfs:subClassOf pkm:ContextualFact ;
+    rdfs:comment "Aggregate state container for a combatant at an instantaneous snapshot. Optional convenience class." .
+
+
+pkm:MaterializedStateAssignment
+    a owl:Class ;
+    rdfs:label "MaterializedStateAssignment" ;
+    rdfs:subClassOf pkm:ContextualFact ;
+    rdfs:comment "A forward-projected or directly observed state assignment attached to an Instantaneous so queries can read current state without replaying the full event history." .
+
+pkm:ProjectionProfile
+    a owl:Class ;
+    rdfs:label "ProjectionProfile" ;
+    rdfs:comment "A named profile describing which state dimensions are intended to be materialized on an Instantaneous and whether the projection is sparse, partial, or complete for those dimensions." ;
+    owl:disjointWith pkm:Entity ;
+    owl:disjointWith pkm:Context ;
+    owl:disjointWith pkm:ContextualFact .
+
+pkm:ParticipantStateAssignment
+    a owl:Class ;
+    rdfs:label "ParticipantStateAssignment" ;
+    rdfs:subClassOf pkm:ContextualFact ;
+    rdfs:subClassOf pkm:MaterializedStateAssignment ;
+    rdfs:comment "Abstract superclass for materialized instantaneous assignments whose subject is a BattleParticipant." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:aboutCombatant ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:BattleParticipant
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasContext ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Instantaneous
+    ] .
+
+pkm:FieldStateAssignment
+    a owl:Class ;
+    rdfs:label "FieldStateAssignment" ;
+    rdfs:subClassOf pkm:FieldState ;
+    rdfs:comment "Abstract superclass for materialized instantaneous assignments whose subject is the battle field as a whole." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:aboutField ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Battle
+    ] .
+
+pkm:SideStateAssignment
+    a owl:Class ;
+    rdfs:label "SideStateAssignment" ;
+    rdfs:subClassOf pkm:SideState ;
+    rdfs:comment "Abstract superclass for materialized instantaneous assignments whose subject is a single BattleSide." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:aboutSide ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:BattleSide
+    ] .
+
+pkm:CurrentHPAssignment
+    a owl:Class ;
+    rdfs:label "CurrentHPAssignment" ;
+    rdfs:subClassOf pkm:ParticipantStateAssignment ;
+    rdfs:comment "Records the current HP of a battle participant at an instantaneous state." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasCurrentHPValue ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onDataRange xsd:integer
+    ] .
+
+pkm:CurrentPPAssignment
+    a owl:Class ;
+    rdfs:label "CurrentPPAssignment" ;
+    rdfs:subClassOf pkm:ContextualFact ;
+    rdfs:subClassOf pkm:MaterializedStateAssignment ;
+    rdfs:comment "Records the current PP of a move slot at an instantaneous state." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:aboutMoveSlot ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:OwnedMoveSlot
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasCurrentPPValue ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onDataRange xsd:integer
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasContext ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Instantaneous
+    ] .
+
+pkm:StatStageAssignment
+    a owl:Class ;
+    rdfs:label "StatStageAssignment" ;
+    rdfs:subClassOf pkm:ParticipantStateAssignment ;
+    rdfs:comment "Records the current stat stage modifier for one stat of one battle participant at an instantaneous state." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:aboutStat ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Stat
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasStageValue ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onDataRange xsd:integer
+    ] .
+
+pkm:VolatileStatusAssignment
+    a owl:Class ;
+    rdfs:label "VolatileStatusAssignment" ;
+    rdfs:subClassOf pkm:ParticipantStateAssignment ;
+    rdfs:comment "Records a volatile status condition on a battle participant at an instantaneous state." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasVolatileCondition ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:VolatileCondition
+    ] .
+
+pkm:FieldState
+    a owl:Class ;
+    rdfs:label "FieldState" ;
+    rdfs:subClassOf pkm:ContextualFact ;
+    rdfs:subClassOf pkm:MaterializedStateAssignment ;
+    rdfs:comment "Records field-wide state (weather, terrain) at an instantaneous snapshot." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasContext ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Instantaneous
+    ] .
+
+pkm:SideState
+    a owl:Class ;
+    rdfs:label "SideState" ;
+    rdfs:subClassOf pkm:ContextualFact ;
+    rdfs:subClassOf pkm:MaterializedStateAssignment ;
+    rdfs:comment "Records side-specific state at an instantaneous snapshot." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasContext ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Instantaneous
+    ] .
+
+pkm:PendingAction
+    a owl:Class ;
+    rdfs:label "PendingAction" ;
+    rdfs:subClassOf pkm:ContextualFact ;
+    rdfs:comment "Records a declared but not yet resolved action at an instantaneous state." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasContext ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Instantaneous
+    ] .
+
+pkm:CurrentTransformationAssignment
+    a owl:Class ;
+    rdfs:label "CurrentTransformationAssignment" ;
+    rdfs:subClassOf pkm:ParticipantStateAssignment ;
+    rdfs:comment "Assigns a temporary transformation state to a battle participant at one instantaneous state. This captures battle-only overlays without mutating the underlying OwnedPokemon or base Variant." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasTransformationState ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:TransformationState
+    ] .
+
+pkm:CurrentStatusAssignment
+    a owl:Class ;
+    rdfs:label "CurrentStatusAssignment" ;
+    rdfs:subClassOf pkm:ParticipantStateAssignment ;
+    rdfs:comment "Records a non-volatile status condition on a battle participant at an instantaneous state." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasStatusCondition ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:StatusCondition
+    ] .
+
+pkm:StatStageAssignment owl:disjointWith pkm:StatAssignment .
+pkm:CurrentHPAssignment owl:disjointWith pkm:StatStageAssignment .
+pkm:CurrentStatusAssignment owl:disjointWith pkm:SaveStatusAssignment .
+
+
+# =============================================================================
+# MODULE 5: INSTANTANEOUS STATE — Object Properties
+# =============================================================================
+
+pkm:aboutCombatant
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "aboutCombatant" ;
+    rdfs:range pkm:BattleParticipant .
+
+pkm:aboutMoveSlot
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "aboutMoveSlot" ;
+    rdfs:range pkm:OwnedMoveSlot .
+
+pkm:aboutField
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "aboutField" ;
+    rdfs:domain pkm:FieldState ;
+    rdfs:range pkm:Battle .
+
+pkm:aboutSide
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "aboutSide" ;
+    rdfs:domain pkm:SideState ;
+    rdfs:range pkm:BattleSide .
+
+pkm:hasTransformationState
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasTransformationState" ;
+    rdfs:domain pkm:CurrentTransformationAssignment ;
+    rdfs:range pkm:TransformationState ;
+    rdfs:comment "The active temporary transformation applied to a battle participant at a given instantaneous state." .
+
+
+# =============================================================================
+# MODULE 5: INSTANTANEOUS STATE — Data Properties
+# =============================================================================
+
+pkm:hasCurrentHPValue
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasCurrentHPValue" ;
+    rdfs:domain pkm:CurrentHPAssignment ;
+    rdfs:range xsd:integer .
+
+pkm:hasCurrentPPValue
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasCurrentPPValue" ;
+    rdfs:domain pkm:CurrentPPAssignment ;
+    rdfs:range xsd:integer .
+
+pkm:hasStageValue
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasStageValue" ;
+    rdfs:domain pkm:StatStageAssignment ;
+    rdfs:range xsd:integer ;
+    rdfs:comment "Range: -6 to +6. Enforce bounds in SHACL." .
+
+pkm:hasRemainingDuration
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasRemainingDuration" ;
+    rdfs:range xsd:integer .
+
+pkm:hasTurnIndex
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasTurnIndex" ;
+    rdfs:domain pkm:Instantaneous ;
+    rdfs:range xsd:integer .
+
+pkm:hasStepIndex
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasStepIndex" ;
+    rdfs:domain pkm:Instantaneous ;
+    rdfs:range xsd:integer .

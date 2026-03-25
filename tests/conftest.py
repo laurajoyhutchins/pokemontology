@@ -12,7 +12,7 @@ REPO = Path(__file__).parent.parent
 @pytest.fixture(scope="session")
 def ontology_graph() -> Graph:
     g = Graph()
-    g.parse(REPO / "ontology" / "pokemon-mechanics-ontology.ttl", format="turtle")
+    g.parse(REPO / "build" / "ontology.ttl", format="turtle")
     return g
 
 

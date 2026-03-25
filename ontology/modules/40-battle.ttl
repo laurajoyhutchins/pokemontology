@@ -1,0 +1,214 @@
+# =============================================================================
+# MODULE 4: BATTLE — Classes
+# =============================================================================
+
+pkm:BattleSide
+    a owl:Class ;
+    rdfs:label "BattleSide" ;
+    rdfs:comment "One side of a battle (player side or opponent side)." ;
+    owl:disjointWith pkm:Entity ;
+    owl:disjointWith pkm:Context ;
+    owl:disjointWith pkm:ContextualFact ;
+    owl:disjointWith pkm:OwnedPokemon .
+
+pkm:BattleParticipant
+    a owl:Class ;
+    rdfs:label "BattleParticipant" ;
+    rdfs:comment "An encounter-local participant identity. All battle-state facts attach to this layer rather than directly to species or save entities." ;
+    owl:disjointWith pkm:Entity ;
+    owl:disjointWith pkm:Context ;
+    owl:disjointWith pkm:ContextualFact ;
+    owl:disjointWith pkm:OwnedPokemon ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:participatesInBattle ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Battle
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:onSide ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:BattleSide
+    ] .
+
+pkm:BattleCombatant
+    a owl:Class ;
+    rdfs:label "BattleCombatant" ;
+    owl:equivalentClass pkm:BattleParticipant ;
+    owl:deprecated "true"^^xsd:boolean ;
+    rdfs:comment "Deprecated compatibility alias for BattleParticipant. It remains only for legacy interoperability and should not be used in new data or shapes." .
+
+pkm:OwnedCombatant
+    a owl:Class ;
+    rdfs:label "OwnedCombatant" ;
+    rdfs:subClassOf pkm:BattleParticipant ;
+    rdfs:comment "A combatant that instantiates an OwnedPokemon from a save file." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:instantiatesOwnedPokemon ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:OwnedPokemon
+    ] .
+
+pkm:TransientCombatant
+    a owl:Class ;
+    rdfs:label "TransientCombatant" ;
+    rdfs:subClassOf pkm:BattleParticipant ;
+    rdfs:comment "A combatant with no OwnedPokemon backing (e.g. wild Pokémon, NPC trainer Pokémon not tracked in a save file)." .
+
+pkm:OwnedCombatant owl:disjointWith pkm:TransientCombatant .
+
+pkm:FieldEffect
+    a owl:Class ;
+    rdfs:label "FieldEffect" ;
+    rdfs:comment "A global field effect active during a battle (e.g. weather, terrain)." ;
+    owl:disjointWith pkm:Entity ;
+    owl:disjointWith pkm:Context ;
+    owl:disjointWith pkm:ContextualFact .
+
+pkm:SideEffect
+    a owl:Class ;
+    rdfs:label "SideEffect" ;
+    rdfs:comment "A side-specific effect active during a battle (e.g. Reflect, Spikes)." ;
+    owl:disjointWith pkm:Entity ;
+    owl:disjointWith pkm:Context ;
+    owl:disjointWith pkm:ContextualFact .
+
+pkm:BattleAction
+    a owl:Class ;
+    rdfs:label "BattleAction" ;
+    rdfs:subClassOf pkm:Action ;
+    rdfs:comment "A declared action within a battle turn." .
+
+pkm:StateTransition
+    a owl:Class ;
+    rdfs:label "StateTransition" ;
+    rdfs:comment "A directed transition from one instantaneous battle state to the next, optionally triggered by an action." ;
+    owl:disjointWith pkm:Entity ;
+    owl:disjointWith pkm:Context ;
+    owl:disjointWith pkm:ContextualFact ;
+    owl:disjointWith pkm:OwnedPokemon ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:fromInstantaneous ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Instantaneous
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:toInstantaneous ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Instantaneous
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:transitionOccursInBattle ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Battle
+    ] .
+
+
+# =============================================================================
+# MODULE 4: BATTLE — Object Properties
+# =============================================================================
+
+pkm:participatesInBattle
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "participatesInBattle" ;
+    rdfs:domain pkm:BattleParticipant ;
+    rdfs:range pkm:Battle .
+
+pkm:onSide
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "onSide" ;
+    rdfs:domain pkm:BattleParticipant ;
+    rdfs:range pkm:BattleSide .
+
+pkm:instantiatesOwnedPokemon
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "instantiatesOwnedPokemon" ;
+    rdfs:comment "Inverse functional only within a single battle — enforce per-battle uniqueness in SHACL." ;
+    rdfs:domain pkm:OwnedCombatant ;
+    rdfs:range pkm:OwnedPokemon .
+
+pkm:hasActiveCombatant
+    a owl:ObjectProperty ;
+    rdfs:label "hasActiveCombatant" ;
+    rdfs:domain pkm:BattleSide ;
+    rdfs:range pkm:BattleParticipant .
+
+pkm:hasFieldEffect
+    a owl:ObjectProperty ;
+    rdfs:label "hasFieldEffect" ;
+    rdfs:domain pkm:Battle ;
+    rdfs:range pkm:FieldEffect .
+
+pkm:hasSideEffect
+    a owl:ObjectProperty ;
+    rdfs:label "hasSideEffect" ;
+    rdfs:domain pkm:BattleSide ;
+    rdfs:range pkm:SideEffect .
+
+pkm:declaresAction
+    a owl:ObjectProperty ;
+    rdfs:label "declaresAction" ;
+    rdfs:domain pkm:BattleParticipant ;
+    rdfs:range pkm:BattleAction .
+
+pkm:fromInstantaneous
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "fromInstantaneous" ;
+    rdfs:domain pkm:StateTransition ;
+    rdfs:range pkm:Instantaneous .
+
+pkm:toInstantaneous
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "toInstantaneous" ;
+    rdfs:domain pkm:StateTransition ;
+    rdfs:range pkm:Instantaneous .
+
+pkm:triggeredByAction
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "triggeredByAction" ;
+    rdfs:domain pkm:StateTransition ;
+    rdfs:range pkm:BattleAction .
+
+pkm:transitionOccursInBattle
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "transitionOccursInBattle" ;
+    rdfs:domain pkm:StateTransition ;
+    rdfs:range pkm:Battle .
+
+
+# =============================================================================
+# MODULE 4: BATTLE — Data Properties
+# =============================================================================
+
+pkm:hasSideIndex
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasSideIndex" ;
+    rdfs:domain pkm:BattleSide ;
+    rdfs:range xsd:integer .
+
+pkm:isActive
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "isActive" ;
+    rdfs:domain pkm:BattleParticipant ;
+    rdfs:range xsd:boolean .
+
+pkm:hasTeamPosition
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasTeamPosition" ;
+    rdfs:domain pkm:BattleParticipant ;
+    rdfs:range xsd:integer .

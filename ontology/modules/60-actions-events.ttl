@@ -1,0 +1,199 @@
+# =============================================================================
+# MODULE 6: ACTIONS AND EVENTS
+# =============================================================================
+
+pkm:MoveUseAction
+    a owl:Class ;
+    rdfs:label "MoveUseAction" ;
+    rdfs:subClassOf pkm:BattleAction .
+
+pkm:SwitchAction
+    a owl:Class ;
+    rdfs:label "SwitchAction" ;
+    rdfs:subClassOf pkm:BattleAction .
+
+pkm:ItemUseAction
+    a owl:Class ;
+    rdfs:label "ItemUseAction" ;
+    rdfs:subClassOf pkm:BattleAction .
+
+[ a owl:AllDisjointClasses ;
+  owl:members ( pkm:MoveUseAction pkm:SwitchAction pkm:ItemUseAction )
+] .
+
+# TargetResolutionState: per-target, per-step outcome fact.
+# Replaces the former per-action functional properties
+# resolvedInInstantaneous / failedInInstantaneous / abortedInInstantaneous,
+# which could not model partial resolution across multiple targets (e.g. Earthquake).
+# Each spread move hit produces one TargetResolutionState individual per target per step.
+pkm:TargetResolutionState
+    a owl:Class ;
+    rdfs:label "TargetResolutionState" ;
+    rdfs:subClassOf pkm:ContextualFact ;
+    rdfs:comment "Records the execution outcome of a BattleAction against one specific target at one Instantaneous step. Enables per-target resolution modeling for spread moves and multi-hit sequences." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:aboutAction ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:BattleAction
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:aboutTarget ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:BattleParticipant
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasResolutionOutcome ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onDataRange xsd:string
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasContext ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Instantaneous
+    ] .
+
+pkm:DamageEvent
+    a owl:Class ;
+    rdfs:label "DamageEvent" ;
+    rdfs:subClassOf pkm:Event .
+
+pkm:HealingEvent
+    a owl:Class ;
+    rdfs:label "HealingEvent" ;
+    rdfs:subClassOf pkm:Event .
+
+pkm:StatusInflictionEvent
+    a owl:Class ;
+    rdfs:label "StatusInflictionEvent" ;
+    rdfs:subClassOf pkm:Event .
+
+pkm:FaintEvent
+    a owl:Class ;
+    rdfs:label "FaintEvent" ;
+    rdfs:subClassOf pkm:Event .
+
+pkm:SwitchEvent
+    a owl:Class ;
+    rdfs:label "SwitchEvent" ;
+    rdfs:subClassOf pkm:Event .
+
+[ a owl:AllDisjointClasses ;
+  owl:members (
+    pkm:DamageEvent pkm:HealingEvent pkm:StatusInflictionEvent
+    pkm:FaintEvent pkm:SwitchEvent
+  )
+] .
+
+pkm:TargetResolutionState owl:disjointWith pkm:CurrentHPAssignment .
+pkm:TargetResolutionState owl:disjointWith pkm:StatStageAssignment .
+pkm:TargetResolutionState owl:disjointWith pkm:CurrentStatusAssignment .
+
+# Action properties
+pkm:actor
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "actor" ;
+    rdfs:domain pkm:BattleAction ;
+    rdfs:range pkm:BattleParticipant .
+
+# Deprecated: pkm:target (single-target assumption).
+# Replaced by hasDeclaredTarget and hasResolvedTarget to model
+# redirection mechanics (Follow Me, Storm Drain, Ally Switch).
+# hasDeclaredTarget: player intent at declaration time (PendingAction phase).
+# hasResolvedTarget: final calculated target at execution time.
+# Neither is functional — spread moves have multiple targets.
+pkm:hasDeclaredTarget
+    a owl:ObjectProperty ;
+    rdfs:label "hasDeclaredTarget" ;
+    rdfs:domain pkm:BattleAction ;
+    rdfs:range pkm:BattleParticipant ;
+    rdfs:comment "The target selected by the player during the declaration phase. May differ from hasResolvedTarget if redirection occurs (e.g. Follow Me, Storm Drain)." .
+
+pkm:hasResolvedTarget
+    a owl:ObjectProperty ;
+    rdfs:label "hasResolvedTarget" ;
+    rdfs:domain pkm:BattleAction ;
+    rdfs:range pkm:BattleParticipant ;
+    rdfs:comment "The final target evaluated at execution time after all redirection mechanics have been applied." .
+
+pkm:usesMove
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "usesMove" ;
+    rdfs:domain pkm:MoveUseAction ;
+    rdfs:range pkm:Move .
+
+pkm:usesItem
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "usesItem" ;
+    rdfs:domain pkm:ItemUseAction ;
+    rdfs:range pkm:Item .
+
+pkm:declaredInInstantaneous
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "declaredInInstantaneous" ;
+    rdfs:domain pkm:BattleAction ;
+    rdfs:range pkm:Instantaneous .
+
+# initiatedInInstantaneous: replaces the former binary resolved/aborted
+# distinction on BattleAction. The action is marked initiated at the step
+# where execution begins. Subsequent step indices in the event log determine
+# whether the action completed, partially completed (multi-hit abort via
+# FaintEvent on attacker), or was aborted before any execution.
+pkm:initiatedInInstantaneous
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "initiatedInInstantaneous" ;
+    rdfs:domain pkm:BattleAction ;
+    rdfs:range pkm:Instantaneous ;
+    rdfs:comment "The Instantaneous state at which this action began execution. Use the event log at subsequent hasStepIndex values to determine completion vs. mid-execution abort." .
+
+# TargetResolutionState properties
+pkm:aboutAction
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "aboutAction" ;
+    rdfs:domain pkm:TargetResolutionState ;
+    rdfs:range pkm:BattleAction .
+
+pkm:aboutTarget
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "aboutTarget" ;
+    rdfs:domain pkm:TargetResolutionState ;
+    rdfs:range pkm:BattleParticipant .
+
+pkm:hasResolutionOutcome
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasResolutionOutcome" ;
+    rdfs:domain pkm:TargetResolutionState ;
+    rdfs:range xsd:string ;
+    rdfs:comment "Outcome of this action against this specific target. Recommended values: 'resolved', 'failed', 'aborted'. Enforce controlled vocabulary in SHACL." .
+
+# Event properties
+pkm:causedByAction
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "causedByAction" ;
+    rdfs:domain pkm:Event ;
+    rdfs:range pkm:BattleAction .
+
+pkm:affectsCombatant
+    a owl:ObjectProperty ;
+    rdfs:label "affectsCombatant" ;
+    rdfs:domain pkm:Event ;
+    rdfs:range pkm:BattleParticipant .
+
+pkm:occursInInstantaneous
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "occursInInstantaneous" ;
+    rdfs:domain pkm:Event ;
+    rdfs:range pkm:Instantaneous .

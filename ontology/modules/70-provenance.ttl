@@ -1,0 +1,109 @@
+# =============================================================================
+# MODULE 4C: REPLAY PROVENANCE AND OBSERVATION STATUS — Version 0.7 Additions
+# =============================================================================
+
+<http://example.org/pokemon-ontology>
+    owl:versionInfo "0.7" .
+
+pkm:EvidenceArtifact
+    a owl:Class ;
+    rdfs:label "EvidenceArtifact" ;
+    rdfs:subClassOf pkm:Entity ;
+    rdfs:comment "A source artifact used to justify modeled battle facts, such as a replay log or official battle video." .
+
+pkm:ReplayArtifact
+    a owl:Class ;
+    rdfs:label "ReplayArtifact" ;
+    rdfs:subClassOf pkm:EvidenceArtifact ;
+    rdfs:comment "A machine-readable replay source, such as a Pokémon Showdown replay JSON or log." .
+
+pkm:KnowledgeStatus
+    a owl:Class ;
+    rdfs:label "KnowledgeStatus" ;
+    rdfs:subClassOf pkm:Entity ;
+    rdfs:comment "Epistemic status for a modeled stochastic resolution or branch set." .
+
+pkm:StatStageChangeEvent
+    a owl:Class ;
+    rdfs:label "StatStageChangeEvent" ;
+    rdfs:subClassOf pkm:Event ;
+    rdfs:comment "An event that changes one combatant's stage modifier for a specific stat." .
+
+pkm:supportedByArtifact
+    a owl:ObjectProperty ;
+    rdfs:label "supportedByArtifact" ;
+    rdfs:range pkm:EvidenceArtifact ;
+    rdfs:comment "Links a modeled node to an evidence artifact supporting it." .
+
+pkm:hasKnowledgeStatus
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasKnowledgeStatus" ;
+    rdfs:comment "Marks whether a stochastic resolution is merely observed, inferred as a complete branch set, or only partially modeled." ;
+    rdfs:range pkm:KnowledgeStatus .
+
+pkm:hasReplayIdentifier
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasReplayIdentifier" ;
+    rdfs:domain pkm:ReplayArtifact ;
+    rdfs:range xsd:string .
+
+pkm:hasSourceURL
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasSourceURL" ;
+    rdfs:domain pkm:EvidenceArtifact ;
+    rdfs:range xsd:anyURI .
+
+pkm:hasReplayTurnIndex
+    a owl:DatatypeProperty ;
+    rdfs:label "hasReplayTurnIndex" ;
+    rdfs:range xsd:integer ;
+    rdfs:comment "Turn number in the replay log to which a modeled node is anchored." .
+
+pkm:hasReplayEventOrder
+    a owl:DatatypeProperty ;
+    rdfs:label "hasReplayEventOrder" ;
+    rdfs:range xsd:integer ;
+    rdfs:comment "Order of the anchored event within one replay turn." .
+
+pkm:hasReplayStepLabel
+    a owl:DatatypeProperty ;
+    rdfs:label "hasReplayStepLabel" ;
+    rdfs:range xsd:string ;
+    rdfs:comment "Human-readable replay anchor, such as turn-4-action-3 or post-turn-3-switch." .
+
+pkm:resultsInEvent
+    a owl:ObjectProperty ;
+    rdfs:label "resultsInEvent" ;
+    rdfs:domain pkm:OutcomeBranch ;
+    rdfs:range pkm:Event ;
+    rdfs:comment "Links an outcome branch to a non-target-resolution event such as a stat-stage change or faint." .
+
+pkm:hasStageDelta
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasStageDelta" ;
+    rdfs:domain pkm:StatStageChangeEvent ;
+    rdfs:range xsd:integer ;
+    rdfs:comment "Signed change to a stage-modified stat, typically in the range -6 to +6 in one event." .
+
+pkm:KnowledgeStatus_ObservedRealized
+    a pkm:KnowledgeStatus ;
+    pkm:hasName "ObservedRealized" ;
+    rdfs:comment "The replay directly shows which branch occurred, but the model does not claim an exhaustive latent branch set." .
+
+pkm:KnowledgeStatus_InferredCompleteBranchSet
+    a pkm:KnowledgeStatus ;
+    pkm:hasName "InferredCompleteBranchSet" ;
+    rdfs:comment "The model asserts that the enumerated branches are exhaustive under the relevant ruleset and local battle state." .
+
+pkm:KnowledgeStatus_InferredPartialBranchSet
+    a pkm:KnowledgeStatus ;
+    pkm:hasName "InferredPartialBranchSet" ;
+    rdfs:comment "The model includes only some branches, typically because the replay does not reveal all hidden state needed for exhaustive expansion." .
+
+[ a owl:AllDisjointClasses ;
+  owl:members ( pkm:EvidenceArtifact pkm:KnowledgeStatus pkm:StatStageChangeEvent )
+] .
