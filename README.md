@@ -5,7 +5,7 @@ RDF/OWL + SHACL project for modeling Pokémon battles as replay-backed state tra
 ## Repository layout
 
 ```text
-pokemon-battle-mechanics-ontology/
+pokemontology/
 ├── ontology/
 │   └── pokemon-mechanics-ontology.ttl
 ├── shapes/

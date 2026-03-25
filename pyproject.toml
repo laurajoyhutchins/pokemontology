@@ -1,5 +1,5 @@
 [project]
-name = "pokemon-battle-mechanics-ontology"
+name = "pokemontology"
 version = "0.1.0"
 description = "Replay-backed Pokémon battle mechanics ontology with SHACL validation."
 requires-python = ">=3.11"
