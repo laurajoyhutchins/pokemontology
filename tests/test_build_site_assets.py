@@ -35,7 +35,7 @@ def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
     ]
     assert "SERVICE" in schema_index["validation"]["forbidden_keywords"]
     assert "Species" in schema_index["validation"]["known_terms"]
-    assert "hasActor" in schema_index["validation"]["known_terms"]
+    assert "actor" in schema_index["validation"]["known_terms"]
     assert "Ruleset_PokeAPI_Default" in schema_index["validation"]["known_terms"]
     assert schema_index["response"]["list_preview_limit"] == 5
     assert schema_index["inference"]["webllm_model"]

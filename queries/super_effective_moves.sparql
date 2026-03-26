@@ -12,7 +12,7 @@ SELECT ?myMoveLabel ?moveTypeName ?opponentLabel ?effectiveTypeName ?factor
 WHERE {
   # Moves used by my side in the replay
   ?action a pkm:MoveUseAction ;
-          pkm:hasActor ?myPokemon ;
+          pkm:actor ?myPokemon ;
           pkm:usesMove ?moveEntity .
   ?moveEntity pkm:hasName ?myMoveLabel .
 

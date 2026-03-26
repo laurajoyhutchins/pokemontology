@@ -207,17 +207,16 @@ def _schema_pack(
             "summary": "ASK pattern for a species whose variant has a typing assignment matching Fire.",
             "snippet": "Match Species, then Variant, then TypingAssignment aboutVariant/aboutType.",
             "query": """PREFIX pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#>
-PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 ASK {
   ?species a pkm:Species ;
-           rdfs:label "Charizard" .
+           pkm:hasName "Charizard" .
   ?variant a pkm:Variant ;
            pkm:belongsToSpecies ?species .
   ?assignment a pkm:TypingAssignment ;
               pkm:aboutVariant ?variant ;
               pkm:aboutType ?type .
-  ?type rdfs:label "Fire" .
+  ?type pkm:hasName "Fire" .
 }""",
         },
     ]

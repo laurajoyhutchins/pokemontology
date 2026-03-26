@@ -26,7 +26,7 @@ pkm:OpponentCombatant
 
 pkm:Action_Ember
     a pkm:MoveUseAction ;
-    pkm:hasActor pkm:MyCombatant ;
+    pkm:actor pkm:MyCombatant ;
     pkm:usesMove pkm:Move_ember .
 
 pkm:Move_ember
@@ -117,16 +117,14 @@ def write_charizard_fire_source(path: Path) -> None:
     path.write_text(
         """
 @prefix pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#> .
-@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-
 pkm:Species_charizard a pkm:Species ;
-    rdfs:label "Charizard" .
+    pkm:hasName "Charizard" .
 
 pkm:Variant_charizard a pkm:Variant ;
     pkm:belongsToSpecies pkm:Species_charizard .
 
 pkm:Type_fire a pkm:Type ;
-    rdfs:label "Fire" .
+    pkm:hasName "Fire" .
 
 pkm:TypingAssignment_charizard_fire a pkm:TypingAssignment ;
     pkm:aboutVariant pkm:Variant_charizard ;

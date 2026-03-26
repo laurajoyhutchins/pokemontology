@@ -78,6 +78,8 @@ def test_docs_workers_are_present() -> None:
     assert "WebGPU local inference" in llm_text
     assert "webllm_library_url" in llm_text
     assert "deterministic fallback synthesizer" in llm_text
+    assert 'pkm:hasName "${species}"' in llm_text
+    assert "rdfs:label" not in llm_text
 
 
 def test_query_validator_enforces_ast_or_safe_fallback() -> None:
@@ -90,3 +92,12 @@ def test_query_validator_enforces_ast_or_safe_fallback() -> None:
     assert "SELECT *" in text
     assert "outside the shipped schema pack" in text
     assert "Fell back to structural validation" in text
+
+
+def test_schema_pack_examples_match_ontology_terms() -> None:
+    schema_index = json.loads(SCHEMA_INDEX.read_text(encoding="utf-8"))
+    examples = {example["id"]: example for example in schema_index["examples"]}
+    assert "pkm:actor" in examples["super-effective-moves"]["query"]
+    assert "pkm:hasActor" not in examples["super-effective-moves"]["query"]
+    assert "pkm:hasName \"Charizard\"" in examples["charizard-fire-check"]["query"]
+    assert "rdfs:label" not in examples["charizard-fire-check"]["query"]
