@@ -164,6 +164,23 @@ Current mapping scope:
 
 The transform intentionally excludes data that PokeAPI exposes only as a current canonical snapshot without a clean ontology context. In particular, it does not emit `pkm:TypingAssignment`, `pkm:StatAssignment`, `pkm:AbilityAssignment`, or `pkm:MovePropertyAssignment`, because those are contextual facts in the ontology and PokeAPI does not provide the necessary ruleset precision for them.
 
+## Ingestion standard
+
+External-source integrations in this repo now follow a standard contract:
+
+1. Acquire/cache source data without ontology assumptions
+2. Normalize it into a stable source-local export format
+3. Transform only the subset that maps cleanly into pokemontology
+
+All transforms should:
+- emit one `pkm:EvidenceArtifact` per upstream source
+- emit `pkm:ExternalEntityReference` nodes for local-to-upstream links
+- use `pkm:refersToEntity`, `pkm:describedByArtifact`, and `pkm:hasExternalIRI`
+- avoid `owl:sameAs` by default
+- emit contextual facts only when the source provides real context, not just a current snapshot
+
+The shared helper implementation for this contract lives in `pokemontology/ingest_common.py`.
+
 ## PokeAPI scraping
 
 The repo also includes a dedicated scraper at `scripts/pokeapi_scrape.py` for pulling raw PokeAPI data while following the project’s published fair-use guidance:

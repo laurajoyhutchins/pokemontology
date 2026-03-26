@@ -11,15 +11,22 @@ import argparse
 import csv
 from pathlib import Path
 
-from rdflib import Graph, Literal, Namespace, URIRef
-from rdflib.namespace import RDF, RDFS, XSD
+from rdflib import Graph, Literal, URIRef
+from rdflib.namespace import RDF, XSD
 
+from pokemontology.ingest_common import (
+    PKM,
+    REPO_ROOT,
+    add_dataset_artifact as add_dataset_artifact_node,
+    add_dataset_header,
+    add_external_reference as add_external_reference_node,
+    bind_namespaces,
+    iri_for,
+)
 
-REPO = Path(__file__).resolve().parent.parent
+REPO = REPO_ROOT
 DEFAULT_SOURCE_DIR = REPO / "data" / "veekun" / "export"
 DEFAULT_OUTPUT = REPO / "build" / "veekun.ttl"
-SITE_BASE = "https://laurajoyhutchins.github.io/pokemontology"
-PKM = Namespace(f"{SITE_BASE}/ontology.ttl#")
 
 ENTITY_FILES: dict[str, tuple[str, URIRef]] = {
     "species.csv": ("Species", PKM.Species),
@@ -52,17 +59,6 @@ REQUIRED_FILES = (
 VEEKUN_URN_BASE = "urn:veekun"
 
 
-def sanitize_identifier(value: str) -> str:
-    safe = "".join(ch if ch.isalnum() else "_" for ch in value.strip())
-    while "__" in safe:
-        safe = safe.replace("__", "_")
-    return safe.strip("_") or "unnamed"
-
-
-def iri_for(class_name: str, identifier: str) -> URIRef:
-    return PKM[f"{class_name}_{sanitize_identifier(identifier)}"]
-
-
 def veekun_external_iri(resource: str, identifier: str) -> str:
     return f"{VEEKUN_URN_BASE}:{resource}:{identifier}"
 
@@ -80,12 +76,16 @@ def require_columns(path: Path, rows: list[dict[str, str]], columns: tuple[str, 
         raise SystemExit(f"{path.name} missing required column(s): {', '.join(missing)}")
 
 
-def add_external_reference(g: Graph, resource: str, identifier: str, entity_iri: URIRef) -> None:
-    ref_iri = iri_for("Ref", f"Veekun_{resource}_{identifier}")
-    g.add((ref_iri, RDF.type, PKM.ExternalEntityReference))
-    g.add((ref_iri, PKM.refersToEntity, entity_iri))
-    g.add((ref_iri, PKM.describedByArtifact, PKM.DatasetArtifact_Veekun))
-    g.add((ref_iri, PKM.hasExternalIRI, Literal(veekun_external_iri(resource, identifier), datatype=XSD.anyURI)))
+def add_veekun_external_reference(g: Graph, resource: str, identifier: str, entity_iri: URIRef) -> None:
+    add_external_reference_node(
+        g,
+        source_slug="Veekun",
+        resource=resource,
+        identifier=identifier,
+        entity_iri=entity_iri,
+        artifact_iri=PKM.DatasetArtifact_Veekun,
+        external_iri=veekun_external_iri(resource, identifier),
+    )
 
 
 def add_named_entity(g: Graph, class_name: str, rdf_class: URIRef, row: dict[str, str], resource: str) -> URIRef:
@@ -94,7 +94,7 @@ def add_named_entity(g: Graph, class_name: str, rdf_class: URIRef, row: dict[str
     g.add((iri, RDF.type, rdf_class))
     g.add((iri, PKM.hasName, Literal(row["name"])))
     g.add((iri, PKM.hasIdentifier, Literal(f"veekun:{resource}:{identifier}")))
-    add_external_reference(g, resource, identifier, iri)
+    add_veekun_external_reference(g, resource, identifier, iri)
     return iri
 
 
@@ -106,20 +106,18 @@ def add_version_group(g: Graph, row: dict[str, str]) -> URIRef:
     g.add((version_group_iri, RDF.type, PKM.VersionGroup))
     g.add((version_group_iri, PKM.hasName, Literal(row["name"])))
     g.add((version_group_iri, PKM.hasIdentifier, Literal(f"veekun:version-group:{identifier}")))
-    add_external_reference(g, "version-group", identifier, version_group_iri)
+    add_veekun_external_reference(g, "version-group", identifier, version_group_iri)
 
     g.add((ruleset_iri, RDF.type, PKM.Ruleset))
     g.add((ruleset_iri, PKM.hasName, Literal(row["name"])))
     g.add((ruleset_iri, PKM.hasIdentifier, Literal(f"veekun:ruleset:{identifier}")))
     g.add((ruleset_iri, PKM.hasVersionGroup, version_group_iri))
-    add_external_reference(g, "ruleset", identifier, ruleset_iri)
+    add_veekun_external_reference(g, "ruleset", identifier, ruleset_iri)
     return ruleset_iri
 
 
-def add_dataset_artifact(g: Graph) -> None:
-    g.add((PKM.DatasetArtifact_Veekun, RDF.type, PKM.EvidenceArtifact))
-    g.add((PKM.DatasetArtifact_Veekun, PKM.hasName, Literal("Veekun")))
-    g.add((PKM.DatasetArtifact_Veekun, PKM.hasSourceURL, Literal("https://github.com/veekun/pokedex", datatype=XSD.anyURI)))
+def add_veekun_dataset_artifact(g: Graph) -> None:
+    add_dataset_artifact_node(g, PKM.DatasetArtifact_Veekun, "Veekun", "https://github.com/veekun/pokedex")
 
 
 def add_variant_links(g: Graph, rows: list[dict[str, str]]) -> None:
@@ -135,23 +133,16 @@ def build_graph_from_csv(source_dir: Path) -> Graph:
         raise SystemExit(f"missing Veekun export file(s): {', '.join(missing)}")
 
     g = Graph()
-    g.bind("pkm", PKM)
-    g.bind("rdf", RDF)
-    g.bind("rdfs", RDFS)
-    g.bind("xsd", XSD)
-
-    dataset_iri = URIRef(f"{SITE_BASE}/data/veekun.ttl")
-    g.add((dataset_iri, RDFS.label, Literal("Veekun ingestion dataset")))
-    g.add((
-        dataset_iri,
-        RDFS.comment,
-        Literal(
-            "Auto-generated TTL dataset built from a local normalized Veekun export. "
-            "This transform emits version-group-scoped mechanics facts where the source export "
-            "provides explicit context, plus lightweight external references back to Veekun."
-        ),
-    ))
-    add_dataset_artifact(g)
+    bind_namespaces(g)
+    add_dataset_header(
+        g,
+        "Veekun ingestion dataset",
+        "veekun.ttl",
+        "Auto-generated TTL dataset built from a local normalized Veekun export. "
+        "This transform emits version-group-scoped mechanics facts where the source export "
+        "provides explicit context, plus lightweight external references back to Veekun.",
+    )
+    add_veekun_dataset_artifact(g)
 
     entity_rows: dict[str, list[dict[str, str]]] = {}
     for filename, (class_name, rdf_class) in ENTITY_FILES.items():

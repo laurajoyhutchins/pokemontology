@@ -4,23 +4,31 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 import urllib.error
 import urllib.parse
 import urllib.request
 from collections import deque
 from pathlib import Path
 
-from rdflib import Graph, Literal, Namespace, URIRef
-from rdflib.namespace import RDF, RDFS, XSD
+from rdflib import Graph, Literal
+from rdflib.namespace import RDF, XSD
 
+from pokemontology.ingest_common import (
+    PKM,
+    REPO_ROOT,
+    SITE_BASE,
+    add_dataset_artifact,
+    add_dataset_header,
+    add_external_reference,
+    bind_namespaces,
+    iri_for,
+    sanitize_identifier,
+)
 
-REPO = Path(__file__).resolve().parent.parent
+REPO = REPO_ROOT
 DEFAULT_RAW_DIR = REPO / "data" / "pokeapi" / "raw"
 DEFAULT_OUTPUT = REPO / "build" / "pokeapi.ttl"
 POKEAPI_BASE = "https://pokeapi.co/api/v2"
-SITE_BASE = "https://laurajoyhutchins.github.io/pokemontology"
-PKM = Namespace(f"{SITE_BASE}/ontology.ttl#")
 
 SUPPORTED_RESOURCES = (
     "pokemon",
@@ -31,13 +39,6 @@ SUPPORTED_RESOURCES = (
     "stat",
     "version-group",
 )
-
-
-def sanitize_identifier(value: str) -> str:
-    slug = re.sub(r"[^A-Za-z0-9]+", "_", value.strip())
-    slug = re.sub(r"_+", "_", slug).strip("_")
-    return slug or "unnamed"
-
 
 def titleize_name(value: str) -> str:
     return " ".join(part.capitalize() for part in value.replace("-", " ").split())
@@ -53,11 +54,6 @@ def english_name(payload: dict) -> str | None:
 
 def payload_name(payload: dict) -> str:
     return str(payload["name"])
-
-
-def iri_for(class_name: str, identifier: str) -> URIRef:
-    return PKM[f"{class_name}_{sanitize_identifier(identifier)}"]
-
 
 def pokeapi_resource_url(resource: str, payload: dict) -> str:
     identifier = payload.get("id", payload_name(payload))
@@ -201,11 +197,15 @@ def add_named_resource(g: Graph, iri: URIRef, rdf_class: URIRef, payload: dict, 
         g.add((iri, PKM.hasIdentifier, Literal(f"pokeapi:{resource}:{payload['id']}")))
     else:
         g.add((iri, PKM.hasIdentifier, Literal(f"pokeapi:{resource}:{payload_name(payload)}")))
-    reference_iri = iri_for("Ref", f"PokeAPI_{resource}_{payload_name(payload)}")
-    g.add((reference_iri, RDF.type, PKM.ExternalEntityReference))
-    g.add((reference_iri, PKM.refersToEntity, iri))
-    g.add((reference_iri, PKM.describedByArtifact, PKM.DatasetArtifact_PokeAPI))
-    g.add((reference_iri, PKM.hasExternalIRI, Literal(pokeapi_resource_url(resource, payload), datatype=XSD.anyURI)))
+    add_external_reference(
+        g,
+        source_slug="PokeAPI",
+        resource=resource,
+        identifier=payload_name(payload),
+        entity_iri=iri,
+        artifact_iri=PKM.DatasetArtifact_PokeAPI,
+        external_iri=pokeapi_resource_url(resource, payload),
+    )
 
 
 def add_version_group_context(g: Graph, payload: dict) -> URIRef:
@@ -237,25 +237,16 @@ def build_graph_from_raw(raw_dir: Path) -> Graph:
     version_groups_by_name = {payload_name(item): item for item in payloads["version-group"]}
 
     g = Graph()
-    g.bind("pkm", PKM)
-    g.bind("rdf", RDF)
-    g.bind("rdfs", RDFS)
-    g.bind("xsd", XSD)
-
-    dataset_iri = URIRef(f"{SITE_BASE}/data/pokeapi.ttl")
-    g.add((dataset_iri, RDFS.label, Literal("PokeAPI ingestion dataset")))
-    g.add((
-        dataset_iri,
-        RDFS.comment,
-        Literal(
-            "Auto-generated TTL dataset built from cached PokeAPI payloads. "
-            "Only data that maps cleanly into the ontology is emitted: canonical entities, "
-            "variant-to-species links, version-group contexts, and version-group-scoped move learnability."
-        ),
-    ))
-    g.add((PKM.DatasetArtifact_PokeAPI, RDF.type, PKM.EvidenceArtifact))
-    g.add((PKM.DatasetArtifact_PokeAPI, PKM.hasName, Literal("PokeAPI")))
-    g.add((PKM.DatasetArtifact_PokeAPI, PKM.hasSourceURL, Literal(f"{POKEAPI_BASE}/", datatype=XSD.anyURI)))
+    bind_namespaces(g)
+    add_dataset_header(
+        g,
+        "PokeAPI ingestion dataset",
+        "pokeapi.ttl",
+        "Auto-generated TTL dataset built from cached PokeAPI payloads. "
+        "Only data that maps cleanly into the ontology is emitted: canonical entities, "
+        "variant-to-species links, version-group contexts, and version-group-scoped move learnability.",
+    )
+    add_dataset_artifact(g, PKM.DatasetArtifact_PokeAPI, "PokeAPI", f"{POKEAPI_BASE}/")
 
     for payload in payloads["type"]:
         add_named_resource(g, iri_for("Type", payload_name(payload)), PKM.Type, payload, "type")
