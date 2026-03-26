@@ -13,6 +13,7 @@ from rdflib import Graph
 from ._script_loader import REPO_ROOT
 from .chat import DEFAULT_OLLAMA_ENDPOINT, DEFAULT_OLLAMA_MODEL, generate_sparql
 from .ingest_common import serialize_turtle_to_path
+from .laurel_eval import DEFAULT_SUITE, EvalConfig, evaluate_suite
 from .turn_order import resolve_action_order
 
 from pokemontology.build import build_ontology, check_ttl_parse
@@ -221,6 +222,22 @@ def cmd_ask(args: argparse.Namespace) -> int:
         pretty=args.pretty,
         query_label="<generated>",
     )
+
+
+def cmd_evaluate_laurel(args: argparse.Namespace) -> int:
+    payload = evaluate_suite(
+        EvalConfig(
+            suite=args.suite,
+            tier=args.tier,
+            include_adversarial=args.include_adversarial,
+            model=args.model,
+            endpoint=args.endpoint,
+            timeout=args.timeout,
+            limit=args.limit,
+        )
+    )
+    _print_json(payload, pretty=True)
+    return 0
 
 
 def add_replay_dataset_subcommands(
@@ -541,6 +558,51 @@ def build_parser() -> argparse.ArgumentParser:
         "--pretty", action="store_true", help="Print query results as indented JSON."
     )
     ask_parser.set_defaults(func=cmd_ask)
+
+    eval_parser = subparsers.add_parser(
+        "evaluate-laurel",
+        help="Run the Laurel evaluation suite against the current NL-to-SPARQL generator.",
+    )
+    eval_parser.add_argument(
+        "--suite",
+        type=Path,
+        default=DEFAULT_SUITE,
+        help="Path to the Laurel evaluation suite JSON.",
+    )
+    eval_parser.add_argument(
+        "--tier",
+        default=None,
+        help="Optional tier to evaluate, such as easy, medium, hard, generation-specific, or adversarial.",
+    )
+    eval_parser.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Optional cap on the number of evaluated items.",
+    )
+    eval_parser.add_argument(
+        "--include-adversarial",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Whether to include adversarial prompts in the evaluation run.",
+    )
+    eval_parser.add_argument(
+        "--model",
+        default=DEFAULT_OLLAMA_MODEL,
+        help="Local Ollama model name to use for translation.",
+    )
+    eval_parser.add_argument(
+        "--endpoint",
+        default=DEFAULT_OLLAMA_ENDPOINT,
+        help="Ollama generate endpoint URL.",
+    )
+    eval_parser.add_argument(
+        "--timeout",
+        type=float,
+        default=240.0,
+        help="Timeout in seconds for each Ollama request.",
+    )
+    eval_parser.set_defaults(func=cmd_evaluate_laurel)
 
     parse_parser = subparsers.add_parser(
         "parse-replay", help="Parse a Showdown replay into a turn/event stream."
