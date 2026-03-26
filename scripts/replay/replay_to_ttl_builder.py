@@ -97,6 +97,8 @@ class StateSnapshot:
     current_side_conditions: set[tuple[URIRef, URIRef]] = field(default_factory=set)
     current_volatile_conditions: set[tuple[URIRef, URIRef]] = field(default_factory=set)
     current_transformations: dict[URIRef, URIRef] = field(default_factory=dict)
+    current_item: dict[URIRef, URIRef] = field(default_factory=dict)
+    current_ability: dict[URIRef, URIRef] = field(default_factory=dict)
 
 
 def combatant_iri_for_token(token: str, p1_name: str, p2_name: str) -> URIRef:
@@ -313,6 +315,32 @@ def emit_projected_state(
         g.add((assignment_iri, PKM.hasReplayTurnIndex, Literal(turn, datatype=XSD.integer)))
         g.add((assignment_iri, PKM.hasReplayEventOrder, Literal(order, datatype=XSD.integer)))
         g.add((assignment_iri, PKM.hasReplayStepLabel, Literal(f"transformation-state-t{turn}-e{order}")))
+
+    for combatant_iri, item_iri in state.current_item.items():
+        label = str(combatant_iri).rsplit("#", 1)[-1]
+        assignment_iri = PKM[f"Item_{instant_name}_{label}"]
+        g.add((assignment_iri, RDF.type, PKM.CurrentItemAssignment))
+        g.add((assignment_iri, PKM.aboutCombatant, combatant_iri))
+        g.add((assignment_iri, PKM.hasCurrentItem, item_iri))
+        g.add((assignment_iri, PKM.hasContext, instant))
+        add_materialization_provenance(g, assignment_iri, event_sources["item"].get(combatant_iri), previous_instant)
+        g.add((assignment_iri, PKM.supportedByArtifact, artifact_iri))
+        g.add((assignment_iri, PKM.hasReplayTurnIndex, Literal(turn, datatype=XSD.integer)))
+        g.add((assignment_iri, PKM.hasReplayEventOrder, Literal(order, datatype=XSD.integer)))
+        g.add((assignment_iri, PKM.hasReplayStepLabel, Literal(f"item-state-t{turn}-e{order}")))
+
+    for combatant_iri, ability_iri in state.current_ability.items():
+        label = str(combatant_iri).rsplit("#", 1)[-1]
+        assignment_iri = PKM[f"Ability_{instant_name}_{label}"]
+        g.add((assignment_iri, RDF.type, PKM.CurrentAbilityAssignment))
+        g.add((assignment_iri, PKM.aboutCombatant, combatant_iri))
+        g.add((assignment_iri, PKM.hasCurrentAbility, ability_iri))
+        g.add((assignment_iri, PKM.hasContext, instant))
+        add_materialization_provenance(g, assignment_iri, event_sources["ability"].get(combatant_iri), previous_instant)
+        g.add((assignment_iri, PKM.supportedByArtifact, artifact_iri))
+        g.add((assignment_iri, PKM.hasReplayTurnIndex, Literal(turn, datatype=XSD.integer)))
+        g.add((assignment_iri, PKM.hasReplayEventOrder, Literal(order, datatype=XSD.integer)))
+        g.add((assignment_iri, PKM.hasReplayStepLabel, Literal(f"ability-state-t{turn}-e{order}")))
 
     for slot_name, combatant_iri in sorted(active_combatants_by_slot.items()):
         assignment_iri = PKM[f"ActiveSlot_{instant_name}_{slot_name}"]
@@ -574,6 +602,8 @@ def build_graph(payload: dict) -> Graph:
             "side": {},
             "volatile": {},
             "transformation": {},
+            "item": {},
+            "ability": {},
             "active_slot": {},
         }
 
@@ -967,6 +997,54 @@ def build_graph(payload: dict) -> Graph:
             volatile_iri = maybe_volatile_iri(g, ev.fields[1]) if len(ev.fields) > 1 else None
             if combatant_iri is not None and volatile_iri is not None:
                 state.current_volatile_conditions.discard((combatant_iri, volatile_iri))
+
+        elif ev.kind == "-item":
+            combatant_iri = active_combatants_by_slot.get(
+                slot_key(ev.fields[0]),
+                combatant_iri_for_token(ev.fields[0], p1_name, p2_name),
+            )
+            item_name = ev.fields[1].strip()
+            item_iri = PKM[f"Item_{sanitize_identifier(item_name)}"]
+            ensure_named_entity(g, item_iri, PKM.Item, item_name)
+            event_iri = PKM[f"ItemEvent_T{ev.turn}_{ev.order}_{sanitize_identifier(actor_display_name(ev.fields[0]))}"]
+            g.add((event_iri, RDF.type, PKM.Event))
+            g.add((event_iri, PKM.affectsCombatant, combatant_iri))
+            g.add((event_iri, PKM.occursInInstantaneous, instant))
+            g.add((event_iri, PKM.supportedByArtifact, artifact_iri))
+            g.add((event_iri, PKM.hasReplayTurnIndex, Literal(ev.turn, datatype=XSD.integer)))
+            g.add((event_iri, PKM.hasReplayEventOrder, Literal(ev.order, datatype=XSD.integer)))
+            g.add((event_iri, PKM.hasReplayStepLabel, Literal(f"item-t{ev.turn}-e{ev.order}")))
+            state.current_item[combatant_iri] = item_iri
+            event_sources["item"][combatant_iri] = event_iri
+
+        elif ev.kind == "-enditem":
+            combatant_iri = maybe_combatant_from_token(ev.fields[0], active_combatants_by_slot, p1_name, p2_name)
+            if combatant_iri is not None:
+                state.current_item.pop(combatant_iri, None)
+
+        elif ev.kind == "-ability":
+            combatant_iri = active_combatants_by_slot.get(
+                slot_key(ev.fields[0]),
+                combatant_iri_for_token(ev.fields[0], p1_name, p2_name),
+            )
+            ability_name = ev.fields[1].strip()
+            ability_iri = PKM[f"Ability_{sanitize_identifier(ability_name)}"]
+            ensure_named_entity(g, ability_iri, PKM.Ability, ability_name)
+            event_iri = PKM[f"AbilityEvent_T{ev.turn}_{ev.order}_{sanitize_identifier(actor_display_name(ev.fields[0]))}"]
+            g.add((event_iri, RDF.type, PKM.Event))
+            g.add((event_iri, PKM.affectsCombatant, combatant_iri))
+            g.add((event_iri, PKM.occursInInstantaneous, instant))
+            g.add((event_iri, PKM.supportedByArtifact, artifact_iri))
+            g.add((event_iri, PKM.hasReplayTurnIndex, Literal(ev.turn, datatype=XSD.integer)))
+            g.add((event_iri, PKM.hasReplayEventOrder, Literal(ev.order, datatype=XSD.integer)))
+            g.add((event_iri, PKM.hasReplayStepLabel, Literal(f"ability-t{ev.turn}-e{ev.order}")))
+            state.current_ability[combatant_iri] = ability_iri
+            event_sources["ability"][combatant_iri] = event_iri
+
+        elif ev.kind == "-endability":
+            combatant_iri = maybe_combatant_from_token(ev.fields[0], active_combatants_by_slot, p1_name, p2_name)
+            if combatant_iri is not None:
+                state.current_ability.pop(combatant_iri, None)
 
         elif ev.kind == "-fail":
             combatant_iri = maybe_combatant_from_token(ev.fields[0], active_combatants_by_slot, p1_name, p2_name)

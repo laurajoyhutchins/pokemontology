@@ -490,6 +490,56 @@ pkmsh:CurrentTransformationAssignmentShape
         """
     ] .
 
+pkmsh:CurrentItemAssignmentShape
+    a sh:NodeShape ;
+    sh:targetClass pkm:CurrentItemAssignment ;
+    sh:property [
+        sh:path pkm:aboutCombatant ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class pkm:BattleParticipant ;
+        sh:message "A CurrentItemAssignment must reference exactly one BattleParticipant."
+    ] ;
+    sh:property [
+        sh:path pkm:hasContext ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class pkm:Instantaneous ;
+        sh:message "A CurrentItemAssignment must be scoped to exactly one Instantaneous."
+    ] ;
+    sh:property [
+        sh:path pkm:hasCurrentItem ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class pkm:Item ;
+        sh:message "A CurrentItemAssignment must reference exactly one Item."
+    ] .
+
+pkmsh:CurrentAbilityAssignmentShape
+    a sh:NodeShape ;
+    sh:targetClass pkm:CurrentAbilityAssignment ;
+    sh:property [
+        sh:path pkm:aboutCombatant ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class pkm:BattleParticipant ;
+        sh:message "A CurrentAbilityAssignment must reference exactly one BattleParticipant."
+    ] ;
+    sh:property [
+        sh:path pkm:hasContext ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class pkm:Instantaneous ;
+        sh:message "A CurrentAbilityAssignment must be scoped to exactly one Instantaneous."
+    ] ;
+    sh:property [
+        sh:path pkm:hasCurrentAbility ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class pkm:Ability ;
+        sh:message "A CurrentAbilityAssignment must reference exactly one Ability."
+    ] .
+
 pkmsh:FieldStateShape
     a sh:NodeShape ;
     sh:targetClass pkm:FieldState ;

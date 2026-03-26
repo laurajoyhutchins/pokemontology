@@ -2142,6 +2142,30 @@ pkm:SideConditionAssignment
         owl:onClass pkm:SideCondition
     ] .
 
+pkm:CurrentItemAssignment
+    a owl:Class ;
+    rdfs:label "CurrentItemAssignment" ;
+    rdfs:subClassOf pkm:ParticipantStateAssignment ;
+    rdfs:comment "Materialized held-item state for a battle participant at an instantaneous snapshot. Only emitted when item state is observed in the replay log; absence does not imply no item." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasCurrentItem ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Item
+    ] .
+
+pkm:CurrentAbilityAssignment
+    a owl:Class ;
+    rdfs:label "CurrentAbilityAssignment" ;
+    rdfs:subClassOf pkm:ParticipantStateAssignment ;
+    rdfs:comment "Materialized ability state for a battle participant at an instantaneous snapshot. Only emitted when ability state is observed in the replay log; absence does not imply a default ability." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:hasCurrentAbility ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Ability
+    ] .
+
 pkm:ActiveSlotAssignment
     a owl:Class ;
     rdfs:label "ActiveSlotAssignment" ;
@@ -2187,6 +2211,20 @@ pkm:hasSideCondition
     rdfs:label "hasSideCondition" ;
     rdfs:domain pkm:SideConditionAssignment ;
     rdfs:range pkm:SideCondition .
+
+pkm:hasCurrentItem
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasCurrentItem" ;
+    rdfs:domain pkm:CurrentItemAssignment ;
+    rdfs:range pkm:Item .
+
+pkm:hasCurrentAbility
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasCurrentAbility" ;
+    rdfs:domain pkm:CurrentAbilityAssignment ;
+    rdfs:range pkm:Ability .
 
 pkm:hasActiveSlotIndex
     a owl:DatatypeProperty ;

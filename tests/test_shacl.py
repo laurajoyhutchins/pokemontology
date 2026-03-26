@@ -145,6 +145,26 @@ def test_synthetic_stage_projection_graph_conforms_to_shapes() -> None:
     assert conforms, f"Synthetic stage projection graph violates SHACL:\n{results_text}"
 
 
+def test_synthetic_item_and_ability_observation_graph_conforms_to_shapes() -> None:
+    payload = {
+        "id": "synthetic-item-ability-observation",
+        "format": "[Gen 9] Custom Game",
+        "players": ["Alice", "Bob"],
+        "log": "\n".join([
+            "|turn|1",
+            "|switch|p1a: Pikachu|Pikachu, L50|100/100",
+            "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
+            "|move|p1a: Pikachu|Knock Off|p2a: Bulbasaur",
+            "|-ability|p2a: Bulbasaur|Overgrow",
+            "|-enditem|p2a: Bulbasaur|Eviolite",
+            "|move|p2a: Bulbasaur|Trick|p1a: Pikachu",
+            "|-item|p1a: Pikachu|Leftovers|[from] move: Trick",
+        ]),
+    }
+    conforms, results_text = _validate_data_graph(build_graph(payload))
+    assert conforms, f"Synthetic item/ability observation graph violates SHACL:\n{results_text}"
+
+
 def test_iv_assignment_rejects_values_above_31() -> None:
     conforms, results_text = _validate_data_graph(
         _parse_ttl(

@@ -49,6 +49,10 @@ SUPPORTED_EVENT_TAGS = {
     "-sideend",
     "-terastallize",
     "-singleturn",
+    "-item",
+    "-enditem",
+    "-ability",
+    "-endability",
     "cant",
 }
 

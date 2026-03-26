@@ -465,3 +465,60 @@ def test_builder_uses_only_declared_pkm_predicates(replay_graph: Graph, ontology
 
     used = {predicate for _, predicate, _ in replay_graph if str(predicate).startswith(str(PKM))}
     assert used <= declared, f"undeclared pkm: predicates in replay graph: {sorted(str(p) for p in used - declared)}"
+
+
+def test_builder_emits_item_and_ability_assignments_on_observation() -> None:
+    payload = {
+        "id": "item-ability-test",
+        "format": "[Gen 9] Custom Game",
+        "players": ["Alice", "Bob"],
+        "log": "\n".join([
+            "|turn|1",
+            "|switch|p1a: Pikachu|Pikachu, L50|100/100",
+            "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
+            "|-ability|p2a: Bulbasaur|Overgrow",
+            "|-item|p1a: Pikachu|Leftovers|[from] move: Trick",
+        ]),
+    }
+    graph = build_graph(payload)
+
+    item_assignments = list(graph.subjects(RDF.type, PKM.CurrentItemAssignment))
+    ability_assignments = list(graph.subjects(RDF.type, PKM.CurrentAbilityAssignment))
+    assert item_assignments, "expected at least one CurrentItemAssignment"
+    assert ability_assignments, "expected at least one CurrentAbilityAssignment"
+
+    item_iri = next(graph.objects(item_assignments[0], PKM.hasCurrentItem))
+    assert str(item_iri).endswith("Leftovers")
+
+    ability_iri = next(graph.objects(ability_assignments[0], PKM.hasCurrentAbility))
+    assert str(ability_iri).endswith("Overgrow")
+
+
+def test_builder_clears_item_and_ability_on_end_events() -> None:
+    payload = {
+        "id": "item-ability-end-test",
+        "format": "[Gen 9] Custom Game",
+        "players": ["Alice", "Bob"],
+        "log": "\n".join([
+            "|turn|1",
+            "|switch|p1a: Pikachu|Pikachu, L50|100/100",
+            "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
+            "|-ability|p2a: Bulbasaur|Overgrow",
+            "|-item|p1a: Pikachu|Leftovers|[from] move: Trick",
+            "|-endability|p2a: Bulbasaur|Overgrow",
+            "|-enditem|p1a: Pikachu|Leftovers",
+        ]),
+    }
+    graph = build_graph(payload)
+
+    # After enditem/endability, final instants should carry no assignments
+    item_assignments = list(graph.subjects(RDF.type, PKM.CurrentItemAssignment))
+    ability_assignments = list(graph.subjects(RDF.type, PKM.CurrentAbilityAssignment))
+    # Assignments may exist on earlier instants but the last instant should have none
+    last_instant = PKM[f"I_{len(list(graph.subjects(RDF.type, PKM.Instantaneous))) - 1}"]
+    assert not any(
+        graph.value(a, PKM.hasContext) == last_instant for a in item_assignments
+    ), "CurrentItemAssignment should not persist after -enditem"
+    assert not any(
+        graph.value(a, PKM.hasContext) == last_instant for a in ability_assignments
+    ), "CurrentAbilityAssignment should not persist after -endability"
