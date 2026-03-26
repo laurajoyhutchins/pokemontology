@@ -167,115 +167,7 @@ PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
 PREFIX pkm:  <${PKM_NS}>
 
 `;
-
-const EXAMPLE_QUERIES = [
-  {
-    group: "Schema",
-    label: "All pkm: classes",
-    query:
-      DEFAULT_PREFIXES +
-      `SELECT ?class ?label ?comment
-WHERE {
-  ?class a owl:Class .
-  FILTER(STRSTARTS(STR(?class), STR(pkm:)))
-  OPTIONAL { ?class rdfs:label ?label }
-  OPTIONAL { ?class rdfs:comment ?comment }
-}
-ORDER BY ?class`,
-  },
-  {
-    group: "Schema",
-    label: "Object properties",
-    query:
-      DEFAULT_PREFIXES +
-      `SELECT ?prop ?label ?domain ?range
-WHERE {
-  ?prop a owl:ObjectProperty .
-  FILTER(STRSTARTS(STR(?prop), STR(pkm:)))
-  OPTIONAL { ?prop rdfs:label ?label }
-  OPTIONAL { ?prop rdfs:domain ?domain }
-  OPTIONAL { ?prop rdfs:range ?range }
-}
-ORDER BY ?label`,
-  },
-  {
-    group: "Schema",
-    label: "Datatype properties",
-    query:
-      DEFAULT_PREFIXES +
-      `SELECT ?prop ?label ?domain ?range
-WHERE {
-  ?prop a owl:DatatypeProperty .
-  FILTER(STRSTARTS(STR(?prop), STR(pkm:)))
-  OPTIONAL { ?prop rdfs:label ?label }
-  OPTIONAL { ?prop rdfs:domain ?domain }
-  OPTIONAL { ?prop rdfs:range ?range }
-}
-ORDER BY ?label`,
-  },
-  {
-    group: "Schema",
-    label: "Class hierarchy",
-    query:
-      DEFAULT_PREFIXES +
-      `SELECT ?class ?parent ?label
-WHERE {
-  ?class a owl:Class .
-  FILTER(STRSTARTS(STR(?class), STR(pkm:)))
-  OPTIONAL {
-    ?class rdfs:subClassOf ?parent .
-    FILTER(!isBlank(?parent))
-  }
-  OPTIONAL { ?class rdfs:label ?label }
-}
-ORDER BY ?parent ?class`,
-  },
-  {
-    group: "Schema",
-    label: "Functional properties",
-    query:
-      DEFAULT_PREFIXES +
-      `SELECT ?prop ?label ?domain ?range
-WHERE {
-  ?prop a owl:FunctionalProperty .
-  FILTER(STRSTARTS(STR(?prop), STR(pkm:)))
-  OPTIONAL { ?prop rdfs:label ?label }
-  OPTIONAL { ?prop rdfs:domain ?domain }
-  OPTIONAL { ?prop rdfs:range ?range }
-}
-ORDER BY ?label`,
-  },
-  {
-    group: "Data",
-    label: "Predicate frequency",
-    query: `SELECT ?predicate (COUNT(?predicate) AS ?count)
-WHERE { ?s ?predicate ?o }
-GROUP BY ?predicate
-ORDER BY DESC(?count)`,
-  },
-  {
-    group: "Data",
-    label: "Triple count",
-    query: `SELECT (COUNT(*) AS ?triples)
-WHERE { ?s ?p ?o }`,
-  },
-  {
-    group: "Shapes",
-    label: "SHACL shapes",
-    sources: ["shapes"],
-    query:
-      `PREFIX sh:   <http://www.w3.org/ns/shacl#>
-PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-
-SELECT ?shape ?targetClass ?label
-WHERE {
-  ?shape a sh:NodeShape .
-  OPTIONAL { ?shape sh:targetClass ?targetClass }
-  OPTIONAL { ?shape rdfs:label ?label }
-}
-ORDER BY ?shape`,
-  },
-];
+let QUERY_EXAMPLES = [];
 const COMUNICA_BROWSER_URLS = [
   "https://rdf.js.org/comunica-browser/versions/v4/engines/query-sparql/comunica-browser.js",
   "https://cdn.jsdelivr.net/npm/@comunica/query-sparql@3/pkg/comunica-browser.js",
@@ -521,14 +413,15 @@ async function loadComunicaEngine() {
   throw lastError ?? new Error("No SPARQL engine bundle could be loaded.");
 }
 
-function populateExampleSelect() {
+function populateExampleSelect(queryExamples) {
   const sel = document.getElementById("example-select");
   if (!sel) return;
-  const groups = [...new Set(EXAMPLE_QUERIES.map((q) => q.group).filter(Boolean))];
+  sel.innerHTML = '<option value="">— pick a query —</option>';
+  const groups = [...new Set(queryExamples.map((q) => q.group).filter(Boolean))];
   groups.forEach((group) => {
     const og = document.createElement("optgroup");
     og.label = group;
-    EXAMPLE_QUERIES.filter((q) => q.group === group).forEach((q) => {
+    queryExamples.filter((q) => q.group === group).forEach((q) => {
       const opt = document.createElement("option");
       opt.value = q.label;
       opt.textContent = q.label;
@@ -536,7 +429,7 @@ function populateExampleSelect() {
     });
     sel.appendChild(og);
   });
-  EXAMPLE_QUERIES.filter((q) => !q.group).forEach((q) => {
+  queryExamples.filter((q) => !q.group).forEach((q) => {
     const opt = document.createElement("option");
     opt.value = q.label;
     opt.textContent = q.label;
@@ -544,7 +437,7 @@ function populateExampleSelect() {
   });
 }
 
-function initQueryEngine() {
+function initQueryEngine(queryExamples) {
   const editor = document.getElementById("sparql-editor");
   const runBtn = document.getElementById("run-btn");
   const runLabel = document.getElementById("run-btn-label");
@@ -553,10 +446,9 @@ function initQueryEngine() {
 
   if (!editor) return;
 
-  // Set default query
-  editor.value = EXAMPLE_QUERIES[0].query;
-
-  populateExampleSelect();
+  QUERY_EXAMPLES = queryExamples;
+  populateExampleSelect(queryExamples);
+  editor.value = queryExamples[0]?.query || DEFAULT_PREFIXES;
 
   // Tab key → indent with spaces
   editor.addEventListener("keydown", (e) => {
@@ -576,7 +468,7 @@ function initQueryEngine() {
 
   // Example selector
   exampleSel?.addEventListener("change", (e) => {
-    const q = EXAMPLE_QUERIES.find((x) => x.label === e.target.value);
+    const q = QUERY_EXAMPLES.find((x) => x.label === e.target.value);
     if (!q) return;
     editor.value = q.query;
     if (q.sources) {
@@ -684,9 +576,9 @@ function initQueryEngine() {
 async function main() {
   setupThemeToggle();
   setupNavHighlight();
-  initQueryEngine();
   try {
     const data = await loadSiteData();
+    initQueryEngine(data.query_examples || []);
     renderArtifacts(data.artifacts);
     renderModules(data.modules, data.site.repository_url);
     renderPipelines(data.pipelines);

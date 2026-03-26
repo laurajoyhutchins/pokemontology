@@ -17,6 +17,7 @@ PAGES_ONTOLOGY = PAGES_DIR / "ontology.ttl"
 PAGES_SHAPES = PAGES_DIR / "shapes.ttl"
 PAGES_SITE_DATA = PAGES_DIR / "site-data.json"
 SHAPES_SOURCE = repo_path("shapes", "modules", "shapes.ttl")
+QUERIES_DIR = repo_path("queries")
 
 MODULE_ORDER = [
     "00-header.ttl",
@@ -39,6 +40,31 @@ def _validate_sources() -> None:
         raise SystemExit(f"missing ontology module(s): {formatted}")
     if not SHAPES_SOURCE.exists():
         raise SystemExit(f"missing shapes source: {SHAPES_SOURCE.relative_to(REPO)}")
+
+
+def _query_examples() -> list[dict[str, object]]:
+    examples: list[dict[str, object]] = []
+    for path in sorted(QUERIES_DIR.glob("*.sparql")):
+        query_text = path.read_text(encoding="utf-8").strip()
+        first_comment = next(
+            (
+                line.removeprefix("#").strip()
+                for line in query_text.splitlines()
+                if line.startswith("#") and line.removeprefix("#").strip()
+            ),
+            "",
+        )
+        examples.append(
+            {
+                "group": "Bundled Queries",
+                "label": path.stem.replace("_", " "),
+                "source_path": str(path.relative_to(REPO)),
+                "summary": first_comment or f"Bundled query from {path.name}.",
+                "query": query_text,
+                "command": f"python3 -m pokemontology query {path.relative_to(REPO)} build/ontology.ttl <data.ttl>",
+            }
+        )
+    return examples
 
 
 def assemble_artifacts() -> tuple[str, str, dict[str, object]]:
@@ -122,6 +148,7 @@ def assemble_artifacts() -> tuple[str, str, dict[str, object]]:
                 "summary": "A sample seed file for fetching and transforming a narrow, ontology-safe subset of PokeAPI data.",
             },
         ],
+        "query_examples": _query_examples(),
     }
     return ontology_text, shapes_text, site_data
 
