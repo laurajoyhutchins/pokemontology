@@ -9,6 +9,7 @@ from rdflib import Graph
 
 from pokemontology import cli
 from pokemontology._script_loader import repo_path
+from pokemontology.chat import validate_sparql_text
 
 
 REPO = repo_path()
@@ -157,3 +158,68 @@ def test_load_turtle_sources_reuses_cached_graph(
 
     assert first is second
     assert parse_calls == 2
+
+
+def test_ask_command_executes_generated_query(
+    built_ontology_path: str, tmp_path: Path, capsys, monkeypatch: object
+) -> None:
+    fixture_path = tmp_path / "super-effective-fixture.ttl"
+    _write_super_effective_fixture(fixture_path)
+
+    generated_query = SUPER_EFFECTIVE_QUERY.read_text(encoding="utf-8")
+    monkeypatch.setattr(cli, "generate_sparql", lambda *args, **kwargs: generated_query)
+
+    exit_code = cli.main(
+        [
+            "ask",
+            "Which of my moves are effective against Bulbasaur?",
+            built_ontology_path,
+            str(fixture_path),
+            "--pretty",
+        ]
+    )
+
+    assert exit_code == 0
+    output = json.loads(capsys.readouterr().out)
+    assert output["rows"] == [
+        {
+            "myMoveLabel": "Ember",
+            "moveTypeName": "Fire",
+            "opponentLabel": "Bulbasaur",
+            "effectiveTypeName": "Grass",
+            "factor": "2.0",
+        }
+    ]
+
+
+def test_laurel_alias_executes_generated_query(
+    built_ontology_path: str, tmp_path: Path, capsys, monkeypatch: object
+) -> None:
+    fixture_path = tmp_path / "super-effective-fixture.ttl"
+    _write_super_effective_fixture(fixture_path)
+
+    generated_query = SUPER_EFFECTIVE_QUERY.read_text(encoding="utf-8")
+    monkeypatch.setattr(cli, "generate_sparql", lambda *args, **kwargs: generated_query)
+
+    exit_code = cli.main(
+        [
+            "laurel",
+            "Which of my moves are effective against Bulbasaur?",
+            built_ontology_path,
+            str(fixture_path),
+            "--pretty",
+        ]
+    )
+
+    assert exit_code == 0
+    output = json.loads(capsys.readouterr().out)
+    assert output["rows"][0]["myMoveLabel"] == "Ember"
+
+
+def test_validate_sparql_text_rejects_updates() -> None:
+    try:
+        validate_sparql_text("PREFIX pkm: <https://example.test#>\nDELETE WHERE { ?s ?p ?o }")
+    except ValueError as exc:
+        assert "forbidden update keywords" in str(exc)
+    else:
+        raise AssertionError("expected update SPARQL to be rejected")

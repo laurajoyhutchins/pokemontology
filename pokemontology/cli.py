@@ -11,6 +11,7 @@ from typing import Sequence
 from rdflib import Graph
 
 from ._script_loader import REPO_ROOT
+from .chat import DEFAULT_OLLAMA_ENDPOINT, DEFAULT_OLLAMA_MODEL, generate_sparql
 from .ingest_common import serialize_turtle_to_path
 from .turn_order import resolve_action_order
 
@@ -174,17 +175,52 @@ def cmd_resolve_order(args: argparse.Namespace) -> int:
     return 0
 
 
-def cmd_query(args: argparse.Namespace) -> int:
-    query_text = _read_text(args.query, label="query file")
-    graph = _load_turtle_sources(args.sources)
+def _execute_query_text(
+    query_text: str,
+    *,
+    sources: Sequence[Path],
+    pretty: bool = False,
+    query_label: str,
+) -> int:
+    graph = _load_turtle_sources(sources)
     try:
         result = graph.query(query_text)
     except Exception as exc:
         raise CliUsageError(
-            f"failed to execute SPARQL query {_repo_relative(args.query)}: {exc}"
+            f"failed to execute SPARQL query {query_label}: {exc}"
         ) from exc
-    _print_json(_query_results_to_json(result), pretty=args.pretty)
+    _print_json(_query_results_to_json(result), pretty=pretty)
     return 0
+
+
+def cmd_query(args: argparse.Namespace) -> int:
+    query_text = _read_text(args.query, label="query file")
+    return _execute_query_text(
+        query_text,
+        sources=args.sources,
+        pretty=args.pretty,
+        query_label=_repo_relative(args.query),
+    )
+
+
+def cmd_ask(args: argparse.Namespace) -> int:
+    try:
+        query_text = generate_sparql(
+            args.question,
+            model=args.model,
+            endpoint=args.endpoint,
+            timeout=args.timeout,
+        )
+    except Exception as exc:
+        raise CliUsageError(f"failed to generate SPARQL from question: {exc}") from exc
+    if args.print_sparql:
+        print(query_text)
+    return _execute_query_text(
+        query_text,
+        sources=args.sources,
+        pretty=args.pretty,
+        query_label="<generated>",
+    )
 
 
 def add_replay_dataset_subcommands(
@@ -467,6 +503,44 @@ def build_parser() -> argparse.ArgumentParser:
         "--pretty", action="store_true", help="Print query results as indented JSON."
     )
     query_parser.set_defaults(func=cmd_query)
+
+    ask_parser = subparsers.add_parser(
+        "ask",
+        aliases=["laurel"],
+        help="Translate a natural-language question to SPARQL with a local Ollama model and execute it.",
+    )
+    ask_parser.add_argument("question", help="Natural-language question to translate.")
+    ask_parser.add_argument(
+        "sources",
+        nargs="+",
+        type=Path,
+        help="One or more Turtle files to load into the query graph.",
+    )
+    ask_parser.add_argument(
+        "--model",
+        default=DEFAULT_OLLAMA_MODEL,
+        help="Local Ollama model name to use for translation.",
+    )
+    ask_parser.add_argument(
+        "--endpoint",
+        default=DEFAULT_OLLAMA_ENDPOINT,
+        help="Ollama generate endpoint URL.",
+    )
+    ask_parser.add_argument(
+        "--timeout",
+        type=float,
+        default=240.0,
+        help="Timeout in seconds for the Ollama request.",
+    )
+    ask_parser.add_argument(
+        "--print-sparql",
+        action="store_true",
+        help="Print the generated SPARQL before executing it.",
+    )
+    ask_parser.add_argument(
+        "--pretty", action="store_true", help="Print query results as indented JSON."
+    )
+    ask_parser.set_defaults(func=cmd_ask)
 
     parse_parser = subparsers.add_parser(
         "parse-replay", help="Parse a Showdown replay into a turn/event stream."
