@@ -258,6 +258,172 @@
           ]
         }
       ]
+    },
+    {
+      "tier": "generation-specific",
+      "items": [
+        {
+          "id": "gen1-hyper-beam-recharge-ko",
+          "category": "generation-specific recharge rules",
+          "question": "In Generation I, if Hyper Beam knocks out the target, does the user still have to recharge next turn?",
+          "expected_answer": "Yes. In Generation I, Hyper Beam still requires recharge even if it knocks out the target.",
+          "answer_type": "boolean",
+          "acceptance": [
+            "Must answer yes for Generation I.",
+            "Should distinguish this from later generations where the recharge can be skipped on a knockout."
+          ],
+          "sources": [
+            {
+              "title": "Hyper Beam (move) - Bulbapedia",
+              "url": "https://bulbapedia.bulbagarden.net/wiki/Hyper_Beam_%28move%29"
+            }
+          ]
+        },
+        {
+          "id": "gen2-steel-resists-dark-ghost",
+          "category": "generation-specific type chart",
+          "question": "In Generation II through V, did Steel resist Dark and Ghost?",
+          "expected_answer": "Yes. Steel resisted both Dark and Ghost from Generation II through Generation V; those resistances were removed in Generation VI.",
+          "answer_type": "rule",
+          "acceptance": [
+            "Must answer yes for Generations II through V.",
+            "Should mention the change in Generation VI."
+          ],
+          "sources": [
+            {
+              "title": "Steel (type) - Bulbapedia",
+              "url": "https://bulbapedia.bulbagarden.net/wiki/Steel_%28type%29"
+            }
+          ]
+        },
+        {
+          "id": "gen3-weather-permanent",
+          "category": "generation-specific weather",
+          "question": "Before Generation VI, did Drizzle and Drought summon permanent weather?",
+          "expected_answer": "Yes. Before Generation VI, weather from abilities like Drizzle and Drought lasted indefinitely unless another weather effect replaced it.",
+          "answer_type": "rule",
+          "acceptance": [
+            "Must answer yes for pre-Generation VI.",
+            "Should mention that the five-turn limit arrived later."
+          ],
+          "sources": [
+            {
+              "title": "Drizzle (Ability) - Bulbapedia",
+              "url": "https://bulbapedia.bulbagarden.net/wiki/Drizzle_%28Ability%29"
+            },
+            {
+              "title": "Drought (Ability) - Bulbapedia",
+              "url": "https://bulbapedia.bulbagarden.net/wiki/Drought_%28Ability%29"
+            }
+          ]
+        },
+        {
+          "id": "gen4-stealth-rock-charizard",
+          "category": "generation-specific hazards",
+          "question": "In Generation IV onward, how much damage does Charizard take when switching into Stealth Rock?",
+          "expected_answer": "Charizard takes 50% of its maximum HP because it is 4x weak to Rock.",
+          "answer_type": "multiplier",
+          "acceptance": [
+            "Must identify the damage as 50% max HP.",
+            "Must connect the result to Charizard's 4x Rock weakness."
+          ],
+          "sources": [
+            {
+              "title": "Stealth Rock (move) - Bulbapedia",
+              "url": "https://bulbapedia.bulbagarden.net/wiki/Stealth_Rock_%28move%29"
+            },
+            {
+              "title": "Charizard - Bulbapedia",
+              "url": "https://bulbapedia.bulbagarden.net/wiki/Charizard"
+            }
+          ]
+        },
+        {
+          "id": "gen5-gems-consumed",
+          "category": "generation-specific held items",
+          "question": "In Generation V, were Gems consumed after boosting a move of their matching type?",
+          "expected_answer": "Yes. In Generation V, a Gem was consumed after boosting a move of the corresponding type.",
+          "answer_type": "boolean",
+          "acceptance": [
+            "Must answer yes.",
+            "Should connect the item to its one-time power boost behavior."
+          ],
+          "sources": [
+            {
+              "title": "Gem - Bulbapedia",
+              "url": "https://bulbapedia.bulbagarden.net/wiki/Gem"
+            }
+          ]
+        },
+        {
+          "id": "gen6-fairy-dragon-immunity",
+          "category": "generation-specific type introduction",
+          "question": "Starting in Generation VI, are Fairy-types immune to Dragon-type moves?",
+          "expected_answer": "Yes. From Generation VI onward, Fairy-type Pokemon are immune to Dragon-type moves.",
+          "answer_type": "boolean",
+          "acceptance": [
+            "Must answer yes for Generation VI onward.",
+            "Should identify this as part of the Fairy type introduction."
+          ],
+          "sources": [
+            {
+              "title": "Fairy (type) - Bulbapedia",
+              "url": "https://bulbapedia.bulbagarden.net/wiki/Fairy_%28type%29"
+            }
+          ]
+        },
+        {
+          "id": "gen7-burn-chip-change",
+          "category": "generation-specific status damage",
+          "question": "In Generation VII, how much residual damage does burn deal at the end of each turn?",
+          "expected_answer": "Burn deals 1/16 of the Pokemon's maximum HP each turn in Generation VII.",
+          "answer_type": "multiplier",
+          "acceptance": [
+            "Must identify the amount as 1/16 max HP.",
+            "Should distinguish it from the 1/8 value used in some earlier generations."
+          ],
+          "sources": [
+            {
+              "title": "Burn (status condition) - Bulbapedia",
+              "url": "https://bulbapedia.bulbagarden.net/wiki/Burn_%28status_condition%29"
+            }
+          ]
+        },
+        {
+          "id": "gen8-teleport-switching",
+          "category": "generation-specific move changes",
+          "question": "Starting in Generation VIII, does Teleport function as a slow pivot move in trainer battles?",
+          "expected_answer": "Yes. Starting in Generation VIII, Teleport became a negative-priority switching move in trainer battles.",
+          "answer_type": "rule",
+          "acceptance": [
+            "Must answer yes for Generation VIII onward.",
+            "Should mention the pivot or switch-out effect."
+          ],
+          "sources": [
+            {
+              "title": "Teleport (move) - Bulbapedia",
+              "url": "https://bulbapedia.bulbagarden.net/wiki/Teleport_%28move%29"
+            }
+          ]
+        },
+        {
+          "id": "gen9-sleep-turns",
+          "category": "generation-specific status flow",
+          "question": "In Generation IX, does a sleeping Pokemon's sleep counter continue to advance while it is switched out?",
+          "expected_answer": "No. In Generation IX, sleep progress resets on switching out rather than continuing off-field.",
+          "answer_type": "boolean-plus-note",
+          "acceptance": [
+            "Must answer no.",
+            "Should describe that switching out resets or restarts sleep progress."
+          ],
+          "sources": [
+            {
+              "title": "Sleep (status condition) - Bulbapedia",
+              "url": "https://bulbapedia.bulbagarden.net/wiki/Sleep_%28status_condition%29"
+            }
+          ]
+        }
+      ]
     }
   ],
   "adversarial": [

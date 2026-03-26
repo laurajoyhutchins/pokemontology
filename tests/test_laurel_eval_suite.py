@@ -15,10 +15,11 @@ def test_laurel_eval_suite_has_expected_tiers_and_adversarial_cases() -> None:
     payload = json.loads(SUITE.read_text(encoding="utf-8"))
 
     tiers = {tier["tier"]: tier["items"] for tier in payload["tiers"]}
-    assert {"easy", "medium", "hard"} <= set(tiers)
+    assert {"easy", "medium", "hard", "generation-specific"} <= set(tiers)
     assert len(tiers["easy"]) >= 4
     assert len(tiers["medium"]) >= 4
     assert len(tiers["hard"]) >= 4
+    assert len(tiers["generation-specific"]) >= 8
     assert len(payload["adversarial"]) >= 5
 
 
