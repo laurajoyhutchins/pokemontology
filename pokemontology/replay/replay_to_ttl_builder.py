@@ -170,7 +170,10 @@ class StateSnapshot:
 
 
 def combatant_iri_for_token(token: str, p1_name: str, p2_name: str) -> URIRef:
-    player_id, _slot = parse_player_slot(token)
+    try:
+        player_id, _slot = parse_player_slot(token)
+    except ValueError:
+        player_id = parse_side_token(token)
     trainer = p1_name if player_id == "p1" else p2_name
     actor_name = actor_display_name(token)
     return PKM[
@@ -178,9 +181,13 @@ def combatant_iri_for_token(token: str, p1_name: str, p2_name: str) -> URIRef:
     ]
 
 
-def slot_key(token: str) -> str:
-    player_id, slot = parse_player_slot(token)
-    return f"{player_id}{slot}"
+def slot_key(token: str) -> str | None:
+    """Return 'p1a'/'p2b' etc., or None if the token has no slot letter."""
+    try:
+        player_id, slot = parse_player_slot(token)
+        return f"{player_id}{slot}"
+    except ValueError:
+        return None
 
 
 def combatant_iri_for_switch(
@@ -223,9 +230,8 @@ def maybe_combatant_from_token(
     token = token.strip()
     if token in active_combatants_by_slot:
         return active_combatants_by_slot[token]
-    try:
-        key = slot_key(token)
-    except ValueError:
+    key = slot_key(token)
+    if key is None:
         return None
     return active_combatants_by_slot.get(
         key, combatant_iri_for_token(token, p1_name, p2_name)
@@ -1266,7 +1272,7 @@ def build_graph(payload: dict) -> Graph:
                 state.current_hp[combatant_iri] = hp_value
                 event_sources["hp"][combatant_iri] = event_iri
 
-                if ev.kind == "-sethp" and len(ev.fields) >= 4:
+                if ev.kind == "-sethp" and len(ev.fields) >= 4 and slot_key(ev.fields[2]) is not None:
                     partner_iri = active_combatants_by_slot.get(
                         slot_key(ev.fields[2]),
                         combatant_iri_for_token(ev.fields[2], p1_name, p2_name),

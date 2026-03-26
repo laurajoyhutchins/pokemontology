@@ -180,6 +180,14 @@ def fetch_seed_data(
         else:
             try:
                 payload = fetch_resource(resource, identifier, timeout)
+            except urllib.error.HTTPError as exc:
+                if exc.code == 404:
+                    print(f"skipping {resource}/{identifier}: not found (404)")
+                    seen.add(key)
+                    continue
+                raise SystemExit(
+                    f"failed to fetch {resource}/{identifier}: {exc}"
+                ) from exc
             except urllib.error.URLError as exc:
                 raise SystemExit(
                     f"failed to fetch {resource}/{identifier}: {exc}"
