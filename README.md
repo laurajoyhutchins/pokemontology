@@ -130,6 +130,14 @@ python3 -m pokemontology pokeapi ingest \
 python3 -m pokemontology check-ttl build/pokeapi.ttl
 ```
 
+```bash
+python3 scripts/pokeapi_scrape.py move \
+      --details \
+      --max-pages 1 \
+      --max-details 25 \
+      --delay-seconds 0.5
+```
+
 ## PokeAPI ingestion pipeline
 
 The repo now includes a two-stage PokeAPI pipeline:
@@ -149,6 +157,20 @@ Current mapping scope:
 - Pokémon move learnsets -> `pkm:MoveLearnRecord` per variant/move/version-group
 
 The transform intentionally excludes data that PokeAPI exposes only as a current canonical snapshot without a clean ontology context. In particular, it does not emit `pkm:TypingAssignment`, `pkm:StatAssignment`, `pkm:AbilityAssignment`, or `pkm:MovePropertyAssignment`, because those are contextual facts in the ontology and PokeAPI does not provide the necessary ruleset precision for them.
+
+## PokeAPI scraping
+
+The repo also includes a dedicated scraper at `scripts/pokeapi_scrape.py` for pulling raw PokeAPI data while following the project’s published fair-use guidance:
+- cache every response to disk
+- send an explicit `User-Agent`
+- pace requests with a configurable delay
+- support resumable runs by skipping already cached pages/details
+- stay within an allowlist of supported resources
+
+This follows PokeAPI’s official documentation and fair-use policy, which says developers should locally cache resources and limit request frequency:
+- https://staging.pokeapi.co/docs/v2
+
+The scraper is for raw collection only. Use the ingestion pipeline afterward to convert the subset that maps cleanly into ontology-native Turtle.
 
 ## Notes
 
