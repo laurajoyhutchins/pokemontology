@@ -172,6 +172,96 @@ def test_builder_emits_switch_events_and_aborted_resolution_for_board_mutations(
     assert any((assignment, RDF.type, PKM.CurrentHPAssignment) in graph for assignment in graph.subjects(RDF.type, PKM.CurrentHPAssignment))
 
 
+def test_builder_expands_spread_targets_and_tracks_mixed_outcomes() -> None:
+    payload = {
+        "id": "synthetic-spread-resolution",
+        "format": "[Gen 9] Custom Game",
+        "players": ["Alice", "Bob"],
+        "log": "\n".join([
+            "|turn|1",
+            "|switch|p1a: Charizard|Charizard, L50|100/100",
+            "|switch|p2a: Venusaur|Venusaur, L50|100/100",
+            "|switch|p2b: Blastoise|Blastoise, L50|100/100",
+            "|move|p1a: Charizard|Heat Wave|p2a: Venusaur|[spread] p2a,p2b",
+            "|-damage|p2a: Venusaur|40/100",
+            "|-miss|p1a: Charizard|p2b: Blastoise",
+        ]),
+    }
+    graph = build_graph(payload)
+
+    heat_wave_action = next(
+        action for action in graph.subjects(RDF.type, PKM.MoveUseAction)
+        if (action, PKM.usesMove, PKM.MoveHeat_Wave) in graph
+    )
+    resolved_targets = set(graph.objects(heat_wave_action, PKM.hasResolvedTarget))
+    assert PKM.Combatant_Bob_Venusaur in resolved_targets
+    assert PKM.Combatant_Bob_Blastoise in resolved_targets
+
+    resolutions = list(graph.subjects(RDF.type, PKM.TargetResolutionState))
+    assert any((resolution, PKM.aboutTarget, PKM.Combatant_Bob_Venusaur) in graph and (resolution, PKM.hasResolutionOutcome, Literal("resolved")) in graph for resolution in resolutions)
+    assert any((resolution, PKM.aboutTarget, PKM.Combatant_Bob_Blastoise) in graph and (resolution, PKM.hasResolutionOutcome, Literal("failed")) in graph for resolution in resolutions)
+
+
+def test_damage_events_link_back_to_current_action_when_targeted() -> None:
+    payload = {
+        "id": "synthetic-causality",
+        "format": "[Gen 9] Custom Game",
+        "players": ["Alice", "Bob"],
+        "log": "\n".join([
+            "|turn|1",
+            "|switch|p1a: Pikachu|Pikachu, L50|100/100",
+            "|switch|p2a: Eevee|Eevee, L50|100/100",
+            "|move|p1a: Pikachu|Thunderbolt|p2a: Eevee",
+            "|-damage|p2a: Eevee|10/100",
+        ]),
+    }
+    graph = build_graph(payload)
+
+    damage_event = next(graph.subjects(RDF.type, PKM.DamageEvent))
+    causing_action = next(graph.objects(damage_event, PKM.causedByAction))
+    assert (causing_action, RDF.type, PKM.MoveUseAction) in graph
+
+
+def test_builder_distinguishes_declared_and_resolved_targets_under_redirection() -> None:
+    payload = {
+        "id": "synthetic-redirection",
+        "format": "[Gen 9] Custom Game",
+        "players": ["Alice", "Bob"],
+        "log": "\n".join([
+            "|turn|1",
+            "|switch|p1a: Pikachu|Pikachu, L50|100/100",
+            "|switch|p2a: Gyarados|Gyarados, L50|100/100",
+            "|switch|p2b: Rhydon|Rhydon, L50|100/100",
+            "|move|p1a: Pikachu|Thunderbolt|p2a: Gyarados",
+            "|-activate|p2b: Rhydon|ability: Lightning Rod",
+            "|-damage|p2b: Rhydon|60/100",
+        ]),
+    }
+    graph = build_graph(payload)
+
+    action = next(
+        action for action in graph.subjects(RDF.type, PKM.MoveUseAction)
+        if (action, PKM.usesMove, PKM.MoveThunderbolt) in graph
+    )
+    declared_targets = set(graph.objects(action, PKM.hasDeclaredTarget))
+    resolved_targets = set(graph.objects(action, PKM.hasResolvedTarget))
+
+    assert declared_targets == {PKM.Combatant_Bob_Gyarados}
+    assert resolved_targets == {PKM.Combatant_Bob_Rhydon}
+
+    resolutions = list(graph.subjects(RDF.type, PKM.TargetResolutionState))
+    assert any(
+        (resolution, PKM.aboutTarget, PKM.Combatant_Bob_Rhydon) in graph
+        and (resolution, PKM.hasResolutionOutcome, Literal("resolved")) in graph
+        for resolution in resolutions
+    )
+    assert not any(
+        (resolution, PKM.aboutTarget, PKM.Combatant_Bob_Gyarados) in graph
+        and (resolution, PKM.hasResolutionOutcome, Literal("resolved")) in graph
+        for resolution in resolutions
+    )
+
+
 def test_builder_uses_only_declared_pkm_predicates(replay_graph: Graph, ontology_graph: Graph) -> None:
     declared = {
         predicate

@@ -19,6 +19,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+from dataclasses import dataclass, field
 
 from rdflib import Graph, Literal, Namespace, URIRef
 from rdflib.namespace import RDF, RDFS, XSD
@@ -71,6 +72,19 @@ STATUS_TOKEN_TO_NAME = {
 }
 
 
+@dataclass
+class ActionExecutionContext:
+    action_iri: URIRef
+    actor_iri: URIRef
+    actor_slot: str
+    declared_targets: list[URIRef] = field(default_factory=list)
+    candidate_targets: list[URIRef] = field(default_factory=list)
+    resolved_targets: set[URIRef] = field(default_factory=set)
+    failed_targets: set[URIRef] = field(default_factory=set)
+    aborted_targets: set[URIRef] = field(default_factory=set)
+    redirected_from_targets: set[URIRef] = field(default_factory=set)
+
+
 def combatant_iri_for_token(token: str, p1_name: str, p2_name: str) -> URIRef:
     player_id, _slot = parse_player_slot(token)
     trainer = p1_name if player_id == "p1" else p2_name
@@ -111,6 +125,9 @@ def maybe_combatant_from_token(
     p1_name: str,
     p2_name: str,
 ) -> URIRef | None:
+    token = token.strip()
+    if token in active_combatants_by_slot:
+        return active_combatants_by_slot[token]
     try:
         key = slot_key(token)
     except ValueError:
@@ -125,6 +142,90 @@ def maybe_status_iri(g: Graph, token: str) -> URIRef | None:
     status_iri = PKM[f"StatusCondition_{sanitize_identifier(status_name)}"]
     ensure_named_entity(g, status_iri, PKM.StatusCondition, status_name)
     return status_iri
+
+
+def annotation_value(fields: list[str], marker: str) -> str | None:
+    prefix = f"[{marker}] "
+    exact = f"[{marker}]"
+    for field in fields:
+        if field == exact:
+            return ""
+        if field.startswith(prefix):
+            return field[len(prefix):]
+    return None
+
+
+def target_iris_for_tokens(
+    token_blob: str,
+    active_combatants_by_slot: dict[str, URIRef],
+    p1_name: str,
+    p2_name: str,
+) -> list[URIRef]:
+    targets: list[URIRef] = []
+    for token in token_blob.split(","):
+        candidate = maybe_combatant_from_token(token.strip(), active_combatants_by_slot, p1_name, p2_name)
+        if candidate is not None and candidate not in targets:
+            targets.append(candidate)
+    return targets
+
+
+def resolution_iri_for(action_iri: URIRef, target_iri: URIRef, outcome: str) -> URIRef:
+    action_name = str(action_iri).rsplit("#", 1)[-1]
+    target_name = str(target_iri).rsplit("#", 1)[-1]
+    return PKM[f"Resolution_{action_name}_{target_name}_{sanitize_identifier(outcome)}"]
+
+
+def emit_target_resolution(
+    g: Graph,
+    action_iri: URIRef,
+    target_iri: URIRef,
+    instant: URIRef,
+    outcome: str,
+    artifact_iri: URIRef,
+    turn: int,
+    order: int,
+) -> URIRef:
+    resolution_iri = resolution_iri_for(action_iri, target_iri, outcome)
+    g.set((resolution_iri, RDF.type, PKM.TargetResolutionState))
+    g.set((resolution_iri, PKM.aboutAction, action_iri))
+    g.set((resolution_iri, PKM.aboutTarget, target_iri))
+    g.set((resolution_iri, PKM.hasContext, instant))
+    g.set((resolution_iri, PKM.hasResolutionOutcome, Literal(outcome)))
+    g.set((resolution_iri, PKM.supportedByArtifact, artifact_iri))
+    g.set((resolution_iri, PKM.hasReplayTurnIndex, Literal(turn, datatype=XSD.integer)))
+    g.set((resolution_iri, PKM.hasReplayEventOrder, Literal(order, datatype=XSD.integer)))
+    g.set((resolution_iri, PKM.hasReplayStepLabel, Literal(f"resolution-{outcome}-t{turn}-e{order}")))
+    g.add((action_iri, PKM.hasResolvedTarget, target_iri))
+    return resolution_iri
+
+
+def mark_redirection(context: ActionExecutionContext, target_iri: URIRef) -> None:
+    if target_iri in context.candidate_targets or not context.candidate_targets:
+        return
+    for declared_target in context.candidate_targets:
+        context.redirected_from_targets.add(declared_target)
+
+
+def finalize_action_context(
+    g: Graph,
+    context: ActionExecutionContext | None,
+    instant: URIRef | None,
+    artifact_iri: URIRef,
+    turn: int,
+    order: int,
+) -> None:
+    if context is None or instant is None:
+        return
+    for target_iri in context.candidate_targets:
+        if (
+            target_iri in context.resolved_targets
+            or target_iri in context.failed_targets
+            or target_iri in context.aborted_targets
+            or target_iri in context.redirected_from_targets
+        ):
+            continue
+        emit_target_resolution(g, context.action_iri, target_iri, instant, "resolved", artifact_iri, turn, order)
+        context.resolved_targets.add(target_iri)
 
 
 def parse_hp_value(hp_status: str) -> int | None:
@@ -255,10 +356,13 @@ def build_graph(payload: dict) -> Graph:
         for slot_token, species_token in discover_pre_turn_switches(payload["log"])
     }
     latest_action_by_slot: dict[str, URIRef] = {}
+    current_action: ActionExecutionContext | None = None
     for idx, ev in enumerate(events):
         instant = PKM[f"I_{idx}"]
 
         if ev.kind in {"switch", "drag", "replace"}:
+            finalize_action_context(g, current_action, instant, artifact_iri, ev.turn, ev.order)
+            current_action = None
             combatant_iri = combatant_iri_for_switch(ev.fields[0], ev.fields[1], p1_name, p2_name)
             active_combatants_by_slot[slot_key(ev.fields[0])] = combatant_iri
 
@@ -311,6 +415,7 @@ def build_graph(payload: dict) -> Graph:
             continue
 
         if ev.kind == "move":
+            finalize_action_context(g, current_action, instant, artifact_iri, ev.turn, ev.order)
             actor_token = ev.fields[0]
             move_name = ev.fields[1].strip()
             actor_iri = active_combatants_by_slot.get(slot_key(actor_token), combatant_iri_for_token(actor_token, p1_name, p2_name))
@@ -333,10 +438,25 @@ def build_graph(payload: dict) -> Graph:
             g.add((action_iri, PKM.supportedByArtifact, artifact_iri))
             latest_action_by_slot[slot_key(actor_token)] = action_iri
 
+            declared_targets: list[URIRef] = []
             if len(ev.fields) > 2:
                 target_iri = maybe_combatant_from_token(ev.fields[2], active_combatants_by_slot, p1_name, p2_name)
                 if target_iri is not None:
                     g.add((action_iri, PKM.hasDeclaredTarget, target_iri))
+                    declared_targets.append(target_iri)
+
+            candidate_targets = list(declared_targets)
+            spread_targets = annotation_value(ev.fields[3:], "spread")
+            if spread_targets:
+                candidate_targets = target_iris_for_tokens(spread_targets, active_combatants_by_slot, p1_name, p2_name)
+
+            current_action = ActionExecutionContext(
+                action_iri=action_iri,
+                actor_iri=actor_iri,
+                actor_slot=slot_key(actor_token),
+                declared_targets=declared_targets,
+                candidate_targets=candidate_targets,
+            )
 
             if idx + 1 < len(events):
                 transition = PKM[f"Transition_{transition_count}"]
@@ -369,6 +489,22 @@ def build_graph(payload: dict) -> Graph:
             g.add((event_iri, PKM.hasReplayEventOrder, Literal(ev.order, datatype=XSD.integer)))
             g.add((event_iri, PKM.hasReplayStepLabel, Literal(f"{ev.kind[1:]}-t{ev.turn}-e{ev.order}")))
             g.add((event_iri, PKM.supportedByArtifact, artifact_iri))
+            if current_action is not None:
+                mark_redirection(current_action, combatant_iri)
+                g.add((event_iri, PKM.causedByAction, current_action.action_iri))
+            if current_action is not None:
+                if combatant_iri != current_action.actor_iri:
+                    emit_target_resolution(
+                        g,
+                        current_action.action_iri,
+                        combatant_iri,
+                        instant,
+                        "resolved",
+                        artifact_iri,
+                        ev.turn,
+                        ev.order,
+                    )
+                    current_action.resolved_targets.add(combatant_iri)
 
             g.add((hp_assignment, RDF.type, PKM.CurrentHPAssignment))
             g.add((hp_assignment, PKM.aboutCombatant, combatant_iri))
@@ -407,8 +543,24 @@ def build_graph(payload: dict) -> Graph:
             g.add((event_iri, PKM.hasReplayEventOrder, Literal(ev.order, datatype=XSD.integer)))
             g.add((event_iri, PKM.hasReplayStepLabel, Literal(f"status-t{ev.turn}-e{ev.order}")))
             g.add((event_iri, PKM.supportedByArtifact, artifact_iri))
+            if current_action is not None:
+                mark_redirection(current_action, combatant_iri)
+            if current_action is not None and combatant_iri != current_action.actor_iri:
+                causing_action = current_action.action_iri
             if causing_action is not None:
                 g.add((event_iri, PKM.causedByAction, causing_action))
+                emit_target_resolution(
+                    g,
+                    causing_action,
+                    combatant_iri,
+                    instant,
+                    "resolved",
+                    artifact_iri,
+                    ev.turn,
+                    ev.order,
+                )
+                if current_action is not None and causing_action == current_action.action_iri:
+                    current_action.resolved_targets.add(combatant_iri)
 
             g.add((assignment_iri, RDF.type, PKM.CurrentStatusAssignment))
             g.add((assignment_iri, PKM.aboutCombatant, combatant_iri))
@@ -549,19 +701,9 @@ def build_graph(payload: dict) -> Graph:
                 action_iri = None
             if action_iri is None:
                 continue
-            resolution_iri = PKM[
-                f"Resolution_T{ev.turn}_{ev.order}_{sanitize_identifier(actor_display_name(ev.fields[0]))}_fail"
-            ]
-            g.add((resolution_iri, RDF.type, PKM.TargetResolutionState))
-            g.add((resolution_iri, PKM.aboutAction, action_iri))
-            g.add((resolution_iri, PKM.aboutTarget, combatant_iri))
-            g.add((resolution_iri, PKM.hasContext, instant))
-            g.add((resolution_iri, PKM.hasResolutionOutcome, Literal("failed")))
-            g.add((resolution_iri, PKM.supportedByArtifact, artifact_iri))
-            g.add((resolution_iri, PKM.hasReplayTurnIndex, Literal(ev.turn, datatype=XSD.integer)))
-            g.add((resolution_iri, PKM.hasReplayEventOrder, Literal(ev.order, datatype=XSD.integer)))
-            g.add((resolution_iri, PKM.hasReplayStepLabel, Literal(f"resolution-fail-t{ev.turn}-e{ev.order}")))
-            g.add((action_iri, PKM.hasResolvedTarget, combatant_iri))
+            emit_target_resolution(g, action_iri, combatant_iri, instant, "failed", artifact_iri, ev.turn, ev.order)
+            if current_action is not None and action_iri == current_action.action_iri:
+                current_action.failed_targets.add(combatant_iri)
 
         elif ev.kind == "-miss":
             if len(ev.fields) < 2:
@@ -576,19 +718,9 @@ def build_graph(payload: dict) -> Graph:
                 action_iri = None
             if action_iri is None:
                 continue
-            resolution_iri = PKM[
-                f"Resolution_T{ev.turn}_{ev.order}_{sanitize_identifier(actor_display_name(ev.fields[0]))}_{sanitize_identifier(actor_display_name(ev.fields[1]))}_miss"
-            ]
-            g.add((resolution_iri, RDF.type, PKM.TargetResolutionState))
-            g.add((resolution_iri, PKM.aboutAction, action_iri))
-            g.add((resolution_iri, PKM.aboutTarget, target_iri))
-            g.add((resolution_iri, PKM.hasContext, instant))
-            g.add((resolution_iri, PKM.hasResolutionOutcome, Literal("failed")))
-            g.add((resolution_iri, PKM.supportedByArtifact, artifact_iri))
-            g.add((resolution_iri, PKM.hasReplayTurnIndex, Literal(ev.turn, datatype=XSD.integer)))
-            g.add((resolution_iri, PKM.hasReplayEventOrder, Literal(ev.order, datatype=XSD.integer)))
-            g.add((resolution_iri, PKM.hasReplayStepLabel, Literal(f"resolution-miss-t{ev.turn}-e{ev.order}")))
-            g.add((action_iri, PKM.hasResolvedTarget, target_iri))
+            emit_target_resolution(g, action_iri, target_iri, instant, "failed", artifact_iri, ev.turn, ev.order)
+            if current_action is not None and action_iri == current_action.action_iri:
+                current_action.failed_targets.add(target_iri)
 
         elif ev.kind == "cant":
             combatant_iri = maybe_combatant_from_token(ev.fields[0], active_combatants_by_slot, p1_name, p2_name)
@@ -600,19 +732,27 @@ def build_graph(payload: dict) -> Graph:
                 action_iri = None
             if action_iri is None:
                 continue
-            resolution_iri = PKM[
-                f"Resolution_T{ev.turn}_{ev.order}_{sanitize_identifier(actor_display_name(ev.fields[0]))}_cant"
-            ]
-            g.add((resolution_iri, RDF.type, PKM.TargetResolutionState))
-            g.add((resolution_iri, PKM.aboutAction, action_iri))
-            g.add((resolution_iri, PKM.aboutTarget, combatant_iri))
-            g.add((resolution_iri, PKM.hasContext, instant))
-            g.add((resolution_iri, PKM.hasResolutionOutcome, Literal("aborted")))
-            g.add((resolution_iri, PKM.supportedByArtifact, artifact_iri))
-            g.add((resolution_iri, PKM.hasReplayTurnIndex, Literal(ev.turn, datatype=XSD.integer)))
-            g.add((resolution_iri, PKM.hasReplayEventOrder, Literal(ev.order, datatype=XSD.integer)))
-            g.add((resolution_iri, PKM.hasReplayStepLabel, Literal(f"resolution-cant-t{ev.turn}-e{ev.order}")))
-            g.add((action_iri, PKM.hasResolvedTarget, combatant_iri))
+            emit_target_resolution(g, action_iri, combatant_iri, instant, "aborted", artifact_iri, ev.turn, ev.order)
+            if current_action is not None and action_iri == current_action.action_iri:
+                current_action.aborted_targets.add(combatant_iri)
+
+        elif ev.kind in {"-supereffective", "-resisted", "-immune", "-activate"}:
+            combatant_iri = maybe_combatant_from_token(ev.fields[0], active_combatants_by_slot, p1_name, p2_name)
+            if combatant_iri is None or current_action is None:
+                continue
+            mark_redirection(current_action, combatant_iri)
+            if combatant_iri != current_action.actor_iri:
+                emit_target_resolution(
+                    g,
+                    current_action.action_iri,
+                    combatant_iri,
+                    instant,
+                    "resolved",
+                    artifact_iri,
+                    ev.turn,
+                    ev.order,
+                )
+                current_action.resolved_targets.add(combatant_iri)
 
         elif ev.kind == "faint":
             fainted_token = ev.fields[0]
@@ -631,6 +771,22 @@ def build_graph(payload: dict) -> Graph:
             g.add((event_iri, PKM.hasReplayEventOrder, Literal(ev.order, datatype=XSD.integer)))
             g.add((event_iri, PKM.hasReplayStepLabel, Literal(f"faint-t{ev.turn}-e{ev.order}")))
             g.add((event_iri, PKM.supportedByArtifact, artifact_iri))
+            if current_action is not None:
+                mark_redirection(current_action, fainted_iri)
+            if current_action is not None:
+                g.add((event_iri, PKM.causedByAction, current_action.action_iri))
+                if fainted_iri != current_action.actor_iri:
+                    emit_target_resolution(
+                        g,
+                        current_action.action_iri,
+                        fainted_iri,
+                        instant,
+                        "resolved",
+                        artifact_iri,
+                        ev.turn,
+                        ev.order,
+                    )
+                    current_action.resolved_targets.add(fainted_iri)
 
             g.add((hp_assignment, RDF.type, PKM.CurrentHPAssignment))
             g.add((hp_assignment, PKM.aboutCombatant, fainted_iri))
@@ -643,6 +799,16 @@ def build_graph(payload: dict) -> Graph:
             g.add((hp_assignment, PKM.hasReplayStepLabel, Literal(f"hp-faint-t{ev.turn}-e{ev.order}")))
 
             active_combatants_by_slot.pop(slot_key(fainted_token), None)
+
+    if events:
+        finalize_action_context(
+            g,
+            current_action,
+            PKM[f"I_{len(events) - 1}"],
+            artifact_iri,
+            events[-1].turn,
+            events[-1].order,
+        )
 
     return g
 

@@ -140,6 +140,8 @@ def test_parse_log_keeps_supported_state_events() -> None:
 |-boost|p1a: Charizard|spa|1
 |-miss|p1a: Charizard|p2a: Mewtwo
 |-fail|p2a: Mewtwo
+|-supereffective|p2a: Mewtwo
+|-activate|p1a: Charizard|ability: Blaze
 |cant|p2a: Mewtwo|par
 |replace|p2a: Zoroark|Zoroark, L50|100/100
 |detailschange|p1a: Charizard|Charizard-Mega-X, L50|150/200
@@ -156,6 +158,8 @@ def test_parse_log_keeps_supported_state_events() -> None:
         "-boost",
         "-miss",
         "-fail",
+        "-supereffective",
+        "-activate",
         "cant",
         "replace",
         "detailschange",
