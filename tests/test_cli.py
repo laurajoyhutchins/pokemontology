@@ -5,10 +5,9 @@ from __future__ import annotations
 import json
 
 from pokemontology import cli
-from pokemontology._script_loader import repo_path
+from tests.support import REPO, write_json
 
 
-REPO = repo_path()
 REPLAY_JSON = (
     REPO
     / "examples"
@@ -59,7 +58,7 @@ def test_parse_replay_command_requires_top_level_object(tmp_path, capsys) -> Non
 
 def test_parse_replay_command_requires_log_field(tmp_path, capsys) -> None:
     replay_path = tmp_path / "replay.json"
-    replay_path.write_text(json.dumps({"id": "missing-log"}), encoding="utf-8")
+    write_json(replay_path, {"id": "missing-log"})
 
     try:
         cli.main(["parse-replay", str(replay_path)])
@@ -94,21 +93,19 @@ def test_build_slice_command_writes_file(tmp_path, capsys) -> None:
 
 def test_resolve_order_command_outputs_json(tmp_path, capsys) -> None:
     state_path = tmp_path / "order-state.json"
-    state_path.write_text(
-        json.dumps(
-            {
-                "combatants": [
-                    {
-                        "side": "p1",
-                        "speed_tier": 120,
-                        "speed_stage": 1,
-                        "item": "Choice Scarf",
-                    },
-                    {"side": "p2", "speed_tier": 150},
-                ]
-            }
-        ),
-        encoding="utf-8",
+    write_json(
+        state_path,
+        {
+            "combatants": [
+                {
+                    "side": "p1",
+                    "speed_tier": 120,
+                    "speed_stage": 1,
+                    "item": "Choice Scarf",
+                },
+                {"side": "p2", "speed_tier": 150},
+            ]
+        },
     )
 
     exit_code = cli.main(["resolve-order", str(state_path), "--pretty"])
@@ -123,16 +120,14 @@ def test_resolve_order_command_skips_mechanics_graph_when_not_needed(
     tmp_path, capsys, monkeypatch: object
 ) -> None:
     state_path = tmp_path / "order-state.json"
-    state_path.write_text(
-        json.dumps(
-            {
-                "combatants": [
-                    {"side": "p1", "speed_tier": 120},
-                    {"side": "p2", "speed_tier": 150},
-                ]
-            }
-        ),
-        encoding="utf-8",
+    write_json(
+        state_path,
+        {
+            "combatants": [
+                {"side": "p1", "speed_tier": 120},
+                {"side": "p2", "speed_tier": 150},
+            ]
+        },
     )
 
     def fail_normalize(_value):
@@ -165,24 +160,22 @@ def test_resolve_order_command_requires_top_level_object(tmp_path, capsys) -> No
 def test_replay_curate_command_writes_curated_file(tmp_path, capsys) -> None:
     index_dir = tmp_path / "index" / "gen9vgc2025reggbo3" / "all"
     index_dir.mkdir(parents=True)
-    (index_dir / "page_1.json").write_text(
-        json.dumps(
-            [
-                {
-                    "id": "battle-1",
-                    "format": "gen9vgc2025reggbo3",
-                    "players": ["Alice", "Bob"],
-                    "rating": 1700,
-                },
-                {
-                    "id": "battle-2",
-                    "format": "gen9vgc2025reggbo3",
-                    "players": ["Solo"],
-                    "rating": 1800,
-                },
-            ]
-        ),
-        encoding="utf-8",
+    write_json(
+        index_dir / "page_1.json",
+        [
+            {
+                "id": "battle-1",
+                "format": "gen9vgc2025reggbo3",
+                "players": ["Alice", "Bob"],
+                "rating": 1700,
+            },
+            {
+                "id": "battle-2",
+                "format": "gen9vgc2025reggbo3",
+                "players": ["Solo"],
+                "rating": 1800,
+            },
+        ],
     )
     curated = tmp_path / "curated.json"
 

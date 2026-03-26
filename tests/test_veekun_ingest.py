@@ -2,28 +2,19 @@
 
 from __future__ import annotations
 
-import shutil
-from pathlib import Path
-
 from rdflib import Graph, Namespace
 from rdflib.namespace import RDF
 
-from pokemontology._script_loader import repo_path
 from pokemontology.ingest import veekun_ingest
+from tests.support import copy_fixture_tree
 
 
-REPO = repo_path()
-FIXTURES = REPO / "tests" / "fixtures" / "veekun_export"
 PKM = Namespace("https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#")
-
-
-def _copy_fixtures(destination: Path) -> None:
-    shutil.copytree(FIXTURES, destination, dirs_exist_ok=True)
 
 
 def test_build_graph_from_csv_emits_contextual_mechanics_assignments(tmp_path) -> None:
     source_dir = tmp_path / "veekun_export"
-    _copy_fixtures(source_dir)
+    copy_fixture_tree("veekun_export", destination=source_dir)
 
     graph = veekun_ingest.build_graph_from_csv(source_dir)
 
@@ -41,7 +32,7 @@ def test_build_graph_from_csv_emits_contextual_mechanics_assignments(tmp_path) -
 
 def test_build_ttl_from_csv_serializes_valid_turtle(tmp_path) -> None:
     source_dir = tmp_path / "veekun_export"
-    _copy_fixtures(source_dir)
+    copy_fixture_tree("veekun_export", destination=source_dir)
 
     ttl = veekun_ingest.build_ttl_from_csv(source_dir)
     graph = Graph()

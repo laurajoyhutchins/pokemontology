@@ -8,11 +8,10 @@ from pathlib import Path
 from rdflib import Graph, Namespace
 from rdflib.namespace import RDF
 
-from pokemontology._script_loader import repo_path
 from pokemontology.replay import replay_dataset
+from tests.support import REPO, read_json, write_json
 
 
-REPO = repo_path()
 REPLAY_JSON = (
     REPO
     / "examples"
@@ -86,36 +85,34 @@ def test_fetch_index_caches_search_pages(tmp_path, monkeypatch) -> None:
 def test_curate_replay_ids_filters_on_format_rating_and_player_count(tmp_path) -> None:
     page_dir = tmp_path / "index" / "gen9vgc2025reggbo3" / "all"
     page_dir.mkdir(parents=True)
-    (page_dir / "page_1.json").write_text(
-        json.dumps(
-            [
-                {
-                    "id": "keep-me",
-                    "format": "gen9vgc2025reggbo3",
-                    "players": ["a", "b"],
-                    "rating": 1650,
-                },
-                {
-                    "id": "too-low",
-                    "format": "gen9vgc2025reggbo3",
-                    "players": ["a", "b"],
-                    "rating": 1200,
-                },
-                {
-                    "id": "wrong-format",
-                    "format": "gen9ou",
-                    "players": ["a", "b"],
-                    "rating": 1900,
-                },
-                {
-                    "id": "not-heads-up",
-                    "format": "gen9vgc2025reggbo3",
-                    "players": ["solo"],
-                    "rating": 1700,
-                },
-            ]
-        ),
-        encoding="utf-8",
+    write_json(
+        page_dir / "page_1.json",
+        [
+            {
+                "id": "keep-me",
+                "format": "gen9vgc2025reggbo3",
+                "players": ["a", "b"],
+                "rating": 1650,
+            },
+            {
+                "id": "too-low",
+                "format": "gen9vgc2025reggbo3",
+                "players": ["a", "b"],
+                "rating": 1200,
+            },
+            {
+                "id": "wrong-format",
+                "format": "gen9ou",
+                "players": ["a", "b"],
+                "rating": 1900,
+            },
+            {
+                "id": "not-heads-up",
+                "format": "gen9vgc2025reggbo3",
+                "players": ["solo"],
+                "rating": 1700,
+            },
+        ],
     )
 
     curated_path = tmp_path / "curated.json"
@@ -129,16 +126,12 @@ def test_curate_replay_ids_filters_on_format_rating_and_player_count(tmp_path) -
     )
 
     assert payload["replay_ids"] == ["keep-me"]
-    assert json.loads(curated_path.read_text(encoding="utf-8"))["replay_ids"] == [
-        "keep-me"
-    ]
+    assert read_json(curated_path)["replay_ids"] == ["keep-me"]
 
 
 def test_fetch_replays_uses_curated_ids_and_caches_json(tmp_path, monkeypatch) -> None:
     curated_path = tmp_path / "curated.json"
-    curated_path.write_text(
-        json.dumps({"replay_ids": ["battle-1", "battle-2"]}), encoding="utf-8"
-    )
+    write_json(curated_path, {"replay_ids": ["battle-1", "battle-2"]})
     requested: list[str] = []
     sleep_calls: list[float] = []
 
@@ -177,12 +170,12 @@ def test_fetch_replays_uses_curated_ids_and_caches_json(tmp_path, monkeypatch) -
 
 def test_transform_replays_writes_ttl_and_manifest(tmp_path) -> None:
     curated_path = tmp_path / "curated.json"
-    curated_path.write_text(json.dumps({"replay_ids": ["battle-1"]}), encoding="utf-8")
+    write_json(curated_path, {"replay_ids": ["battle-1"]})
     raw_dir = tmp_path / "raw"
     raw_dir.mkdir()
     replay_payload = json.loads(REPLAY_JSON.read_text(encoding="utf-8"))
     replay_payload["id"] = "battle-1"
-    (raw_dir / "battle-1.json").write_text(json.dumps(replay_payload), encoding="utf-8")
+    write_json(raw_dir / "battle-1.json", replay_payload)
 
     stats = replay_dataset.transform_replays(curated_path, raw_dir, tmp_path / "ttl")
 
@@ -190,9 +183,7 @@ def test_transform_replays_writes_ttl_and_manifest(tmp_path) -> None:
     assert stats.slices_written == 1
     ttl_path = tmp_path / "ttl" / "battle-1.ttl"
     assert ttl_path.exists()
-    manifest = json.loads(
-        (tmp_path / "ttl" / "manifest.json").read_text(encoding="utf-8")
-    )
+    manifest = read_json(tmp_path / "ttl" / "manifest.json")
     assert manifest["slices"][0]["id"] == "battle-1"
 
     graph = Graph()

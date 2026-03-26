@@ -3,28 +3,20 @@
 from __future__ import annotations
 
 import json
-import shutil
-from pathlib import Path
 
 from rdflib import Graph, Namespace
 from rdflib.namespace import RDF
 
-from pokemontology._script_loader import repo_path
 from pokemontology.ingest import pokeapi_ingest
+from tests.support import copy_fixture_tree, fixture_path
 
 
-REPO = repo_path()
-FIXTURES = REPO / "tests" / "fixtures" / "pokeapi" / "raw"
 PKM = Namespace("https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#")
-
-
-def _copy_raw_fixtures(destination: Path) -> None:
-    shutil.copytree(FIXTURES, destination, dirs_exist_ok=True)
 
 
 def test_fetch_seed_data_expands_related_resources(tmp_path, monkeypatch) -> None:
     fixture_payloads: dict[tuple[str, str], dict] = {}
-    for path in FIXTURES.rglob("*.json"):
+    for path in fixture_path("pokeapi", "raw").rglob("*.json"):
         resource = path.parent.name
         identifier = path.stem
         fixture_payloads[(resource, identifier)] = json.loads(
@@ -50,7 +42,7 @@ def test_fetch_seed_data_expands_related_resources(tmp_path, monkeypatch) -> Non
 
 def test_build_graph_from_raw_emits_expected_ontology_nodes(tmp_path) -> None:
     raw_dir = tmp_path / "raw"
-    _copy_raw_fixtures(raw_dir)
+    copy_fixture_tree("pokeapi", "raw", destination=raw_dir)
 
     graph = pokeapi_ingest.build_graph_from_raw(raw_dir)
 
@@ -79,7 +71,7 @@ def test_build_graph_from_raw_emits_expected_ontology_nodes(tmp_path) -> None:
 
 def test_build_ttl_from_raw_serializes_valid_turtle(tmp_path) -> None:
     raw_dir = tmp_path / "raw"
-    _copy_raw_fixtures(raw_dir)
+    copy_fixture_tree("pokeapi", "raw", destination=raw_dir)
 
     ttl = pokeapi_ingest.build_ttl_from_raw(raw_dir)
     graph = Graph()

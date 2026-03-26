@@ -5,11 +5,9 @@ from __future__ import annotations
 import pytest
 from rdflib import Graph
 
-from pokemontology._script_loader import repo_path
 from pokemontology.build import build_ontology
+from tests.support import REPO
 
-
-REPO = repo_path()
 
 
 @pytest.fixture(scope="session")

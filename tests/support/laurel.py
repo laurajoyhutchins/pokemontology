@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
+
+from tests.support import write_json
 
 
 def write_super_effective_fixture(path: Path) -> None:
@@ -75,15 +76,13 @@ def write_dense_schema_index(
     vector: list[int],
     item: dict[str, object],
 ) -> None:
-    path.write_text(
-        json.dumps(
-            {
-                "vocabulary": vocabulary,
-                "vectors": [vector],
-                "items": [item],
-            }
-        ),
-        encoding="utf-8",
+    write_json(
+        path,
+        {
+            "vocabulary": vocabulary,
+            "vectors": [vector],
+            "items": [item],
+        },
     )
 
 
@@ -101,18 +100,16 @@ def write_eval_suite_payload(
     tiers: list[dict[str, object]],
     adversarial: list[dict[str, object]],
 ) -> None:
-    path.write_text(
-        json.dumps(
-            {
-                "suite_name": "Test Laurel Suite",
-                "version": "test",
-                "scope": "Test scope",
-                "notes": ["Test suite payload."],
-                "tiers": tiers,
-                "adversarial": adversarial,
-            }
-        ),
-        encoding="utf-8",
+    write_json(
+        path,
+        {
+            "suite_name": "Test Laurel Suite",
+            "version": "test",
+            "scope": "Test scope",
+            "notes": ["Test suite payload."],
+            "tiers": tiers,
+            "adversarial": adversarial,
+        },
     )
 
 

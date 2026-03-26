@@ -8,12 +8,11 @@ from pathlib import Path
 from rdflib import Graph
 
 from pokemontology import cli
-from pokemontology._script_loader import repo_path
 from pokemontology.chat import validate_sparql_text
-from tests._laurel_support import write_dense_schema_index, write_super_effective_fixture
+from tests.support import REPO
+from tests.support.laurel import write_dense_schema_index, write_super_effective_fixture
 
 
-REPO = repo_path()
 SUPER_EFFECTIVE_QUERY = REPO / "queries" / "super_effective_moves.sparql"
 
 

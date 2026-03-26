@@ -6,7 +6,7 @@ import json
 
 from pokemontology import cli
 from pokemontology.laurel_eval import EvalConfig, describe_suite, evaluate_suite, load_suite
-from tests._laurel_support import (
+from tests.support.laurel import (
     write_charizard_fire_source,
     write_dense_schema_index,
     write_eval_suite,
