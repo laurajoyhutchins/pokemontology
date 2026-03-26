@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 from rdflib import Graph
+from rdflib.namespace import RDF
 
 from pokemontology import cli
 from pokemontology.chat import validate_sparql_text
@@ -14,6 +16,20 @@ from tests.support.laurel import write_dense_schema_index, write_super_effective
 
 
 SUPER_EFFECTIVE_QUERY = REPO / "queries" / "super_effective_moves.sparql"
+PKM_PREFIX_TERM_RE = re.compile(r"\bpkm:([A-Za-z_][\w-]*)\b")
+
+
+def _declared_pkm_terms(graph: Graph) -> set[str]:
+    declared: set[str] = set()
+    for subject in graph.subjects(RDF.type, None):
+        subject_text = str(subject)
+        if "#" not in subject_text:
+            continue
+        namespace, local = subject_text.rsplit("#", 1)
+        if namespace != "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl":
+            continue
+        declared.add(local)
+    return declared
 
 
 def test_super_effective_moves_query_returns_expected_row(
@@ -35,6 +51,18 @@ def test_super_effective_moves_query_returns_expected_row(
     assert str(row.opponentLabel) == "Bulbasaur"
     assert str(row.effectiveTypeName) == "Grass"
     assert str(row.factor) == "2.0"
+
+
+def test_bundled_super_effective_query_only_uses_declared_ontology_terms(
+    ontology_graph: Graph,
+) -> None:
+    declared = _declared_pkm_terms(ontology_graph)
+    used = {
+        term
+        for term in PKM_PREFIX_TERM_RE.findall(SUPER_EFFECTIVE_QUERY.read_text(encoding="utf-8"))
+        if "_" not in term
+    }
+    assert used <= declared, sorted(used - declared)
 
 
 def test_query_command_outputs_json_results(

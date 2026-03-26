@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 
 from pokemontology._script_loader import repo_path
 
@@ -11,6 +12,7 @@ APP_JS = REPO / "docs" / "app.js"
 SITE_DATA = REPO / "docs" / "site-data.json"
 INDEX_HTML = REPO / "docs" / "index.html"
 SCHEMA_INDEX = REPO / "docs" / "schema-index.json"
+PKM_PREFIX_TERM_RE = re.compile(r"\bpkm:([A-Za-z_][\w-]*)\b")
 
 
 def test_query_engine_uses_comunica_fallback_urls() -> None:
@@ -101,3 +103,18 @@ def test_schema_pack_examples_match_ontology_terms() -> None:
     assert "pkm:hasActor" not in examples["super-effective-moves"]["query"]
     assert "pkm:hasName \"Charizard\"" in examples["charizard-fire-check"]["query"]
     assert "rdfs:label" not in examples["charizard-fire-check"]["query"]
+
+
+def test_schema_pack_examples_only_reference_known_ontology_terms() -> None:
+    schema_index = json.loads(SCHEMA_INDEX.read_text(encoding="utf-8"))
+    known_terms = set(schema_index["validation"]["known_terms"])
+    for example in schema_index["examples"]:
+        used_terms = set(PKM_PREFIX_TERM_RE.findall(example.get("query", "")))
+        assert used_terms <= known_terms, (example["id"], sorted(used_terms - known_terms))
+
+
+def test_frontend_fallback_worker_avoids_stale_ontology_patterns() -> None:
+    llm_text = (REPO / "docs" / "workers" / "llm-worker.js").read_text(encoding="utf-8")
+    assert "pkm:hasActor" not in llm_text
+    assert "rdfs:label" not in llm_text
+    assert "pkm:hasName" in llm_text
