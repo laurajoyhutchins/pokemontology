@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from pathlib import Path
 from dataclasses import dataclass, field
 
@@ -34,11 +35,20 @@ from scripts.replay.replay_parser import (
     parse_player_slot,
     parse_replay_payload,
     parse_side_token,
+    pokeapi_species_id,
     sanitize_identifier,
 )
 
 PKM = Namespace(PKM_PREFIX)
 SITE_BASE = "https://laurajoyhutchins.github.io/pokemontology"
+
+
+def _species_iri(species_raw: str) -> URIRef:
+    pokeapi_id = pokeapi_species_id(species_raw)
+    safe = re.sub(r"[^A-Za-z0-9]+", "_", pokeapi_id).strip("_")
+    safe = re.sub(r"_+", "_", safe)
+    return PKM[f"Species_{safe}"]
+
 
 STAT_TOKEN_TO_NAME = {
     "atk": "Attack",
@@ -608,6 +618,7 @@ def build_graph(payload: dict) -> Graph:
         g.add((combatant, PKM.participatesInBattle, battle_iri))
         g.add((combatant, PKM.onSide, side_iri))
         g.add((combatant, PKM.hasCombatantLabel, Literal(info["label"])))
+        g.add((combatant, PKM.representsSpecies, _species_iri(info["species_raw"])))
 
     for move_iri, move_name in moves.items():
         g.add((PKM[move_iri], RDF.type, PKM.Move))
@@ -1017,6 +1028,8 @@ def build_graph(payload: dict) -> Graph:
             transformation_name = f"Terastallized {tera_type}"
             transformation_iri = PKM[f"Transformation_{sanitize_identifier(transformation_name)}"]
             ensure_named_entity(g, transformation_iri, PKM.TransformationState, transformation_name)
+            type_iri = PKM[f"Type_{sanitize_identifier(tera_type.lower())}"]
+            g.add((transformation_iri, PKM.hasTeraType, type_iri))
 
             state.current_transformations[combatant_iri] = transformation_iri
             event_sources["transformation"][combatant_iri] = PKM[

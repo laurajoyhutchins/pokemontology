@@ -1410,6 +1410,22 @@ pkm:hasBattleOutcome
     rdfs:domain pkm:Battle ;
     rdfs:range xsd:string .
 
+pkm:representsSpecies
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "representsSpecies" ;
+    rdfs:comment "Links a replay BattleParticipant to the canonical Species individual for species-level lookups such as base typing." ;
+    rdfs:domain pkm:BattleParticipant ;
+    rdfs:range pkm:Species .
+
+pkm:hasTeraType
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasTeraType" ;
+    rdfs:comment "The Tera type of a Terastallized TransformationState, used for type-effectiveness queries that must override base species typing." ;
+    rdfs:domain pkm:TransformationState ;
+    rdfs:range pkm:Type .
+
 # Canonical random mechanic individuals for reuse
 pkm:RandomMechanic_AccuracyCheck
     a pkm:RandomMechanic ;

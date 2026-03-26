@@ -16,6 +16,9 @@ dependencies = [
 [project.scripts]
 pokemontology = "pokemontology.cli:main"
 
+[tool.setuptools.packages.find]
+include = ["pokemontology*", "scripts*"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-m 'not slow'"

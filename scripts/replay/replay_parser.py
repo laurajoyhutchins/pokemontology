@@ -91,6 +91,18 @@ def sanitize_identifier(text: str) -> str:
     return text
 
 
+def pokeapi_species_id(species_raw: str) -> str:
+    """Normalize a Showdown species display name to a PokeAPI pokemon identifier.
+
+    Examples: "Pikachu" → "pikachu", "Mr. Mime" → "mr-mime",
+              "Farfetch'd" → "farfetchd", "Type: Null" → "type-null"
+    """
+    text = species_raw.lower().strip()
+    text = re.sub(r"[^a-z0-9]+", "-", text)
+    text = re.sub(r"-+", "-", text).strip("-")
+    return text
+
+
 def compact_species_name(raw: str) -> str:
     """Normalize battle log Pokémon names to a stable compact label."""
     text = raw.strip()

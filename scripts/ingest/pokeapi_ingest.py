@@ -8,6 +8,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from collections import deque
+from decimal import Decimal
 from pathlib import Path
 
 from rdflib import Graph, Literal, URIRef
@@ -250,6 +251,12 @@ def build_graph_from_raw(raw_dir: Path) -> Graph:
     )
     add_dataset_artifact(g, PKM.DatasetArtifact_PokeAPI, "PokeAPI", f"{POKEAPI_BASE}/")
 
+    # Synthetic default ruleset for current-gen PokeAPI data (referenced throughout)
+    default_ruleset_iri = PKM["Ruleset_PokeAPI_Default"]
+    g.add((default_ruleset_iri, RDF.type, PKM.Ruleset))
+    g.add((default_ruleset_iri, PKM.hasName, Literal("PokeAPI Default (Current Generation)")))
+    g.add((default_ruleset_iri, PKM.hasIdentifier, Literal("pokeapi:ruleset:current")))
+
     for payload in payloads["type"]:
         add_named_resource(g, iri_for("Type", payload_name(payload)), PKM.Type, payload, "type")
 
@@ -260,13 +267,58 @@ def build_graph_from_raw(raw_dir: Path) -> Graph:
         add_named_resource(g, iri_for("Ability", payload_name(payload)), PKM.Ability, payload, "ability")
 
     for payload in payloads["move"]:
-        add_named_resource(g, iri_for("Move", payload_name(payload)), PKM.Move, payload, "move")
+        move_name = payload_name(payload)
+        add_named_resource(g, iri_for("Move", move_name), PKM.Move, payload, "move")
+        move_type_name = payload.get("type", {}).get("name")
+        if move_type_name:
+            type_iri = iri_for("Type", move_type_name)
+            move_iri = iri_for("Move", move_name)
+            mpa_iri = iri_for("MovePropertyAssignment", f"{move_name}_current")
+            g.add((mpa_iri, RDF.type, PKM.MovePropertyAssignment))
+            g.add((mpa_iri, PKM.aboutMove, move_iri))
+            g.add((mpa_iri, PKM.hasContext, default_ruleset_iri))
+            g.add((mpa_iri, PKM.hasMoveType, type_iri))
+            base_power = payload.get("power")
+            if base_power is not None:
+                g.add((mpa_iri, PKM.hasBasePower, Literal(base_power, datatype=XSD.integer)))
+            accuracy = payload.get("accuracy")
+            if accuracy is not None:
+                g.add((mpa_iri, PKM.hasAccuracy, Literal(accuracy, datatype=XSD.integer)))
+            priority = payload.get("priority")
+            if priority is not None:
+                g.add((mpa_iri, PKM.hasPriority, Literal(priority, datatype=XSD.integer)))
+            pp = payload.get("pp")
+            if pp is not None:
+                g.add((mpa_iri, PKM.hasPP, Literal(pp, datatype=XSD.integer)))
 
     for payload in payloads["pokemon-species"]:
         add_named_resource(g, iri_for("Species", payload_name(payload)), PKM.Species, payload, "pokemon-species")
 
     for payload in payloads["version-group"]:
         add_version_group_context(g, payload)
+
+    # TypeEffectivenessAssignment from type.damage_relations
+    damage_factor_map = {
+        "double_damage_to": Decimal("2.0"),
+        "half_damage_to": Decimal("0.5"),
+        "no_damage_to": Decimal("0.0"),
+    }
+    for payload in payloads["type"]:
+        attacker_iri = iri_for("Type", payload_name(payload))
+        relations = payload.get("damage_relations", {})
+        for relation_key, factor in damage_factor_map.items():
+            for defender_entry in relations.get(relation_key, []):
+                defender_name = defender_entry["name"]
+                defender_iri = iri_for("Type", defender_name)
+                assignment_iri = iri_for(
+                    "TypeEffectivenessAssignment",
+                    f"{payload_name(payload)}_{defender_name}_current",
+                )
+                g.add((assignment_iri, RDF.type, PKM.TypeEffectivenessAssignment))
+                g.add((assignment_iri, PKM.attackerType, attacker_iri))
+                g.add((assignment_iri, PKM.defenderType, defender_iri))
+                g.add((assignment_iri, PKM.hasContext, default_ruleset_iri))
+                g.add((assignment_iri, PKM.hasDamageFactor, Literal(factor, datatype=XSD.decimal)))
 
     learn_records_seen: set[tuple[str, str, str]] = set()
     for payload in payloads["pokemon"]:
@@ -290,6 +342,23 @@ def build_graph_from_raw(raw_dir: Path) -> Graph:
             artifact_iri=PKM.DatasetArtifact_PokeAPI,
             external_iri=pokeapi_resource_url("pokemon", payload),
         )
+
+        # TypingAssignment from pokemon.types
+        for type_slot in payload.get("types", []):
+            slot_num = type_slot.get("slot", 1)
+            type_name = type_slot.get("type", {}).get("name")
+            if not type_name:
+                continue
+            type_iri = iri_for("Type", type_name)
+            typing_assignment_iri = iri_for(
+                "TypingAssignment",
+                f"{pokemon_name}_{type_name}_current",
+            )
+            g.add((typing_assignment_iri, RDF.type, PKM.TypingAssignment))
+            g.add((typing_assignment_iri, PKM.aboutVariant, variant_iri))
+            g.add((typing_assignment_iri, PKM.aboutType, type_iri))
+            g.add((typing_assignment_iri, PKM.hasContext, default_ruleset_iri))
+            g.add((typing_assignment_iri, PKM.hasTypeSlot, Literal(slot_num, datatype=XSD.integer)))
 
         for move_entry in payload.get("moves", []):
             move_name = move_entry.get("move", {}).get("name")

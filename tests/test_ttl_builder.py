@@ -649,6 +649,51 @@ def test_builder_records_battle_outcome_on_tie() -> None:
     assert str(outcome) == "tie"
 
 
+def test_builder_emits_represents_species() -> None:
+    payload = {
+        "id": "synthetic-species-link",
+        "format": "[Gen 9] Custom Game",
+        "players": ["Alice", "Bob"],
+        "log": "\n".join([
+            "|turn|1",
+            "|switch|p1a: Pikachu|Pikachu, L50|100/100",
+            "|switch|p2a: Mr. Mime|Mr. Mime, L50|100/100",
+        ]),
+    }
+    graph = build_graph(payload)
+
+    pikachu = PKM["Combatant_Alice_Pikachu"]
+    mr_mime = PKM["Combatant_Bob_MrMime"]
+
+    pikachu_species = list(graph.objects(pikachu, PKM.representsSpecies))
+    assert len(pikachu_species) == 1
+    assert str(pikachu_species[0]) == str(PKM["Species_pikachu"])
+
+    mr_mime_species = list(graph.objects(mr_mime, PKM.representsSpecies))
+    assert len(mr_mime_species) == 1
+    assert str(mr_mime_species[0]) == str(PKM["Species_mr_mime"])
+
+
+def test_builder_emits_has_tera_type() -> None:
+    payload = {
+        "id": "synthetic-tera",
+        "format": "[Gen 9] Custom Game",
+        "players": ["Alice", "Bob"],
+        "log": "\n".join([
+            "|turn|1",
+            "|switch|p1a: Pikachu|Pikachu, L50|100/100",
+            "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
+            "|-terastallize|p1a: Pikachu|Electric",
+        ]),
+    }
+    graph = build_graph(payload)
+
+    transformation_iri = PKM["Transformation_Terastallized_Electric"]
+    tera_types = list(graph.objects(transformation_iri, PKM.hasTeraType))
+    assert len(tera_types) == 1
+    assert str(tera_types[0]) == str(PKM["Type_electric"])
+
+
 def test_builder_handles_cureteam() -> None:
     # Blissey (p1) uses Aromatherapy, curing its own side's status conditions.
     payload = {

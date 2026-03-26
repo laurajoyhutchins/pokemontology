@@ -1,0 +1,64 @@
+# Super-effective move query
+# Requires: build/ontology.ttl + build/pokeapi.ttl + a replay slice TTL
+# Returns: move name, move type, opponent, effective defender type, multiplier
+#
+# For terastallized opponents, uses the Tera type as the sole defending type.
+# For non-terastallized opponents, uses all base species types (dual-type compounding
+# must be handled outside SPARQL or via repeated type joins).
+
+PREFIX pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#>
+
+SELECT ?myMoveLabel ?moveTypeName ?opponentLabel ?effectiveTypeName ?factor
+WHERE {
+  # Moves used by my side in the replay
+  ?action a pkm:MoveUseAction ;
+          pkm:hasActor ?myPokemon ;
+          pkm:usesMove ?moveEntity .
+  ?moveEntity pkm:hasName ?myMoveLabel .
+
+  # Move type from PokeAPI data
+  ?mpa a pkm:MovePropertyAssignment ;
+       pkm:aboutMove ?moveEntity ;
+       pkm:hasContext pkm:Ruleset_PokeAPI_Default ;
+       pkm:hasMoveType ?moveType .
+  ?moveType pkm:hasName ?moveTypeName .
+
+  # Opponent's revealed Pokémon
+  ?opponent a pkm:BattleParticipant ;
+            pkm:hasCombatantLabel ?opponentLabel .
+  FILTER(?myPokemon != ?opponent)
+
+  # Effective typing: tera overrides base
+  {
+    # Terastallized: single tera type
+    ?cta a pkm:CurrentTransformationAssignment ;
+         pkm:aboutCombatant ?opponent ;
+         pkm:hasTransformationState ?ts .
+    ?ts pkm:hasTeraType ?effectiveType .
+  }
+  UNION
+  {
+    # Not terastallized: base species types
+    FILTER NOT EXISTS {
+      ?anyCta a pkm:CurrentTransformationAssignment ;
+              pkm:aboutCombatant ?opponent ;
+              pkm:hasTransformationState/pkm:hasTeraType [] .
+    }
+    ?opponent pkm:representsSpecies ?species .
+    ?variant pkm:belongsToSpecies ?species .
+    ?ta a pkm:TypingAssignment ;
+        pkm:aboutVariant ?variant ;
+        pkm:hasContext pkm:Ruleset_PokeAPI_Default ;
+        pkm:aboutType ?effectiveType .
+  }
+  ?effectiveType pkm:hasName ?effectiveTypeName .
+
+  # Type chart — super effective only
+  ?tea a pkm:TypeEffectivenessAssignment ;
+       pkm:attackerType ?moveType ;
+       pkm:defenderType ?effectiveType ;
+       pkm:hasContext pkm:Ruleset_PokeAPI_Default ;
+       pkm:hasDamageFactor ?factor .
+  FILTER(?factor > 1.0)
+}
+ORDER BY DESC(?factor) ?opponentLabel ?myMoveLabel

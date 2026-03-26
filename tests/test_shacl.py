@@ -416,3 +416,34 @@ def test_shacl_rejects_undeclared_pkm_predicates() -> None:
     )
     assert not conforms
     assert "declared as an ontology property" in results_text
+
+
+def test_synthetic_represents_species_conforms() -> None:
+    payload = {
+        "id": "synthetic-represents-species",
+        "format": "[Gen 9] Custom Game",
+        "players": ["Alice", "Bob"],
+        "log": "\n".join([
+            "|turn|1",
+            "|switch|p1a: Pikachu|Pikachu, L50|100/100",
+            "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
+        ]),
+    }
+    conforms, results_text = _validate_data_graph(build_graph(payload))
+    assert conforms, f"representsSpecies graph violates SHACL:\n{results_text}"
+
+
+def test_synthetic_has_tera_type_conforms() -> None:
+    payload = {
+        "id": "synthetic-has-tera-type",
+        "format": "[Gen 9] Custom Game",
+        "players": ["Alice", "Bob"],
+        "log": "\n".join([
+            "|turn|1",
+            "|switch|p1a: Pikachu|Pikachu, L50|100/100",
+            "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
+            "|-terastallize|p1a: Pikachu|Electric",
+        ]),
+    }
+    conforms, results_text = _validate_data_graph(build_graph(payload))
+    assert conforms, f"hasTeraType graph violates SHACL:\n{results_text}"
