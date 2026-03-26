@@ -22,10 +22,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install project
-        run: python3 -m pip install .
       - name: Build published ontology artifacts
-        run: python3 -m pokemontology build
+        run: python3 scripts/build/build_ontology.py
       - uses: actions/upload-pages-artifact@v3
         with:
           path: docs
