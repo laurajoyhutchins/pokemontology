@@ -175,3 +175,321 @@ def test_web_worker_pipeline_end_to_end() -> None:
     assert "pkm:actor" in payload["generation"]["sparql"]
     assert payload["validation"]["ok"] is True
     assert "PREFIX pkm:" in payload["validation"]["normalized"]
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node is required for web integration")
+def test_web_page_controller_end_to_end(tmp_path: Path) -> None:
+    query_text = SUPER_EFFECTIVE_QUERY.read_text(encoding="utf-8")
+    site_data_text = (REPO / "docs" / "site-data.json").read_text(encoding="utf-8")
+    schema_index_text = SCHEMA_INDEX.read_text(encoding="utf-8")
+    script = textwrap.dedent(
+        f"""
+        import path from "node:path";
+        import {{ pathToFileURL }} from "node:url";
+
+        const repo = {json.dumps(str(REPO))};
+        const queryText = {json.dumps(query_text)};
+        const siteData = {site_data_text};
+        const schemaPack = {schema_index_text};
+
+        class FakeClassList {{
+          constructor() {{
+            this.names = new Set();
+          }}
+          toggle(name, force) {{
+            if (force === undefined) {{
+              if (this.names.has(name)) this.names.delete(name);
+              else this.names.add(name);
+              return this.names.has(name);
+            }}
+            if (force) this.names.add(name);
+            else this.names.delete(name);
+            return force;
+          }}
+        }}
+
+        class FakeElement {{
+          constructor(id = "", tag = "div") {{
+            this.id = id;
+            this.tagName = tag.toUpperCase();
+            this.listeners = {{}};
+            this.children = [];
+            this.attributes = new Map();
+            this.dataset = {{}};
+            this.classList = new FakeClassList();
+            this.hidden = false;
+            this.checked = false;
+            this.disabled = false;
+            this.open = false;
+            this.value = "";
+            this.innerHTML = "";
+            this.textContent = "";
+            this.href = "";
+          }}
+          addEventListener(type, listener) {{
+            (this.listeners[type] ||= []).push(listener);
+          }}
+          async dispatch(type, event = {{}}) {{
+            for (const listener of this.listeners[type] || []) {{
+              await listener({{
+                preventDefault() {{}},
+                stopPropagation() {{}},
+                target: this,
+                currentTarget: this,
+                ...event,
+              }});
+            }}
+          }}
+          async click() {{
+            await this.dispatch("click");
+          }}
+          setAttribute(name, value) {{
+            this.attributes.set(name, String(value));
+            if (name === "hidden") this.hidden = true;
+            if (name.startsWith("data-")) {{
+              this.dataset[name.slice(5).replace(/-([a-z])/g, (_, c) => c.toUpperCase())] = String(value);
+            }}
+          }}
+          removeAttribute(name) {{
+            this.attributes.delete(name);
+            if (name === "hidden") this.hidden = false;
+          }}
+          appendChild(child) {{
+            this.children.push(child);
+            return child;
+          }}
+          removeChild(child) {{
+            this.children = this.children.filter((entry) => entry !== child);
+          }}
+          focus() {{
+            this.focused = true;
+          }}
+        }}
+
+        const byId = new Map();
+        const bySelector = new Map();
+        const selectorLists = new Map([
+          ["main section[id]", []],
+          [".nav-links a[href^='#']", []],
+        ]);
+
+        function registerId(id, tag = "div") {{
+          const element = new FakeElement(id, tag);
+          byId.set(id, element);
+          return element;
+        }}
+        function registerSelector(selector, element) {{
+          bySelector.set(selector, element);
+          return element;
+        }}
+
+        const documentElement = new FakeElement("", "html");
+        documentElement.dataset = {{}};
+        const body = new FakeElement("", "body");
+        body.dataset = {{}};
+        const head = new FakeElement("", "head");
+
+        const question = registerId("nl-question", "textarea");
+        const laurelRunBtn = registerId("laurel-run-btn", "button");
+        const sparqlEditor = registerId("sparql-editor", "textarea");
+        const generatedPreview = registerId("generated-query-preview", "code");
+        const validationList = registerId("validation-list");
+        const validationBadge = registerId("validation-badge");
+        const groundingNotes = registerId("grounding-notes");
+        const qeResults = registerId("qe-results");
+        const laurelStatus = registerId("laurel-status");
+        const runBtn = registerId("run-btn", "button");
+        const runBtnLabel = registerId("run-btn-label");
+        const exampleSelect = registerId("example-select", "select");
+        const srcOntology = registerId("src-ontology", "input");
+        srcOntology.checked = true;
+        const srcShapes = registerId("src-shapes", "input");
+        srcShapes.checked = false;
+        registerId("export-csv-btn", "button");
+        registerId("clear-results-btn", "button");
+        registerId("copy-sparql-btn", "button");
+        registerId("sample-question-btn", "button");
+        registerId("toggle-advanced-btn", "button");
+        registerId("advanced-console", "details");
+        registerId("focus-question-btn", "button");
+        registerId("copy-query-btn", "button");
+        registerId("clear-query-btn", "button");
+        registerId("qe-status");
+
+        registerSelector("[data-status-model]", new FakeElement("", "span"));
+        registerSelector("[data-status-grounding]", new FakeElement("", "span"));
+        registerSelector("[data-status-validator]", new FakeElement("", "span"));
+        registerSelector("[data-grounding-count]", new FakeElement("", "span"));
+        registerSelector("[data-theme-toggle]", new FakeElement("", "button"));
+        registerSelector("[data-theme-label]", new FakeElement("", "span"));
+        registerSelector("[data-power-toggle]", new FakeElement("", "button"));
+        registerSelector("[data-power-label]", new FakeElement("", "span"));
+        registerSelector("[data-repository-url]", new FakeElement("", "a"));
+        registerSelector("[data-pages-base-url]", new FakeElement("", "span"));
+        const siteError = registerSelector("[data-site-error]", new FakeElement("", "div"));
+        siteError.hidden = true;
+
+        const document = {{
+          body,
+          head,
+          documentElement,
+          getElementById(id) {{
+            return byId.get(id) || null;
+          }},
+          querySelector(selector) {{
+            return bySelector.get(selector) || null;
+          }},
+          querySelectorAll(selector) {{
+            return selectorLists.get(selector) || [];
+          }},
+          createElement(tag) {{
+            return new FakeElement("", tag);
+          }},
+        }};
+
+        class FakeBinding {{
+          constructor(values) {{
+            this.values = values;
+          }}
+          get(name) {{
+            const value = this.values[name];
+            return value === undefined ? undefined : {{ termType: "Literal", value }};
+          }}
+          [Symbol.iterator]() {{
+            return Object.entries(this.values)
+              .map(([name, value]) => [{{ termType: "Variable", value: name }}, {{ termType: "Literal", value }}])[Symbol.iterator]();
+          }}
+        }}
+
+        class FakeWorker {{
+          constructor(url) {{
+            this.url = url;
+            this.onmessage = null;
+            this.onerror = null;
+          }}
+          postMessage(payload) {{
+            queueMicrotask(() => {{
+              try {{
+                let message;
+                if (this.url.includes("retrieval-worker")) {{
+                  message = {{
+                    matches: [{{
+                      kind: "example",
+                      label: "super effective moves",
+                      score: 0.99,
+                      query: queryText,
+                    }}],
+                  }};
+                }} else if (this.url.includes("llm-worker")) {{
+                  message = {{
+                    backend: "CPU fallback synthesizer",
+                    sparql: queryText,
+                    fallbackSparql: queryText,
+                    summary: "synthetic test response",
+                  }};
+                }} else {{
+                  message = {{
+                    ok: true,
+                    messages: ["validated in test harness"],
+                    normalized: queryText,
+                  }};
+                }}
+                this.onmessage?.({{ data: message }});
+              }} catch (error) {{
+                this.onerror?.({{ error }});
+              }}
+            }});
+          }}
+        }}
+
+        globalThis.document = document;
+        globalThis.window = globalThis;
+        Object.defineProperty(globalThis, "navigator", {{
+          configurable: true,
+          value: {{
+            gpu: null,
+            clipboard: {{ writeText: async () => {{}} }},
+          }},
+        }});
+        Object.defineProperty(globalThis, "location", {{
+          configurable: true,
+          value: {{ href: "https://example.test/pokemontology/docs/index.html" }},
+        }});
+        Object.defineProperty(globalThis, "localStorage", {{
+          configurable: true,
+          value: {{
+          store: new Map(),
+          getItem(key) {{ return this.store.has(key) ? this.store.get(key) : null; }},
+          setItem(key, value) {{ this.store.set(key, String(value)); }},
+          }},
+        }});
+        globalThis.matchMedia = () => ({{ matches: false }});
+        globalThis.IntersectionObserver = class {{
+          constructor() {{}}
+          observe() {{}}
+          disconnect() {{}}
+        }};
+        globalThis.Worker = FakeWorker;
+        globalThis.fetch = async (url) => {{
+          const target = String(url);
+          if (target.endsWith("site-data.json")) {{
+            return {{ ok: true, json: async () => siteData }};
+          }}
+          if (target.endsWith("schema-index.json")) {{
+            return {{ ok: true, json: async () => schemaPack }};
+          }}
+          throw new Error(`unexpected fetch: ${{target}}`);
+        }};
+        globalThis.performance = {{ now: () => 123 }};
+        globalThis.URL = URL;
+        globalThis.URL.createObjectURL = () => "blob:test";
+        globalThis.URL.revokeObjectURL = () => {{}};
+        globalThis._qe_engine = {{
+          async queryBindings() {{
+            return {{
+              async *[Symbol.asyncIterator]() {{
+                yield new FakeBinding({{
+                  myMoveLabel: "Ember",
+                  moveTypeName: "Fire",
+                  opponentLabel: "Charizard",
+                  effectiveTypeName: "Flying",
+                  factor: "2.0",
+                }});
+              }},
+            }};
+          }},
+        }};
+
+        const module = await import(pathToFileURL(path.join(repo, "docs", "js", "laurel-app.js")).href + "?page-e2e");
+        await module.createLaurelApp();
+        question.value = "Which of my moves are effective against Charizard?";
+        await laurelRunBtn.click();
+
+        console.log(JSON.stringify({{
+          generatedQuery: generatedPreview.textContent,
+          findingsHtml: qeResults.innerHTML,
+          validationHtml: validationList.innerHTML,
+          validationBadge: validationBadge.textContent,
+          statusText: laurelStatus.textContent,
+        }}));
+        """
+    )
+
+    script_path = tmp_path / "web-page-e2e.mjs"
+    script_path.write_text(script, encoding="utf-8")
+
+    completed = subprocess.run(
+        ["node", str(script_path)],
+        cwd=REPO,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    payload = json.loads(completed.stdout)
+    assert "pkm:actor" in payload["generatedQuery"]
+    assert "1 matching row" in payload["findingsHtml"]
+    assert "myMoveLabel=Ember" in payload["findingsHtml"]
+    assert "validated in test harness" in payload["validationHtml"]
+    assert payload["validationBadge"] == "Validated"
+    assert payload["statusText"] == "Field query complete."
