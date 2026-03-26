@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Sequence
 
 from ._script_loader import REPO_ROOT
+from .turn_order import resolve_action_order
 
 from scripts.build import build_ontology, check_ttl_parse
 from scripts.ingest import pokeapi_ingest, veekun_ingest
@@ -63,6 +64,16 @@ def cmd_build_slice(args: argparse.Namespace) -> int:
     output_path = args.output or args.replay_json.with_name(f"{args.replay_json.stem}-slice.ttl")
     output_path.write_text(ttl, encoding="utf-8")
     print(output_path)
+    return 0
+
+
+def cmd_resolve_order(args: argparse.Namespace) -> int:
+    payload = json.loads(args.state_json.read_text(encoding="utf-8"))
+    resolved = resolve_action_order(payload)
+    if args.pretty:
+        print(json.dumps(resolved, ensure_ascii=False, indent=2))
+    else:
+        print(json.dumps(resolved, ensure_ascii=False))
     return 0
 
 
@@ -248,6 +259,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="Output TTL path. Defaults to <replay_json stem>-slice.ttl.",
     )
     slice_parser.set_defaults(func=cmd_build_slice)
+
+    resolve_parser = subparsers.add_parser(
+        "resolve-order",
+        help="Infer heads-up action order from move priority and battle-state snapshot inputs.",
+    )
+    resolve_parser.add_argument("state_json", type=Path, help="Path to turn-order input JSON.")
+    resolve_parser.add_argument("--pretty", action="store_true", help="Print inferred order as indented JSON.")
+    resolve_parser.set_defaults(func=cmd_resolve_order)
 
     add_replay_dataset_subcommands(subparsers)
     add_pokeapi_subcommands(subparsers)

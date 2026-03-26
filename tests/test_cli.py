@@ -39,6 +39,28 @@ def test_build_slice_command_writes_file(tmp_path, capsys) -> None:
     assert printed == str(output_path)
 
 
+def test_resolve_order_command_outputs_json(tmp_path, capsys) -> None:
+    state_path = tmp_path / "order-state.json"
+    state_path.write_text(
+        json.dumps(
+            {
+                "combatants": [
+                    {"side": "p1", "speed_tier": 120, "speed_stage": 1, "item": "Choice Scarf"},
+                    {"side": "p2", "speed_tier": 150},
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    exit_code = cli.main(["resolve-order", str(state_path), "--pretty"])
+    assert exit_code == 0
+
+    output = json.loads(capsys.readouterr().out)
+    assert output["branches"][0]["first"] == "p1"
+    assert output["priority_bracket"] == 0
+
+
 def test_replay_curate_command_writes_curated_file(tmp_path, capsys) -> None:
     index_dir = tmp_path / "index" / "gen9vgc2025reggbo3" / "all"
     index_dir.mkdir(parents=True)
