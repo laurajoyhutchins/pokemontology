@@ -59,14 +59,33 @@ function renderPipelines(pipelines) {
     .join("");
 }
 
+function renderExamples(examples) {
+  const target = document.querySelector("[data-examples]");
+  if (!target) return;
+  target.innerHTML = examples
+    .map(
+      (example, index) => `
+        <article class="example-card fade-up delay-${(index % 3) + 1}">
+          <span class="example-kind">${example.kind}</span>
+          <h3>${example.name}</h3>
+          <p>${example.summary}</p>
+          <div class="example-path"><code>${example.path}</code></div>
+        </article>
+      `,
+    )
+    .join("");
+}
+
 function renderStats(data) {
   const artifactCount = document.querySelector("[data-artifact-count]");
   const pipelineCount = document.querySelector("[data-pipeline-count]");
+  const exampleCount = document.querySelector("[data-example-count]");
   const repoLink = document.querySelector("[data-repository-url]");
   const pagesBase = document.querySelector("[data-pages-base-url]");
 
   if (artifactCount) artifactCount.textContent = String(data.artifacts.length);
   if (pipelineCount) pipelineCount.textContent = String(data.pipelines.length);
+  if (exampleCount) exampleCount.textContent = String(data.examples.length);
   if (repoLink) repoLink.href = data.site.repository_url;
   if (pagesBase) pagesBase.textContent = data.site.pages_base_url;
 }
@@ -84,6 +103,7 @@ async function main() {
     renderArtifacts(data.artifacts);
     renderModules(data.modules);
     renderPipelines(data.pipelines);
+    renderExamples(data.examples);
     renderStats(data);
   } catch (error) {
     renderError(error);

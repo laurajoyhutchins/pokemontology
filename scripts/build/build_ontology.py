@@ -94,6 +94,32 @@ def main() -> None:
                 "command": "python3 -m pokemontology veekun transform --source-dir tests/fixtures/veekun_export --output build/veekun.ttl",
             },
         ],
+        "examples": [
+            {
+                "name": "Replay-backed battle slice",
+                "path": "examples/slices/showdown-finals-game1-slice.ttl",
+                "kind": "Turtle slice",
+                "summary": "A worked example of a replay-derived battle graph with events, assignments, and validation coverage.",
+            },
+            {
+                "name": "Seed fixture",
+                "path": "examples/fixtures/froakie-caterpie-seed.ttl",
+                "kind": "Fixture data",
+                "summary": "Compact seed data for ontology tests and examples around owned combatants, moves, and save-state entities.",
+            },
+            {
+                "name": "Replay JSON source",
+                "path": "examples/replays/gen9vgc2025regjbo3-2414024536-ey54jc53vyjqy20sq0ww1l5nd3bq5qhpw.json",
+                "kind": "Replay JSON",
+                "summary": "A cached Showdown replay used as a source document for parsing, summarization, and slice generation.",
+            },
+            {
+                "name": "PokeAPI seed config",
+                "path": "examples/pokeapi/seed-config.json",
+                "kind": "Ingest config",
+                "summary": "A sample seed file for fetching and transforming a narrow, ontology-safe subset of PokeAPI data.",
+            },
+        ],
     }
 
     OUTPUT.write_text(ontology_text, encoding="utf-8")
