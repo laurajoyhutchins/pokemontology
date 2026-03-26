@@ -227,3 +227,14 @@ def test_validate_sparql_text_rejects_updates() -> None:
         assert "forbidden update keywords" in str(exc)
     else:
         raise AssertionError("expected update SPARQL to be rejected")
+
+
+def test_validate_sparql_text_rejects_malformed_read_only_query() -> None:
+    try:
+        validate_sparql_text(
+            "PREFIX pkm: <https://example.test#>\nSELECT WHERE { ?s ?p ?o }"
+        )
+    except ValueError as exc:
+        assert "failed formal parsing" in str(exc)
+    else:
+        raise AssertionError("expected malformed read-only SPARQL to be rejected")
