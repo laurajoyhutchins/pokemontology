@@ -71,6 +71,13 @@
 
         <div class="qe-workspace fade-up delay-2">
           <div class="qe-editor-col">
+            <div class="qe-editor-header">
+              <span class="qe-lang-badge">SPARQL</span>
+              <div class="qe-editor-actions">
+                <button class="qe-action-btn" id="copy-query-btn" type="button" title="Copy query to clipboard">Copy</button>
+                <button class="qe-action-btn" id="clear-query-btn" type="button" title="Clear editor">Clear</button>
+              </div>
+            </div>
             <textarea
               id="sparql-editor"
               class="qe-textarea"
@@ -87,10 +94,16 @@
               <span class="qe-hint">Ctrl+Enter to run</span>
             </div>
           </div>
-          <div class="qe-results-col" id="qe-results" aria-live="polite">
-            <div class="qe-placeholder">
-              <span class="qe-placeholder-icon">▶</span>
-              <p>Run a query to see results here.</p>
+          <div class="qe-results-col">
+            <div class="qe-results-header">
+              <span class="qe-results-label">Results</span>
+              <button class="qe-action-btn qe-export-btn" id="export-csv-btn" type="button" hidden>Export CSV</button>
+            </div>
+            <div class="qe-results-body" id="qe-results" aria-live="polite">
+              <div class="qe-placeholder">
+                <span class="qe-placeholder-icon">▶</span>
+                <p>Run a query to see results here.</p>
+              </div>
             </div>
           </div>
         </div>

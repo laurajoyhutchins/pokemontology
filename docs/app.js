@@ -1,5 +1,7 @@
 const THEME_STORAGE_KEY = "pokemontology-theme";
 
+let _lastSelectResult = null;
+
 // ── Site metadata ─────────────────────────────────────────────────────────────
 
 async function loadSiteData() {
@@ -38,6 +40,30 @@ function setupThemeToggle() {
   });
 }
 
+// ── Navigation highlight ──────────────────────────────────────────────────────
+
+function setupNavHighlight() {
+  const sections = [...document.querySelectorAll("main section[id]")];
+  const navLinks = [...document.querySelectorAll(".nav-links a[href^='#']")];
+  if (!sections.length || !navLinks.length) return;
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const id = entry.target.id;
+          navLinks.forEach((a) => {
+            a.classList.toggle("nav-active", a.getAttribute("href") === `#${id}`);
+          });
+        }
+      });
+    },
+    { rootMargin: "-20% 0px -65% 0px", threshold: 0 },
+  );
+
+  sections.forEach((s) => observer.observe(s));
+}
+
 // ── Documentation renderers ───────────────────────────────────────────────────
 
 function renderArtifacts(artifacts) {
@@ -58,7 +84,7 @@ function renderArtifacts(artifacts) {
     .join("");
 }
 
-function renderModules(modules) {
+function renderModules(modules, repositoryUrl) {
   const target = document.querySelector("[data-modules]");
   const count = document.querySelector("[data-module-count]");
   if (!target) return;
@@ -68,8 +94,8 @@ function renderModules(modules) {
       (m, i) => `
         <article class="module-card fade-up delay-${(i % 3) + 1}">
           <h3>${m.name.replace(/^[0-9]+-/, "").replace(/-/g, " ")}</h3>
-          <p>Source module in the authoring graph.</p>
           <code>${m.source_path}</code>
+          ${repositoryUrl ? `<div style="margin-top:0.5rem"><a class="example-link" href="${repositoryUrl}/blob/main/${m.source_path}" target="_blank" rel="noopener">View source →</a></div>` : ""}
         </article>`,
     )
     .join("");
@@ -90,7 +116,7 @@ function renderPipelines(pipelines) {
     .join("");
 }
 
-function renderExamples(examples) {
+function renderExamples(examples, repositoryUrl) {
   const target = document.querySelector("[data-examples]");
   if (!target) return;
   target.innerHTML = examples
@@ -101,6 +127,7 @@ function renderExamples(examples) {
           <h3>${e.name}</h3>
           <p>${e.summary}</p>
           <div class="example-path"><code>${e.path}</code></div>
+          ${repositoryUrl ? `<a class="example-link" href="${repositoryUrl}/blob/main/${e.path}" target="_blank" rel="noopener">View on GitHub →</a>` : ""}
         </article>`,
     )
     .join("");
@@ -143,6 +170,7 @@ PREFIX pkm:  <${PKM_NS}>
 
 const EXAMPLE_QUERIES = [
   {
+    group: "Schema",
     label: "All pkm: classes",
     query:
       DEFAULT_PREFIXES +
@@ -156,6 +184,7 @@ WHERE {
 ORDER BY ?class`,
   },
   {
+    group: "Schema",
     label: "Object properties",
     query:
       DEFAULT_PREFIXES +
@@ -170,6 +199,7 @@ WHERE {
 ORDER BY ?label`,
   },
   {
+    group: "Schema",
     label: "Datatype properties",
     query:
       DEFAULT_PREFIXES +
@@ -184,6 +214,7 @@ WHERE {
 ORDER BY ?label`,
   },
   {
+    group: "Schema",
     label: "Class hierarchy",
     query:
       DEFAULT_PREFIXES +
@@ -200,6 +231,7 @@ WHERE {
 ORDER BY ?parent ?class`,
   },
   {
+    group: "Schema",
     label: "Functional properties",
     query:
       DEFAULT_PREFIXES +
@@ -214,6 +246,7 @@ WHERE {
 ORDER BY ?label`,
   },
   {
+    group: "Data",
     label: "Predicate frequency",
     query: `SELECT ?predicate (COUNT(?predicate) AS ?count)
 WHERE { ?s ?predicate ?o }
@@ -221,12 +254,14 @@ GROUP BY ?predicate
 ORDER BY DESC(?count)`,
   },
   {
+    group: "Data",
     label: "Triple count",
     query: `SELECT (COUNT(*) AS ?triples)
 WHERE { ?s ?p ?o }`,
   },
   {
-    label: "SHACL shapes (sources: shapes.ttl)",
+    group: "Shapes",
+    label: "SHACL shapes",
     sources: ["shapes"],
     query:
       `PREFIX sh:   <http://www.w3.org/ns/shacl#>
@@ -278,7 +313,17 @@ function setResultsContent(html) {
   if (panel) panel.innerHTML = html;
 }
 
+function showExportBtn(show) {
+  const btn = document.getElementById("export-csv-btn");
+  if (!btn) return;
+  if (show) btn.removeAttribute("hidden");
+  else btn.setAttribute("hidden", "");
+}
+
 function renderQueryResults(result) {
+  _lastSelectResult = null;
+  showExportBtn(false);
+
   if (result.type === "boolean") {
     const cls = result.value ? "qe-ask-true" : "qe-ask-false";
     setResultsContent(
@@ -316,6 +361,9 @@ function renderQueryResults(result) {
     setResultsContent('<div class="qe-empty">No results.</div>');
     return;
   }
+
+  _lastSelectResult = { vars, bindings };
+  showExportBtn(true);
 
   const headerCells = vars.map((v) => `<th>?${escapeHtml(v)}</th>`).join("");
   const rows = bindings
@@ -381,7 +429,19 @@ async function executeQuery(sparql, sources) {
 function populateExampleSelect() {
   const sel = document.getElementById("example-select");
   if (!sel) return;
-  EXAMPLE_QUERIES.forEach((q) => {
+  const groups = [...new Set(EXAMPLE_QUERIES.map((q) => q.group).filter(Boolean))];
+  groups.forEach((group) => {
+    const og = document.createElement("optgroup");
+    og.label = group;
+    EXAMPLE_QUERIES.filter((q) => q.group === group).forEach((q) => {
+      const opt = document.createElement("option");
+      opt.value = q.label;
+      opt.textContent = q.label;
+      og.appendChild(opt);
+    });
+    sel.appendChild(og);
+  });
+  EXAMPLE_QUERIES.filter((q) => !q.group).forEach((q) => {
     const opt = document.createElement("option");
     opt.value = q.label;
     opt.textContent = q.label;
@@ -424,11 +484,56 @@ function initQueryEngine() {
     const q = EXAMPLE_QUERIES.find((x) => x.label === e.target.value);
     if (!q) return;
     editor.value = q.query;
-    // If the example specifies preferred sources, set them
     if (q.sources) {
       document.getElementById("src-ontology").checked = q.sources.includes("ontology");
       document.getElementById("src-shapes").checked = q.sources.includes("shapes");
     }
+  });
+
+  // Copy query
+  document.getElementById("copy-query-btn")?.addEventListener("click", async () => {
+    const text = editor.value;
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      const btn = document.getElementById("copy-query-btn");
+      const orig = btn.textContent;
+      btn.textContent = "Copied!";
+      setTimeout(() => { btn.textContent = orig; }, 1400);
+    } catch (_) {}
+  });
+
+  // Clear editor
+  document.getElementById("clear-query-btn")?.addEventListener("click", () => {
+    editor.value = "";
+    if (exampleSel) exampleSel.value = "";
+    editor.focus();
+  });
+
+  // Export CSV
+  document.getElementById("export-csv-btn")?.addEventListener("click", () => {
+    if (!_lastSelectResult) return;
+    const { vars, bindings } = _lastSelectResult;
+    const lines = [
+      vars.map((v) => JSON.stringify(v)).join(","),
+      ...bindings.map((b) =>
+        vars
+          .map((v) => {
+            const t = b.get(v);
+            return t ? JSON.stringify(t.value) : '""';
+          })
+          .join(","),
+      ),
+    ];
+    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "sparql-results.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   });
 
   // Run button
@@ -439,6 +544,8 @@ function initQueryEngine() {
     runBtn.disabled = true;
     runLabel.textContent = "Running…";
     statusEl.textContent = "";
+    _lastSelectResult = null;
+    showExportBtn(false);
     setResultsContent('<div class="qe-loading"><span class="qe-spinner"></span> Querying…</div>');
 
     try {
@@ -489,13 +596,14 @@ function initQueryEngine() {
 
 async function main() {
   setupThemeToggle();
+  setupNavHighlight();
   initQueryEngine();
   try {
     const data = await loadSiteData();
     renderArtifacts(data.artifacts);
-    renderModules(data.modules);
+    renderModules(data.modules, data.site.repository_url);
     renderPipelines(data.pipelines);
-    renderExamples(data.examples);
+    renderExamples(data.examples, data.site.repository_url);
     renderStats(data);
   } catch (error) {
     renderError(error);

@@ -29,6 +29,7 @@
   --radius-lg: 8px;
   --radius-md: 6px;
   --radius-sm: 4px;
+  --header-bg: rgba(243, 233, 191, 0.88);
 }
 
 :root[data-theme="dark"] {
@@ -57,6 +58,7 @@
   --code-bg: #081106;
   --code-fg: #e9f2bb;
   --shadow: 8px 8px 0 rgba(0, 0, 0, 0.32);
+  --header-bg: rgba(24, 41, 25, 0.92);
 }
 
 * {
@@ -113,7 +115,13 @@ pre {
 }
 
 .site-header {
-  padding: 1rem 0 0.35rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  padding: 0.5rem 0 0.35rem;
+  background: var(--header-bg);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 1px 0 rgba(49, 72, 52, 0.12);
 }
 
 .topbar {
@@ -200,6 +208,18 @@ pre {
   font-family: var(--font-ui);
   text-transform: uppercase;
   letter-spacing: 0.08em;
+  transition: color 120ms ease;
+}
+
+.nav-links a:hover {
+  color: var(--teal);
+}
+
+.nav-links a.nav-active {
+  color: var(--teal);
+  text-decoration: underline;
+  text-decoration-thickness: 0.12em;
+  text-underline-offset: 0.22em;
 }
 
 .hero {
@@ -346,6 +366,16 @@ pre {
   background: var(--panel);
   padding: 1rem;
   box-shadow: inset -2px -2px 0 rgba(23, 45, 32, 0.1);
+  transition: border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
+}
+
+.artifact-card:hover,
+.module-card:hover,
+.pipeline-card:hover,
+.example-card:hover {
+  border-color: var(--teal);
+  transform: translate(-2px, -2px);
+  box-shadow: 4px 4px 0 var(--glow-teal), inset -2px -2px 0 rgba(23, 45, 32, 0.1);
 }
 
 .artifact-card h3,
@@ -448,6 +478,22 @@ pre {
 .highlights {
   display: grid;
   gap: 0.9rem;
+}
+
+.module-list {
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+
+.example-list {
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+
+.pipeline-list {
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+
+.highlights {
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
 }
 
 .module-card code,
@@ -673,21 +719,38 @@ pre {
 }
 
 .source-toggle {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
   cursor: pointer;
-  font-size: 0.86rem;
+  font-size: 0.8rem;
   font-family: var(--font-ui);
-  color: var(--ink);
+  color: var(--muted);
   user-select: none;
+  padding: 0.35rem 0.75rem;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: var(--control-bg);
+  transition: background 100ms ease, color 100ms ease, border-color 100ms ease;
+}
+
+.source-toggle:has(input:checked) {
+  background: var(--teal);
+  border-color: var(--teal);
+  color: var(--bg);
+}
+
+.source-toggle:has(input:focus-visible) {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
 }
 
 .source-toggle input {
-  accent-color: var(--teal);
-  width: 1rem;
-  height: 1rem;
-  cursor: pointer;
+  appearance: none;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .qe-select {
@@ -731,7 +794,7 @@ pre {
 .qe-textarea {
   display: block;
   width: 100%;
-  min-height: 380px;
+  min-height: 420px;
   padding: 1rem 1.1rem;
   border: none;
   background: var(--code-bg);
@@ -792,8 +855,34 @@ pre {
   border-radius: var(--radius-lg);
   background: var(--paper);
   box-shadow: var(--shadow);
-  min-height: 120px;
-  max-height: 600px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.qe-results-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 2px solid var(--card-line);
+  background: var(--panel);
+}
+
+.qe-results-label {
+  font-size: 0.72rem;
+  font-family: var(--font-ui);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.qe-results-body {
+  flex: 1;
+  min-height: 440px;
+  max-height: 640px;
   overflow-y: auto;
   overflow-x: hidden;
 }
@@ -1018,4 +1107,101 @@ pre {
     min-height: 280px;
     font-size: 0.78rem;
   }
+
+  .qe-results-body {
+    min-height: 280px;
+  }
+}
+
+/* ── Editor header strip ─────────────────────────────────────────────────── */
+
+.qe-editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.45rem 0.75rem;
+  background: rgba(0, 0, 0, 0.22);
+  border-bottom: 1px solid rgba(155, 220, 138, 0.10);
+  flex-shrink: 0;
+}
+
+.qe-lang-badge {
+  font-size: 0.7rem;
+  font-family: var(--font-ui);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: rgba(155, 220, 138, 0.55);
+  font-weight: 700;
+}
+
+:root[data-theme="light"] .qe-lang-badge {
+  color: var(--muted);
+  opacity: 0.65;
+}
+
+.qe-editor-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.qe-action-btn {
+  padding: 0.22rem 0.6rem;
+  border: 1px solid rgba(155, 220, 138, 0.22);
+  border-radius: var(--radius-sm);
+  background: rgba(155, 220, 138, 0.06);
+  color: rgba(155, 220, 138, 0.55);
+  font-family: var(--font-ui);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: background 100ms ease, color 100ms ease, border-color 100ms ease;
+}
+
+.qe-action-btn:hover {
+  background: rgba(155, 220, 138, 0.16);
+  color: rgba(155, 220, 138, 0.95);
+  border-color: rgba(155, 220, 138, 0.45);
+}
+
+:root[data-theme="light"] .qe-action-btn {
+  border-color: var(--line);
+  background: var(--control-bg);
+  color: var(--muted);
+}
+
+:root[data-theme="light"] .qe-action-btn:hover {
+  color: var(--ink);
+  border-color: var(--control-border-hover);
+  background: var(--highlight-bg);
+}
+
+/* Results header action button — uses paper/panel context */
+
+.qe-results-header .qe-action-btn {
+  border-color: var(--line);
+  background: var(--control-bg);
+  color: var(--muted);
+}
+
+.qe-results-header .qe-action-btn:hover {
+  color: var(--ink);
+  border-color: var(--control-border-hover);
+  background: var(--highlight-bg);
+}
+
+/* Example card GitHub link */
+
+.example-link {
+  display: inline-block;
+  font-size: 0.8rem;
+  font-family: var(--font-ui);
+  color: var(--teal);
+  text-decoration: none;
+  letter-spacing: 0.04em;
+}
+
+.example-link:hover {
+  color: var(--rust);
+  text-decoration: underline;
 }
