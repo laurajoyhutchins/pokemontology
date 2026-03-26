@@ -14,6 +14,7 @@ import parse_showdown_replay
 import pokeapi_ingest
 import replay_to_ttl_builder
 import summarize_showdown_replay
+import veekun_ingest
 
 
 def _repo_relative(path: Path) -> str:
@@ -119,6 +120,27 @@ def add_pokeapi_subcommands(subparsers: argparse._SubParsersAction[argparse.Argu
     ingest_parser.set_defaults(func=lambda args: (pokeapi_ingest.cmd_ingest(args), 0)[1])
 
 
+def add_veekun_subcommands(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+    veekun_parser = subparsers.add_parser("veekun", help="Transform a local normalized Veekun export into Turtle.")
+    veekun_subparsers = veekun_parser.add_subparsers(dest="veekun_command", required=True)
+
+    transform_parser = veekun_subparsers.add_parser("transform", help="Transform local Veekun CSV export into Turtle.")
+    transform_parser.add_argument(
+        "--source-dir",
+        type=Path,
+        default=veekun_ingest.DEFAULT_SOURCE_DIR,
+        help="Directory containing normalized Veekun CSV export files.",
+    )
+    transform_parser.add_argument(
+        "-o",
+        "--output",
+        type=Path,
+        default=veekun_ingest.DEFAULT_OUTPUT,
+        help="Output TTL path.",
+    )
+    transform_parser.set_defaults(func=lambda args: (veekun_ingest.cmd_transform(args), 0)[1])
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="pokemontology",
@@ -154,6 +176,7 @@ def build_parser() -> argparse.ArgumentParser:
     slice_parser.set_defaults(func=cmd_build_slice)
 
     add_pokeapi_subcommands(subparsers)
+    add_veekun_subcommands(subparsers)
     return parser
 
 

@@ -1,0 +1,4 @@
+variant_identifier,stat_identifier,version_group_identifier,value
+froakie,hp,x_y,41
+froakie,special_attack,x_y,62
+froakie,speed,x_y,71

@@ -138,6 +138,12 @@ python3 scripts/pokeapi_scrape.py move \
       --delay-seconds 0.5
 ```
 
+```bash
+python3 -m pokemontology veekun transform \
+      --source-dir tests/fixtures/veekun_export \
+      --output build/veekun.ttl
+```
+
 ## PokeAPI ingestion pipeline
 
 The repo now includes a two-stage PokeAPI pipeline:
@@ -171,6 +177,23 @@ This follows PokeAPI’s official documentation and fair-use policy, which says 
 - https://staging.pokeapi.co/docs/v2
 
 The scraper is for raw collection only. Use the ingestion pipeline afterward to convert the subset that maps cleanly into ontology-native Turtle.
+
+## Veekun ingestion scaffold
+
+The repo also includes a local-only Veekun transform at `scripts/veekun_ingest.py`.
+
+This scaffold expects a normalized CSV export directory, not a live download. It is designed for the ontology areas where Veekun is stronger than PokeAPI:
+- `pkm:VersionGroup` / `pkm:Ruleset`
+- `pkm:TypingAssignment`
+- `pkm:AbilityAssignment`
+- `pkm:StatAssignment`
+- `pkm:MovePropertyAssignment`
+- `pkm:MoveLearnRecord`
+- `pkm:TypeEffectivenessAssignment`
+
+It also emits `pkm:ExternalEntityReference` nodes back to `pkm:DatasetArtifact_Veekun`.
+
+The scaffold is intentionally local-only because Veekun’s software is MIT-licensed, but upstream notes that included game-derived data is used at the user’s own legal risk. That makes Veekun a strong source for internal/reference workflows, but not something this repo should blindly repackage in bulk.
 
 ## Notes
 

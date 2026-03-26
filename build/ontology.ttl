@@ -2067,6 +2067,12 @@ pkm:DatasetArtifact_PokeAPI
     pkm:hasSourceURL "https://pokeapi.co/api/v2/"^^xsd:anyURI ;
     rdfs:comment "External PokeAPI dataset/API referenced for cross-dataset links and cache-backed ingestion." .
 
+pkm:DatasetArtifact_Veekun
+    a pkm:EvidenceArtifact ;
+    pkm:hasName "Veekun" ;
+    pkm:hasSourceURL "https://github.com/veekun/pokedex"^^xsd:anyURI ;
+    rdfs:comment "External Veekun dataset/codebase referenced for local-only ingestion. The repository software is MIT-licensed, but included game-derived data is published at the user's own legal risk according to the upstream repository; avoid republishing bulk derived data without a conscious risk decision." .
+
 [ a owl:AllDisjointClasses ;
   owl:members ( pkm:EvidenceArtifact pkm:ExternalEntityReference pkm:KnowledgeStatus )
 ] .

@@ -37,10 +37,14 @@
     "scripts/check_ttl_parse.py",
     "scripts/parse_showdown_replay.py",
     "scripts/pokeapi_ingest.py",
+    "scripts/pokeapi_scrape.py",
     "scripts/replay_to_ttl_builder.py",
     "scripts/summarize_showdown_replay.py",
+    "scripts/veekun_ingest.py",
     "shapes/modules/shapes.ttl",
     "tests/README.md",
-    "tests/test_pokeapi_ingest.py"
+    "tests/test_pokeapi_ingest.py",
+    "tests/test_pokeapi_scrape.py",
+    "tests/test_veekun_ingest.py"
   ]
 }
