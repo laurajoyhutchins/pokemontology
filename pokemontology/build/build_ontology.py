@@ -5,6 +5,9 @@ from __future__ import annotations
 
 import json
 
+from rdflib import Graph, Namespace, URIRef
+from rdflib.namespace import OWL, RDF, RDFS
+
 from pokemontology._script_loader import repo_path
 
 REPO = repo_path()
@@ -19,6 +22,7 @@ PAGES_SITE_DATA = PAGES_DIR / "site-data.json"
 PAGES_SCHEMA_INDEX = PAGES_DIR / "schema-index.json"
 SHAPES_SOURCE = repo_path("shapes", "modules", "shapes.ttl")
 QUERIES_DIR = repo_path("queries")
+PKM = Namespace("https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#")
 
 MODULE_ORDER = [
     "00-header.ttl",
@@ -78,7 +82,60 @@ def _tokenize(text: str) -> list[str]:
     ]
 
 
-def _schema_pack(query_examples: list[dict[str, object]]) -> dict[str, object]:
+def _local_name(iri: str) -> str:
+    if "#" in iri:
+        return iri.rsplit("#", 1)[1]
+    return iri.rsplit("/", 1)[-1]
+
+
+def _ontology_grounding_items(ontology_text: str) -> list[dict[str, object]]:
+    graph = Graph()
+    graph.parse(data=ontology_text, format="turtle")
+    items: list[dict[str, object]] = []
+    seen: set[str] = set()
+    kind_priority = (
+        (OWL.Class, "class"),
+        (OWL.ObjectProperty, "property"),
+        (OWL.DatatypeProperty, "property"),
+        (OWL.NamedIndividual, "individual"),
+    )
+
+    for subject in sorted(
+        {
+            subject
+            for subject in graph.subjects(RDF.type, None)
+            if isinstance(subject, URIRef) and str(subject).startswith(str(PKM))
+        },
+        key=lambda value: str(value),
+    ):
+        iri = str(subject)
+        if iri in seen:
+            continue
+        label = graph.value(subject, RDFS.label)
+        comment = graph.value(subject, RDFS.comment)
+        if label is None and comment is None:
+            continue
+        kind = "term"
+        for rdf_type, candidate_kind in kind_priority:
+            if (subject, RDF.type, rdf_type) in graph:
+                kind = candidate_kind
+                break
+        items.append(
+            {
+                "kind": kind,
+                "label": str(label) if label is not None else _local_name(iri),
+                "iri": iri,
+                "summary": str(comment) if comment is not None else f"Pokemontology term {_local_name(iri)}.",
+                "snippet": f"Ontology term `{_local_name(iri)}` from the published pkm namespace.",
+            }
+        )
+        seen.add(iri)
+    return items
+
+
+def _schema_pack(
+    ontology_text: str, query_examples: list[dict[str, object]]
+) -> dict[str, object]:
     prefixes = [
         {
             "alias": "pkm:",
@@ -90,35 +147,9 @@ def _schema_pack(query_examples: list[dict[str, object]]) -> dict[str, object]:
         {"alias": "xsd:", "iri": "http://www.w3.org/2001/XMLSchema#"},
         {"alias": "sh:", "iri": "http://www.w3.org/ns/shacl#"},
     ]
-    items: list[dict[str, object]] = [
-        {
-            "kind": "class",
-            "label": "Species",
-            "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#Species",
-            "summary": "Species-level identity for Pokemon such as Charizard or Froakie.",
-            "snippet": "Use Species when the question refers to a Pokemon taxon instead of a battle participant.",
-        },
-        {
-            "kind": "class",
-            "label": "Variant",
-            "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#Variant",
-            "summary": "Variant-level mechanics subject that carries typing and learnset assignments.",
-            "snippet": "TypingAssignment and other contextual facts usually attach to Variant rather than directly to Species.",
-        },
-        {
-            "kind": "class",
-            "label": "Ruleset",
-            "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#Ruleset",
-            "summary": "Mechanics context such as the default PokeAPI ruleset.",
-            "snippet": "Contextual assignments often reference Ruleset_PokeAPI_Default through hasContext.",
-        },
-        {
-            "kind": "class",
-            "label": "BattleParticipant",
-            "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#BattleParticipant",
-            "summary": "Combatant node inside a battle slice.",
-            "snippet": "Replay-backed questions about my Pokemon or the opponent usually start from BattleParticipant.",
-        },
+    items = _ontology_grounding_items(ontology_text)
+    items.extend(
+        [
         {
             "kind": "pattern",
             "label": "TypingAssignment pattern",
@@ -133,7 +164,8 @@ def _schema_pack(query_examples: list[dict[str, object]]) -> dict[str, object]:
             "summary": "Damage multipliers come from TypeEffectivenessAssignment nodes.",
             "snippet": "TypeEffectivenessAssignment attackerType ?moveType ; defenderType ?effectiveType ; hasDamageFactor ?factor .",
         },
-    ]
+        ]
+    )
     examples: list[dict[str, object]] = [
         {
             "id": "super-effective-moves",
@@ -288,7 +320,8 @@ def write_artifacts(
     PAGES_SHAPES.write_text(shapes_text, encoding="utf-8")
     PAGES_SITE_DATA.write_text(json.dumps(site_data, indent=2) + "\n", encoding="utf-8")
     PAGES_SCHEMA_INDEX.write_text(
-        json.dumps(_schema_pack(site_data["query_examples"]), indent=2) + "\n",
+        json.dumps(_schema_pack(ontology_text, site_data["query_examples"]), indent=2)
+        + "\n",
         encoding="utf-8",
     )
 

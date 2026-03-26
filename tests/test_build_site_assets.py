@@ -20,5 +20,7 @@ def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
 
     schema_index = (tmp_path / "schema-index.json").read_text(encoding="utf-8")
     assert '"prefixes"' in schema_index
+    assert '"Species"' in schema_index
+    assert '"Canonical ontological species identity' in schema_index
     assert '"TypingAssignment pattern"' in schema_index
     assert '"super-effective-moves"' in schema_index
