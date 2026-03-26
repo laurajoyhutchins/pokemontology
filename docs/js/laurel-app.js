@@ -23,10 +23,12 @@ import {
 } from "./site-render.js";
 
 const THEME_STORAGE_KEY = "pokemontology-theme";
+const POWER_MODE_STORAGE_KEY = "pokemontology-power-mode";
 
 export async function createLaurelApp() {
   const state = createState();
   setupThemeToggle();
+  setupPowerToggle();
   setupNavHighlight();
   bindStaticActions(state);
 
@@ -91,10 +93,23 @@ function applyTheme(theme) {
   if (label) label.textContent = theme === "dark" ? "Light" : "Dark";
 }
 
+function applyPowerMode(mode) {
+  const body = document.body;
+  const toggle = document.querySelector("[data-power-toggle]");
+  const label = document.querySelector("[data-power-label]");
+  body.dataset.powerMode = mode;
+  if (toggle) toggle.setAttribute("aria-pressed", String(mode === "on"));
+  if (label) label.textContent = `Technical: ${mode === "on" ? "On" : "Off"}`;
+}
+
 function resolvedInitialTheme() {
   const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
   if (stored === "light" || stored === "dark") return stored;
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
+function resolvedInitialPowerMode() {
+  return window.localStorage.getItem(POWER_MODE_STORAGE_KEY) === "on" ? "on" : "off";
 }
 
 function setupThemeToggle() {
@@ -105,6 +120,17 @@ function setupThemeToggle() {
     const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
     window.localStorage.setItem(THEME_STORAGE_KEY, next);
     applyTheme(next);
+  });
+}
+
+function setupPowerToggle() {
+  applyPowerMode(resolvedInitialPowerMode());
+  const toggle = document.querySelector("[data-power-toggle]");
+  if (!toggle) return;
+  toggle.addEventListener("click", () => {
+    const next = document.body.dataset.powerMode === "on" ? "off" : "on";
+    window.localStorage.setItem(POWER_MODE_STORAGE_KEY, next);
+    applyPowerMode(next);
   });
 }
 

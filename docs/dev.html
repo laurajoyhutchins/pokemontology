@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dev Console | Pokemontology</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-shell">
+      <div class="topbar fade-up">
+        <a class="brand" href="./index.html">
+          <span class="brand-mark">PL</span>
+          <span class="brand-copy">
+            <strong>Professor Laurel</strong>
+            <span>field lab for Pokemontology</span>
+          </span>
+        </a>
+        <nav class="nav-links" aria-label="Primary">
+          <a href="./index.html">Ask</a>
+          <a href="./dev.html" class="nav-active" aria-current="page">Dev Console</a>
+          <a href="https://github.com/laurajoyhutchins/pokemontology">Repo</a>
+        </nav>
+        <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false" aria-label="Toggle dark mode">
+          <span data-theme-label>Dark</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="section">
+      <div class="site-shell">
+        <div class="section-head">
+          <h1>Dev Console</h1>
+          <p class="lede">Technical resources and internal manifests for Pokemontology contributors.</p>
+        </div>
+        
+        <div class="dev-grid">
+          <a href="./artifacts.html" class="dev-card">
+            <span class="dev-card-kicker">Published</span>
+            <h2>Artifacts</h2>
+            <p>Direct links to ontology.ttl, shapes.ttl, and schema-index.json.</p>
+          </a>
+          
+          <a href="./modules.html" class="dev-card">
+            <span class="dev-card-kicker">Structure</span>
+            <h2>Source Modules</h2>
+            <p>The individual Turtle fragments that compose the master ontology.</p>
+          </a>
+          
+          <a href="./examples.html" class="dev-card">
+            <span class="dev-card-kicker">Fixtures</span>
+            <h2>Sample Files</h2>
+            <p>Replay inputs, test cases, and generated battle slices.</p>
+          </a>
+          
+          <a href="./pipelines.html" class="dev-card">
+            <span class="dev-card-kicker">Workflow</span>
+            <h2>Data Routes</h2>
+            <p>Documentation on how Showdown and PokeAPI data is ingested.</p>
+          </a>
+
+          <a href="./repo-structure.md" class="dev-card">
+            <span class="dev-card-kicker">Overview</span>
+            <h2>Repository</h2>
+            <p>Internal project layout and file-system organization.</p>
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="site-shell footer-shell">
+      <div>
+        The Pokemontology project is an open-source research effort.
+      </div>
+      <div>
+        <a href="https://github.com/laurajoyhutchins/pokemontology">GitHub</a>
+      </div>
+    </div>
+  </footer>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

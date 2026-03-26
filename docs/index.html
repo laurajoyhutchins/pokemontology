@@ -20,15 +20,17 @@
         </a>
         <nav class="nav-links" aria-label="Primary">
           <a href="./index.html" class="nav-active" aria-current="page">Ask</a>
-          <a href="./artifacts.html">Artifacts</a>
-          <a href="./modules.html">Modules</a>
-          <a href="./examples.html">Examples</a>
-          <a href="./pipelines.html">Pipelines</a>
-          <a href="./repo-structure.md">Repo</a>
+          <a href="./dev.html">Dev Console</a>
+          <a href="https://github.com/laurajoyhutchins/pokemontology">Repo</a>
         </nav>
-        <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false" aria-label="Toggle dark mode">
-          <span data-theme-label>Dark</span>
-        </button>
+        <div class="header-actions">
+          <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false" aria-label="Toggle dark mode">
+            <span data-theme-label>Dark</span>
+          </button>
+          <button class="power-toggle" type="button" data-power-toggle aria-pressed="false" aria-label="Toggle technical mode">
+            <span data-power-label>Technical: Off</span>
+          </button>
+        </div>
       </div>
     </div>
   </header>
@@ -46,9 +48,9 @@
           <div class="hero-actions">
             <button class="button button-primary" id="focus-question-btn" type="button">Focus Research Field</button>
             <button class="button button-secondary" id="sample-question-btn" type="button">Load Sample</button>
-            <button class="button button-secondary" id="toggle-advanced-btn" type="button" aria-expanded="false">Advanced View</button>
+            <button class="button button-secondary" id="toggle-advanced-btn" type="button" aria-expanded="false" data-power-only>Technical View</button>
           </div>
-          <div class="hero-stats">
+          <div class="hero-stats" data-power-only>
             <div class="stat-chip">
               <strong data-status-model>Checking…</strong>
               <span>Inference backend</span>
@@ -64,7 +66,7 @@
           </div>
         </div>
 
-        <aside class="laurel-sidecar fade-up delay-1">
+        <aside class="laurel-sidecar fade-up delay-1" data-power-only>
           <div class="sidecar-card">
             <p class="panel-kicker">Mission Brief</p>
             <h2>Professor Laurel keeps the risky parts visible.</h2>
@@ -118,7 +120,7 @@
         </div>
 
         <div class="laurel-board fade-up delay-2">
-          <section class="laurel-panel">
+          <section class="laurel-panel" data-power-only>
             <div class="laurel-panel-head">
               <span class="qe-results-label">Grounding Notes</span>
               <span class="mini-badge" data-grounding-count>0 matches</span>
@@ -131,7 +133,7 @@
             </div>
           </section>
 
-          <section class="laurel-panel">
+          <section class="laurel-panel findings-panel">
             <div class="laurel-panel-head">
               <span class="qe-results-label">Findings</span>
               <div class="qe-panel-actions">
@@ -147,7 +149,7 @@
             </div>
           </section>
 
-          <section class="laurel-panel">
+          <section class="laurel-panel" data-power-only>
             <div class="laurel-panel-head">
               <span class="qe-results-label">Generated Query</span>
               <span class="mini-badge" id="validation-badge">Awaiting validation</span>
@@ -167,7 +169,7 @@
           </section>
         </div>
 
-        <details class="advanced-console fade-up delay-2" id="advanced-console">
+        <details class="advanced-console fade-up delay-2" id="advanced-console" data-power-only>
           <summary>Advanced Query View</summary>
           <div class="qe-toolbar">
             <div class="qe-example-group">

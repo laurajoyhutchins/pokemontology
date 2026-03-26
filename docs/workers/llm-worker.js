@@ -165,17 +165,16 @@ function buildFallbackQuery(question, matches, schemaPack) {
     const typeName = escapeLiteral(typeCheck[2]);
     return {
       sparql: `PREFIX pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#>
-PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 ASK {
   ?species a pkm:Species ;
-           rdfs:label "${species}" .
+           pkm:hasName "${species}" .
   ?variant a pkm:Variant ;
            pkm:belongsToSpecies ?species .
   ?assignment a pkm:TypingAssignment ;
               pkm:aboutVariant ?variant ;
               pkm:aboutType ?type .
-  ?type rdfs:label "${typeName}" .
+  ?type pkm:hasName "${typeName}" .
 }`,
       summary: "Synthesized a typed ASK query from the question pattern.",
     };
