@@ -1,8 +1,8 @@
-"""Semantic regression tests against the example slice."""
+"""Semantic regression tests against the example slice and built ontology."""
 
 from __future__ import annotations
 
-from rdflib import Graph, Namespace, RDF
+from rdflib import Graph, Namespace, RDF, RDFS
 
 PKM = Namespace("https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#")
 
@@ -152,3 +152,11 @@ def test_all_combatants_belong_to_a_battle(combined_graph: Graph) -> None:
     assert bad == [], "BattleParticipants not in exactly one Battle:\n" + "\n".join(
         f"  {row.combatant} (battles: {row['count']})" for row in bad
     )
+
+
+def test_move_slot_abstraction_covers_pp_tracking(ontology_graph: Graph) -> None:
+    """PP tracking should target the shared MoveSlot abstraction."""
+    assert (PKM.OwnedMoveSlot, RDFS.subClassOf, PKM.MoveSlot) in ontology_graph
+    assert (PKM.aboutMoveSlot, RDFS.range, PKM.MoveSlot) in ontology_graph
+    assert (PKM.hasSlot, RDFS.domain, PKM.MoveSlot) in ontology_graph
+    assert (PKM.knowsMove, RDFS.domain, PKM.MoveSlot) in ontology_graph

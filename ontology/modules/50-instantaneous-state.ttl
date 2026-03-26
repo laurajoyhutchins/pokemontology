@@ -97,12 +97,12 @@ pkm:CurrentPPAssignment
     rdfs:label "CurrentPPAssignment" ;
     rdfs:subClassOf pkm:ContextualFact ;
     rdfs:subClassOf pkm:MaterializedStateAssignment ;
-    rdfs:comment "Records the current PP of a move slot at an instantaneous state. This vocabulary currently scopes PP tracking to OwnedMoveSlot-backed combatants; transient replay combatants need a future battle-local move-slot model." ;
+    rdfs:comment "Records the current PP of a move slot at an instantaneous state. This targets the shared MoveSlot abstraction so replay-time battle-local slots can coexist with save-file OwnedMoveSlot records." ;
     rdfs:subClassOf [
         a owl:Restriction ;
         owl:onProperty pkm:aboutMoveSlot ;
         owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
-        owl:onClass pkm:OwnedMoveSlot
+        owl:onClass pkm:MoveSlot
     ] ;
     rdfs:subClassOf [
         a owl:Restriction ;
@@ -214,7 +214,7 @@ pkm:aboutMoveSlot
     a owl:ObjectProperty ;
     a owl:FunctionalProperty ;
     rdfs:label "aboutMoveSlot" ;
-    rdfs:range pkm:OwnedMoveSlot .
+    rdfs:range pkm:MoveSlot .
 
 pkm:aboutField
     a owl:ObjectProperty ;

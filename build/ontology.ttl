@@ -600,7 +600,7 @@ pkm:hasSlot
     a owl:DatatypeProperty ;
     a owl:FunctionalProperty ;
     rdfs:label "hasSlot" ;
-    rdfs:domain pkm:OwnedMoveSlot ;
+    rdfs:domain pkm:MoveSlot ;
     rdfs:range xsd:integer .
 
 pkm:hasValue
@@ -704,13 +704,25 @@ pkm:OwnedPokemon
         owl:onClass pkm:Trainer
     ] .
 
+pkm:MoveSlot
+    a owl:Class ;
+    rdfs:label "MoveSlot" ;
+    rdfs:comment "A move slot that carries a move assignment and slot index. This superclass covers persistent save-file slots and future battle-local slot representations." ;
+    owl:disjointWith pkm:Entity ;
+    owl:disjointWith pkm:Context ;
+    owl:disjointWith pkm:ContextualFact ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:knowsMove ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Move
+    ] .
+
 pkm:OwnedMoveSlot
     a owl:Class ;
     rdfs:label "OwnedMoveSlot" ;
     rdfs:comment "A move slot belonging to a specific OwnedPokemon in a save file." ;
-    owl:disjointWith pkm:Entity ;
-    owl:disjointWith pkm:Context ;
-    owl:disjointWith pkm:ContextualFact ;
+    rdfs:subClassOf pkm:MoveSlot ;
     rdfs:subClassOf [
         a owl:Restriction ;
         owl:onProperty pkm:ownedBy ;
@@ -890,7 +902,7 @@ pkm:knowsMove
     a owl:ObjectProperty ;
     a owl:FunctionalProperty ;
     rdfs:label "knowsMove" ;
-    rdfs:domain pkm:OwnedMoveSlot ;
+    rdfs:domain pkm:MoveSlot ;
     rdfs:range pkm:Move .
 
 pkm:hasNature
@@ -1546,12 +1558,12 @@ pkm:CurrentPPAssignment
     rdfs:label "CurrentPPAssignment" ;
     rdfs:subClassOf pkm:ContextualFact ;
     rdfs:subClassOf pkm:MaterializedStateAssignment ;
-    rdfs:comment "Records the current PP of a move slot at an instantaneous state. This vocabulary currently scopes PP tracking to OwnedMoveSlot-backed combatants; transient replay combatants need a future battle-local move-slot model." ;
+    rdfs:comment "Records the current PP of a move slot at an instantaneous state. This targets the shared MoveSlot abstraction so replay-time battle-local slots can coexist with save-file OwnedMoveSlot records." ;
     rdfs:subClassOf [
         a owl:Restriction ;
         owl:onProperty pkm:aboutMoveSlot ;
         owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
-        owl:onClass pkm:OwnedMoveSlot
+        owl:onClass pkm:MoveSlot
     ] ;
     rdfs:subClassOf [
         a owl:Restriction ;
@@ -1663,7 +1675,7 @@ pkm:aboutMoveSlot
     a owl:ObjectProperty ;
     a owl:FunctionalProperty ;
     rdfs:label "aboutMoveSlot" ;
-    rdfs:range pkm:OwnedMoveSlot .
+    rdfs:range pkm:MoveSlot .
 
 pkm:aboutField
     a owl:ObjectProperty ;

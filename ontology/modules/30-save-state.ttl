@@ -28,13 +28,25 @@ pkm:OwnedPokemon
         owl:onClass pkm:Trainer
     ] .
 
+pkm:MoveSlot
+    a owl:Class ;
+    rdfs:label "MoveSlot" ;
+    rdfs:comment "A move slot that carries a move assignment and slot index. This superclass covers persistent save-file slots and future battle-local slot representations." ;
+    owl:disjointWith pkm:Entity ;
+    owl:disjointWith pkm:Context ;
+    owl:disjointWith pkm:ContextualFact ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:knowsMove ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Move
+    ] .
+
 pkm:OwnedMoveSlot
     a owl:Class ;
     rdfs:label "OwnedMoveSlot" ;
     rdfs:comment "A move slot belonging to a specific OwnedPokemon in a save file." ;
-    owl:disjointWith pkm:Entity ;
-    owl:disjointWith pkm:Context ;
-    owl:disjointWith pkm:ContextualFact ;
+    rdfs:subClassOf pkm:MoveSlot ;
     rdfs:subClassOf [
         a owl:Restriction ;
         owl:onProperty pkm:ownedBy ;
@@ -214,7 +226,7 @@ pkm:knowsMove
     a owl:ObjectProperty ;
     a owl:FunctionalProperty ;
     rdfs:label "knowsMove" ;
-    rdfs:domain pkm:OwnedMoveSlot ;
+    rdfs:domain pkm:MoveSlot ;
     rdfs:range pkm:Move .
 
 pkm:hasNature
