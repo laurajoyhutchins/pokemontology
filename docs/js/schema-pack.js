@@ -1,3 +1,5 @@
+const CURATED_DEFAULT_QUESTION = "Which move types are super effective against Charizard?";
+
 export async function loadSchemaPack() {
   const response = await fetch("./schema-index.json", { cache: "no-store" });
   if (!response.ok) {
@@ -15,8 +17,9 @@ export function formatPrefixBlock(schemaPack) {
 }
 
 export function defaultQuestion(schemaPack) {
-  return (
-    schemaPack?.examples?.[0]?.question ||
-    "Which of my moves are effective against Charizard?"
-  );
+  const schemaExample = schemaPack?.examples?.[0]?.question?.trim();
+  if (schemaExample && schemaExample !== "Which of my moves are effective against Charizard?") {
+    return schemaExample;
+  }
+  return CURATED_DEFAULT_QUESTION;
 }

@@ -8,6 +8,7 @@ import {
   renderGeneratedQuery,
   renderGrounding,
   renderQueryResults,
+  toggleResultActions,
   renderValidation,
   setResultsContent,
 } from "./query-execution.js";
@@ -24,6 +25,22 @@ import {
 
 const THEME_STORAGE_KEY = "pokemontology-theme";
 const POWER_MODE_STORAGE_KEY = "pokemontology-power-mode";
+
+function readStorage(key) {
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeStorage(key, value) {
+  try {
+    window.localStorage.setItem(key, value);
+  } catch {
+    // Storage can be unavailable for local-file browsing or privacy-restricted contexts.
+  }
+}
 
 export async function createLaurelApp() {
   const state = createState();
@@ -90,7 +107,8 @@ function applyTheme(theme) {
   const label = document.querySelector("[data-theme-label]");
   root.dataset.theme = theme;
   if (toggle) toggle.setAttribute("aria-pressed", String(theme === "dark"));
-  if (label) label.textContent = theme === "dark" ? "Light" : "Dark";
+  if (toggle) toggle.setAttribute("aria-label", `Current theme: ${theme}`);
+  if (label) label.textContent = theme === "dark" ? "Dark" : "Light";
 }
 
 function applyPowerMode(mode) {
@@ -103,13 +121,13 @@ function applyPowerMode(mode) {
 }
 
 function resolvedInitialTheme() {
-  const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
+  const stored = readStorage(THEME_STORAGE_KEY);
   if (stored === "light" || stored === "dark") return stored;
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
 function resolvedInitialPowerMode() {
-  return window.localStorage.getItem(POWER_MODE_STORAGE_KEY) === "on" ? "on" : "off";
+  return readStorage(POWER_MODE_STORAGE_KEY) === "on" ? "on" : "off";
 }
 
 function setupThemeToggle() {
@@ -118,7 +136,7 @@ function setupThemeToggle() {
   if (!toggle) return;
   toggle.addEventListener("click", () => {
     const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
-    window.localStorage.setItem(THEME_STORAGE_KEY, next);
+    writeStorage(THEME_STORAGE_KEY, next);
     applyTheme(next);
   });
 }
@@ -129,7 +147,7 @@ function setupPowerToggle() {
   if (!toggle) return;
   toggle.addEventListener("click", () => {
     const next = document.body.dataset.powerMode === "on" ? "off" : "on";
-    window.localStorage.setItem(POWER_MODE_STORAGE_KEY, next);
+    writeStorage(POWER_MODE_STORAGE_KEY, next);
     applyPowerMode(next);
   });
 }

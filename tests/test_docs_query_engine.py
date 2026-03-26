@@ -61,7 +61,8 @@ def test_query_engine_uses_generated_query_examples_and_schema_pack() -> None:
 
 def test_professor_laurel_landing_page_is_primary_entry() -> None:
     text = INDEX_HTML.read_text(encoding="utf-8")
-    assert "Ask Professor Laurel." in text
+    assert "Professor Laurel" in text
+    assert "Run Query" in text
     assert "Grounding Notes" in text
     assert "Generated Query" in text
     assert "Advanced Query View" in text

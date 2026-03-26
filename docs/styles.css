@@ -1,7 +1,7 @@
 :root {
   color-scheme: light;
   --font-ui: "IBM Plex Mono", "Courier New", monospace;
-  --font-body: "Alegreya", "Georgia", serif;
+  --font-body: "IBM Plex Mono", "Courier New", monospace;
   --bg: #ece1bf;
   --bg-deep: #d9c996;
   --paper: rgba(248, 243, 225, 0.95);
@@ -13,10 +13,18 @@
   --fern: #8ea66f;
   --amber: #b9832a;
   --clay: #9b5a34;
-  --shadow: 10px 10px 0 rgba(23, 50, 43, 0.14);
+  --shadow:
+    2px 2px 0 rgba(23, 50, 43, 0.55),
+    4px 4px 0 rgba(23, 50, 43, 0.28);
   --radius-lg: 20px;
   --radius-md: 14px;
   --radius-sm: 10px;
+  --pixel-cut: 10px;
+  --pixel-frame:
+    inset 1px 0 0 var(--line),
+    inset -1px 0 0 var(--line),
+    inset 0 1px 0 var(--line),
+    inset 0 -1px 0 var(--line);
   --header-bg: rgba(245, 239, 215, 0.88);
   --control-bg: #efe5c1;
   --code-bg: #172922;
@@ -36,7 +44,9 @@
   --fern: #d9d381;
   --amber: #efc06a;
   --clay: #f0a56f;
-  --shadow: 10px 10px 0 rgba(0, 0, 0, 0.28);
+  --shadow:
+    2px 2px 0 rgba(0, 0, 0, 0.72),
+    4px 4px 0 rgba(0, 0, 0, 0.38);
   --header-bg: rgba(19, 35, 30, 0.9);
   --control-bg: #223a33;
   --code-bg: #08100d;
@@ -55,11 +65,7 @@ body {
   margin: 0;
   color: var(--ink);
   font-family: var(--font-body);
-  background:
-    radial-gradient(circle at top left, rgba(142, 166, 111, 0.25), transparent 32rem),
-    radial-gradient(circle at 82% 18%, rgba(185, 131, 42, 0.18), transparent 24rem),
-    radial-gradient(circle at bottom right, rgba(84, 121, 92, 0.2), transparent 28rem),
-    linear-gradient(180deg, var(--bg) 0%, var(--bg-deep) 100%);
+  background: var(--bg);
 }
 
 body::before {
@@ -104,7 +110,6 @@ textarea {
   z-index: 50;
   padding: 0.7rem 0 0.45rem;
   background: var(--header-bg);
-  backdrop-filter: blur(12px);
 }
 
 .topbar,
@@ -115,9 +120,82 @@ textarea {
 .panel,
 .callout,
 .advanced-console {
-  border: 3px solid var(--line);
+  border: 2px solid var(--line);
   background: var(--paper);
   box-shadow: var(--shadow);
+}
+
+.topbar,
+.brand-mark,
+.theme-toggle,
+.power-toggle,
+.button,
+.qe-action-btn,
+.qe-select,
+.source-toggle,
+.laurel-textarea,
+.qe-textarea,
+.laurel-intro,
+.laurel-sidecar,
+.lab-question,
+.laurel-panel,
+.panel,
+.callout,
+.advanced-console,
+.sidecar-card,
+.grounding-card,
+.artifact-card,
+.module-card,
+.pipeline-card,
+.example-card,
+.highlight,
+.generated-query-card,
+.stat-chip,
+.mini-badge,
+.qe-lang-badge,
+.validation-item,
+.laurel-answer-inline,
+.qe-results-body,
+.qe-construct-pre,
+.pipeline-card pre {
+  box-shadow: var(--pixel-frame), var(--shadow);
+}
+
+.topbar,
+.brand-mark,
+.theme-toggle,
+.power-toggle,
+.button,
+.qe-action-btn,
+.qe-select,
+.source-toggle,
+.laurel-textarea,
+.qe-textarea,
+.laurel-intro,
+.laurel-sidecar,
+.lab-question,
+.laurel-panel,
+.panel,
+.callout,
+.advanced-console,
+.sidecar-card,
+.grounding-card,
+.artifact-card,
+.module-card,
+.pipeline-card,
+.example-card,
+.highlight,
+.generated-query-card,
+.stat-chip,
+.mini-badge,
+.qe-lang-badge,
+.validation-item,
+.laurel-answer-inline,
+.qe-results-body,
+.qe-construct-pre,
+.pipeline-card pre {
+  border-radius: 0;
+  position: relative;
 }
 
 .topbar {
@@ -126,7 +204,6 @@ textarea {
   justify-content: space-between;
   gap: 1rem;
   padding: 0.8rem 1rem;
-  border-radius: 999px;
 }
 
 .brand {
@@ -143,8 +220,7 @@ textarea {
   display: grid;
   place-items: center;
   border: 2px solid var(--line);
-  border-radius: 8px;
-  background: linear-gradient(180deg, var(--fern), var(--moss));
+  background: var(--fern);
   color: #12241e;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -217,7 +293,6 @@ textarea {
 .button,
 .qe-action-btn {
   min-height: 2.85rem;
-  border-radius: 999px;
   background: var(--control-bg);
   color: var(--ink);
   cursor: pointer;
@@ -231,10 +306,21 @@ textarea {
   gap: 0.5rem;
 }
 
+.header-actions > button {
+  min-width: 9.5rem;
+  justify-content: center;
+}
+
 .power-toggle[aria-pressed="true"] {
   background: var(--moss);
   color: #f8f2dd;
   border-color: #385f4d;
+}
+
+:root[data-theme="dark"] .power-toggle[aria-pressed="true"],
+:root[data-theme="dark"] .button-primary {
+  color: #10211e;
+  border-color: #7ea262;
 }
 
 [data-power-only] {
@@ -256,16 +342,37 @@ body[data-power-mode="on"] details.advanced-console[data-power-only] {
 /* Focused layout when power mode is off */
 body:not([data-power-mode="on"]) .laurel-grid {
   grid-template-columns: 1fr;
-  max-width: 800px;
-  margin-left: auto;
-  margin-right: auto;
+  align-items: stretch;
 }
 
 body:not([data-power-mode="on"]) .laurel-board {
   grid-template-columns: 1fr;
-  max-width: 800px;
-  margin-left: auto;
-  margin-right: auto;
+}
+
+body:not([data-power-mode="on"]) .laurel-console .site-shell {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 1rem;
+}
+
+body:not([data-power-mode="on"]) .lab-question,
+body:not([data-power-mode="on"]) .findings-panel,
+body:not([data-power-mode="on"]) .laurel-intro {
+  display: flex;
+  flex-direction: column;
+}
+
+body:not([data-power-mode="on"]) .laurel-board {
+  min-height: 0;
+}
+
+body:not([data-power-mode="on"]) .findings-panel {
+  min-height: 0;
+}
+
+body:not([data-power-mode="on"]) .qe-results-body {
+  flex: 1;
+  min-height: 16rem;
 }
 
 .button {
@@ -277,7 +384,7 @@ body:not([data-power-mode="on"]) .laurel-board {
 }
 
 .button-primary {
-  background: linear-gradient(180deg, var(--moss), #385f4d);
+  background: var(--moss);
   color: #f8f2dd;
 }
 
@@ -296,29 +403,28 @@ body:not([data-power-mode="on"]) .laurel-board {
 }
 
 .laurel-hero {
-  padding: 2rem 0 1.2rem;
+  padding: 0.35rem 0 1rem;
 }
 
 .laurel-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(300px, 0.9fr);
-  gap: 1.2rem;
+  grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.72fr);
+  gap: 1rem;
 }
 
 .laurel-intro,
 .laurel-sidecar {
-  border-radius: var(--radius-lg);
-  padding: 1.4rem;
+  padding: 1.1rem 1.2rem;
 }
 
 .laurel-sidecar {
   display: grid;
   gap: 1rem;
+  align-self: start;
 }
 
 .sidecar-card {
   border: 2px solid rgba(47, 85, 71, 0.18);
-  border-radius: var(--radius-md);
   background: var(--panel);
   padding: 1rem;
 }
@@ -326,14 +432,14 @@ body:not([data-power-mode="on"]) .laurel-board {
 .eyebrow {
   margin: 0 0 0.7rem;
   color: var(--clay);
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   font-weight: 700;
 }
 
 .laurel-title {
-  margin: 0;
-  font-size: clamp(3rem, 8vw, 5.4rem);
-  line-height: 0.95;
+  margin: 0 0 0.5rem;
+  font-size: clamp(1.9rem, 5vw, 3rem);
+  line-height: 1;
   font-family: var(--font-ui);
   text-transform: uppercase;
 }
@@ -348,8 +454,8 @@ body:not([data-power-mode="on"]) .laurel-board {
 .highlight p,
 .sidecar-card p {
   color: var(--muted);
-  line-height: 1.68;
-  font-size: 1.04rem;
+  line-height: 1.55;
+  font-size: 0.94rem;
 }
 
 .hero-actions,
@@ -420,12 +526,11 @@ body:not([data-power-mode="on"]) .laurel-board {
 
 .hero-stats {
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  margin-top: 1.5rem;
+  margin-top: 1rem;
 }
 
 .stat-chip {
   border: 2px solid var(--line);
-  border-radius: var(--radius-md);
   background: var(--panel);
   padding: 0.95rem 1rem;
 }
@@ -443,12 +548,11 @@ body:not([data-power-mode="on"]) .laurel-board {
 }
 
 .laurel-console {
-  padding-bottom: 1rem;
+  padding: 1.25rem 0 0.5rem;
 }
 
 .lab-question {
-  padding: 1rem;
-  border-radius: var(--radius-lg);
+  padding: 1.15rem;
 }
 
 .toolbar-label {
@@ -461,7 +565,6 @@ body:not([data-power-mode="on"]) .laurel-board {
 .laurel-textarea,
 .qe-textarea {
   width: 100%;
-  border-radius: var(--radius-md);
   background: var(--panel);
   color: var(--ink);
   padding: 1rem;
@@ -470,7 +573,7 @@ body:not([data-power-mode="on"]) .laurel-board {
 }
 
 .laurel-textarea {
-  min-height: 7rem;
+  min-height: 8.5rem;
 }
 
 .qe-textarea {
@@ -531,7 +634,7 @@ body:not([data-power-mode="on"]) .laurel-board {
 }
 
 .laurel-board {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr);
   margin-top: 1rem;
 }
 
@@ -540,7 +643,6 @@ body:not([data-power-mode="on"]) .laurel-board {
 .callout,
 .advanced-console {
   padding: 1.15rem;
-  border-radius: var(--radius-lg);
 }
 
 .grounding-stack,
@@ -557,7 +659,6 @@ body:not([data-power-mode="on"]) .laurel-board {
 .highlight,
 .generated-query-card {
   border: 2px solid var(--line);
-  border-radius: var(--radius-md);
   background: var(--panel);
   padding: 1rem;
 }
@@ -580,7 +681,6 @@ body:not([data-power-mode="on"]) .laurel-board {
 
 .mini-badge,
 .qe-lang-badge {
-  border-radius: 999px;
   padding: 0.3rem 0.6rem;
   background: rgba(84, 121, 92, 0.15);
   border: 1px solid var(--line);
@@ -612,7 +712,6 @@ body:not([data-power-mode="on"]) .laurel-board {
   border-left: 4px solid var(--moss);
   padding: 0.75rem 0.85rem;
   background: rgba(84, 121, 92, 0.09);
-  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   font-size: 0.78rem;
 }
 
@@ -620,15 +719,13 @@ body:not([data-power-mode="on"]) .laurel-board {
   margin-bottom: 0.9rem;
   padding: 0.85rem 0.95rem;
   border: 2px solid var(--line);
-  border-radius: var(--radius-sm);
   background: rgba(84, 121, 92, 0.08);
   color: var(--ink);
 }
 
 .qe-results-body {
-  min-height: 15rem;
+  min-height: 18rem;
   border: 2px dashed rgba(47, 85, 71, 0.3);
-  border-radius: var(--radius-md);
   padding: 1rem;
   background: rgba(255, 255, 255, 0.16);
 }
@@ -691,7 +788,6 @@ body:not([data-power-mode="on"]) .laurel-board {
 .pipeline-card pre {
   margin: 0;
   padding: 0.95rem;
-  border-radius: var(--radius-sm);
   background: var(--code-bg);
   color: var(--code-fg);
   overflow-x: auto;
@@ -727,7 +823,7 @@ body:not([data-power-mode="on"]) .laurel-board {
 }
 
 .section-tight {
-  padding-top: 0.7rem;
+  padding-top: 0.4rem;
 }
 
 .section-head {
@@ -779,7 +875,6 @@ body:not([data-power-mode="on"]) .laurel-board {
   display: inline-flex;
   align-items: center;
   gap: 0.55rem;
-  border-radius: 999px;
   background: var(--control-bg);
   padding: 0.55rem 0.8rem;
   font-size: 0.76rem;
@@ -791,7 +886,6 @@ body:not([data-power-mode="on"]) .laurel-board {
 
 .qe-select {
   min-height: 2.8rem;
-  border-radius: 999px;
   background: var(--control-bg);
   color: var(--ink);
   padding: 0.55rem 0.85rem;

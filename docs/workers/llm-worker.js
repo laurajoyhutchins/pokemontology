@@ -154,6 +154,52 @@ function buildFallbackQuery(question, matches, schemaPack) {
   const lower = question.toLowerCase();
   const examples = schemaPack?.examples || [];
   const superEffective = examples.find((example) => example.id === "super-effective-moves");
+  const superEffectiveTypes = /^which\s+move\s+types?\s+are\s+super\s+effective\s+against\s+(.+?)\??$/i.exec(question.trim());
+  if (superEffectiveTypes) {
+    const species = escapeLiteral(superEffectiveTypes[1]);
+    return {
+      sparql: `PREFIX pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+SELECT ?moveTypeName (SUM(?factorScore) AS ?netScore)
+WHERE {
+  ?species a pkm:Species ;
+           pkm:hasName "${species}" .
+  ?variant a pkm:Variant ;
+           pkm:belongsToSpecies ?species .
+  ?assignment a pkm:TypingAssignment ;
+              pkm:aboutVariant ?variant ;
+              pkm:aboutType ?defenderType .
+  ?moveType a pkm:Type ;
+            pkm:hasName ?moveTypeName .
+  OPTIONAL {
+    ?effectiveness a pkm:TypeEffectivenessAssignment ;
+                   pkm:attackerType ?moveType ;
+                   pkm:defenderType ?defenderType ;
+                   pkm:hasDamageFactor ?factor .
+  }
+  BIND(
+    IF(!BOUND(?factor), 0,
+      IF(?factor = "0.0"^^xsd:decimal, -99,
+        IF(?factor = "0.25"^^xsd:decimal, -2,
+          IF(?factor = "0.5"^^xsd:decimal, -1,
+            IF(?factor = "1.0"^^xsd:decimal, 0,
+              IF(?factor = "2.0"^^xsd:decimal, 1,
+                IF(?factor = "4.0"^^xsd:decimal, 2, 0)
+              )
+            )
+          )
+        )
+      )
+    ) AS ?factorScore
+  )
+}
+GROUP BY ?moveTypeName
+HAVING (SUM(?factorScore) > 0)
+ORDER BY DESC(?netScore) ?moveTypeName`,
+      summary: "Synthesized a species type-effectiveness query that works with browser demo data.",
+    };
+  }
   if (/\beffective\b/.test(lower) && /\bmove/.test(lower) && superEffective) {
     return {
       sparql: superEffective.query,

@@ -10,6 +10,7 @@ import textwrap
 from pathlib import Path
 
 import pytest
+from rdflib import Graph
 
 from tests.support import REPO
 from tests.support.laurel import write_super_effective_fixture
@@ -175,6 +176,63 @@ def test_web_worker_pipeline_end_to_end() -> None:
     assert "pkm:actor" in payload["generation"]["sparql"]
     assert payload["validation"]["ok"] is True
     assert "PREFIX pkm:" in payload["validation"]["normalized"]
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node is required for web E2E")
+def test_web_worker_query_executes_actual_species_question() -> None:
+    script = textwrap.dedent(
+        f"""
+        import fs from "node:fs";
+        import path from "node:path";
+        import {{ pathToFileURL }} from "node:url";
+
+        const repo = {json.dumps(str(REPO))};
+        const schemaPack = JSON.parse(fs.readFileSync(path.join(repo, "docs", "schema-index.json"), "utf8"));
+
+        const llmMessages = [];
+        globalThis.self = {{
+          postMessage(message) {{
+            llmMessages.push(message);
+          }},
+        }};
+        await import(pathToFileURL(path.join(repo, "docs", "workers", "llm-worker.js")).href + "?e2e=species");
+        await globalThis.self.onmessage({{
+          data: {{
+            question: "Which move types are super effective against Charizard?",
+            matches: [],
+            schemaPack,
+            webgpuAvailable: false,
+          }},
+        }});
+
+        console.log(JSON.stringify(llmMessages.at(-1)));
+        """
+    )
+
+    completed = subprocess.run(
+        ["node", "--input-type=module", "--eval", script],
+        cwd=REPO,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    payload = json.loads(completed.stdout)
+    assert payload["summary"] == "Synthesized a species type-effectiveness query that works with browser demo data."
+    assert 'pkm:hasName "Charizard"' in payload["sparql"]
+    assert "SUM(?factorScore) AS ?netScore" in payload["sparql"]
+
+    graph = Graph()
+    graph.parse(REPO / "docs" / "ontology.ttl", format="ttl")
+    graph.parse(REPO / "docs" / "pokeapi-demo.ttl", format="ttl")
+    rows = list(graph.query(payload["sparql"]))
+
+    assert rows
+    scores = {str(row.moveTypeName): int(row.netScore.toPython()) for row in rows}
+    assert scores["Rock"] == 2
+    assert scores["Water"] == 1
+    assert scores["Electric"] == 1
+    assert "Ground" not in scores
 
 
 @pytest.mark.skipif(shutil.which("node") is None, reason="node is required for web integration")

@@ -36,68 +36,7 @@
   </header>
 
   <main>
-    <section class="laurel-hero" id="query">
-      <div class="site-shell laurel-grid">
-        <div class="laurel-intro fade-up">
-          <p class="eyebrow">Pokemontology / Interface</p>
-          <h1 class="laurel-title">Query the Engine.</h1>
-          <p class="laurel-lead">
-            Natural-language interface to Pokémon battle mechanics with client-side RAG grounding, 
-            local-browser translation, and live SPARQL execution.
-          </p>
-          <div class="hero-actions">
-            <button class="button button-primary" id="focus-question-btn" type="button">Focus Query Field</button>
-            <button class="button button-secondary" id="sample-question-btn" type="button">Load Sample</button>
-            <button class="button button-secondary" id="toggle-advanced-btn" type="button" aria-expanded="false" data-power-only>Technical View</button>
-          </div>
-          <div class="hero-stats" data-power-only>
-            <div class="stat-chip">
-              <strong data-status-model>Checking…</strong>
-              <span>Inference backend</span>
-            </div>
-            <div class="stat-chip">
-              <strong data-status-grounding>Pending</strong>
-              <span>Grounding pass</span>
-            </div>
-            <div class="stat-chip">
-              <strong data-status-validator>Standby</strong>
-              <span>AST validator</span>
-            </div>
-          </div>
-        </div>
-
-        <aside class="laurel-sidecar fade-up delay-1" data-power-only>
-          <div class="sidecar-card">
-            <p class="panel-kicker">Technical Brief</p>
-            <h2>Transparent Translation.</h2>
-            <p>
-              Inference is browser-local. Schema grounding, generated SPARQL, 
-              and validation results remain inspectable before execution.
-            </p>
-          </div>
-          <div class="sidecar-card">
-            <p class="panel-kicker">Static Sources</p>
-            <div class="qe-source-group">
-              <label class="source-toggle">
-                <input type="checkbox" id="src-ontology" checked>
-                <span>ontology.ttl</span>
-              </label>
-              <label class="source-toggle">
-                <input type="checkbox" id="src-shapes">
-                <span>shapes.ttl</span>
-              </label>
-            </div>
-            <div class="qe-artifact-links">
-              <a class="button button-secondary" href="./ontology.ttl">ontology.ttl</a>
-              <a class="button button-secondary" href="./shapes.ttl">shapes.ttl</a>
-              <a class="button button-secondary" href="https://github.com/laurajoyhutchins/pokemontology" data-repository-url>Source</a>
-            </div>
-          </div>
-        </aside>
-      </div>
-    </section>
-
-    <section class="laurel-console section-tight">
+    <section class="laurel-console section-tight" id="query">
       <div class="site-shell">
         <div class="lab-question fade-up delay-1">
           <label class="toolbar-label" for="nl-question">Query</label>
@@ -108,7 +47,7 @@
             autocorrect="off"
             autocapitalize="sentences"
             aria-label="Natural-language query input"
-            placeholder="Which moves are effective against Charizard?"
+            placeholder="Which move types are super effective against Charizard?"
           ></textarea>
           <div class="laurel-runbar">
             <div class="qe-runbar-left">
@@ -203,6 +142,70 @@
             </div>
           </div>
         </details>
+      </div>
+    </section>
+
+    <section class="laurel-hero">
+      <div class="site-shell laurel-grid">
+        <div class="laurel-intro fade-up">
+          <p class="eyebrow">Pokemontology / Interface</p>
+          <h1 class="laurel-title">Professor Laurel</h1>
+          <p class="laurel-lead">
+            Ask natural-language questions about Pokémon battle mechanics and inspect the generated SPARQL when you need the technical view.
+          </p>
+          <div class="hero-actions">
+            <button class="button button-primary" id="focus-question-btn" type="button">Focus Query Field</button>
+            <button class="button button-secondary" id="sample-question-btn" type="button">Load Sample</button>
+            <button class="button button-secondary" id="toggle-advanced-btn" type="button" aria-expanded="false" data-power-only>Technical View</button>
+          </div>
+          <div class="hero-stats" data-power-only>
+            <div class="stat-chip">
+              <strong data-status-model>Checking…</strong>
+              <span>Inference backend</span>
+            </div>
+            <div class="stat-chip">
+              <strong data-status-grounding>Pending</strong>
+              <span>Grounding pass</span>
+            </div>
+            <div class="stat-chip">
+              <strong data-status-validator>Standby</strong>
+              <span>AST validator</span>
+            </div>
+          </div>
+        </div>
+
+        <aside class="laurel-sidecar fade-up delay-1" data-power-only>
+          <div class="sidecar-card">
+            <p class="panel-kicker">Technical Brief</p>
+            <h2>Transparent Translation</h2>
+            <p>
+              Inference is browser-local. Schema grounding, generated SPARQL, and validation results remain inspectable before execution.
+            </p>
+          </div>
+          <div class="sidecar-card">
+            <p class="panel-kicker">Static Sources</p>
+            <div class="qe-source-group">
+              <label class="source-toggle">
+                <input type="checkbox" id="src-ontology" checked>
+                <span>ontology.ttl</span>
+              </label>
+              <label class="source-toggle">
+                <input type="checkbox" id="src-pokeapi-demo" checked>
+                <span>pokeapi-demo.ttl</span>
+              </label>
+              <label class="source-toggle">
+                <input type="checkbox" id="src-shapes">
+                <span>shapes.ttl</span>
+              </label>
+            </div>
+            <div class="qe-artifact-links">
+              <a class="button button-secondary" href="./ontology.ttl">ontology.ttl</a>
+              <a class="button button-secondary" href="./pokeapi-demo.ttl">pokeapi-demo.ttl</a>
+              <a class="button button-secondary" href="./shapes.ttl">shapes.ttl</a>
+              <a class="button button-secondary" href="https://github.com/laurajoyhutchins/pokemontology" data-repository-url>Source</a>
+            </div>
+          </div>
+        </aside>
       </div>
     </section>
   </main>

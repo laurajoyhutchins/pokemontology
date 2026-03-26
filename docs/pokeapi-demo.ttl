@@ -1,0 +1,154 @@
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix pkm:  <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#> .
+
+<https://laurajoyhutchins.github.io/pokemontology/pokeapi-demo.ttl>
+    a owl:Ontology ;
+    rdfs:label "Pokemontology Browser Demo Data" ;
+    rdfs:comment "Small browser-friendly Pokemon data slice for Professor Laurel demos." .
+
+pkm:Ruleset_Demo
+    a pkm:Ruleset ;
+    pkm:hasName "Browser Demo Ruleset" .
+
+pkm:Species_Charizard
+    a pkm:Species ;
+    pkm:hasName "Charizard" .
+
+pkm:Variant_Charizard_Default
+    a pkm:Variant ;
+    pkm:hasName "Charizard" ;
+    pkm:belongsToSpecies pkm:Species_Charizard .
+
+pkm:Type_Fire a pkm:Type ; pkm:hasName "Fire" .
+pkm:Type_Flying a pkm:Type ; pkm:hasName "Flying" .
+pkm:Type_Water a pkm:Type ; pkm:hasName "Water" .
+pkm:Type_Electric a pkm:Type ; pkm:hasName "Electric" .
+pkm:Type_Rock a pkm:Type ; pkm:hasName "Rock" .
+pkm:Type_Ground a pkm:Type ; pkm:hasName "Ground" .
+pkm:Type_Ice a pkm:Type ; pkm:hasName "Ice" .
+pkm:Type_Grass a pkm:Type ; pkm:hasName "Grass" .
+pkm:Type_Fighting a pkm:Type ; pkm:hasName "Fighting" .
+pkm:Type_Bug a pkm:Type ; pkm:hasName "Bug" .
+pkm:Type_Steel a pkm:Type ; pkm:hasName "Steel" .
+pkm:Type_Fairy a pkm:Type ; pkm:hasName "Fairy" .
+pkm:Type_Normal a pkm:Type ; pkm:hasName "Normal" .
+
+pkm:TypingAssignment_Charizard_Fire
+    a pkm:TypingAssignment ;
+    pkm:aboutVariant pkm:Variant_Charizard_Default ;
+    pkm:aboutType pkm:Type_Fire ;
+    pkm:hasContext pkm:Ruleset_Demo .
+
+pkm:TypingAssignment_Charizard_Flying
+    a pkm:TypingAssignment ;
+    pkm:aboutVariant pkm:Variant_Charizard_Default ;
+    pkm:aboutType pkm:Type_Flying ;
+    pkm:hasContext pkm:Ruleset_Demo .
+
+pkm:TypeEffectiveness_Water_Fire
+    a pkm:TypeEffectivenessAssignment ;
+    pkm:attackerType pkm:Type_Water ;
+    pkm:defenderType pkm:Type_Fire ;
+    pkm:hasDamageFactor "2.0"^^xsd:decimal ;
+    pkm:hasContext pkm:Ruleset_Demo .
+
+pkm:TypeEffectiveness_Electric_Flying
+    a pkm:TypeEffectivenessAssignment ;
+    pkm:attackerType pkm:Type_Electric ;
+    pkm:defenderType pkm:Type_Flying ;
+    pkm:hasDamageFactor "2.0"^^xsd:decimal ;
+    pkm:hasContext pkm:Ruleset_Demo .
+
+pkm:TypeEffectiveness_Rock_Fire
+    a pkm:TypeEffectivenessAssignment ;
+    pkm:attackerType pkm:Type_Rock ;
+    pkm:defenderType pkm:Type_Fire ;
+    pkm:hasDamageFactor "2.0"^^xsd:decimal ;
+    pkm:hasContext pkm:Ruleset_Demo .
+
+pkm:TypeEffectiveness_Rock_Flying
+    a pkm:TypeEffectivenessAssignment ;
+    pkm:attackerType pkm:Type_Rock ;
+    pkm:defenderType pkm:Type_Flying ;
+    pkm:hasDamageFactor "2.0"^^xsd:decimal ;
+    pkm:hasContext pkm:Ruleset_Demo .
+
+pkm:TypeEffectiveness_Ground_Fire
+    a pkm:TypeEffectivenessAssignment ;
+    pkm:attackerType pkm:Type_Ground ;
+    pkm:defenderType pkm:Type_Fire ;
+    pkm:hasDamageFactor "2.0"^^xsd:decimal ;
+    pkm:hasContext pkm:Ruleset_Demo .
+
+pkm:TypeEffectiveness_Ground_Flying
+    a pkm:TypeEffectivenessAssignment ;
+    pkm:attackerType pkm:Type_Ground ;
+    pkm:defenderType pkm:Type_Flying ;
+    pkm:hasDamageFactor "0.0"^^xsd:decimal ;
+    pkm:hasContext pkm:Ruleset_Demo .
+
+pkm:TypeEffectiveness_Ice_Fire
+    a pkm:TypeEffectivenessAssignment ;
+    pkm:attackerType pkm:Type_Ice ;
+    pkm:defenderType pkm:Type_Fire ;
+    pkm:hasDamageFactor "0.5"^^xsd:decimal ;
+    pkm:hasContext pkm:Ruleset_Demo .
+
+pkm:TypeEffectiveness_Ice_Flying
+    a pkm:TypeEffectivenessAssignment ;
+    pkm:attackerType pkm:Type_Ice ;
+    pkm:defenderType pkm:Type_Flying ;
+    pkm:hasDamageFactor "2.0"^^xsd:decimal ;
+    pkm:hasContext pkm:Ruleset_Demo .
+
+pkm:TypeEffectiveness_Grass_Fire
+    a pkm:TypeEffectivenessAssignment ;
+    pkm:attackerType pkm:Type_Grass ;
+    pkm:defenderType pkm:Type_Fire ;
+    pkm:hasDamageFactor "0.5"^^xsd:decimal ;
+    pkm:hasContext pkm:Ruleset_Demo .
+
+pkm:TypeEffectiveness_Grass_Flying
+    a pkm:TypeEffectivenessAssignment ;
+    pkm:attackerType pkm:Type_Grass ;
+    pkm:defenderType pkm:Type_Flying ;
+    pkm:hasDamageFactor "0.5"^^xsd:decimal ;
+    pkm:hasContext pkm:Ruleset_Demo .
+
+pkm:TypeEffectiveness_Fighting_Flying
+    a pkm:TypeEffectivenessAssignment ;
+    pkm:attackerType pkm:Type_Fighting ;
+    pkm:defenderType pkm:Type_Flying ;
+    pkm:hasDamageFactor "0.5"^^xsd:decimal ;
+    pkm:hasContext pkm:Ruleset_Demo .
+
+pkm:TypeEffectiveness_Bug_Fire
+    a pkm:TypeEffectivenessAssignment ;
+    pkm:attackerType pkm:Type_Bug ;
+    pkm:defenderType pkm:Type_Fire ;
+    pkm:hasDamageFactor "0.5"^^xsd:decimal ;
+    pkm:hasContext pkm:Ruleset_Demo .
+
+pkm:TypeEffectiveness_Bug_Flying
+    a pkm:TypeEffectivenessAssignment ;
+    pkm:attackerType pkm:Type_Bug ;
+    pkm:defenderType pkm:Type_Flying ;
+    pkm:hasDamageFactor "0.5"^^xsd:decimal ;
+    pkm:hasContext pkm:Ruleset_Demo .
+
+pkm:TypeEffectiveness_Steel_Fire
+    a pkm:TypeEffectivenessAssignment ;
+    pkm:attackerType pkm:Type_Steel ;
+    pkm:defenderType pkm:Type_Fire ;
+    pkm:hasDamageFactor "0.5"^^xsd:decimal ;
+    pkm:hasContext pkm:Ruleset_Demo .
+
+pkm:TypeEffectiveness_Fairy_Fire
+    a pkm:TypeEffectivenessAssignment ;
+    pkm:attackerType pkm:Type_Fairy ;
+    pkm:defenderType pkm:Type_Fire ;
+    pkm:hasDamageFactor "0.5"^^xsd:decimal ;
+    pkm:hasContext pkm:Ruleset_Demo .
