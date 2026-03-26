@@ -276,6 +276,10 @@ WHERE {
 ORDER BY ?shape`,
   },
 ];
+const COMUNICA_BROWSER_URLS = [
+  "https://rdf.js.org/comunica-browser/versions/v4/engines/query-sparql/comunica-browser.js",
+  "https://cdn.jsdelivr.net/npm/@comunica/query-sparql@3/pkg/comunica-browser.js",
+];
 
 function escapeHtml(str) {
   return String(str)
@@ -396,11 +400,77 @@ function detectQueryType(sparql) {
 }
 
 function buildSources() {
-  const base = new URL("./", window.location.href).href;
   const sources = [];
-  if (document.getElementById("src-ontology")?.checked) sources.push(base + "ontology.ttl");
-  if (document.getElementById("src-shapes")?.checked) sources.push(base + "shapes.ttl");
+  if (document.getElementById("src-ontology")?.checked) sources.push(new URL("./ontology.ttl", window.location.href).href);
+  if (document.getElementById("src-shapes")?.checked) sources.push(new URL("./shapes.ttl", window.location.href).href);
   return sources;
+}
+
+async function iteratorToArray(stream) {
+  if (!stream) return [];
+  if (typeof stream.toArray === "function") {
+    return stream.toArray();
+  }
+  const items = [];
+  for await (const item of stream) {
+    items.push(item);
+  }
+  return items;
+}
+
+function inferBindingVars(bindings) {
+  const names = new Set();
+  bindings.forEach((binding) => {
+    if (!binding || typeof binding[Symbol.iterator] !== "function") return;
+    for (const [variable] of binding) {
+      if (variable?.termType === "Variable" && variable.value) {
+        names.add(variable.value);
+      }
+    }
+  });
+  return [...names];
+}
+
+function normalizeMetadataVars(metadata) {
+  const vars = metadata?.variables;
+  if (!Array.isArray(vars)) return [];
+  return vars
+    .map((variable) => {
+      if (typeof variable === "string") return variable.replace(/^\?/, "");
+      if (variable?.value) return String(variable.value).replace(/^\?/, "");
+      return "";
+    })
+    .filter(Boolean);
+}
+
+async function executeBindingsQuery(engine, sparql, sources) {
+  if (typeof engine.query === "function") {
+    const result = await engine.query(sparql, { sources });
+    if (result?.resultType === "bindings") {
+      const metadata = typeof result.metadata === "function" ? await result.metadata() : null;
+      const stream = typeof result.execute === "function"
+        ? await result.execute()
+        : result.bindingsStream;
+      const bindings = await iteratorToArray(stream);
+      const vars = normalizeMetadataVars(metadata);
+      return {
+        type: "bindings",
+        vars: vars.length ? vars : inferBindingVars(bindings),
+        bindings,
+      };
+    }
+  }
+
+  const stream = await engine.queryBindings(sparql, { sources });
+  const bindings = await iteratorToArray(stream);
+  const vars = typeof stream?.getProperty === "function"
+    ? normalizeMetadataVars(await stream.getProperty("variables"))
+    : [];
+  return {
+    type: "bindings",
+    vars: vars.length ? vars : inferBindingVars(bindings),
+    bindings,
+  };
 }
 
 async function executeQuery(sparql, sources) {
@@ -416,14 +486,39 @@ async function executeQuery(sparql, sources) {
 
   if (queryType === "quads") {
     const stream = await engine.queryQuads(sparql, { sources });
-    const quads = await stream.toArray();
+    const quads = await iteratorToArray(stream);
     return { type: "quads", quads };
   }
 
-  const stream = await engine.queryBindings(sparql, { sources });
-  const vars = stream.variables.map((v) => v.value);
-  const bindings = await stream.toArray();
-  return { type: "bindings", vars, bindings };
+  return executeBindingsQuery(engine, sparql, sources);
+}
+
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = src;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error(`Failed to load ${src}`));
+    document.head.appendChild(script);
+  });
+}
+
+async function loadComunicaEngine() {
+  if (window._qe_engine) return window._qe_engine;
+  let lastError = null;
+  for (const src of COMUNICA_BROWSER_URLS) {
+    try {
+      await loadScript(src);
+      if (window.Comunica?.QueryEngine) {
+        window._qe_engine = new window.Comunica.QueryEngine();
+        return window._qe_engine;
+      }
+      lastError = new Error(`Comunica QueryEngine unavailable after loading ${src}`);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError ?? new Error("No SPARQL engine bundle could be loaded.");
 }
 
 function populateExampleSelect() {
@@ -570,26 +665,18 @@ function initQueryEngine() {
   });
 
   // Load Comunica dynamically
-  const script = document.createElement("script");
-  script.src =
-    "https://cdn.jsdelivr.net/npm/@comunica/query-sparql@3/pkg/comunica-browser.js";
-  script.onload = () => {
-    try {
-      window._qe_engine = new window.Comunica.QueryEngine();
+  loadComunicaEngine()
+    .then(() => {
       runBtn.disabled = false;
       runLabel.textContent = "▶ Run";
-    } catch (e) {
-      runLabel.textContent = "Engine error";
-      console.error("Comunica init failed:", e);
-    }
-  };
-  script.onerror = () => {
-    runLabel.textContent = "Engine failed to load";
-    setResultsContent(
-      '<div class="qe-error">Failed to load the SPARQL engine from CDN. Check your network connection.</div>',
-    );
-  };
-  document.head.appendChild(script);
+    })
+    .catch((error) => {
+      runLabel.textContent = "Engine failed to load";
+      console.error("Comunica init failed:", error);
+      setResultsContent(
+        `<div class="qe-error">Failed to load the SPARQL engine. ${escapeHtml(error.message)}</div>`,
+      );
+    });
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
