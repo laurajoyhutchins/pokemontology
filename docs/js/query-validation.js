@@ -13,6 +13,7 @@ export async function validateQueryAst(sparql, schemaPack) {
   if (!trimmed) {
     return { ok: false, messages: ["No SPARQL was generated."], normalized: "" };
   }
+  const withoutComments = trimmed.replace(COMMENT_RE, "");
 
   const errors = [];
   const notes = [];
@@ -20,7 +21,7 @@ export async function validateQueryAst(sparql, schemaPack) {
   const allowedQueryTypes = schemaPack?.validation?.allowed_query_types || [];
   const knownTerms = new Set(schemaPack?.validation?.known_terms || []);
   const forbiddenRe = buildKeywordRegex(forbiddenKeywords);
-  if (forbiddenRe && forbiddenRe.test(trimmed)) {
+  if (forbiddenRe && forbiddenRe.test(withoutComments)) {
     errors.push("Forbidden SPARQL keyword detected.");
   }
 
@@ -74,6 +75,7 @@ export async function validateQueryAst(sparql, schemaPack) {
 function lintQuerySemantics(sparql, queryType, knownTerms) {
   const errors = [];
   const notes = [];
+  const withoutComments = sparql.replace(COMMENT_RE, "");
   if (/^\s*(?:PREFIX\b.*\n)*\s*SELECT\s+\*/im.test(sparql)) {
     errors.push("Generated SELECT queries must project explicit variables instead of SELECT *.");
   }
@@ -81,7 +83,6 @@ function lintQuerySemantics(sparql, queryType, knownTerms) {
     errors.push("Generated SELECT queries must include LIMIT or ORDER BY for bounded execution.");
   }
 
-  const withoutComments = sparql.replace(COMMENT_RE, "");
   const body = withoutComments.replace(PREFIX_RE, "");
   const pkmTerms = [...body.matchAll(PKM_TERM_RE)].map((match) => match[1]);
   const unknownTerms = [...new Set(pkmTerms.filter((term) => knownTerms.size && !knownTerms.has(term)))];
