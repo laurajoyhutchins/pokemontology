@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import Any
 
 from pokemontology.ingest_common import REPO_ROOT, serialize_turtle_to_path
+from pokemontology.io_utils import format_json_text, read_json_file, write_json_file
 from pokemontology.replay import replay_to_ttl_builder
 
 
@@ -57,17 +58,6 @@ class TransformStats:
     slices_written: int = 0
 
 
-def write_json(path: Path, payload: Any) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-    )
-
-
-def read_json(path: Path) -> Any:
-    return json.loads(path.read_text(encoding="utf-8"))
-
-
 def fetch_json_url(url: str, timeout: float) -> Any:
     request = urllib.request.Request(
         url,
@@ -89,10 +79,10 @@ def fetch_with_cache(
     force: bool,
 ) -> tuple[Any, bool]:
     if cache_path.exists() and not force:
-        return read_json(cache_path), False
+        return read_json_file(cache_path), False
 
     payload = fetch_json_url(url, timeout=timeout)
-    write_json(cache_path, payload)
+    write_json_file(cache_path, payload)
     time.sleep(delay_seconds)
     return payload, True
 
@@ -171,7 +161,7 @@ def fetch_index(
 def _iter_index_entries(index_dir: Path) -> list[dict[str, Any]]:
     entries: list[dict[str, Any]] = []
     for path in sorted(index_dir.rglob("page_*.json")):
-        entries.extend(_normalize_search_entries(read_json(path)))
+        entries.extend(_normalize_search_entries(read_json_file(path)))
     return entries
 
 
@@ -235,12 +225,12 @@ def curate_replay_ids(
         "replay_ids": sorted(selected),
         "replays": [selected[replay_id] for replay_id in sorted(selected)],
     }
-    write_json(curated_path, payload)
+    write_json_file(curated_path, payload)
     return payload
 
 
 def load_curated_replay_ids(curated_path: Path) -> list[str]:
-    payload = read_json(curated_path)
+    payload = read_json_file(curated_path)
     if isinstance(payload, dict):
         replay_ids = payload.get("replay_ids")
         if isinstance(replay_ids, list):
@@ -292,13 +282,13 @@ def transform_replays(
                 f"missing cached replay JSON for {replay_id}: {payload_path}"
             )
 
-        payload = read_json(payload_path)
+        payload = read_json_file(payload_path)
         ttl_path = output_dir / f"{replay_id}.ttl"
         serialize_turtle_to_path(replay_to_ttl_builder.build_graph(payload), ttl_path)
         manifest.append({"id": replay_id, "ttl_path": str(ttl_path)})
         stats.slices_written += 1
 
-    write_json(
+    write_json_file(
         output_dir / "manifest.json",
         {
             "source": "pokemon-showdown-search",
@@ -460,7 +450,7 @@ def cmd_fetch_index(args: argparse.Namespace) -> None:
         force=args.force,
     )
     print(
-        json.dumps(
+        format_json_text(
             {
                 "format": args.formatid,
                 "index_dir": str(args.index_dir),
@@ -469,8 +459,7 @@ def cmd_fetch_index(args: argparse.Namespace) -> None:
                 "cache_hits": stats.cache_hits,
                 "fetches": stats.fetches,
             },
-            indent=2,
-            sort_keys=True,
+            pretty=True,
         )
     )
 
@@ -485,13 +474,12 @@ def cmd_curate(args: argparse.Namespace) -> None:
         require_two_players=not args.allow_non_heads_up,
     )
     print(
-        json.dumps(
+        format_json_text(
             {
                 "output": str(args.output),
                 "replay_count": len(payload["replay_ids"]),
             },
-            indent=2,
-            sort_keys=True,
+            pretty=True,
         )
     )
 
@@ -505,7 +493,7 @@ def cmd_fetch(args: argparse.Namespace) -> None:
         force=args.force,
     )
     print(
-        json.dumps(
+        format_json_text(
             {
                 "curated": str(args.curated),
                 "raw_dir": str(args.raw_dir),
@@ -513,8 +501,7 @@ def cmd_fetch(args: argparse.Namespace) -> None:
                 "cache_hits": stats.cache_hits,
                 "fetches": stats.fetches,
             },
-            indent=2,
-            sort_keys=True,
+            pretty=True,
         )
     )
 
@@ -522,15 +509,14 @@ def cmd_fetch(args: argparse.Namespace) -> None:
 def cmd_transform(args: argparse.Namespace) -> None:
     stats = transform_replays(args.curated, args.raw_dir, args.output_dir)
     print(
-        json.dumps(
+        format_json_text(
             {
                 "curated": str(args.curated),
                 "output_dir": str(args.output_dir),
                 "replay_ids_seen": stats.replay_ids_seen,
                 "slices_written": stats.slices_written,
             },
-            indent=2,
-            sort_keys=True,
+            pretty=True,
         )
     )
 

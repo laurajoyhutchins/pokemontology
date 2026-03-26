@@ -18,6 +18,7 @@ from .chat import (
     retrieve_matches,
 )
 from .ingest_common import serialize_turtle_to_path
+from .io_utils import display_repo_path, format_json_text, read_json_file
 from .laurel_eval import DEFAULT_SUITE, EvalConfig, describe_suite, evaluate_suite, load_suite
 from .laurel import summarize_results
 from .turn_order import resolve_action_order
@@ -45,15 +46,12 @@ _RAG_MATCH_CACHE: dict[tuple[str, str, int, int], list[dict[str, object]]] = {}
 
 
 def _repo_relative(path: Path) -> str:
-    try:
-        return str(path.relative_to(REPO_ROOT))
-    except ValueError:
-        return str(path)
+    return display_repo_path(path)
 
 
 def _load_json(path: Path) -> object:
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        return read_json_file(path)
     except OSError as exc:
         raise CliUsageError(
             f"failed to read JSON file {_repo_relative(path)}: {exc}"
@@ -126,10 +124,7 @@ def _query_results_to_json(result) -> dict[str, object]:
 
 
 def _print_json(payload: object, *, pretty: bool = False) -> None:
-    if pretty:
-        print(json.dumps(payload, ensure_ascii=False, indent=2))
-        return
-    print(json.dumps(payload, ensure_ascii=False))
+    print(format_json_text(payload, pretty=pretty))
 
 
 def _return_zero(

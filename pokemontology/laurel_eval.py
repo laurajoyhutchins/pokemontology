@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -18,6 +17,7 @@ from .chat import (
     retrieve_matches,
     validate_sparql_text,
 )
+from .io_utils import display_repo_path, read_json_file
 from .laurel import summarize_results as summarize_answer
 
 
@@ -92,10 +92,7 @@ class EvalSuite:
 
 
 def display_path(path: Path) -> str:
-    try:
-        return str(path.relative_to(repo_path()))
-    except ValueError:
-        return str(path)
+    return display_repo_path(path)
 
 
 def _require_string(item: dict[str, object], key: str, *, context: str) -> str:
@@ -172,7 +169,7 @@ def _load_case(item: dict[str, object], *, bucket: str, mode: str) -> EvalCase:
 
 
 def load_suite(path: Path) -> EvalSuite:
-    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload = read_json_file(path)
     if not isinstance(payload, dict):
         raise ValueError("evaluation suite root must be a JSON object")
     tiers_raw = payload.get("tiers", [])
@@ -507,7 +504,7 @@ def evaluate_suite(config: EvalConfig) -> dict[str, object]:
 
     schema_pack: dict[str, object] | None = None
     if config.schema_index is not None and config.schema_index.exists():
-        schema_pack = json.loads(config.schema_index.read_text(encoding="utf-8"))
+        schema_pack = read_json_file(config.schema_index)
 
     def generator(question: str) -> str:
         matches = None
