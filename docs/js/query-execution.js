@@ -1,7 +1,7 @@
 const PKM_NS = "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#";
 
 const PREFIX_MAP = [
-  [PKM_NS, "pkm:"],
+  ["https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#", "pkm:"],
   ["http://www.w3.org/2002/07/owl#", "owl:"],
   ["http://www.w3.org/2000/01/rdf-schema#", "rdfs:"],
   ["http://www.w3.org/1999/02/22-rdf-syntax-ns#", "rdf:"],
@@ -56,11 +56,17 @@ export function setResultsContent(html) {
   if (panel) panel.innerHTML = html;
 }
 
-export function showExportBtn(show) {
-  const btn = document.getElementById("export-csv-btn");
-  if (!btn) return;
-  if (show) btn.removeAttribute("hidden");
-  else btn.setAttribute("hidden", "");
+export function toggleResultActions(show, { showExport = true } = {}) {
+  const exportBtn = document.getElementById("export-csv-btn");
+  const clearBtn = document.getElementById("clear-results-btn");
+  if (exportBtn) {
+    if (show && showExport) exportBtn.removeAttribute("hidden");
+    else exportBtn.setAttribute("hidden", "");
+  }
+  if (clearBtn) {
+    if (show) clearBtn.removeAttribute("hidden");
+    else clearBtn.setAttribute("hidden", "");
+  }
 }
 
 export function renderGeneratedQuery(queryText) {
@@ -129,44 +135,47 @@ export function configureQueryPresentation(schemaPack) {
 
 export function summarizeQueryResult(question, result) {
   if (result.type === "boolean") {
-    return `${result.value ? "Yes." : "No."} ${question}`.trim();
+    return `${result.value ? "Yes," : "No,"} regarding: "${question}"`.trim();
   }
   if (result.type === "quads") {
-    return `Laurel assembled ${result.quads.length} triples from the generated SPARQL.`;
+    return `Laurel assembled ${result.quads.length} triples for the query: "${question}"`;
   }
   const { vars, bindings } = result;
   if (!bindings.length) {
-    return "Laurel found no matching results.";
+    return `Laurel found no matching results for: "${question}"`;
   }
+  const previewLimit = summaryPolicy.list_preview_limit || DEFAULT_SUMMARY_POLICY.list_preview_limit;
   if (vars.length === 1) {
     const values = bindings
       .map((binding) => binding.get(vars[0])?.value)
-      .filter(Boolean);
-    const previewLimit = summaryPolicy.list_preview_limit || DEFAULT_SUMMARY_POLICY.list_preview_limit;
+      .filter(Boolean)
+      .map(shortenUri);
     if (values.length === 1) {
-      return `Laurel found 1 result: ${values[0]}.`;
+      return `Laurel found 1 result for "${question}": ${values[0]}.`;
     }
-    if (values.length > 1) {
-      const preview = values.slice(0, previewLimit).join(", ");
-      return `Laurel found ${values.length} results: ${preview}${values.length > previewLimit ? ", …" : ""}.`;
-    }
+    const preview = values.slice(0, previewLimit).join(", ");
+    return `Laurel found ${values.length} results for "${question}": ${preview}${values.length > previewLimit ? ", …" : ""}.`;
   }
   if (bindings.length === 1) {
     const fields = vars
-      .map((variable) => `${variable}=${bindings[0].get(variable)?.value ?? "—"}`)
+      .map((variable) => {
+        const term = bindings[0].get(variable);
+        return `${variable}=${term ? shortenUri(term.value) : "—"}`;
+      })
       .join(", ");
-    return `Laurel found 1 matching row: ${fields}.`;
+    return `Laurel found 1 matching row for "${question}": ${fields}.`;
   }
-  return `Laurel found ${bindings.length} matching rows.`;
+  return `Laurel found ${bindings.length} matching rows for: "${question}"`;
 }
 
 export function renderQueryResults(result, question = "") {
   lastSelectResult = null;
-  showExportBtn(false);
+  toggleResultActions(false);
   const summary = question ? summarizeQueryResult(question, result) : "";
 
   if (result.type === "boolean") {
     const cls = result.value ? "qe-ask-true" : "qe-ask-false";
+    toggleResultActions(true, { showExport: false });
     setResultsContent(
       `<div class="laurel-answer-inline">${escapeHtml(summary)}</div>
       <div class="qe-ask-result ${cls}">
@@ -178,6 +187,7 @@ export function renderQueryResults(result, question = "") {
   }
 
   if (result.type === "quads") {
+    toggleResultActions(true, { showExport: false });
     const lines = result.quads
       .map(
         (q) =>
@@ -201,12 +211,13 @@ export function renderQueryResults(result, question = "") {
   const { vars, bindings } = result;
 
   if (bindings.length === 0) {
+    toggleResultActions(true, { showExport: false });
     setResultsContent('<div class="qe-empty">No results.</div>');
     return;
   }
 
   lastSelectResult = { vars, bindings };
-  showExportBtn(true);
+  toggleResultActions(true);
 
   const headerCells = vars.map((v) => `<th>?${escapeHtml(v)}</th>`).join("");
   const rows = bindings

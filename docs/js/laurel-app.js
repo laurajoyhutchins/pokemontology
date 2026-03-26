@@ -161,8 +161,29 @@ function bindStaticActions(state) {
     button.setAttribute("aria-expanded", String(details.open));
   });
 
+  document.getElementById("focus-question-btn")?.addEventListener("click", () => {
+    document.getElementById("nl-question")?.focus();
+  });
+
   document.getElementById("export-csv-btn")?.addEventListener("click", () => {
     exportLastResultsToCsv();
+  });
+
+  document.getElementById("clear-results-btn")?.addEventListener("click", () => {
+    setResultsContent(`
+      <div class="qe-placeholder">
+        <span class="qe-placeholder-icon">▶</span>
+        <p>Professor Laurel will summarize the translated query results here.</p>
+      </div>
+    `);
+    toggleResultActions(false);
+  });
+
+  document.getElementById("copy-sparql-btn")?.addEventListener("click", async () => {
+    const preview = document.getElementById("generated-query-preview");
+    if (!preview?.textContent) return;
+    if (preview.textContent === "No SPARQL generated yet.") return;
+    await navigator.clipboard.writeText(preview.textContent);
   });
 
   document.getElementById("sample-question-btn")?.addEventListener("click", () => {
@@ -179,7 +200,7 @@ function bindInteractiveActions(state) {
   const exampleSelect = document.getElementById("example-select");
   const editor = document.getElementById("sparql-editor");
 
-  document.getElementById("ask-btn")?.addEventListener("click", async () => {
+  document.getElementById("laurel-run-btn")?.addEventListener("click", async () => {
     await runLaurelPipeline(state);
   });
 
@@ -269,79 +290,85 @@ async function askWorker(worker, payload, { onProgress } = {}) {
 }
 
 async function runLaurelPipeline(state) {
-  const question = document.getElementById("nl-question")?.value.trim() || "";
-  const editor = document.getElementById("sparql-editor");
-  if (!question) return;
-  const sources = buildSources();
-  const schemaVersion = stableStringify({
-    inference: state.schemaPack?.inference || {},
-    retrieval: state.schemaPack?.retrieval || {},
-    validation: state.schemaPack?.validation || {},
-  });
-
-  setInlineStatus("Grounding question…");
-  setStatus("[data-status-grounding]", "Searching");
-  const retrievalKey = `${question}::${schemaVersion}`;
-  let retrieval = state.retrievalCache.get(retrievalKey);
-  if (!retrieval) {
-    retrieval = await askWorker(state.retrievalWorker, {
-      question,
-      schemaPack: state.schemaPack,
-      topK: 4,
+  const runBtn = document.getElementById("laurel-run-btn");
+  if (runBtn) runBtn.disabled = true;
+  try {
+    const question = document.getElementById("nl-question")?.value.trim() || "";
+    const editor = document.getElementById("sparql-editor");
+    if (!question) return;
+    const sources = buildSources();
+    const schemaVersion = stableStringify({
+      inference: state.schemaPack?.inference || {},
+      retrieval: state.schemaPack?.retrieval || {},
+      validation: state.schemaPack?.validation || {},
     });
-    state.retrievalCache.set(retrievalKey, retrieval);
-  }
-  state.lastGrounding = retrieval.matches || [];
-  renderGrounding(state.lastGrounding);
-  setStatus("[data-status-grounding]", `${state.lastGrounding.length} notes`);
 
-  setInlineStatus("Generating local translation…");
-  const generationKey = `${question}::${matchesKey(state.lastGrounding)}::${schemaVersion}`;
-  let generation = state.generationCache.get(generationKey);
-  if (!generation) {
-    generation = await askWorker(
-      state.llmWorker,
-      {
+    setInlineStatus("Grounding question…");
+    setStatus("[data-status-grounding]", "Searching");
+    const retrievalKey = `${question}::${schemaVersion}`;
+    let retrieval = state.retrievalCache.get(retrievalKey);
+    if (!retrieval) {
+      retrieval = await askWorker(state.retrievalWorker, {
         question,
-        matches: state.lastGrounding,
         schemaPack: state.schemaPack,
-        webgpuAvailable: supportsWebGpu(),
-      },
-      {
-        onProgress: (progress) => {
-          if (progress.message) setInlineStatus(progress.message);
-          if (progress.backend) setStatus("[data-status-model]", progress.backend);
+        topK: 4,
+      });
+      state.retrievalCache.set(retrievalKey, retrieval);
+    }
+    state.lastGrounding = retrieval.matches || [];
+    renderGrounding(state.lastGrounding);
+    setStatus("[data-status-grounding]", `${state.lastGrounding.length} notes`);
+
+    setInlineStatus("Generating local translation…");
+    const generationKey = `${question}::${matchesKey(state.lastGrounding)}::${schemaVersion}`;
+    let generation = state.generationCache.get(generationKey);
+    if (!generation) {
+      generation = await askWorker(
+        state.llmWorker,
+        {
+          question,
+          matches: state.lastGrounding,
+          schemaPack: state.schemaPack,
+          webgpuAvailable: supportsWebGpu(),
         },
-      },
+        {
+          onProgress: (progress) => {
+            if (progress.message) setInlineStatus(progress.message);
+            if (progress.backend) setStatus("[data-status-model]", progress.backend);
+          },
+        },
+      );
+      state.generationCache.set(generationKey, generation);
+    }
+    setStatus("[data-status-model]", generation.backend);
+    setResultsContent(
+      '<div class="laurel-answer"><p class="laurel-answer-kicker">Professor Laurel</p><p>Translation complete. Running the generated SPARQL now.</p></div>',
     );
-    state.generationCache.set(generationKey, generation);
-  }
-  setStatus("[data-status-model]", generation.backend);
-  setResultsContent(
-    '<div class="laurel-answer"><p class="laurel-answer-kicker">Professor Laurel</p><p>Translation complete. Running the generated SPARQL now.</p></div>',
-  );
-  renderGeneratedQuery(generation.sparql);
-  if (editor) editor.value = generation.sparql;
+    renderGeneratedQuery(generation.sparql);
+    if (editor) editor.value = generation.sparql;
 
-  setInlineStatus("Validating query AST…");
-  const validationKey = `${generation.sparql}::${schemaVersion}`;
-  let validation = state.validationCache.get(validationKey);
-  if (!validation) {
-    validation = await askWorker(state.queryWorker, {
-      sparql: generation.sparql,
-      schemaPack: state.schemaPack,
-    });
-    state.validationCache.set(validationKey, validation);
-  }
-  renderValidation(validation);
-  setStatus("[data-status-validator]", validation.ok ? "Validated" : "Needs repair");
-  if (!validation.ok) {
-    setInlineStatus("Validation failed.");
-    return;
-  }
+    setInlineStatus("Validating query AST…");
+    const validationKey = `${generation.sparql}::${schemaVersion}`;
+    let validation = state.validationCache.get(validationKey);
+    if (!validation) {
+      validation = await askWorker(state.queryWorker, {
+        sparql: generation.sparql,
+        schemaPack: state.schemaPack,
+      });
+      state.validationCache.set(validationKey, validation);
+    }
+    renderValidation(validation);
+    setStatus("[data-status-validator]", validation.ok ? "Validated" : "Needs repair");
+    if (!validation.ok) {
+      setInlineStatus("Validation failed.");
+      return;
+    }
 
-  setInlineStatus("Running SPARQL…");
-  await executeEditorQuery(state, sources);
+    setInlineStatus("Running SPARQL…");
+    await executeEditorQuery(state, sources);
+  } finally {
+    if (runBtn) runBtn.disabled = false;
+  }
 }
 
 async function executeEditorQuery(state, sources = buildSources()) {

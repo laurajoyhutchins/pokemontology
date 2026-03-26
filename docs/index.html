@@ -44,9 +44,9 @@
             translation, query inspection, and live SPARQL execution against the published graph.
           </p>
           <div class="hero-actions">
-            <button class="button button-primary" id="ask-btn" type="button">Run Field Query</button>
+            <button class="button button-primary" id="focus-question-btn" type="button">Focus Research Field</button>
             <button class="button button-secondary" id="sample-question-btn" type="button">Load Sample</button>
-            <button class="button button-secondary" id="toggle-advanced-btn" type="button" aria-expanded="false">Advanced Query View</button>
+            <button class="button button-secondary" id="toggle-advanced-btn" type="button" aria-expanded="false">Advanced View</button>
           </div>
           <div class="hero-stats">
             <div class="stat-chip">
@@ -109,8 +109,11 @@
             placeholder="Which of my moves are effective against Charizard?"
           ></textarea>
           <div class="laurel-runbar">
-            <span class="qe-hint">Shift+Enter for a new line</span>
-            <span class="qe-status" id="laurel-status" aria-live="polite"></span>
+            <div class="qe-runbar-left">
+              <span class="qe-hint">Shift+Enter for a new line</span>
+              <span class="qe-status" id="laurel-status" aria-live="polite"></span>
+            </div>
+            <button class="button button-primary" id="laurel-run-btn" type="button">Run Query</button>
           </div>
         </div>
 
@@ -131,7 +134,10 @@
           <section class="laurel-panel">
             <div class="laurel-panel-head">
               <span class="qe-results-label">Findings</span>
-              <button class="qe-action-btn qe-export-btn" id="export-csv-btn" type="button" hidden>Export CSV</button>
+              <div class="qe-panel-actions">
+                <button class="qe-action-btn qe-export-btn" id="export-csv-btn" type="button" hidden>Export CSV</button>
+                <button class="qe-action-btn" id="clear-results-btn" type="button" hidden>Clear</button>
+              </div>
             </div>
             <div class="qe-results-body" id="qe-results" aria-live="polite">
               <div class="qe-placeholder">
@@ -147,7 +153,12 @@
               <span class="mini-badge" id="validation-badge">Awaiting validation</span>
             </div>
             <div class="generated-query-card">
-              <p class="generated-query-label">Translation preview</p>
+              <div class="generated-query-header">
+                <p class="generated-query-label">Translation preview</p>
+                <div class="qe-panel-actions">
+                  <button class="qe-action-btn" id="copy-sparql-btn" type="button" title="Copy SPARQL to clipboard">Copy</button>
+                </div>
+              </div>
               <pre class="qe-construct-pre"><code id="generated-query-preview">No SPARQL generated yet.</code></pre>
             </div>
             <div class="validation-list" id="validation-list">

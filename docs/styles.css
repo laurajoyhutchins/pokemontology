@@ -245,6 +245,13 @@ textarea {
   color: var(--clay);
 }
 
+.button:disabled,
+.qe-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(1);
+}
+
 .laurel-hero {
   padding: 2rem 0 1.2rem;
 }
@@ -387,15 +394,52 @@ textarea {
 .qe-toolbar,
 .qe-editor-header,
 .qe-results-header,
-.laurel-panel-head {
+.laurel-panel-head,
+.generated-query-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
 }
 
+.qe-panel-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.generated-query-header {
+  margin-bottom: 0.5rem;
+}
+
+.generated-query-label {
+  margin: 0;
+}
+
 .laurel-runbar {
   margin-top: 0.8rem;
+}
+
+.qe-runbar-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.grounding-card:hover {
+  border-color: var(--moss);
+  background: var(--paper);
+}
+
+.grounding-card p {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 0.88rem;
+}
+
+.grounding-card:hover p {
+  -webkit-line-clamp: unset;
 }
 
 .laurel-board {
