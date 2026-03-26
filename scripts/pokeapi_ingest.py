@@ -59,6 +59,11 @@ def iri_for(class_name: str, identifier: str) -> URIRef:
     return PKM[f"{class_name}_{sanitize_identifier(identifier)}"]
 
 
+def pokeapi_resource_url(resource: str, payload: dict) -> str:
+    identifier = payload.get("id", payload_name(payload))
+    return f"{POKEAPI_BASE}/{resource}/{identifier}/"
+
+
 def entity_name_literal(payload: dict) -> Literal:
     return Literal(english_name(payload) or titleize_name(payload_name(payload)))
 
@@ -196,6 +201,11 @@ def add_named_resource(g: Graph, iri: URIRef, rdf_class: URIRef, payload: dict, 
         g.add((iri, PKM.hasIdentifier, Literal(f"pokeapi:{resource}:{payload['id']}")))
     else:
         g.add((iri, PKM.hasIdentifier, Literal(f"pokeapi:{resource}:{payload_name(payload)}")))
+    reference_iri = iri_for("Ref", f"PokeAPI_{resource}_{payload_name(payload)}")
+    g.add((reference_iri, RDF.type, PKM.ExternalEntityReference))
+    g.add((reference_iri, PKM.refersToEntity, iri))
+    g.add((reference_iri, PKM.describedByArtifact, PKM.DatasetArtifact_PokeAPI))
+    g.add((reference_iri, PKM.hasExternalIRI, Literal(pokeapi_resource_url(resource, payload), datatype=XSD.anyURI)))
 
 
 def add_version_group_context(g: Graph, payload: dict) -> URIRef:
@@ -243,6 +253,9 @@ def build_graph_from_raw(raw_dir: Path) -> Graph:
             "variant-to-species links, version-group contexts, and version-group-scoped move learnability."
         ),
     ))
+    g.add((PKM.DatasetArtifact_PokeAPI, RDF.type, PKM.EvidenceArtifact))
+    g.add((PKM.DatasetArtifact_PokeAPI, PKM.hasName, Literal("PokeAPI")))
+    g.add((PKM.DatasetArtifact_PokeAPI, PKM.hasSourceURL, Literal(f"{POKEAPI_BASE}/", datatype=XSD.anyURI)))
 
     for payload in payloads["type"]:
         add_named_resource(g, iri_for("Type", payload_name(payload)), PKM.Type, payload, "type")

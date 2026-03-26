@@ -63,6 +63,17 @@ def test_build_graph_from_raw_emits_expected_ontology_nodes(tmp_path) -> None:
     assert (PKM.Ruleset_x_y, RDF.type, PKM.Ruleset) in graph
     assert (move_record, RDF.type, PKM.MoveLearnRecord) in graph
     assert (move_record, PKM.hasContext, PKM.Ruleset_x_y) in graph
+    assert (PKM.DatasetArtifact_PokeAPI, RDF.type, PKM.EvidenceArtifact) in graph
+    assert (
+        PKM.Ref_PokeAPI_pokemon_species_froakie,
+        PKM.refersToEntity,
+        species,
+    ) in graph
+    assert (
+        PKM.Ref_PokeAPI_move_bubble,
+        PKM.describedByArtifact,
+        PKM.DatasetArtifact_PokeAPI,
+    ) in graph
 
 
 def test_build_ttl_from_raw_serializes_valid_turtle(tmp_path) -> None:
@@ -75,6 +86,7 @@ def test_build_ttl_from_raw_serializes_valid_turtle(tmp_path) -> None:
 
     assert len(graph) > 0
     assert any(graph.triples((None, RDF.type, PKM.MoveLearnRecord)))
+    assert any(graph.triples((None, RDF.type, PKM.ExternalEntityReference)))
     assert not any(graph.triples((None, RDF.type, PKM.MovePropertyAssignment)))
     assert not any(graph.triples((None, RDF.type, PKM.TypingAssignment)))
     assert not any(graph.triples((None, RDF.type, PKM.StatAssignment)))

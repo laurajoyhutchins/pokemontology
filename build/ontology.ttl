@@ -2061,6 +2061,12 @@ pkm:DatasetArtifact_PokemonKG
     pkm:hasSourceURL "https://pokemonkg.org/"^^xsd:anyURI ;
     rdfs:comment "External PokemonKG dataset/site referenced for cross-dataset links. The ontology page publishes CC BY 4.0 licensing, but dataset redistribution terms should be verified separately before republishing source data." .
 
+pkm:DatasetArtifact_PokeAPI
+    a pkm:EvidenceArtifact ;
+    pkm:hasName "PokeAPI" ;
+    pkm:hasSourceURL "https://pokeapi.co/api/v2/"^^xsd:anyURI ;
+    rdfs:comment "External PokeAPI dataset/API referenced for cross-dataset links and cache-backed ingestion." .
+
 [ a owl:AllDisjointClasses ;
   owl:members ( pkm:EvidenceArtifact pkm:ExternalEntityReference pkm:KnowledgeStatus )
 ] .
