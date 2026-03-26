@@ -16,6 +16,7 @@ PAGES_DIR = repo_path("docs")
 PAGES_ONTOLOGY = PAGES_DIR / "ontology.ttl"
 PAGES_SHAPES = PAGES_DIR / "shapes.ttl"
 PAGES_SITE_DATA = PAGES_DIR / "site-data.json"
+PAGES_SCHEMA_INDEX = PAGES_DIR / "schema-index.json"
 SHAPES_SOURCE = repo_path("shapes", "modules", "shapes.ttl")
 QUERIES_DIR = repo_path("queries")
 
@@ -67,6 +68,123 @@ def _query_examples() -> list[dict[str, object]]:
     return examples
 
 
+def _tokenize(text: str) -> list[str]:
+    return [
+        token
+        for token in "".join(
+            character.lower() if character.isalnum() else " " for character in text
+        ).split()
+        if token
+    ]
+
+
+def _schema_pack(query_examples: list[dict[str, object]]) -> dict[str, object]:
+    prefixes = [
+        {
+            "alias": "pkm:",
+            "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#",
+        },
+        {"alias": "rdf:", "iri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#"},
+        {"alias": "rdfs:", "iri": "http://www.w3.org/2000/01/rdf-schema#"},
+        {"alias": "owl:", "iri": "http://www.w3.org/2002/07/owl#"},
+        {"alias": "xsd:", "iri": "http://www.w3.org/2001/XMLSchema#"},
+        {"alias": "sh:", "iri": "http://www.w3.org/ns/shacl#"},
+    ]
+    items: list[dict[str, object]] = [
+        {
+            "kind": "class",
+            "label": "Species",
+            "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#Species",
+            "summary": "Species-level identity for Pokemon such as Charizard or Froakie.",
+            "snippet": "Use Species when the question refers to a Pokemon taxon instead of a battle participant.",
+        },
+        {
+            "kind": "class",
+            "label": "Variant",
+            "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#Variant",
+            "summary": "Variant-level mechanics subject that carries typing and learnset assignments.",
+            "snippet": "TypingAssignment and other contextual facts usually attach to Variant rather than directly to Species.",
+        },
+        {
+            "kind": "class",
+            "label": "Ruleset",
+            "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#Ruleset",
+            "summary": "Mechanics context such as the default PokeAPI ruleset.",
+            "snippet": "Contextual assignments often reference Ruleset_PokeAPI_Default through hasContext.",
+        },
+        {
+            "kind": "class",
+            "label": "BattleParticipant",
+            "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#BattleParticipant",
+            "summary": "Combatant node inside a battle slice.",
+            "snippet": "Replay-backed questions about my Pokemon or the opponent usually start from BattleParticipant.",
+        },
+        {
+            "kind": "pattern",
+            "label": "TypingAssignment pattern",
+            "iri": "",
+            "summary": "Variant typing is modeled as a contextual fact.",
+            "snippet": "TypingAssignment aboutVariant ?variant ; hasContext pkm:Ruleset_PokeAPI_Default ; aboutType ?type .",
+        },
+        {
+            "kind": "pattern",
+            "label": "Type effectiveness pattern",
+            "iri": "",
+            "summary": "Damage multipliers come from TypeEffectivenessAssignment nodes.",
+            "snippet": "TypeEffectivenessAssignment attackerType ?moveType ; defenderType ?effectiveType ; hasDamageFactor ?factor .",
+        },
+    ]
+    examples: list[dict[str, object]] = [
+        {
+            "id": "super-effective-moves",
+            "kind": "example",
+            "label": "super effective moves",
+            "question": "Which of my moves are effective against Charizard?",
+            "summary": "Bundled query that links replay combatants, move typing, and type chart effectiveness.",
+            "snippet": "Use MoveUseAction, MovePropertyAssignment, TypingAssignment, and TypeEffectivenessAssignment together.",
+            "query": query_examples[0]["query"] if query_examples else "",
+        },
+        {
+            "id": "charizard-fire-check",
+            "kind": "example",
+            "label": "type ask query",
+            "question": "Is Charizard a Fire type?",
+            "summary": "ASK pattern for a species whose variant has a typing assignment matching Fire.",
+            "snippet": "Match Species, then Variant, then TypingAssignment aboutVariant/aboutType.",
+            "query": """PREFIX pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+ASK {
+  ?species a pkm:Species ;
+           rdfs:label "Charizard" .
+  ?variant a pkm:Variant ;
+           pkm:belongsToSpecies ?species .
+  ?assignment a pkm:TypingAssignment ;
+              pkm:aboutVariant ?variant ;
+              pkm:aboutType ?type .
+  ?type rdfs:label "Fire" .
+}""",
+        },
+    ]
+    items.extend(examples)
+    vocabulary = sorted(
+        {token for item in items for token in _tokenize(f"{item['label']} {item['summary']} {item['snippet']}")}
+    )
+    vectors = []
+    for item in items:
+        counts = {token: 0 for token in vocabulary}
+        for token in _tokenize(f"{item['label']} {item['summary']} {item['snippet']}"):
+            counts[token] += 1
+        vectors.append([counts[token] for token in vocabulary])
+    return {
+        "prefixes": prefixes,
+        "items": items,
+        "examples": examples,
+        "vocabulary": vocabulary,
+        "vectors": vectors,
+    }
+
+
 def assemble_artifacts() -> tuple[str, str, dict[str, object]]:
     _validate_sources()
     chunks = []
@@ -77,6 +195,7 @@ def assemble_artifacts() -> tuple[str, str, dict[str, object]]:
 
     ontology_text = "\n\n".join(chunks) + "\n"
     shapes_text = SHAPES_SOURCE.read_text(encoding="utf-8")
+    query_examples = _query_examples()
     site_data = {
         "site": {
             "title": "Pokemontology",
@@ -148,7 +267,11 @@ def assemble_artifacts() -> tuple[str, str, dict[str, object]]:
                 "summary": "A sample seed file for fetching and transforming a narrow, ontology-safe subset of PokeAPI data.",
             },
         ],
-        "query_examples": _query_examples(),
+        "query_examples": query_examples,
+        "schema_pack": {
+            "path": "schema-index.json",
+            "summary": "Compact grounding pack for Professor Laurel retrieval, local translation, and validator checks.",
+        },
     }
     return ontology_text, shapes_text, site_data
 
@@ -164,6 +287,10 @@ def write_artifacts(
     PAGES_ONTOLOGY.write_text(ontology_text, encoding="utf-8")
     PAGES_SHAPES.write_text(shapes_text, encoding="utf-8")
     PAGES_SITE_DATA.write_text(json.dumps(site_data, indent=2) + "\n", encoding="utf-8")
+    PAGES_SCHEMA_INDEX.write_text(
+        json.dumps(_schema_pack(site_data["query_examples"]), indent=2) + "\n",
+        encoding="utf-8",
+    )
 
 
 def main() -> None:
@@ -174,6 +301,7 @@ def main() -> None:
     print(f"wrote {PAGES_ONTOLOGY.relative_to(REPO)}")
     print(f"wrote {PAGES_SHAPES.relative_to(REPO)}")
     print(f"wrote {PAGES_SITE_DATA.relative_to(REPO)}")
+    print(f"wrote {PAGES_SCHEMA_INDEX.relative_to(REPO)}")
 
 
 if __name__ == "__main__":

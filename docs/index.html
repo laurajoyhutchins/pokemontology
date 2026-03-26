@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Pokemontology</title>
-  <meta name="description" content="Pokemontology is an OWL and SHACL project for Pokemon battle mechanics, replay parsing, and provenance-aware data pipelines.">
+  <title>Pokemontology | Professor Laurel</title>
+  <meta name="description" content="Ask Professor Laurel about Pokemontology with client-side grounding, local-browser translation, SPARQL inspection, and in-browser query execution.">
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
@@ -12,14 +12,14 @@
     <div class="site-shell">
       <div class="topbar fade-up">
         <a class="brand" href="./">
-          <span class="brand-mark">dex</span>
+          <span class="brand-mark">PL</span>
           <span class="brand-copy">
-            <strong>Pokemontology</strong>
-            <span>battle mechanics index</span>
+            <strong>Professor Laurel</strong>
+            <span>field lab for Pokemontology</span>
           </span>
         </a>
         <nav class="nav-links" aria-label="Primary">
-          <a href="#query">Query</a>
+          <a href="#query">Ask</a>
           <a href="#artifacts">Artifacts</a>
           <a href="#modules">Modules</a>
           <a href="#examples">Examples</a>
@@ -34,79 +34,162 @@
   </header>
 
   <main>
-    <section class="qe-section" id="query">
+    <section class="laurel-hero" id="query">
+      <div class="site-shell laurel-grid">
+        <div class="laurel-intro fade-up">
+          <p class="eyebrow">Field Station Laurel / Landing Console</p>
+          <h1 class="laurel-title">Ask Professor Laurel.</h1>
+          <p class="laurel-lead">
+            Natural-language access to Pokemontology with client-side grounding, local-browser
+            translation, query inspection, and live SPARQL execution against the published graph.
+          </p>
+          <div class="hero-actions">
+            <button class="button button-primary" id="ask-btn" type="button">Run Field Query</button>
+            <button class="button button-secondary" id="sample-question-btn" type="button">Load Sample</button>
+            <button class="button button-secondary" id="toggle-advanced-btn" type="button" aria-expanded="false">Advanced Query View</button>
+          </div>
+          <div class="hero-stats">
+            <div class="stat-chip">
+              <strong data-status-model>Checking…</strong>
+              <span>Inference backend</span>
+            </div>
+            <div class="stat-chip">
+              <strong data-status-grounding>Pending</strong>
+              <span>Grounding pass</span>
+            </div>
+            <div class="stat-chip">
+              <strong data-status-validator>Standby</strong>
+              <span>AST validator</span>
+            </div>
+          </div>
+        </div>
+
+        <aside class="laurel-sidecar fade-up delay-1">
+          <div class="sidecar-card">
+            <p class="panel-kicker">Mission Brief</p>
+            <h2>Professor Laurel keeps the risky parts visible.</h2>
+            <p>
+              Translation stays local to the browser when possible. Retrieved schema notes,
+              generated SPARQL, and validation results stay inspectable before execution.
+            </p>
+          </div>
+          <div class="sidecar-card">
+            <p class="panel-kicker">Source Cartridge</p>
+            <div class="qe-source-group">
+              <label class="source-toggle">
+                <input type="checkbox" id="src-ontology" checked>
+                <span>ontology.ttl</span>
+              </label>
+              <label class="source-toggle">
+                <input type="checkbox" id="src-shapes">
+                <span>shapes.ttl</span>
+              </label>
+            </div>
+            <div class="qe-artifact-links">
+              <a class="button button-secondary" href="./ontology.ttl">ontology.ttl</a>
+              <a class="button button-secondary" href="./shapes.ttl">shapes.ttl</a>
+              <a class="button button-secondary" href="https://github.com/laurajoyhutchins/pokemontology" data-repository-url>Source</a>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="laurel-console section-tight">
       <div class="site-shell">
-        <div class="qe-header fade-up">
-          <div class="qe-intro">
-            <p class="eyebrow">Field Guide No. 001</p>
-            <h1 class="qe-title">Query the ontology.</h1>
-            <p class="qe-lead">SPARQL against the published graph, live in your browser.</p>
-          </div>
-          <div class="qe-artifact-links">
-            <a class="button button-secondary" href="./ontology.ttl">ontology.ttl</a>
-            <a class="button button-secondary" href="./shapes.ttl">shapes.ttl</a>
-            <a class="button button-secondary" href="https://github.com/laurajoyhutchins/pokemontology" data-repository-url>Source</a>
-          </div>
-        </div>
-
-        <div class="qe-toolbar fade-up delay-1">
-          <div class="qe-source-group">
-            <span class="toolbar-label">Sources</span>
-            <label class="source-toggle">
-              <input type="checkbox" id="src-ontology" checked>
-              <span>ontology.ttl</span>
-            </label>
-            <label class="source-toggle">
-              <input type="checkbox" id="src-shapes">
-              <span>shapes.ttl</span>
-            </label>
-          </div>
-          <div class="qe-example-group">
-            <label for="example-select" class="toolbar-label">Example</label>
-            <select id="example-select" class="qe-select">
-              <option value="">— pick a query —</option>
-            </select>
+        <div class="lab-question fade-up delay-1">
+          <label class="toolbar-label" for="nl-question">Question</label>
+          <textarea
+            id="nl-question"
+            class="laurel-textarea"
+            spellcheck="false"
+            autocorrect="off"
+            autocapitalize="sentences"
+            aria-label="Ask Professor Laurel a natural-language question"
+            placeholder="Which of my moves are effective against Charizard?"
+          ></textarea>
+          <div class="laurel-runbar">
+            <span class="qe-hint">Shift+Enter for a new line</span>
+            <span class="qe-status" id="laurel-status" aria-live="polite"></span>
           </div>
         </div>
 
-        <div class="qe-workspace fade-up delay-2">
-          <div class="qe-editor-col">
-            <div class="qe-editor-header">
-              <span class="qe-lang-badge">SPARQL</span>
-              <div class="qe-editor-actions">
-                <button class="qe-action-btn" id="copy-query-btn" type="button" title="Copy query to clipboard">Copy</button>
-                <button class="qe-action-btn" id="clear-query-btn" type="button" title="Clear editor">Clear</button>
+        <div class="laurel-board fade-up delay-2">
+          <section class="laurel-panel">
+            <div class="laurel-panel-head">
+              <span class="qe-results-label">Grounding Notes</span>
+              <span class="mini-badge" data-grounding-count>0 matches</span>
+            </div>
+            <div class="grounding-stack" id="grounding-notes" aria-live="polite">
+              <div class="qe-placeholder">
+                <span class="qe-placeholder-icon">✦</span>
+                <p>Relevant schema cards and exemplar queries will appear here.</p>
               </div>
             </div>
-            <textarea
-              id="sparql-editor"
-              class="qe-textarea"
-              spellcheck="false"
-              autocorrect="off"
-              autocapitalize="off"
-              aria-label="SPARQL query editor"
-            ></textarea>
-            <div class="qe-run-bar">
-              <button id="run-btn" class="button button-primary qe-run-btn" disabled>
-                <span id="run-btn-label">Loading engine…</span>
-              </button>
-              <span id="qe-status" class="qe-status" aria-live="polite"></span>
-              <span class="qe-hint">Ctrl+Enter to run</span>
-            </div>
-          </div>
-          <div class="qe-results-col">
-            <div class="qe-results-header">
-              <span class="qe-results-label">Results</span>
+          </section>
+
+          <section class="laurel-panel">
+            <div class="laurel-panel-head">
+              <span class="qe-results-label">Findings</span>
               <button class="qe-action-btn qe-export-btn" id="export-csv-btn" type="button" hidden>Export CSV</button>
             </div>
             <div class="qe-results-body" id="qe-results" aria-live="polite">
               <div class="qe-placeholder">
                 <span class="qe-placeholder-icon">▶</span>
-                <p>Run a query to see results here.</p>
+                <p>Professor Laurel will summarize the translated query results here.</p>
               </div>
             </div>
-          </div>
+          </section>
+
+          <section class="laurel-panel">
+            <div class="laurel-panel-head">
+              <span class="qe-results-label">Generated Query</span>
+              <span class="mini-badge" id="validation-badge">Awaiting validation</span>
+            </div>
+            <div class="generated-query-card">
+              <p class="generated-query-label">Translation preview</p>
+              <pre class="qe-construct-pre"><code id="generated-query-preview">No SPARQL generated yet.</code></pre>
+            </div>
+            <div class="validation-list" id="validation-list">
+              <div class="validation-item">Validation notes will appear here before execution.</div>
+            </div>
+          </section>
         </div>
+
+        <details class="advanced-console fade-up delay-2" id="advanced-console">
+          <summary>Advanced Query View</summary>
+          <div class="qe-toolbar">
+            <div class="qe-example-group">
+              <label for="example-select" class="toolbar-label">Example</label>
+              <select id="example-select" class="qe-select">
+                <option value="">— pick a query —</option>
+              </select>
+            </div>
+            <div class="qe-editor-actions">
+              <button class="qe-action-btn" id="copy-query-btn" type="button" title="Copy query to clipboard">Copy</button>
+              <button class="qe-action-btn" id="clear-query-btn" type="button" title="Clear editor">Clear</button>
+              <button class="qe-action-btn" id="run-btn" type="button" disabled>
+                <span id="run-btn-label">Loading engine…</span>
+              </button>
+            </div>
+          </div>
+          <div class="qe-workspace">
+            <div class="qe-editor-col">
+              <div class="qe-editor-header">
+                <span class="qe-lang-badge">SPARQL</span>
+                <span class="qe-status" id="qe-status" aria-live="polite"></span>
+              </div>
+              <textarea
+                id="sparql-editor"
+                class="qe-textarea"
+                spellcheck="false"
+                autocorrect="off"
+                autocapitalize="off"
+                aria-label="SPARQL query editor"
+              ></textarea>
+            </div>
+          </div>
+        </details>
       </div>
     </section>
 
@@ -122,16 +205,16 @@
           </p>
           <div class="highlights">
             <div class="highlight">
-              <strong>One base namespace</strong>
-              <p>IRIs and downloadable bundles resolve from the same base, so the published graph stays consistent.</p>
+              <strong>Grounded queries first</strong>
+              <p>Professor Laurel retrieves schema notes and canonical examples before synthesizing SPARQL.</p>
             </div>
             <div class="highlight">
-              <strong>Built from modules</strong>
-              <p>The <code>.ttl</code> files here are generated from the modular sources in the repository, not edited by hand.</p>
+              <strong>Visible safety gate</strong>
+              <p>Generated queries stay inspectable and validated before the browser executes anything.</p>
             </div>
             <div class="highlight">
-              <strong>Validation ships with it</strong>
-              <p>The SHACL layer is published beside the ontology because the data is meant to be checked, not just read.</p>
+              <strong>Published graph below</strong>
+              <p>The same generated ontology and SHACL artifacts remain directly accessible for manual work.</p>
             </div>
           </div>
         </div>
@@ -186,6 +269,6 @@
       </div>
     </div>
   </footer>
-  <script src="./app.js" defer></script>
+  <script type="module" src="./app.js"></script>
 </body>
 </html>

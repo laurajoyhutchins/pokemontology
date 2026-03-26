@@ -1,0 +1,14 @@
+export function createState() {
+  return {
+    siteData: null,
+    schemaPack: null,
+    retrievalWorker: null,
+    llmWorker: null,
+    queryWorker: null,
+    generatedQuery: "",
+    lastGrounding: [],
+    modelStatus: "Checking…",
+    groundingStatus: "Pending",
+    validatorStatus: "Standby",
+  };
+}
