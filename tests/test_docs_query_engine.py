@@ -88,4 +88,5 @@ def test_query_validator_enforces_ast_or_safe_fallback() -> None:
     assert "allowed_query_types" in text
     assert "known_terms" in text
     assert "SELECT *" in text
+    assert "outside the shipped schema pack" in text
     assert "Fell back to structural validation" in text

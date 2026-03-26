@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import math
+import re
 
 from rdflib import Graph, Namespace, URIRef
 from rdflib.namespace import OWL, RDF, RDFS
@@ -96,6 +97,15 @@ def _local_name(iri: str) -> str:
     return iri.rsplit("/", 1)[-1]
 
 
+def _pkm_terms_from_text(text: object) -> set[str]:
+    if not isinstance(text, str):
+        return set()
+    return {
+        match.group(1)
+        for match in re.finditer(r"\bpkm:([A-Za-z_][\w-]*)\b", text)
+    }
+
+
 def _ontology_grounding_items(ontology_text: str) -> list[dict[str, object]]:
     graph = Graph()
     graph.parse(data=ontology_text, format="turtle")
@@ -156,13 +166,11 @@ def _schema_pack(
         {"alias": "sh:", "iri": "http://www.w3.org/ns/shacl#"},
     ]
     items = _ontology_grounding_items(ontology_text)
-    known_terms = sorted(
-        {
-            _local_name(str(item["iri"]))
-            for item in items
-            if isinstance(item.get("iri"), str) and str(item["iri"]).startswith(str(PKM))
-        }
-    )
+    known_terms = {
+        _local_name(str(item["iri"]))
+        for item in items
+        if isinstance(item.get("iri"), str) and str(item["iri"]).startswith(str(PKM))
+    }
     items.extend(
         [
         {
@@ -214,6 +222,10 @@ ASK {
         },
     ]
     items.extend(examples)
+    for example in examples:
+        known_terms.update(_pkm_terms_from_text(example.get("query", "")))
+    for example in query_examples:
+        known_terms.update(_pkm_terms_from_text(example.get("query", "")))
     sparse_index: dict[str, list[list[int | float]]] = {}
     item_norms: list[float] = []
     for index, item in enumerate(items):
@@ -239,7 +251,7 @@ ASK {
         "validation": {
             "allowed_query_types": list(ALLOWED_READ_ONLY_QUERY_TYPES),
             "forbidden_keywords": list(FORBIDDEN_SPARQL_KEYWORDS),
-            "known_terms": known_terms,
+            "known_terms": sorted(known_terms),
         },
         "response": {
             "list_preview_limit": SUMMARY_PREVIEW_LIMIT,

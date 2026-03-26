@@ -46,7 +46,9 @@ export async function validateQueryAst(sparql, schemaPack) {
     }
   }
 
-  errors.push(...lintQuerySemantics(trimmed, queryType, knownTerms));
+  const lint = lintQuerySemantics(trimmed, queryType, knownTerms);
+  errors.push(...lint.errors);
+  notes.push(...lint.notes);
 
   const normalized = trimmed
     .replace(/\r\n/g, "\n")
@@ -70,12 +72,13 @@ export async function validateQueryAst(sparql, schemaPack) {
 }
 
 function lintQuerySemantics(sparql, queryType, knownTerms) {
-  const messages = [];
+  const errors = [];
+  const notes = [];
   if (/^\s*(?:PREFIX\b.*\n)*\s*SELECT\s+\*/im.test(sparql)) {
-    messages.push("Generated SELECT queries must project explicit variables instead of SELECT *.");
+    errors.push("Generated SELECT queries must project explicit variables instead of SELECT *.");
   }
   if (queryType === "SELECT" && !LIMIT_RE.test(sparql) && !ORDER_BY_RE.test(sparql)) {
-    messages.push("Generated SELECT queries must include LIMIT or ORDER BY for bounded execution.");
+    errors.push("Generated SELECT queries must include LIMIT or ORDER BY for bounded execution.");
   }
 
   const withoutComments = sparql.replace(COMMENT_RE, "");
@@ -83,7 +86,7 @@ function lintQuerySemantics(sparql, queryType, knownTerms) {
   const pkmTerms = [...body.matchAll(PKM_TERM_RE)].map((match) => match[1]);
   const unknownTerms = [...new Set(pkmTerms.filter((term) => knownTerms.size && !knownTerms.has(term)))];
   if (unknownTerms.length) {
-    messages.push(`Generated query uses unknown pkm terms: ${unknownTerms.map((term) => `pkm:${term}`).join(", ")}`);
+    notes.push(`Generated query uses pkm terms outside the shipped schema pack: ${unknownTerms.map((term) => `pkm:${term}`).join(", ")}`);
   }
 
   if (queryType === "SELECT") {
@@ -93,11 +96,11 @@ function lintQuerySemantics(sparql, queryType, knownTerms) {
     const bound = new Set([...whereBody.matchAll(PROJECTED_VAR_RE)].map((match) => match[1]));
     const unbound = projected.filter((variable) => !bound.has(variable));
     if (unbound.length) {
-      messages.push(`Projected variables are not bound in WHERE: ${unbound.map((variable) => `?${variable}`).join(", ")}`);
+      errors.push(`Projected variables are not bound in WHERE: ${unbound.map((variable) => `?${variable}`).join(", ")}`);
     }
   }
 
-  return messages;
+  return { errors, notes };
 }
 
 async function parseQuery(sparql, allowedQueryTypes) {
