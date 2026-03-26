@@ -1,0 +1,81 @@
+{
+  "site": {
+    "title": "Pokemontology",
+    "tagline": "A public ontology for Pokemon battle mechanics, replay-backed state, and validation.",
+    "repository_url": "https://github.com/laurajoyhutchins/pokemontology",
+    "pages_base_url": "https://laurajoyhutchins.github.io/pokemontology/"
+  },
+  "artifacts": [
+    {
+      "label": "Ontology",
+      "path": "ontology.ttl",
+      "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#",
+      "description": "Published OWL/Turtle bundle assembled from the modular ontology source."
+    },
+    {
+      "label": "SHACL Shapes",
+      "path": "shapes.ttl",
+      "iri": "https://laurajoyhutchins.github.io/pokemontology/shapes.ttl#",
+      "description": "Validation shapes used for replay slices, save-state data, and ingestion outputs."
+    }
+  ],
+  "modules": [
+    {
+      "name": "00-header",
+      "source_path": "ontology/modules/00-header.ttl"
+    },
+    {
+      "name": "10-core",
+      "source_path": "ontology/modules/10-core.ttl"
+    },
+    {
+      "name": "20-ruleset-mechanics",
+      "source_path": "ontology/modules/20-ruleset-mechanics.ttl"
+    },
+    {
+      "name": "30-save-state",
+      "source_path": "ontology/modules/30-save-state.ttl"
+    },
+    {
+      "name": "40-battle",
+      "source_path": "ontology/modules/40-battle.ttl"
+    },
+    {
+      "name": "45-battle-resolution",
+      "source_path": "ontology/modules/45-battle-resolution.ttl"
+    },
+    {
+      "name": "50-instantaneous-state",
+      "source_path": "ontology/modules/50-instantaneous-state.ttl"
+    },
+    {
+      "name": "60-actions-events",
+      "source_path": "ontology/modules/60-actions-events.ttl"
+    },
+    {
+      "name": "70-provenance",
+      "source_path": "ontology/modules/70-provenance.ttl"
+    },
+    {
+      "name": "80-materialized-state",
+      "source_path": "ontology/modules/80-materialized-state.ttl"
+    }
+  ],
+  "pipelines": [
+    {
+      "name": "Replay ingestion",
+      "summary": "Acquire public Showdown replays, curate a competitive corpus, and transform JSON logs into ontology slices.",
+      "command": "python3 -m pokemontology replay transform --output-dir build/replays"
+    },
+    {
+      "name": "PokeAPI ingestion",
+      "summary": "Cache public API resources and convert the cleanly mappable subset into ontology-native Turtle.",
+      "command": "python3 -m pokemontology pokeapi ingest examples/pokeapi/seed-config.json --raw-dir data/pokeapi/raw --output build/pokeapi.ttl"
+    },
+    {
+      "name": "Veekun ingestion",
+      "summary": "Transform a local normalized export into version-group-scoped mechanics assignments with explicit provenance.",
+      "command": "python3 -m pokemontology veekun transform --source-dir tests/fixtures/veekun_export --output build/veekun.ttl"
+    }
+  ]
+}

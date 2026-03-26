@@ -2,6 +2,7 @@
 """Assemble the consumer ontology file from modular Turtle source fragments."""
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 
@@ -13,6 +14,7 @@ BUILD_SHAPES = BUILD_DIR / "shapes.ttl"
 PAGES_DIR = REPO / "docs"
 PAGES_ONTOLOGY = PAGES_DIR / "ontology.ttl"
 PAGES_SHAPES = PAGES_DIR / "shapes.ttl"
+PAGES_SITE_DATA = PAGES_DIR / "site-data.json"
 SHAPES_SOURCE = REPO / "shapes" / "modules" / "shapes.ttl"
 
 MODULE_ORDER = [
@@ -47,15 +49,63 @@ def main() -> None:
 
     ontology_text = "\n\n".join(chunks) + "\n"
     shapes_text = SHAPES_SOURCE.read_text(encoding="utf-8")
+    site_data = {
+        "site": {
+            "title": "Pokemontology",
+            "tagline": "A public ontology for Pokemon battle mechanics, replay-backed state, and validation.",
+            "repository_url": "https://github.com/laurajoyhutchins/pokemontology",
+            "pages_base_url": "https://laurajoyhutchins.github.io/pokemontology/",
+        },
+        "artifacts": [
+            {
+                "label": "Ontology",
+                "path": "ontology.ttl",
+                "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#",
+                "description": "Published OWL/Turtle bundle assembled from the modular ontology source.",
+            },
+            {
+                "label": "SHACL Shapes",
+                "path": "shapes.ttl",
+                "iri": "https://laurajoyhutchins.github.io/pokemontology/shapes.ttl#",
+                "description": "Validation shapes used for replay slices, save-state data, and ingestion outputs.",
+            },
+        ],
+        "modules": [
+            {
+                "name": name.removesuffix(".ttl"),
+                "source_path": f"ontology/modules/{name}",
+            }
+            for name in MODULE_ORDER
+        ],
+        "pipelines": [
+            {
+                "name": "Replay ingestion",
+                "summary": "Acquire public Showdown replays, curate a competitive corpus, and transform JSON logs into ontology slices.",
+                "command": "python3 -m pokemontology replay transform --output-dir build/replays",
+            },
+            {
+                "name": "PokeAPI ingestion",
+                "summary": "Cache public API resources and convert the cleanly mappable subset into ontology-native Turtle.",
+                "command": "python3 -m pokemontology pokeapi ingest examples/pokeapi/seed-config.json --raw-dir data/pokeapi/raw --output build/pokeapi.ttl",
+            },
+            {
+                "name": "Veekun ingestion",
+                "summary": "Transform a local normalized export into version-group-scoped mechanics assignments with explicit provenance.",
+                "command": "python3 -m pokemontology veekun transform --source-dir tests/fixtures/veekun_export --output build/veekun.ttl",
+            },
+        ],
+    }
 
     OUTPUT.write_text(ontology_text, encoding="utf-8")
     BUILD_SHAPES.write_text(shapes_text, encoding="utf-8")
     PAGES_ONTOLOGY.write_text(ontology_text, encoding="utf-8")
     PAGES_SHAPES.write_text(shapes_text, encoding="utf-8")
+    PAGES_SITE_DATA.write_text(json.dumps(site_data, indent=2) + "\n", encoding="utf-8")
     print(f"wrote {OUTPUT.relative_to(REPO)}")
     print(f"wrote {BUILD_SHAPES.relative_to(REPO)}")
     print(f"wrote {PAGES_ONTOLOGY.relative_to(REPO)}")
     print(f"wrote {PAGES_SHAPES.relative_to(REPO)}")
+    print(f"wrote {PAGES_SITE_DATA.relative_to(REPO)}")
 
 
 if __name__ == "__main__":

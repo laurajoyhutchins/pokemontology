@@ -3,108 +3,145 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Pokemontology Namespace</title>
-  <style>
-    :root {
-      --bg: #f3efe4;
-      --fg: #1f2a30;
-      --muted: #5a6a70;
-      --card: #fffaf1;
-      --line: #d9ccb4;
-      --accent: #0d6b6f;
-      --accent-2: #bc5c26;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: "Iowan Old Style", "Palatino Linotype", serif;
-      color: var(--fg);
-      background:
-        radial-gradient(circle at top left, rgba(13,107,111,0.12), transparent 28rem),
-        radial-gradient(circle at bottom right, rgba(188,92,38,0.12), transparent 26rem),
-        var(--bg);
-    }
-    main {
-      max-width: 58rem;
-      margin: 0 auto;
-      padding: 3rem 1.25rem 4rem;
-    }
-    h1 {
-      margin: 0 0 0.75rem;
-      font-size: clamp(2.2rem, 5vw, 4rem);
-      line-height: 0.95;
-      letter-spacing: -0.03em;
-    }
-    p {
-      font-size: 1.05rem;
-      line-height: 1.6;
-      color: var(--muted);
-      max-width: 48rem;
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
-      gap: 1rem;
-      margin: 2rem 0;
-    }
-    .card {
-      padding: 1.1rem 1.15rem;
-      border: 1px solid var(--line);
-      background: var(--card);
-      border-radius: 1rem;
-      box-shadow: 0 10px 30px rgba(31, 42, 48, 0.06);
-    }
-    .card h2 {
-      margin: 0 0 0.55rem;
-      font-size: 1.05rem;
-    }
-    a {
-      color: var(--accent);
-      text-decoration-thickness: 0.08em;
-      text-underline-offset: 0.14em;
-    }
-    code {
-      font-family: "IBM Plex Mono", "SFMono-Regular", monospace;
-      font-size: 0.92em;
-      color: var(--accent-2);
-    }
-    .small {
-      font-size: 0.95rem;
-    }
-  </style>
+  <title>Pokemontology</title>
+  <meta name="description" content="Public landing page for the Pokemontology namespace, validation shapes, replay tooling, and ingestion pipelines.">
+  <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-  <main>
-    <h1>Pokemontology Namespace</h1>
-    <p>
-      This site publishes the canonical namespace and validation artifacts for the
-      Pokémon battle mechanics ontology.
-    </p>
-    <div class="grid">
-      <section class="card">
-        <h2>Ontology Namespace</h2>
-        <p class="small">
-          Base IRI: <code>https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#</code>
-        </p>
-        <p><a href="./ontology.ttl">Download ontology.ttl</a></p>
-      </section>
-      <section class="card">
-        <h2>SHACL Shapes</h2>
-        <p class="small">
-          Base IRI: <code>https://laurajoyhutchins.github.io/pokemontology/shapes.ttl#</code>
-        </p>
-        <p><a href="./shapes.ttl">Download shapes.ttl</a></p>
-      </section>
-      <section class="card">
-        <h2>Repository</h2>
-        <p><a href="https://github.com/laurajoyhutchins/pokemontology">View source on GitHub</a></p>
-      </section>
+  <header class="site-header">
+    <div class="site-shell">
+      <div class="topbar fade-up">
+        <a class="brand" href="./">
+          <span class="brand-mark">pkm</span>
+          <span class="brand-copy">
+            <strong>Pokemontology</strong>
+            <span>Pokemon battle mechanics ontology</span>
+          </span>
+        </a>
+        <nav class="nav-links" aria-label="Primary">
+          <a href="#artifacts">Artifacts</a>
+          <a href="#modules">Modules</a>
+          <a href="#pipelines">Pipelines</a>
+          <a href="./repo-structure.md">Repo Structure</a>
+          <a href="./roadmap.md">Roadmap</a>
+        </nav>
+      </div>
     </div>
-    <p class="small">
-      The published <code>.ttl</code> files are generated from the modular sources in
-      <code>ontology/modules/</code> and copied into this Pages artifact directory by
-      <code>scripts/build/build_ontology.py</code>.
-    </p>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="site-shell hero-grid">
+        <div class="hero-copy fade-up">
+          <p class="eyebrow">Public Namespace + Data Tooling</p>
+          <h1>Replay-backed mechanics, published as a real public ontology.</h1>
+          <p>
+            Pokemontology models Pokemon battles as explicit state transitions with OWL semantics,
+            SHACL validation, replay-derived event structure, and provenance-aware ingestion from
+            external sources.
+          </p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="./ontology.ttl">Open ontology.ttl</a>
+            <a class="button button-secondary" href="./shapes.ttl">Open shapes.ttl</a>
+            <a class="button button-secondary" href="https://github.com/laurajoyhutchins/pokemontology" data-repository-url>View source</a>
+          </div>
+          <div class="hero-stats">
+            <div class="stat-chip fade-up delay-1">
+              <strong data-module-count>0</strong>
+              <span>ontology modules</span>
+            </div>
+            <div class="stat-chip fade-up delay-2">
+              <strong data-artifact-count>0</strong>
+              <span>published TTL artifacts</span>
+            </div>
+            <div class="stat-chip fade-up delay-3">
+              <strong data-pipeline-count>0</strong>
+              <span>ingestion pipelines</span>
+            </div>
+          </div>
+        </div>
+
+        <aside class="hero-panel fade-up delay-1">
+          <p class="panel-kicker">Namespace</p>
+          <div class="artifact-stack" data-artifacts></div>
+          <p class="lede">
+            Pages base URL:
+            <code data-pages-base-url>https://laurajoyhutchins.github.io/pokemontology/</code>
+          </p>
+          <p class="lede" data-site-error hidden></p>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section" id="artifacts">
+      <div class="site-shell section-grid">
+        <div class="panel fade-up">
+          <div class="section-head">
+            <h2>What is published here</h2>
+          </div>
+          <p>
+            The GitHub Pages site is not just documentation. It is the canonical public namespace for
+            the built ontology and the SHACL constraints used to validate replay slices, save-state
+            data, and source ingests.
+          </p>
+          <div class="highlights">
+            <div class="highlight">
+              <strong>Stable namespace</strong>
+              <p>Both ontology and shapes resolve under the same public Pages base, so IRIs and downloadable artifacts stay aligned.</p>
+            </div>
+            <div class="highlight">
+              <strong>Build-driven publication</strong>
+              <p>The published TTL files are generated from modular sources in the repository, then copied into this site during the build.</p>
+            </div>
+            <div class="highlight">
+              <strong>Operational validation</strong>
+              <p>SHACL constraints are part of the published contract, not an internal afterthought.</p>
+            </div>
+          </div>
+        </div>
+        <div class="callout fade-up delay-1">
+          <h2>Quick Start</h2>
+          <p>Rebuild the ontology and refresh the Pages artifacts locally with:</p>
+          <pre><code>python3 -m pokemontology build</code></pre>
+          <p>
+            That updates <code>build/ontology.ttl</code>, <code>build/shapes.ttl</code>, and the
+            published copies under <code>docs/</code>.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="modules">
+      <div class="site-shell">
+        <div class="section-head">
+          <h2>Ontology Modules</h2>
+          <p class="lede">The public bundle is assembled from the authoring modules below.</p>
+        </div>
+        <div class="module-list" data-modules></div>
+      </div>
+    </section>
+
+    <section class="section" id="pipelines">
+      <div class="site-shell">
+        <div class="section-head">
+          <h2>Data Pipelines</h2>
+          <p class="lede">External data is staged through explicit acquisition, normalization, and ontology transforms.</p>
+        </div>
+        <div class="pipeline-list" data-pipelines></div>
+      </div>
+    </section>
   </main>
+
+  <footer class="footer">
+    <div class="site-shell footer-shell">
+      <div>
+        Pokemontology is published from the same repository that defines the ontology, shapes, replay tooling, and ingest pipelines.
+      </div>
+      <div>
+        <a href="https://github.com/laurajoyhutchins/pokemontology">GitHub</a>
+      </div>
+    </div>
+  </footer>
+  <script src="./app.js" defer></script>
 </body>
 </html>
