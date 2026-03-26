@@ -385,6 +385,29 @@ async function runLaurelPipeline(state) {
       });
       state.validationCache.set(validationKey, validation);
     }
+    if (!validation.ok && generation.fallbackSparql && generation.fallbackSparql !== generation.sparql) {
+      setInlineStatus("Primary translation failed validation. Trying Laurel fallback…");
+      renderGeneratedQuery(generation.fallbackSparql);
+      if (editor) editor.value = generation.fallbackSparql;
+      const fallbackValidationKey = `${generation.fallbackSparql}::${schemaVersion}`;
+      let fallbackValidation = state.validationCache.get(fallbackValidationKey);
+      if (!fallbackValidation) {
+        fallbackValidation = await askWorker(state.queryWorker, {
+          sparql: generation.fallbackSparql,
+          schemaPack: state.schemaPack,
+        });
+        state.validationCache.set(fallbackValidationKey, fallbackValidation);
+      }
+      if (fallbackValidation.ok) {
+        validation = {
+          ...fallbackValidation,
+          messages: [
+            "Primary browser-local translation failed validation; Laurel fell back to a bundled safe query.",
+            ...fallbackValidation.messages,
+          ],
+        };
+      }
+    }
     renderValidation(validation);
     setStatus("[data-status-validator]", validation.ok ? "Validated" : "Needs repair");
     if (!validation.ok) {

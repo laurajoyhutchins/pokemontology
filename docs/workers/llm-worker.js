@@ -21,6 +21,7 @@ self.onmessage = async (event) => {
       self.postMessage({
         backend: "WebGPU local inference",
         sparql,
+        fallbackSparql: buildFallbackQuery(question || "", matches, schemaPack).sparql,
         summary: "Translated with a browser-local model and Laurel grounding notes.",
       });
       return;
@@ -37,6 +38,7 @@ self.onmessage = async (event) => {
   self.postMessage({
     backend: webgpuAvailable ? "deterministic fallback synthesizer" : "CPU fallback synthesizer",
     sparql: answer.sparql,
+    fallbackSparql: answer.sparql,
     summary: answer.summary,
   });
 };

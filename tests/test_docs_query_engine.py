@@ -80,6 +80,7 @@ def test_docs_workers_are_present() -> None:
     assert "WebGPU local inference" in llm_text
     assert "webllm_library_url" in llm_text
     assert "deterministic fallback synthesizer" in llm_text
+    assert "fallbackSparql" in llm_text
     assert 'pkm:hasName "${species}"' in llm_text
     assert "rdfs:label" not in llm_text
 
@@ -118,3 +119,10 @@ def test_frontend_fallback_worker_avoids_stale_ontology_patterns() -> None:
     assert "pkm:hasActor" not in llm_text
     assert "rdfs:label" not in llm_text
     assert "pkm:hasName" in llm_text
+
+
+def test_laurel_app_retries_with_safe_fallback_on_validation_failure() -> None:
+    app_text = (REPO / "docs" / "js" / "laurel-app.js").read_text(encoding="utf-8")
+    assert "Primary translation failed validation. Trying Laurel fallback" in app_text
+    assert "generation.fallbackSparql" in app_text
+    assert "Primary browser-local translation failed validation; Laurel fell back to a bundled safe query." in app_text
