@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from rdflib import Graph, Literal, Namespace, URIRef
 from rdflib.namespace import RDF, RDFS, XSD
 
+from ._script_loader import REPO_ROOT
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
+
 SITE_BASE = "https://laurajoyhutchins.github.io/pokemontology"
 PKM = Namespace(f"{SITE_BASE}/ontology.ttl#")
 

@@ -8,10 +8,11 @@ from pathlib import Path
 from rdflib import Graph, Namespace
 from rdflib.namespace import RDF
 
+from pokemontology._script_loader import repo_path
 from scripts.ingest import veekun_ingest
 
 
-REPO = Path(__file__).parent.parent
+REPO = repo_path()
 FIXTURES = REPO / "tests" / "fixtures" / "veekun_export"
 PKM = Namespace("https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#")
 

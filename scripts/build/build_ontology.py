@@ -4,19 +4,19 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
+from pokemontology._script_loader import repo_path
 
-REPO = Path(__file__).resolve().parents[2]
-MODULES_DIR = REPO / "ontology" / "modules"
-BUILD_DIR = REPO / "build"
+REPO = repo_path()
+MODULES_DIR = repo_path("ontology", "modules")
+BUILD_DIR = repo_path("build")
 OUTPUT = BUILD_DIR / "ontology.ttl"
 BUILD_SHAPES = BUILD_DIR / "shapes.ttl"
-PAGES_DIR = REPO / "docs"
+PAGES_DIR = repo_path("docs")
 PAGES_ONTOLOGY = PAGES_DIR / "ontology.ttl"
 PAGES_SHAPES = PAGES_DIR / "shapes.ttl"
 PAGES_SITE_DATA = PAGES_DIR / "site-data.json"
-SHAPES_SOURCE = REPO / "shapes" / "modules" / "shapes.ttl"
+SHAPES_SOURCE = repo_path("shapes", "modules", "shapes.ttl")
 
 MODULE_ORDER = [
     "00-header.ttl",
@@ -32,7 +32,7 @@ MODULE_ORDER = [
 ]
 
 
-def main() -> None:
+def _validate_sources() -> None:
     missing = [name for name in MODULE_ORDER if not (MODULES_DIR / name).exists()]
     if missing:
         formatted = ", ".join(missing)
@@ -40,8 +40,9 @@ def main() -> None:
     if not SHAPES_SOURCE.exists():
         raise SystemExit(f"missing shapes source: {SHAPES_SOURCE.relative_to(REPO)}")
 
-    BUILD_DIR.mkdir(parents=True, exist_ok=True)
-    PAGES_DIR.mkdir(parents=True, exist_ok=True)
+
+def assemble_artifacts() -> tuple[str, str, dict[str, object]]:
+    _validate_sources()
     chunks = []
     for name in MODULE_ORDER:
         path = MODULES_DIR / name
@@ -122,12 +123,25 @@ def main() -> None:
             },
         ],
     }
+    return ontology_text, shapes_text, site_data
+
+
+def write_artifacts(
+    ontology_text: str, shapes_text: str, site_data: dict[str, object]
+) -> None:
+    BUILD_DIR.mkdir(parents=True, exist_ok=True)
+    PAGES_DIR.mkdir(parents=True, exist_ok=True)
 
     OUTPUT.write_text(ontology_text, encoding="utf-8")
     BUILD_SHAPES.write_text(shapes_text, encoding="utf-8")
     PAGES_ONTOLOGY.write_text(ontology_text, encoding="utf-8")
     PAGES_SHAPES.write_text(shapes_text, encoding="utf-8")
     PAGES_SITE_DATA.write_text(json.dumps(site_data, indent=2) + "\n", encoding="utf-8")
+
+
+def main() -> None:
+    ontology_text, shapes_text, site_data = assemble_artifacts()
+    write_artifacts(ontology_text, shapes_text, site_data)
     print(f"wrote {OUTPUT.relative_to(REPO)}")
     print(f"wrote {BUILD_SHAPES.relative_to(REPO)}")
     print(f"wrote {PAGES_ONTOLOGY.relative_to(REPO)}")

@@ -21,6 +21,10 @@ from scripts.replay import (
 )
 
 
+class CliUsageError(ValueError):
+    """Raised when CLI input is syntactically valid but unusable."""
+
+
 def _repo_relative(path: Path) -> str:
     try:
         return str(path.relative_to(REPO_ROOT))
@@ -29,7 +33,23 @@ def _repo_relative(path: Path) -> str:
 
 
 def _load_json(path: Path) -> object:
-    return json.loads(path.read_text(encoding="utf-8"))
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except OSError as exc:
+        raise CliUsageError(
+            f"failed to read JSON file {_repo_relative(path)}: {exc}"
+        ) from exc
+    except json.JSONDecodeError as exc:
+        raise CliUsageError(
+            f"invalid JSON in {_repo_relative(path)} at line {exc.lineno}, column {exc.colno}: {exc.msg}"
+        ) from exc
+
+
+def _load_json_object(path: Path, *, label: str) -> dict[str, object]:
+    payload = _load_json(path)
+    if not isinstance(payload, dict):
+        raise CliUsageError(f"{label} must contain a top-level JSON object")
+    return payload
 
 
 def _print_json(payload: object, *, pretty: bool = False) -> None:
@@ -65,8 +85,10 @@ def cmd_check_ttl(args: argparse.Namespace) -> int:
 
 
 def cmd_parse_replay(args: argparse.Namespace) -> int:
-    replay = _load_json(args.replay_json)
-    assert isinstance(replay, dict)
+    replay = _load_json_object(args.replay_json, label="replay JSON")
+    log = replay.get("log")
+    if not isinstance(log, str):
+        raise CliUsageError("replay JSON must contain a string 'log' field")
     turns = parse_showdown_replay.parse_log(replay["log"])
     output = {
         "id": replay.get("id"),
@@ -79,15 +101,13 @@ def cmd_parse_replay(args: argparse.Namespace) -> int:
 
 
 def cmd_summarize_replay(args: argparse.Namespace) -> int:
-    payload = _load_json(args.replay_json)
-    assert isinstance(payload, dict)
+    payload = _load_json_object(args.replay_json, label="replay JSON")
     _print_json(summarize_showdown_replay.summarize(payload), pretty=True)
     return 0
 
 
 def cmd_build_slice(args: argparse.Namespace) -> int:
-    payload = _load_json(args.replay_json)
-    assert isinstance(payload, dict)
+    payload = _load_json_object(args.replay_json, label="replay JSON")
     ttl = replay_to_ttl_builder.build_ttl(payload)
     output_path = args.output or args.replay_json.with_name(
         f"{args.replay_json.stem}-slice.ttl"
@@ -98,8 +118,7 @@ def cmd_build_slice(args: argparse.Namespace) -> int:
 
 
 def cmd_resolve_order(args: argparse.Namespace) -> int:
-    payload = _load_json(args.state_json)
-    assert isinstance(payload, dict)
+    payload = _load_json_object(args.state_json, label="turn-order state JSON")
     resolved = resolve_action_order(payload)
     _print_json(resolved, pretty=args.pretty)
     return 0
@@ -425,8 +444,11 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
-    args = parser.parse_args(argv)
-    return int(args.func(args))
+    try:
+        args = parser.parse_args(argv)
+        return int(args.func(args))
+    except CliUsageError as exc:
+        parser.error(str(exc))
 
 
 if __name__ == "__main__":

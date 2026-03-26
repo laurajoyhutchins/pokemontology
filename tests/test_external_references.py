@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from rdflib import Graph, Namespace, URIRef
 
+from pokemontology._script_loader import repo_path
 
-REPO = Path(__file__).parent.parent
+
+REPO = repo_path()
 PKM = Namespace("https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#")
 OWL_SAME_AS = URIRef("http://www.w3.org/2002/07/owl#sameAs")
 

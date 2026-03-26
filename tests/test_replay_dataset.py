@@ -8,10 +8,11 @@ from pathlib import Path
 from rdflib import Graph, Namespace
 from rdflib.namespace import RDF
 
+from pokemontology._script_loader import repo_path
 from scripts.replay import replay_dataset
 
 
-REPO = Path(__file__).parent.parent
+REPO = repo_path()
 REPLAY_JSON = (
     REPO
     / "examples"

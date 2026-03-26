@@ -9,12 +9,11 @@ import pytest
 from pyshacl import validate
 from rdflib import Graph
 
+from pokemontology._script_loader import repo_path
 from scripts.replay.replay_to_ttl_builder import build_graph
 
-REPO = Path(__file__).parent.parent
+REPO = repo_path()
 
-ONTOLOGY = REPO / "build" / "ontology.ttl"
-SHAPES = REPO / "build" / "shapes.ttl"
 SLICE = REPO / "examples" / "slices" / "showdown-finals-game1-slice.ttl"
 REPLAY_JSON = (
     REPO
@@ -23,25 +22,16 @@ REPLAY_JSON = (
     / "gen9vgc2025regjbo3-2414024536-ey54jc53vyjqy20sq0ww1l5nd3bq5qhpw.json"
 )
 
-# Parsed once per session; pyshacl reads but does not mutate these graphs.
 _shapes_graph: Graph | None = None
 _ontology_graph: Graph | None = None
 
 
-def _get_shapes_graph() -> Graph:
+@pytest.fixture(autouse=True)
+def _cache_validation_graphs(shapes_graph: Graph, ontology_graph: Graph) -> None:
     global _shapes_graph
-    if _shapes_graph is None:
-        _shapes_graph = Graph()
-        _shapes_graph.parse(SHAPES, format="turtle")
-    return _shapes_graph
-
-
-def _get_ontology_graph() -> Graph:
     global _ontology_graph
-    if _ontology_graph is None:
-        _ontology_graph = Graph()
-        _ontology_graph.parse(ONTOLOGY, format="turtle")
-    return _ontology_graph
+    _shapes_graph = shapes_graph
+    _ontology_graph = ontology_graph
 
 
 def _load(path: Path) -> Graph:
@@ -51,12 +41,20 @@ def _load(path: Path) -> Graph:
 
 
 def _validate_data_graph(
-    data_graph: Graph, *, inference: str = "rdfs"
+    data_graph: Graph,
+    *,
+    shapes_graph: Graph | None = None,
+    ontology_graph: Graph | None = None,
+    inference: str = "rdfs",
 ) -> tuple[bool, str]:
+    effective_shapes_graph = shapes_graph or _shapes_graph
+    effective_ontology_graph = ontology_graph or _ontology_graph
+    assert effective_shapes_graph is not None
+    assert effective_ontology_graph is not None
     conforms, _results_graph, results_text = validate(
         data_graph=data_graph,
-        shacl_graph=_get_shapes_graph(),
-        ont_graph=_get_ontology_graph(),
+        shacl_graph=effective_shapes_graph,
+        ont_graph=effective_ontology_graph,
         inference=inference,
         abort_on_first=False,
     )
@@ -69,21 +67,29 @@ def _parse_ttl(ttl: str) -> Graph:
     return g
 
 
-def test_slice_conforms_to_shapes() -> None:
-    conforms, results_text = _validate_data_graph(_load(SLICE))
+def test_slice_conforms_to_shapes(shapes_graph: Graph, ontology_graph: Graph) -> None:
+    conforms, results_text = _validate_data_graph(
+        _load(SLICE), shapes_graph=shapes_graph, ontology_graph=ontology_graph
+    )
     assert conforms, f"SHACL violations found:\n{results_text}"
 
 
 @pytest.mark.slow
-def test_generated_replay_graph_conforms_to_shapes() -> None:
+def test_generated_replay_graph_conforms_to_shapes(
+    shapes_graph: Graph, ontology_graph: Graph
+) -> None:
     import json
 
     payload = json.loads(REPLAY_JSON.read_text(encoding="utf-8"))
-    conforms, results_text = _validate_data_graph(build_graph(payload))
+    conforms, results_text = _validate_data_graph(
+        build_graph(payload), shapes_graph=shapes_graph, ontology_graph=ontology_graph
+    )
     assert conforms, f"Generated replay graph violates SHACL:\n{results_text}"
 
 
-def test_synthetic_status_and_target_resolution_graph_conforms_to_shapes() -> None:
+def test_synthetic_status_and_target_resolution_graph_conforms_to_shapes(
+    shapes_graph: Graph, ontology_graph: Graph
+) -> None:
     payload = {
         "id": "synthetic-status-targeting",
         "format": "[Gen 9] Custom Game",
@@ -102,13 +108,17 @@ def test_synthetic_status_and_target_resolution_graph_conforms_to_shapes() -> No
             ]
         ),
     }
-    conforms, results_text = _validate_data_graph(build_graph(payload))
+    conforms, results_text = _validate_data_graph(
+        build_graph(payload), shapes_graph=shapes_graph, ontology_graph=ontology_graph
+    )
     assert conforms, (
         f"Synthetic status/target-resolution graph violates SHACL:\n{results_text}"
     )
 
 
-def test_synthetic_teardown_projection_graph_conforms_to_shapes() -> None:
+def test_synthetic_teardown_projection_graph_conforms_to_shapes(
+    shapes_graph: Graph, ontology_graph: Graph
+) -> None:
     payload = {
         "id": "synthetic-teardown-projection",
         "format": "[Gen 9] Custom Game",
@@ -133,13 +143,17 @@ def test_synthetic_teardown_projection_graph_conforms_to_shapes() -> None:
             ]
         ),
     }
-    conforms, results_text = _validate_data_graph(build_graph(payload))
+    conforms, results_text = _validate_data_graph(
+        build_graph(payload), shapes_graph=shapes_graph, ontology_graph=ontology_graph
+    )
     assert conforms, (
         f"Synthetic teardown/projection graph violates SHACL:\n{results_text}"
     )
 
 
-def test_synthetic_stage_projection_graph_conforms_to_shapes() -> None:
+def test_synthetic_stage_projection_graph_conforms_to_shapes(
+    shapes_graph: Graph, ontology_graph: Graph
+) -> None:
     payload = {
         "id": "synthetic-stage-projection",
         "format": "[Gen 9] Custom Game",
@@ -159,11 +173,15 @@ def test_synthetic_stage_projection_graph_conforms_to_shapes() -> None:
             ]
         ),
     }
-    conforms, results_text = _validate_data_graph(build_graph(payload))
+    conforms, results_text = _validate_data_graph(
+        build_graph(payload), shapes_graph=shapes_graph, ontology_graph=ontology_graph
+    )
     assert conforms, f"Synthetic stage projection graph violates SHACL:\n{results_text}"
 
 
-def test_synthetic_item_and_ability_observation_graph_conforms_to_shapes() -> None:
+def test_synthetic_item_and_ability_observation_graph_conforms_to_shapes(
+    shapes_graph: Graph, ontology_graph: Graph
+) -> None:
     payload = {
         "id": "synthetic-item-ability-observation",
         "format": "[Gen 9] Custom Game",
@@ -181,13 +199,17 @@ def test_synthetic_item_and_ability_observation_graph_conforms_to_shapes() -> No
             ]
         ),
     }
-    conforms, results_text = _validate_data_graph(build_graph(payload))
+    conforms, results_text = _validate_data_graph(
+        build_graph(payload), shapes_graph=shapes_graph, ontology_graph=ontology_graph
+    )
     assert conforms, (
         f"Synthetic item/ability observation graph violates SHACL:\n{results_text}"
     )
 
 
-def test_synthetic_volatile_start_graph_conforms_to_shapes() -> None:
+def test_synthetic_volatile_start_graph_conforms_to_shapes(
+    shapes_graph: Graph, ontology_graph: Graph
+) -> None:
     payload = {
         "id": "synthetic-volatile-start",
         "format": "[Gen 9] Custom Game",
@@ -207,7 +229,9 @@ def test_synthetic_volatile_start_graph_conforms_to_shapes() -> None:
             ]
         ),
     }
-    conforms, results_text = _validate_data_graph(build_graph(payload))
+    conforms, results_text = _validate_data_graph(
+        build_graph(payload), shapes_graph=shapes_graph, ontology_graph=ontology_graph
+    )
     assert conforms, f"Synthetic volatile -start graph violates SHACL:\n{results_text}"
 
 

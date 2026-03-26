@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-from pathlib import Path
+from pokemontology._script_loader import repo_path
 
-
-REPO = Path(__file__).parent.parent
+REPO = repo_path()
 APP_JS = REPO / "docs" / "app.js"
 
 

@@ -9,10 +9,11 @@ from pathlib import Path
 from rdflib import Graph, Namespace
 from rdflib.namespace import RDF
 
+from pokemontology._script_loader import repo_path
 from scripts.ingest import pokeapi_ingest
 
 
-REPO = Path(__file__).parent.parent
+REPO = repo_path()
 FIXTURES = REPO / "tests" / "fixtures" / "pokeapi" / "raw"
 PKM = Namespace("https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#")
 

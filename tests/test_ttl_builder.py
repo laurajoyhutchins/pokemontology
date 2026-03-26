@@ -3,23 +3,22 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 import pytest
 from rdflib import Graph, Literal, Namespace
 from rdflib.namespace import OWL, RDF
 
+from pokemontology._script_loader import repo_path
 from scripts.replay.replay_parser import parse_log
 from scripts.replay.replay_to_ttl_builder import build_graph
 
-REPO = Path(__file__).parent.parent
+REPO = repo_path()
 REPLAY_JSON = (
     REPO
     / "examples"
     / "replays"
     / "gen9vgc2025regjbo3-2414024536-ey54jc53vyjqy20sq0ww1l5nd3bq5qhpw.json"
 )
-ONTOLOGY = REPO / "build" / "ontology.ttl"
 PKM = Namespace("https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#")
 
 
@@ -31,13 +30,6 @@ def replay_payload() -> dict:
 @pytest.fixture(scope="module")
 def replay_graph(replay_payload: dict) -> Graph:
     return build_graph(replay_payload)
-
-
-@pytest.fixture(scope="module")
-def ontology_graph() -> Graph:
-    graph = Graph()
-    graph.parse(ONTOLOGY, format="turtle")
-    return graph
 
 
 def test_graph_has_replay_artifact(replay_graph: Graph) -> None:

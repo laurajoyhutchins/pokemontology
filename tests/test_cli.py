@@ -3,19 +3,18 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 from pokemontology import cli
+from pokemontology._script_loader import repo_path
 
 
-REPO = Path(__file__).parent.parent
+REPO = repo_path()
 REPLAY_JSON = (
     REPO
     / "examples"
     / "replays"
     / "gen9vgc2025regjbo3-2414024536-ey54jc53vyjqy20sq0ww1l5nd3bq5qhpw.json"
 )
-ONTOLOGY = REPO / "build" / "ontology.ttl"
 
 
 def test_parse_replay_command_outputs_json(capsys) -> None:
@@ -27,8 +26,54 @@ def test_parse_replay_command_outputs_json(capsys) -> None:
     assert output["turns"]
 
 
-def test_check_ttl_command_succeeds(capsys) -> None:
-    exit_code = cli.main(["check-ttl", str(ONTOLOGY)])
+def test_parse_replay_command_reports_invalid_json(tmp_path, capsys) -> None:
+    replay_path = tmp_path / "bad.json"
+    replay_path.write_text("{not valid json", encoding="utf-8")
+
+    try:
+        cli.main(["parse-replay", str(replay_path)])
+    except SystemExit as exc:
+        assert exc.code == 2
+    else:
+        raise AssertionError("expected parse-replay to exit with a usage error")
+
+    error = capsys.readouterr().err
+    assert "invalid JSON" in error
+    assert "line 1, column 2" in error
+
+
+def test_parse_replay_command_requires_top_level_object(tmp_path, capsys) -> None:
+    replay_path = tmp_path / "replay.json"
+    replay_path.write_text('["not", "an", "object"]', encoding="utf-8")
+
+    try:
+        cli.main(["parse-replay", str(replay_path)])
+    except SystemExit as exc:
+        assert exc.code == 2
+    else:
+        raise AssertionError("expected parse-replay to exit with a usage error")
+
+    error = capsys.readouterr().err
+    assert "top-level JSON object" in error
+
+
+def test_parse_replay_command_requires_log_field(tmp_path, capsys) -> None:
+    replay_path = tmp_path / "replay.json"
+    replay_path.write_text(json.dumps({"id": "missing-log"}), encoding="utf-8")
+
+    try:
+        cli.main(["parse-replay", str(replay_path)])
+    except SystemExit as exc:
+        assert exc.code == 2
+    else:
+        raise AssertionError("expected parse-replay to exit with a usage error")
+
+    error = capsys.readouterr().err
+    assert "string 'log' field" in error
+
+
+def test_check_ttl_command_succeeds(built_ontology_path: str, capsys) -> None:
+    exit_code = cli.main(["check-ttl", built_ontology_path])
     assert exit_code == 0
 
     output = capsys.readouterr().out
@@ -72,6 +117,21 @@ def test_resolve_order_command_outputs_json(tmp_path, capsys) -> None:
     output = json.loads(capsys.readouterr().out)
     assert output["branches"][0]["first"] == "p1"
     assert output["priority_bracket"] == 0
+
+
+def test_resolve_order_command_requires_top_level_object(tmp_path, capsys) -> None:
+    state_path = tmp_path / "order-state.json"
+    state_path.write_text('["bad"]', encoding="utf-8")
+
+    try:
+        cli.main(["resolve-order", str(state_path)])
+    except SystemExit as exc:
+        assert exc.code == 2
+    else:
+        raise AssertionError("expected resolve-order to exit with a usage error")
+
+    error = capsys.readouterr().err
+    assert "turn-order state JSON must contain a top-level JSON object" in error
 
 
 def test_replay_curate_command_writes_curated_file(tmp_path, capsys) -> None:
