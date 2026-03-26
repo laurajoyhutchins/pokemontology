@@ -11,7 +11,12 @@ from typing import Sequence
 from rdflib import Graph
 
 from ._script_loader import REPO_ROOT
-from .chat import DEFAULT_OLLAMA_ENDPOINT, DEFAULT_OLLAMA_MODEL, generate_sparql
+from .chat import (
+    DEFAULT_OLLAMA_ENDPOINT,
+    DEFAULT_OLLAMA_MODEL,
+    generate_sparql,
+    retrieve_matches,
+)
 from .ingest_common import serialize_turtle_to_path
 from .laurel_eval import DEFAULT_SUITE, EvalConfig, evaluate_suite
 from .laurel import summarize_results
@@ -29,6 +34,9 @@ from pokemontology.replay import (
 
 class CliUsageError(ValueError):
     """Raised when CLI input is syntactically valid but unusable."""
+
+
+DEFAULT_SCHEMA_INDEX = REPO_ROOT / "build" / "schema-index.json"
 
 
 _TURTLE_SOURCE_CACHE: dict[tuple[tuple[str, int, int], ...], Graph] = {}
@@ -234,10 +242,21 @@ def cmd_query(args: argparse.Namespace) -> int:
     )
 
 
+def _get_rag_matches(args: argparse.Namespace) -> list[dict[str, object]] | None:
+    if not args.schema_index.exists():
+        return None
+    try:
+        schema_pack = _load_json_object(args.schema_index, label="schema index")
+        return retrieve_matches(args.question, schema_pack)
+    except Exception:
+        return None
+
+
 def cmd_ask(args: argparse.Namespace) -> int:
     try:
         query_text = generate_sparql(
             args.question,
+            matches=_get_rag_matches(args),
             model=args.model,
             endpoint=args.endpoint,
             timeout=args.timeout,
@@ -252,6 +271,7 @@ def cmd_laurel(args: argparse.Namespace) -> int:
     try:
         query_text = generate_sparql(
             args.question,
+            matches=_get_rag_matches(args),
             model=args.model,
             endpoint=args.endpoint,
             timeout=args.timeout,
@@ -289,6 +309,7 @@ def cmd_evaluate_laurel(args: argparse.Namespace) -> int:
                 tier=args.tier,
                 include_adversarial=args.include_adversarial,
                 sources=tuple(args.sources),
+                schema_index=args.schema_index,
                 model=args.model,
                 endpoint=args.endpoint,
                 timeout=args.timeout,
@@ -588,6 +609,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     ask_parser.add_argument("question", help="Natural-language question to translate.")
     ask_parser.add_argument(
+        "--schema-index",
+        type=Path,
+        default=DEFAULT_SCHEMA_INDEX,
+        help="Path to the schema-index.json for RAG grounding.",
+    )
+    ask_parser.add_argument(
         "--model",
         default=DEFAULT_OLLAMA_MODEL,
         help="Local Ollama model name to use for translation.",
@@ -615,6 +642,12 @@ def build_parser() -> argparse.ArgumentParser:
         nargs="+",
         type=Path,
         help="One or more Turtle files to load into the query graph.",
+    )
+    laurel_parser.add_argument(
+        "--schema-index",
+        type=Path,
+        default=DEFAULT_SCHEMA_INDEX,
+        help="Path to the schema-index.json for RAG grounding.",
     )
     laurel_parser.add_argument(
         "--model",
@@ -653,6 +686,12 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=DEFAULT_SUITE,
         help="Path to the Laurel evaluation suite JSON.",
+    )
+    eval_parser.add_argument(
+        "--schema-index",
+        type=Path,
+        default=DEFAULT_SCHEMA_INDEX,
+        help="Path to the schema-index.json for RAG grounding.",
     )
     eval_parser.add_argument(
         "--mode",

@@ -15,6 +15,7 @@ from .chat import (
     DEFAULT_OLLAMA_ENDPOINT,
     DEFAULT_OLLAMA_MODEL,
     generate_sparql,
+    retrieve_matches,
     validate_sparql_text,
 )
 from .laurel import summarize_results as summarize_answer
@@ -56,6 +57,7 @@ class EvalConfig:
     tier: str | None = None
     include_adversarial: bool = True
     sources: tuple[Path, ...] = ()
+    schema_index: Path | None = None
     model: str = DEFAULT_OLLAMA_MODEL
     endpoint: str = DEFAULT_OLLAMA_ENDPOINT
     timeout: float = 240.0
@@ -350,9 +352,17 @@ def evaluate_suite(config: EvalConfig) -> dict[str, object]:
     if config.mode == "pipeline" and not config.sources:
         raise ValueError("full-pipeline evaluation requires one or more Turtle sources")
 
+    schema_pack: dict[str, object] | None = None
+    if config.schema_index is not None and config.schema_index.exists():
+        schema_pack = json.loads(config.schema_index.read_text(encoding="utf-8"))
+
     def generator(question: str) -> str:
+        matches = None
+        if schema_pack is not None:
+            matches = retrieve_matches(question, schema_pack)
         return generate_sparql(
             question,
+            matches=matches,
             model=config.model,
             endpoint=config.endpoint,
             timeout=config.timeout,
@@ -376,6 +386,7 @@ def evaluate_suite(config: EvalConfig) -> dict[str, object]:
         ),
         "mode": config.mode,
         "sources": [str(path) for path in config.sources],
+        "schema_index": None if config.schema_index is None else str(config.schema_index),
         "model": config.model,
         "endpoint": config.endpoint,
         "summary": summarize_results(results),

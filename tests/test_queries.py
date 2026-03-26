@@ -171,6 +171,52 @@ def test_ask_command_outputs_generated_sparql(capsys, monkeypatch: object) -> No
     assert "SELECT ?myMoveLabel ?moveTypeName ?opponentLabel" in output
 
 
+def test_ask_command_passes_retrieved_matches(capsys, monkeypatch: object, tmp_path: Path) -> None:
+    schema_index = tmp_path / "schema-index.json"
+    schema_index.write_text(
+        json.dumps(
+            {
+                "vocabulary": ["effective", "bulbasaur", "move"],
+                "vectors": [[1, 1, 1]],
+                "items": [
+                    {
+                        "label": "Super-effective moves",
+                        "kind": "pattern",
+                        "summary": "Match a combatant move to a defender typing.",
+                        "snippet": "Which of my moves are effective against Bulbasaur?",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    captured_matches: list[dict[str, object]] | None = None
+    generated_query = SUPER_EFFECTIVE_QUERY.read_text(encoding="utf-8")
+
+    def fake_generate_sparql(*args, **kwargs):
+        nonlocal captured_matches
+        captured_matches = kwargs.get("matches")
+        return generated_query
+
+    monkeypatch.setattr(cli, "generate_sparql", fake_generate_sparql)
+
+    exit_code = cli.main(
+        [
+            "ask",
+            "Which of my moves are effective against Bulbasaur?",
+            "--schema-index",
+            str(schema_index),
+        ]
+    )
+
+    assert exit_code == 0
+    assert captured_matches is not None
+    assert captured_matches[0]["label"] == "Super-effective moves"
+    output = capsys.readouterr().out
+    assert "SELECT ?myMoveLabel ?moveTypeName ?opponentLabel" in output
+
+
 def test_laurel_command_answers_from_generated_query(
     built_ontology_path: str, tmp_path: Path, capsys, monkeypatch: object
 ) -> None:

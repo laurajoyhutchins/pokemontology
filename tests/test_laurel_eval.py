@@ -144,3 +144,45 @@ def test_evaluate_laurel_cli_pipeline_requires_sources(capsys) -> None:
         raise AssertionError("expected pipeline mode without sources to fail")
     error = capsys.readouterr().err
     assert "requires one or more Turtle sources" in error
+
+
+def test_evaluate_suite_uses_schema_index_matches(monkeypatch: object, tmp_path) -> None:
+    schema_index = tmp_path / "schema-index.json"
+    schema_index.write_text(
+        json.dumps(
+            {
+                "vocabulary": ["charizard", "fire", "type"],
+                "vectors": [[1, 1, 1]],
+                "items": [
+                    {
+                        "label": "Charizard typing",
+                        "kind": "pattern",
+                        "summary": "Resolve a species typing fact.",
+                        "snippet": "Is Charizard a Fire type?",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    captured_matches: list[dict[str, object]] | None = None
+
+    def fake_generate_sparql(*args, **kwargs):
+        nonlocal captured_matches
+        captured_matches = kwargs.get("matches")
+        return "SELECT * WHERE { ?s ?p ?o } LIMIT 1"
+
+    monkeypatch.setattr("pokemontology.laurel_eval.generate_sparql", fake_generate_sparql)
+
+    payload = evaluate_suite(
+        EvalConfig(
+            limit=1,
+            include_adversarial=False,
+            schema_index=schema_index,
+        )
+    )
+
+    assert payload["schema_index"] == str(schema_index)
+    assert captured_matches is not None
+    assert captured_matches[0]["label"] == "Charizard typing"
