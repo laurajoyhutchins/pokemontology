@@ -275,6 +275,7 @@ def emit_projected_state(
     g: Graph,
     instant: URIRef,
     previous_instant: URIRef | None,
+    battle_iri: URIRef,
     state: StateSnapshot,
     active_combatants_by_slot: dict[str, URIRef],
     side_by_slot: dict[str, URIRef],
@@ -411,7 +412,7 @@ def emit_projected_state(
         weather_name = str(state.current_weather).rsplit("#", 1)[-1]
         assignment_iri = PKM[f"Weather_{instant_name}_{weather_name}"]
         g.add((assignment_iri, RDF.type, PKM.CurrentWeatherAssignment))
-        g.add((assignment_iri, PKM.aboutField, next(g.subjects(RDF.type, PKM.Battle))))
+        g.add((assignment_iri, PKM.aboutField, battle_iri))
         g.add((assignment_iri, PKM.hasContext, instant))
         g.add((assignment_iri, PKM.hasWeatherCondition, state.current_weather))
         add_materialization_provenance(
@@ -444,7 +445,7 @@ def emit_projected_state(
         terrain_name = str(state.current_terrain).rsplit("#", 1)[-1]
         assignment_iri = PKM[f"Terrain_{instant_name}_{terrain_name}"]
         g.add((assignment_iri, RDF.type, PKM.CurrentTerrainAssignment))
-        g.add((assignment_iri, PKM.aboutField, next(g.subjects(RDF.type, PKM.Battle))))
+        g.add((assignment_iri, PKM.aboutField, battle_iri))
         g.add((assignment_iri, PKM.hasContext, instant))
         g.add((assignment_iri, PKM.hasTerrainCondition, state.current_terrain))
         add_materialization_provenance(
@@ -1027,6 +1028,7 @@ def build_graph(payload: dict) -> Graph:
                 g,
                 instant,
                 previous_materialized_instant,
+                battle_iri,
                 state,
                 active_combatants_by_slot,
                 side_by_slot,
@@ -2596,6 +2598,7 @@ def build_graph(payload: dict) -> Graph:
             g,
             instant,
             previous_materialized_instant,
+            battle_iri,
             state,
             active_combatants_by_slot,
             side_by_slot,

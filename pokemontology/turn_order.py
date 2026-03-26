@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from fractions import Fraction
 from itertools import product
 from pathlib import Path
+from types import MappingProxyType
 
 from rdflib import Graph, Literal, Namespace
 from rdflib.namespace import RDF
@@ -93,6 +94,14 @@ DEFAULT_MECHANICS_SEARCH_DIRS = (
     Path("docs"),
 )
 IGNORED_MECHANICS_TTL_NAMES = {"ontology.ttl", "shapes.ttl"}
+
+
+@dataclass(frozen=True)
+class MechanicsData:
+    graph: Graph
+    ruleset_index: MappingProxyType[str, object]
+    move_index: MappingProxyType[str, object]
+    move_properties_index: MappingProxyType[tuple[object, object], dict[str, object]]
 
 
 @dataclass(frozen=True)
@@ -289,6 +298,95 @@ def _load_mechanics_graph(paths: tuple[Path, ...]) -> Graph | None:
     return graph if loaded_any else None
 
 
+_MECHANICS_DATA_CACHE: dict[tuple[tuple[str, int, int], ...], MechanicsData | None] = {}
+
+
+def _mechanics_cache_key(paths: tuple[Path, ...]) -> tuple[tuple[str, int, int], ...]:
+    entries: list[tuple[str, int, int]] = []
+    for path in paths:
+        if not path.exists():
+            continue
+        stat = path.stat()
+        entries.append((str(path.resolve()), stat.st_mtime_ns, stat.st_size))
+    return tuple(entries)
+
+
+def _index_rulesets(graph: Graph) -> MappingProxyType[str, object]:
+    index: dict[str, object] = {}
+    for subject in graph.subjects(RDF.type, PKM.Ruleset):
+        keys = {
+            str(subject).strip().lower(),
+            str(subject).rsplit("#", 1)[-1].strip().lower(),
+        }
+        keys.update(
+            identifier.lower()
+            for identifier in _literal_texts(graph, subject, PKM.hasIdentifier)
+        )
+        keys.update(
+            name.lower() for name in _literal_texts(graph, subject, PKM.hasName)
+        )
+        for key in keys:
+            if key:
+                index.setdefault(key, subject)
+    return MappingProxyType(index)
+
+
+def _index_moves(graph: Graph) -> MappingProxyType[str, object]:
+    index: dict[str, object] = {}
+    for subject in graph.subjects(RDF.type, PKM.Move):
+        keys = {
+            str(subject).strip().lower(),
+            str(subject).rsplit("#", 1)[-1].strip().lower(),
+        }
+        keys.update(
+            name.lower() for name in _literal_texts(graph, subject, PKM.hasName)
+        )
+        for key in keys:
+            if key:
+                index.setdefault(key, subject)
+    return MappingProxyType(index)
+
+
+def _index_move_properties(
+    graph: Graph,
+) -> MappingProxyType[tuple[object, object], dict[str, object]]:
+    index: dict[tuple[object, object], dict[str, object]] = {}
+    for assignment in graph.subjects(RDF.type, PKM.MovePropertyAssignment):
+        move_iri = next(graph.objects(assignment, PKM.aboutMove), None)
+        ruleset_iri = next(graph.objects(assignment, PKM.hasContext), None)
+        if move_iri is None or ruleset_iri is None:
+            continue
+        resolved: dict[str, object] = {}
+        priority = next(graph.objects(assignment, PKM.hasPriority), None)
+        if isinstance(priority, Literal):
+            resolved["move_priority"] = int(priority)
+        type_iri = next(graph.objects(assignment, PKM.hasMoveType), None)
+        if type_iri is not None:
+            resolved["move_type"] = _move_type_name(graph, type_iri)
+        index[(ruleset_iri, move_iri)] = resolved
+    return MappingProxyType(index)
+
+
+def _load_mechanics_data(paths: tuple[Path, ...]) -> MechanicsData | None:
+    if not paths:
+        return None
+    cache_key = _mechanics_cache_key(paths)
+    if cache_key in _MECHANICS_DATA_CACHE:
+        return _MECHANICS_DATA_CACHE[cache_key]
+    graph = _load_mechanics_graph(paths)
+    if graph is None:
+        _MECHANICS_DATA_CACHE[cache_key] = None
+        return None
+    data = MechanicsData(
+        graph=graph,
+        ruleset_index=_index_rulesets(graph),
+        move_index=_index_moves(graph),
+        move_properties_index=_index_move_properties(graph),
+    )
+    _MECHANICS_DATA_CACHE[cache_key] = data
+    return data
+
+
 def _literal_texts(graph: Graph, subject, predicate) -> list[str]:
     return [
         str(obj).strip()
@@ -297,38 +395,16 @@ def _literal_texts(graph: Graph, subject, predicate) -> list[str]:
     ]
 
 
-def _find_ruleset_iri(graph: Graph | None, ruleset: str | None):
-    if graph is None or not ruleset:
+def _find_ruleset_iri(mechanics_data: MechanicsData | None, ruleset: str | None):
+    if mechanics_data is None or not ruleset:
         return None
-    target = ruleset.strip().lower()
-    for subject in graph.subjects(RDF.type, PKM.Ruleset):
-        identifiers = _literal_texts(graph, subject, PKM.hasIdentifier)
-        names = _literal_texts(graph, subject, PKM.hasName)
-        local_name = str(subject).rsplit("#", 1)[-1].lower()
-        if (
-            str(subject).lower() == target
-            or local_name == target
-            or any(identifier.lower() == target for identifier in identifiers)
-            or any(name.lower() == target for name in names)
-        ):
-            return subject
-    return None
+    return mechanics_data.ruleset_index.get(ruleset.strip().lower())
 
 
-def _find_move_iri(graph: Graph | None, move_name: str | None):
-    if graph is None or not move_name:
+def _find_move_iri(mechanics_data: MechanicsData | None, move_name: str | None):
+    if mechanics_data is None or not move_name:
         return None
-    target = move_name.strip().lower()
-    for subject in graph.subjects(RDF.type, PKM.Move):
-        names = _literal_texts(graph, subject, PKM.hasName)
-        local_name = str(subject).rsplit("#", 1)[-1].lower()
-        if (
-            str(subject).lower() == target
-            or local_name == target
-            or any(name.lower() == target for name in names)
-        ):
-            return subject
-    return None
+    return mechanics_data.move_index.get(move_name.strip().lower())
 
 
 def _move_type_name(graph: Graph, type_iri) -> str | None:
@@ -339,29 +415,15 @@ def _move_type_name(graph: Graph, type_iri) -> str | None:
 
 
 def _lookup_move_properties(
-    graph: Graph | None, ruleset: str | None, move_name: str | None
+    mechanics_data: MechanicsData | None, ruleset: str | None, move_name: str | None
 ) -> dict[str, object]:
-    if graph is None or not ruleset or not move_name:
+    if mechanics_data is None or not ruleset or not move_name:
         return {}
-    ruleset_iri = _find_ruleset_iri(graph, ruleset)
-    move_iri = _find_move_iri(graph, move_name)
+    ruleset_iri = _find_ruleset_iri(mechanics_data, ruleset)
+    move_iri = _find_move_iri(mechanics_data, move_name)
     if ruleset_iri is None or move_iri is None:
         return {}
-
-    for assignment in graph.subjects(PKM.aboutMove, move_iri):
-        if (assignment, RDF.type, PKM.MovePropertyAssignment) not in graph:
-            continue
-        if (assignment, PKM.hasContext, ruleset_iri) not in graph:
-            continue
-        resolved: dict[str, object] = {}
-        priority = next(graph.objects(assignment, PKM.hasPriority), None)
-        if isinstance(priority, Literal):
-            resolved["move_priority"] = int(priority)
-        type_iri = next(graph.objects(assignment, PKM.hasMoveType), None)
-        if type_iri is not None:
-            resolved["move_type"] = _move_type_name(graph, type_iri)
-        return resolved
-    return {}
+    return dict(mechanics_data.move_properties_index.get((ruleset_iri, move_iri), {}))
 
 
 def _validate_payload(
@@ -380,7 +442,7 @@ def _validate_payload(
     mechanics_ttl_paths = _normalize_mechanics_ttl_paths(
         payload.get("mechanics_ttl_paths")
     )
-    mechanics_graph = _load_mechanics_graph(mechanics_ttl_paths)
+    mechanics_data = _load_mechanics_data(mechanics_ttl_paths)
 
     combatants_raw = payload.get("combatants")
     if not isinstance(combatants_raw, list) or len(combatants_raw) != 2:
@@ -410,7 +472,7 @@ def _validate_payload(
         if speed_stage not in SPEED_STAGE_MULTIPLIERS:
             raise ValueError(f"combatant {index} speed_stage must be between -6 and 6")
         looked_up_properties = _lookup_move_properties(
-            mechanics_graph, ruleset, move_name
+            mechanics_data, ruleset, move_name
         )
         if move_priority is None:
             move_priority = int(looked_up_properties.get("move_priority", 0))
