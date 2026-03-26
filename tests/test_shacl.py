@@ -4,6 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 from textwrap import dedent
 
+import pytest
 from pyshacl import validate
 from rdflib import Graph
 
@@ -16,6 +17,26 @@ SHAPES = REPO / "build" / "shapes.ttl"
 SLICE = REPO / "examples" / "slices" / "showdown-finals-game1-slice.ttl"
 REPLAY_JSON = REPO / "examples" / "replays" / "gen9vgc2025regjbo3-2414024536-ey54jc53vyjqy20sq0ww1l5nd3bq5qhpw.json"
 
+# Parsed once per session; pyshacl reads but does not mutate these graphs.
+_shapes_graph: Graph | None = None
+_ontology_graph: Graph | None = None
+
+
+def _get_shapes_graph() -> Graph:
+    global _shapes_graph
+    if _shapes_graph is None:
+        _shapes_graph = Graph()
+        _shapes_graph.parse(SHAPES, format="turtle")
+    return _shapes_graph
+
+
+def _get_ontology_graph() -> Graph:
+    global _ontology_graph
+    if _ontology_graph is None:
+        _ontology_graph = Graph()
+        _ontology_graph.parse(ONTOLOGY, format="turtle")
+    return _ontology_graph
+
 
 def _load(path: Path) -> Graph:
     g = Graph()
@@ -23,12 +44,12 @@ def _load(path: Path) -> Graph:
     return g
 
 
-def _validate_data_graph(data_graph: Graph) -> tuple[bool, str]:
-    conforms, results_graph, results_text = validate(
+def _validate_data_graph(data_graph: Graph, *, inference: str = "rdfs") -> tuple[bool, str]:
+    conforms, _results_graph, results_text = validate(
         data_graph=data_graph,
-        shacl_graph=_load(SHAPES),
-        ont_graph=_load(ONTOLOGY),
-        inference="rdfs",
+        shacl_graph=_get_shapes_graph(),
+        ont_graph=_get_ontology_graph(),
+        inference=inference,
         abort_on_first=False,
     )
     return conforms, results_text
@@ -45,6 +66,7 @@ def test_slice_conforms_to_shapes() -> None:
     assert conforms, f"SHACL violations found:\n{results_text}"
 
 
+@pytest.mark.slow
 def test_generated_replay_graph_conforms_to_shapes() -> None:
     import json
 
@@ -140,7 +162,8 @@ def test_iv_assignment_rejects_values_above_31() -> None:
                 pkm:hasContext pkm:Save1 ;
                 pkm:hasIVValue 32 .
             """
-        )
+        ),
+        inference="none",
     )
     assert not conforms
     assert "IV value in [0, 31]" in results_text
@@ -179,7 +202,8 @@ def test_ev_assignment_rejects_total_above_510() -> None:
                 pkm:hasContext pkm:Save1 ;
                 pkm:hasEVValue 8 .
             """
-        )
+        ),
+        inference="none",
     )
     assert not conforms
     assert "must not exceed 510" in results_text
@@ -218,7 +242,8 @@ def test_ev_assignment_allows_total_of_510() -> None:
                 pkm:hasContext pkm:Save1 ;
                 pkm:hasEVValue 6 .
             """
-        )
+        ),
+        inference="none",
     )
     assert conforms, f"510-total EV spread should conform, but got:\n{results_text}"
 
@@ -248,7 +273,8 @@ def test_typing_assignment_rejects_duplicate_type_slots_per_variant_and_ruleset(
                 pkm:hasContext pkm:Rule1 ;
                 pkm:hasTypeSlot 1 .
             """
-        )
+        ),
+        inference="none",
     )
     assert not conforms
     assert "per variant/ruleset/type-slot" in results_text
@@ -263,7 +289,8 @@ def test_shacl_rejects_undeclared_pkm_predicates() -> None:
             pkm:Battle1 a pkm:Battle ;
                 pkm:notDeclaredPredicate pkm:Anything .
             """
-        )
+        ),
+        inference="none",
     )
     assert not conforms
     assert "declared as an ontology property" in results_text
