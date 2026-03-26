@@ -372,6 +372,36 @@ pre {
   padding: 1.25rem 0 0;
 }
 
+.section-tight {
+  padding-top: 0.75rem;
+}
+
+.warning-banner {
+  padding: 1rem 1.1rem;
+  border: 3px solid var(--rust);
+  border-radius: var(--radius-md);
+  background:
+    repeating-linear-gradient(
+      -45deg,
+      rgba(194, 142, 49, 0.22),
+      rgba(194, 142, 49, 0.22) 12px,
+      rgba(154, 74, 45, 0.14) 12px,
+      rgba(154, 74, 45, 0.14) 24px
+    ),
+    var(--panel);
+  color: var(--ink);
+  box-shadow: var(--shadow);
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+.warning-banner strong {
+  display: inline-block;
+  margin-right: 0.35rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
 .section-head {
   display: flex;
   align-items: end;
