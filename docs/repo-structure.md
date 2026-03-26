@@ -23,7 +23,6 @@ This project is easiest to maintain if it keeps three layers separate:
 - `scripts/build/` — build and syntax-check implementations
 - `scripts/ingest/` — external-data acquisition and transform implementations
 - `scripts/replay/` — replay parsing, summary, and slice-building implementations
-- `scripts/*.py` — compatibility wrappers for direct script execution
 - `docs/` — project notes
 - `tests/` — validation/regression test area
 

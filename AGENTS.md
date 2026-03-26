@@ -20,7 +20,6 @@ This repository models Pokemon battle mechanics as RDF/OWL and SHACL, with suppo
 - `build/`: generated consumer artifacts
 - `docs/`: published copies of generated artifacts
 - `scripts/build/`, `scripts/ingest/`, `scripts/replay/`: grouped script implementations used by the CLI
-- `scripts/*.py`: compatibility wrappers for direct script execution
 - `pokemontology/`: installable CLI package
 - `tests/`: regression and validation tests
 

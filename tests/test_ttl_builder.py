@@ -2,16 +2,13 @@
 from __future__ import annotations
 
 import json
-import sys
 from pathlib import Path
 
 import pytest
 from rdflib import Graph, Namespace
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
-
-from replay_parser import parse_log
-from replay_to_ttl_builder import build_graph
+from scripts.replay.replay_parser import parse_log
+from scripts.replay.replay_to_ttl_builder import build_graph
 
 REPO = Path(__file__).parent.parent
 REPLAY_JSON = REPO / "examples" / "replays" / "gen9vgc2025regjbo3-2414024536-ey54jc53vyjqy20sq0ww1l5nd3bq5qhpw.json"

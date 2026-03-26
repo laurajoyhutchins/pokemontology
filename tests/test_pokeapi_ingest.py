@@ -3,15 +3,12 @@ from __future__ import annotations
 
 import json
 import shutil
-import sys
 from pathlib import Path
 
 from rdflib import Graph, Namespace
 from rdflib.namespace import RDF
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
-
-import pokeapi_ingest
+from scripts.ingest import pokeapi_ingest
 
 
 REPO = Path(__file__).parent.parent

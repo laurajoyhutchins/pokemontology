@@ -2,12 +2,8 @@
 from __future__ import annotations
 
 import json
-import sys
-from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
-
-import pokeapi_scrape
+from scripts.ingest import pokeapi_scrape
 
 
 def test_scrape_resource_fetches_pages_and_details_then_reuses_cache(tmp_path, monkeypatch) -> None:

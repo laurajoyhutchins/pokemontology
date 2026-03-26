@@ -1,14 +1,9 @@
 """Unit tests for the shared replay_parser module."""
 from __future__ import annotations
 
-import sys
-from pathlib import Path
-
 import pytest
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
-
-from replay_parser import (
+from scripts.replay.replay_parser import (
     ReplayEvent,
     compact_species_name,
     discover_moves,

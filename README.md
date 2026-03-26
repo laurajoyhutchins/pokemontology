@@ -40,7 +40,6 @@ pokemontology/
 │   │   ├── replay_parser.py
 │   │   ├── replay_to_ttl_builder.py
 │   │   └── summarize_showdown_replay.py
-│   └── *.py compatibility wrappers
 ├── docs/
 │   ├── index.html
 │   ├── ontology.ttl
@@ -67,7 +66,7 @@ pokemontology/
 - Replay JSON used as source corpus
 - Replay-backed TTL slice
 - Sample PokeAPI seed config and an ingestion pipeline for caching raw API data and building TTL
-- Script implementations organized by `build`, `ingest`, and `replay`, with top-level compatibility wrappers for direct script execution
+- Script implementations organized by `build`, `ingest`, and `replay`
 
 ## Suggested workflow
 
