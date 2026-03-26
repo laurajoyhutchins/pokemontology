@@ -12,10 +12,10 @@
     <div class="site-shell">
       <div class="topbar fade-up">
         <a class="brand" href="./">
-          <span class="brand-mark">pkm</span>
+          <span class="brand-mark">dex</span>
           <span class="brand-copy">
             <strong>Pokemontology</strong>
-            <span>Pokemon battle mechanics ontology</span>
+            <span>battle mechanics index</span>
           </span>
         </a>
         <nav class="nav-links" aria-label="Primary">
@@ -37,12 +37,12 @@
     <section class="hero">
       <div class="site-shell hero-grid">
         <div class="hero-copy fade-up">
-          <p class="eyebrow">Ontology, Shapes, and Tools</p>
-          <h1>A battle mechanics ontology built from actual replay data.</h1>
+          <p class="eyebrow">Field Guide No. 001</p>
+          <h1>A battle mechanics index built from replay logs.</h1>
           <p>
-            Pokemontology treats a battle as a sequence of explicit states, actions, and events.
-            The project publishes an OWL ontology, a SHACL validation layer, replay tooling, and
-            data pipelines for external sources.
+            Pokemontology tracks a battle as a sequence of states, actions, and events. It publishes
+            an OWL ontology, SHACL validation shapes, replay tooling, and import pipelines for
+            outside data sources.
           </p>
           <div class="hero-actions">
             <a class="button button-primary" href="./ontology.ttl">Open ontology.ttl</a>
@@ -52,28 +52,28 @@
           <div class="hero-stats">
             <div class="stat-chip fade-up delay-1">
               <strong data-module-count>0</strong>
-              <span>ontology modules</span>
+              <span>source modules</span>
             </div>
             <div class="stat-chip fade-up delay-2">
               <strong data-artifact-count>0</strong>
-              <span>published TTL artifacts</span>
+              <span>published bundles</span>
             </div>
             <div class="stat-chip fade-up delay-3">
               <strong data-pipeline-count>0</strong>
-              <span>ingestion pipelines</span>
+              <span>data routes</span>
             </div>
             <div class="stat-chip fade-up delay-1">
               <strong data-example-count>0</strong>
-              <span>worked examples</span>
+              <span>sample files</span>
             </div>
           </div>
         </div>
 
         <aside class="hero-panel fade-up delay-1">
-          <p class="panel-kicker">Namespace</p>
+          <p class="panel-kicker">Published Cartridge</p>
           <div class="artifact-stack" data-artifacts></div>
           <p class="lede">
-            Base URL:
+            Base path:
             <code data-pages-base-url>https://laurajoyhutchins.github.io/pokemontology/</code>
           </p>
           <p class="lede" data-site-error hidden></p>
@@ -85,30 +85,30 @@
       <div class="site-shell section-grid">
         <div class="panel fade-up">
           <div class="section-head">
-            <h2>What lives here</h2>
+            <h2>What ships here</h2>
           </div>
           <p>
-            This Pages site is the published face of the project. It hosts the canonical ontology,
-            the validation shapes, and the links you need to inspect or build against the graph.
+            This site is the public build of the project. It hosts the ontology, the validation
+            shapes, and the files you need to inspect or build against the graph.
           </p>
           <div class="highlights">
             <div class="highlight">
-              <strong>One public namespace</strong>
-              <p>Ontology IRIs and downloadable artifacts resolve from the same base, so the published graph stays coherent.</p>
+              <strong>One base namespace</strong>
+              <p>IRIs and downloadable bundles resolve from the same base, so the published graph stays consistent.</p>
             </div>
             <div class="highlight">
-              <strong>Built from source</strong>
-              <p>The `.ttl` files here are generated from the modular sources in the repository, not maintained by hand.</p>
+              <strong>Built from modules</strong>
+              <p>The `.ttl` files here are generated from the modular sources in the repository, not edited by hand.</p>
             </div>
             <div class="highlight">
-              <strong>Validation is part of the contract</strong>
-              <p>The SHACL layer is published alongside the ontology because the project cares about usable, checkable data.</p>
+              <strong>Validation ships with it</strong>
+              <p>The SHACL layer is published beside the ontology because the data is meant to be checked, not just read.</p>
             </div>
           </div>
         </div>
         <div class="callout fade-up delay-1">
-          <h2>Quick start</h2>
-          <p>Rebuild the ontology and refresh the Pages artifacts with:</p>
+          <h2>Boot sequence</h2>
+          <p>Rebuild the ontology and refresh the published files with:</p>
           <pre><code>python3 -m pokemontology build</code></pre>
           <p>
             This updates <code>build/ontology.ttl</code>, <code>build/shapes.ttl</code>, and the
@@ -121,8 +121,8 @@
     <section class="section" id="modules">
       <div class="site-shell">
         <div class="section-head">
-          <h2>Ontology Modules</h2>
-          <p class="lede">The published bundle is assembled from these source modules.</p>
+          <h2>Source Modules</h2>
+          <p class="lede">The published bundle is assembled from these source files.</p>
         </div>
         <div class="module-list" data-modules></div>
       </div>
@@ -131,7 +131,7 @@
     <section class="section" id="examples">
       <div class="site-shell">
         <div class="section-head">
-          <h2>Examples</h2>
+          <h2>Sample Files</h2>
           <p class="lede">A few concrete files from the repo: replay input, test fixtures, and generated slices.</p>
         </div>
         <div class="example-list" data-examples></div>
@@ -141,8 +141,8 @@
     <section class="section" id="pipelines">
       <div class="site-shell">
         <div class="section-head">
-          <h2>Data Pipelines</h2>
-          <p class="lede">Source data comes in through staged acquisition, normalization, and ontology transforms.</p>
+          <h2>Data Routes</h2>
+          <p class="lede">Source data moves through staged acquisition, normalization, and ontology transforms.</p>
         </div>
         <div class="pipeline-list" data-pipelines></div>
       </div>
