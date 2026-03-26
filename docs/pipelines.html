@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pipelines | Pokemontology</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-shell">
+      <div class="topbar fade-up">
+        <a class="brand" href="./">
+          <span class="brand-mark">PL</span>
+          <span class="brand-copy">
+            <strong>Professor Laurel</strong>
+            <span>field lab for Pokemontology</span>
+          </span>
+        </a>
+        <nav class="nav-links" aria-label="Primary">
+          <a href="./index.html">Ask</a>
+          <a href="./artifacts.html">Artifacts</a>
+          <a href="./modules.html">Modules</a>
+          <a href="./examples.html">Examples</a>
+          <a href="./pipelines.html" class="nav-active">Pipelines</a>
+          <a href="./repo-structure.md">Repo</a>
+        </nav>
+        <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false" aria-label="Toggle dark mode">
+          <span data-theme-label>Dark</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="section" id="pipelines">
+      <div class="site-shell">
+        <div class="section-head">
+          <h2>Data Routes</h2>
+          <p class="lede">Source data moves through staged acquisition, normalization, and ontology transforms.</p>
+        </div>
+        <div class="pipeline-list" data-pipelines></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="site-shell footer-shell">
+      <div>
+        The same repository defines the ontology, the shapes, the replay tooling, and the ingest pipelines.
+      </div>
+      <div>
+        <a href="https://github.com/laurajoyhutchins/pokemontology">GitHub</a>
+      </div>
+    </div>
+  </footer>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

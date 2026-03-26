@@ -41,10 +41,12 @@ export async function createLaurelApp() {
     renderStats(state.siteData);
     populateExampleSelect(state.siteData.query_examples || []);
     hydrateDefaultValues(state);
-    initWorkers(state);
-    await initQueryEngine();
-    setStatus("[data-status-model]", supportsWebGpu() ? "WebGPU ready" : "CPU fallback");
-    bindInteractiveActions(state);
+    if (document.getElementById("nl-question")) {
+      initWorkers(state);
+      await initQueryEngine();
+      setStatus("[data-status-model]", supportsWebGpu() ? "WebGPU ready" : "CPU fallback");
+      bindInteractiveActions(state);
+    }
   } catch (error) {
     renderError(error);
     throw error;

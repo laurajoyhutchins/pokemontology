@@ -19,11 +19,11 @@
           </span>
         </a>
         <nav class="nav-links" aria-label="Primary">
-          <a href="#query">Ask</a>
-          <a href="#artifacts">Artifacts</a>
-          <a href="#modules">Modules</a>
-          <a href="#examples">Examples</a>
-          <a href="#pipelines">Pipelines</a>
+          <a href="./index.html" class="nav-active" aria-current="page">Ask</a>
+          <a href="./artifacts.html">Artifacts</a>
+          <a href="./modules.html">Modules</a>
+          <a href="./examples.html">Examples</a>
+          <a href="./pipelines.html">Pipelines</a>
           <a href="./repo-structure.md">Repo</a>
         </nav>
         <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false" aria-label="Toggle dark mode">
@@ -201,71 +201,6 @@
             </div>
           </div>
         </details>
-      </div>
-    </section>
-
-    <section class="section" id="artifacts">
-      <div class="site-shell section-grid">
-        <div class="panel fade-up">
-          <div class="section-head">
-            <h2>What ships here</h2>
-          </div>
-          <p>
-            This site is the public build of the project. It hosts the ontology, the validation
-            shapes, and the files you need to inspect or build against the graph.
-          </p>
-          <div class="highlights">
-            <div class="highlight">
-              <strong>Grounded queries first</strong>
-              <p>Professor Laurel retrieves schema notes and canonical examples before synthesizing SPARQL.</p>
-            </div>
-            <div class="highlight">
-              <strong>Visible safety gate</strong>
-              <p>Generated queries stay inspectable and validated before the browser executes anything.</p>
-            </div>
-            <div class="highlight">
-              <strong>Published graph below</strong>
-              <p>The same generated ontology and SHACL artifacts remain directly accessible for manual work.</p>
-            </div>
-          </div>
-        </div>
-        <div class="callout fade-up delay-1">
-          <h2>Published Cartridge</h2>
-          <p>Base path:</p>
-          <pre><code data-pages-base-url>https://laurajoyhutchins.github.io/pokemontology/</code></pre>
-          <div class="artifact-stack" data-artifacts></div>
-          <p class="lede" data-site-error hidden></p>
-        </div>
-      </div>
-    </section>
-
-    <section class="section" id="modules">
-      <div class="site-shell">
-        <div class="section-head">
-          <h2>Source Modules</h2>
-          <p class="lede">The published bundle is assembled from these source files. <strong data-module-count>0</strong> modules total.</p>
-        </div>
-        <div class="module-list" data-modules></div>
-      </div>
-    </section>
-
-    <section class="section" id="examples">
-      <div class="site-shell">
-        <div class="section-head">
-          <h2>Sample Files</h2>
-          <p class="lede">A few concrete files from the repo: replay input, test fixtures, and generated slices.</p>
-        </div>
-        <div class="example-list" data-examples></div>
-      </div>
-    </section>
-
-    <section class="section" id="pipelines">
-      <div class="site-shell">
-        <div class="section-head">
-          <h2>Data Routes</h2>
-          <p class="lede">Source data moves through staged acquisition, normalization, and ontology transforms.</p>
-        </div>
-        <div class="pipeline-list" data-pipelines></div>
       </div>
     </section>
   </main>
