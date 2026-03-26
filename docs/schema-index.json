@@ -25,6 +25,43 @@
       "iri": "http://www.w3.org/ns/shacl#"
     }
   ],
+  "retrieval": {
+    "top_k": 4,
+    "minimum_scores": [
+      {
+        "max_tokens": 2,
+        "score": 0.34
+      },
+      {
+        "max_tokens": 5,
+        "score": 0.24
+      },
+      {
+        "max_tokens": null,
+        "score": 0.16
+      }
+    ]
+  },
+  "validation": {
+    "allowed_query_types": [
+      "SELECT",
+      "ASK",
+      "DESCRIBE",
+      "CONSTRUCT"
+    ],
+    "forbidden_keywords": [
+      "INSERT",
+      "DELETE",
+      "DROP",
+      "CLEAR",
+      "LOAD",
+      "CREATE",
+      "COPY",
+      "MOVE",
+      "ADD",
+      "SERVICE"
+    ]
+  },
   "items": [
     {
       "kind": "class",

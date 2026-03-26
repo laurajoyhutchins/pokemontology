@@ -1,6 +1,5 @@
 import { createState } from "./state.js";
 import {
-  DEFAULT_PREFIXES,
   buildSources,
   executeQuery,
   exportLastResultsToCsv,
@@ -11,7 +10,7 @@ import {
   renderValidation,
   setResultsContent,
 } from "./query-execution.js";
-import { defaultQuestion, loadSchemaPack } from "./schema-pack.js";
+import { defaultQuestion, formatPrefixBlock, loadSchemaPack } from "./schema-pack.js";
 import {
   loadSiteData,
   renderArtifacts,
@@ -133,7 +132,7 @@ function hydrateDefaultValues(state) {
   const question = document.getElementById("nl-question");
   const editor = document.getElementById("sparql-editor");
   if (question) question.value = defaultQuestion(state.schemaPack);
-  if (editor) editor.value = DEFAULT_PREFIXES;
+  if (editor) editor.value = formatPrefixBlock(state.schemaPack);
 }
 
 function bindStaticActions(state) {

@@ -14,15 +14,35 @@ from rdflib.plugins.sparql.parser import parseQuery
 
 DEFAULT_OLLAMA_ENDPOINT = "http://127.0.0.1:11434/api/generate"
 DEFAULT_OLLAMA_MODEL = "qwen2.5:1.5b"
+FORBIDDEN_SPARQL_KEYWORDS = (
+    "INSERT",
+    "DELETE",
+    "DROP",
+    "CLEAR",
+    "LOAD",
+    "CREATE",
+    "COPY",
+    "MOVE",
+    "ADD",
+    "SERVICE",
+)
+ALLOWED_READ_ONLY_QUERY_TYPES = ("SELECT", "ASK", "DESCRIBE", "CONSTRUCT")
+RETRIEVAL_MINIMUM_SCORES = (
+    (2, 0.34),
+    (5, 0.24),
+    (None, 0.16),
+)
 
 _FENCED_BLOCK_RE = re.compile(r"```(?:sparql)?\s*(.*?)```", re.IGNORECASE | re.DOTALL)
 _PREFIX_LINE_RE = re.compile(r"^(?:PREFIX|BASE)\b.*$", re.IGNORECASE | re.MULTILINE)
 _PREFIX_DECL_RE = re.compile(r"^\s*(?:PREFIX|BASE)\b", re.IGNORECASE)
 _FORBIDDEN_KEYWORD_RE = re.compile(
-    r"\b(?:INSERT|DELETE|DROP|CLEAR|LOAD|CREATE|COPY|MOVE|ADD|SERVICE)\b",
+    r"\b(?:" + "|".join(FORBIDDEN_SPARQL_KEYWORDS) + r")\b",
     re.IGNORECASE,
 )
-_ALLOWED_QUERY_RE = re.compile(r"^(SELECT|ASK|DESCRIBE|CONSTRUCT)\b", re.IGNORECASE)
+_ALLOWED_QUERY_RE = re.compile(
+    r"^(" + "|".join(ALLOWED_READ_ONLY_QUERY_TYPES) + r")\b", re.IGNORECASE
+)
 
 
 def tokenize(text: str) -> list[str]:
@@ -58,11 +78,10 @@ def cosine_similarity(left: list[int], right: list[int]) -> float:
 
 def get_minimum_score(question: str) -> float:
     token_count = len(tokenize(question))
-    if token_count <= 2:
-        return 0.34
-    if token_count <= 5:
-        return 0.24
-    return 0.16
+    for max_tokens, score in RETRIEVAL_MINIMUM_SCORES:
+        if max_tokens is None or token_count <= max_tokens:
+            return score
+    return RETRIEVAL_MINIMUM_SCORES[-1][1]
 
 
 def retrieve_matches(

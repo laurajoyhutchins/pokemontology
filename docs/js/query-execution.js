@@ -9,14 +9,6 @@ const PREFIX_MAP = [
   ["http://www.w3.org/ns/shacl#", "sh:"],
 ];
 
-export const DEFAULT_PREFIXES = `PREFIX owl:  <http://www.w3.org/2002/07/owl#>
-PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
-PREFIX pkm:  <${PKM_NS}>
-
-`;
-
 export const COMUNICA_BROWSER_URLS = [
   "https://rdf.js.org/comunica-browser/versions/v4/engines/query-sparql/comunica-browser.js",
   "https://cdn.jsdelivr.net/npm/@comunica/query-sparql@3/pkg/comunica-browser.js",

@@ -1,6 +1,4 @@
 const PREFIX_RE = /^\s*PREFIX\s+([A-Za-z][\w-]*):\s*<([^>]+)>\s*$/gim;
-const FORBIDDEN_RE = /\b(?:INSERT|DELETE|DROP|CLEAR|LOAD|CREATE|COPY|MOVE|ADD|SERVICE)\b/i;
-const TYPE_RE = /\b(SELECT|ASK|DESCRIBE|CONSTRUCT)\b/i;
 const COMMENT_RE = /#[^\n]*/g;
 const SPARQLJS_URL = "https://esm.sh/sparqljs@3.7.3";
 
@@ -13,15 +11,20 @@ export async function validateQueryAst(sparql, schemaPack) {
   }
 
   const messages = [];
-  if (FORBIDDEN_RE.test(trimmed)) {
+  const forbiddenKeywords = schemaPack?.validation?.forbidden_keywords || [];
+  const allowedQueryTypes = schemaPack?.validation?.allowed_query_types || [];
+  const forbiddenRe = buildKeywordRegex(forbiddenKeywords);
+  if (forbiddenRe && forbiddenRe.test(trimmed)) {
     messages.push("Forbidden SPARQL keyword detected.");
   }
 
-  const parseResult = await parseQuery(trimmed);
+  const parseResult = await parseQuery(trimmed, allowedQueryTypes);
   const prefixes = parseResult.prefixes;
   const queryType = parseResult.queryType;
   if (!queryType) {
     messages.push("Could not identify a read-only query type.");
+  } else if (allowedQueryTypes.length && !allowedQueryTypes.includes(queryType)) {
+    messages.push(`Query type "${queryType}" is not in the Laurel read-only allowlist.`);
   } else if (parseResult.mode === "ast") {
     messages.push("AST parser certified a read-only SPARQL shape.");
   } else {
@@ -58,7 +61,7 @@ export async function validateQueryAst(sparql, schemaPack) {
   };
 }
 
-async function parseQuery(sparql) {
+async function parseQuery(sparql, allowedQueryTypes) {
   const parser = await loadParser();
   if (parser) {
     try {
@@ -81,11 +84,22 @@ async function parseQuery(sparql) {
   const withoutComments = sparql.replace(COMMENT_RE, "");
   const prefixes = [...withoutComments.matchAll(PREFIX_RE)].map((match) => match[1]);
   const body = withoutComments.replace(PREFIX_RE, "").trim();
+  const typeRe = buildKeywordRegex(allowedQueryTypes, { anchored: false });
   return {
     mode: "fallback",
     prefixes,
-    queryType: TYPE_RE.exec(body)?.[1]?.toUpperCase() || "",
+    queryType: typeRe?.exec(body)?.[1]?.toUpperCase() || "",
   };
+}
+
+function buildKeywordRegex(keywords, { anchored = false } = {}) {
+  if (!keywords.length) return null;
+  const source = keywords.map((keyword) => escapeRegex(keyword)).join("|");
+  return new RegExp(anchored ? `^(${source})\\b` : `\\b(${source})\\b`, "i");
+}
+
+function escapeRegex(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 async function loadParser() {

@@ -4,7 +4,9 @@ self.onmessage = (event) => {
   const vectors = schemaPack?.vectors || [];
   const items = schemaPack?.items || [];
   const queryVector = vectorize(question || "", vocabulary);
-  const minScore = minimumScore(question || "");
+  const retrievalConfig = schemaPack?.retrieval || {};
+  const minScore = minimumScore(question || "", retrievalConfig.minimum_scores || []);
+  const effectiveTopK = retrievalConfig.top_k || topK;
 
   const matches = items
     .map((item, index) => ({
@@ -12,7 +14,7 @@ self.onmessage = (event) => {
       score: cosine(queryVector, vectors[index] || []),
     }))
     .sort((a, b) => b.score - a.score)
-    .slice(0, topK)
+    .slice(0, effectiveTopK)
     .filter((item) => item.score >= minScore);
 
   self.postMessage({ matches });
@@ -48,9 +50,12 @@ function cosine(left, right) {
   return dot / (Math.sqrt(leftNorm) * Math.sqrt(rightNorm));
 }
 
-function minimumScore(question) {
+function minimumScore(question, scoreRules) {
   const tokenCount = tokenize(question).length;
-  if (tokenCount <= 2) return 0.34;
-  if (tokenCount <= 5) return 0.24;
+  for (const rule of scoreRules) {
+    if (rule.max_tokens === null || tokenCount <= rule.max_tokens) {
+      return rule.score;
+    }
+  }
   return 0.16;
 }

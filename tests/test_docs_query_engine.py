@@ -44,9 +44,11 @@ def test_query_engine_uses_generated_query_examples_and_schema_pack() -> None:
     schema_index = json.loads(SCHEMA_INDEX.read_text(encoding="utf-8"))
 
     assert "schema-index.json" in text
+    assert "formatPrefixBlock" in text
     assert site_data["query_examples"]
     assert site_data["schema_pack"]["path"] == "schema-index.json"
     assert schema_index["examples"]
+    assert schema_index["prefixes"][0]["alias"] == "pkm:"
     assert (
         site_data["query_examples"][0]["source_path"]
         == "queries/super_effective_moves.sparql"
@@ -69,12 +71,14 @@ def test_docs_workers_are_present() -> None:
         encoding="utf-8"
     )
     assert "minimumScore" in retrieval_text
-    assert "tokenCount <= 2" in retrieval_text
+    assert "minimum_scores" in retrieval_text
+    assert "retrievalConfig.top_k" in retrieval_text
 
 
 def test_query_validator_enforces_ast_or_safe_fallback() -> None:
     text = (REPO / "docs" / "js" / "query-validation.js").read_text(encoding="utf-8")
     assert "SPARQLJS_URL" in text
     assert "https://esm.sh/sparqljs@3.7.3" in text
-    assert "SERVICE" in text
+    assert "forbidden_keywords" in text
+    assert "allowed_query_types" in text
     assert "Fell back to structural validation" in text

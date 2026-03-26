@@ -9,6 +9,11 @@ from rdflib import Graph, Namespace, URIRef
 from rdflib.namespace import OWL, RDF, RDFS
 
 from pokemontology._script_loader import repo_path
+from pokemontology.chat import (
+    ALLOWED_READ_ONLY_QUERY_TYPES,
+    FORBIDDEN_SPARQL_KEYWORDS,
+    RETRIEVAL_MINIMUM_SCORES,
+)
 
 REPO = repo_path()
 MODULES_DIR = repo_path("ontology", "modules")
@@ -210,6 +215,20 @@ ASK {
         vectors.append([counts[token] for token in vocabulary])
     return {
         "prefixes": prefixes,
+        "retrieval": {
+            "top_k": 4,
+            "minimum_scores": [
+                {
+                    "max_tokens": max_tokens,
+                    "score": score,
+                }
+                for max_tokens, score in RETRIEVAL_MINIMUM_SCORES
+            ],
+        },
+        "validation": {
+            "allowed_query_types": list(ALLOWED_READ_ONLY_QUERY_TYPES),
+            "forbidden_keywords": list(FORBIDDEN_SPARQL_KEYWORDS),
+        },
         "items": items,
         "examples": examples,
         "vocabulary": vocabulary,

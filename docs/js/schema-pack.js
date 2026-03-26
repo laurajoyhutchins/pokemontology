@@ -6,6 +6,14 @@ export async function loadSchemaPack() {
   return response.json();
 }
 
+export function formatPrefixBlock(schemaPack) {
+  const prefixes = schemaPack?.prefixes || [];
+  if (!prefixes.length) return "";
+  return `${prefixes
+    .map((prefix) => `PREFIX ${prefix.alias.padEnd(5, " ")} <${prefix.iri}>`)
+    .join("\n")}\n\n`;
+}
+
 export function defaultQuestion(schemaPack) {
   return (
     schemaPack?.examples?.[0]?.question ||
