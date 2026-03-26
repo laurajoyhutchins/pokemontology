@@ -21,6 +21,8 @@ pokemontology/
 ├── examples/
 │   ├── fixtures/
 │   │   └── froakie-caterpie-seed.ttl
+│   ├── pokeapi/
+│   │   └── seed-config.json
 │   ├── replays/
 │   │   └── gen9vgc2025regjbo3-2414024536-ey54jc53vyjqy20sq0ww1l5nd3bq5qhpw.json
 │   └── slices/
@@ -29,6 +31,7 @@ pokemontology/
 │   ├── build_ontology.py
 │   ├── check_ttl_parse.py
 │   ├── parse_showdown_replay.py
+│   ├── pokeapi_ingest.py
 │   ├── replay_to_ttl_builder.py
 │   └── summarize_showdown_replay.py
 ├── docs/
@@ -56,6 +59,7 @@ pokemontology/
 - Seed/example fixture extracted from the ontology source
 - Replay JSON used as source corpus
 - Replay-backed TTL slice
+- Sample PokeAPI seed config and an ingestion pipeline for caching raw API data and building TTL
 - Utility scripts for replay parsing, summary, slice building, and TTL syntax checking
 
 ## Suggested workflow
@@ -91,6 +95,42 @@ python scripts/replay_to_ttl_builder.py       examples/replays/gen9vgc2025regjbo
 ```bash
 python3 scripts/check_ttl_parse.py       build/ontology.ttl       build/shapes.ttl       examples/fixtures/froakie-caterpie-seed.ttl       examples/slices/showdown-finals-game1-slice.ttl
 ```
+
+```bash
+python3 scripts/pokeapi_ingest.py ingest \
+      examples/pokeapi/seed-config.json \
+      --raw-dir data/pokeapi/raw \
+      --output build/pokeapi.ttl
+```
+
+```bash
+python3 scripts/check_ttl_parse.py build/pokeapi.ttl
+```
+
+## PokeAPI ingestion pipeline
+
+The repo now includes a two-stage PokeAPI pipeline:
+
+1. `fetch` caches raw JSON under `data/pokeapi/raw/`
+2. `transform` converts cached payloads into ontology-native Turtle
+3. `ingest` runs both steps in sequence
+
+Current mapping scope:
+- `pokemon-species` -> `pkm:Species`
+- `pokemon` -> `pkm:Variant`
+- `move` -> `pkm:Move` plus snapshot `pkm:MovePropertyAssignment`
+- `ability` -> `pkm:Ability`
+- `type` -> `pkm:Type`
+- `stat` -> `pkm:Stat`
+- `version-group` -> `pkm:VersionGroup` plus linked `pkm:Ruleset`
+- Pokémon move learnsets -> `pkm:MoveLearnRecord` per variant/move/version-group
+- Pokémon current types, stats, and abilities -> snapshot assignments in `pkm:Ruleset_PokeAPI_CanonicalSnapshot`
+
+The transform intentionally distinguishes between:
+- version-group-scoped learnability data that PokeAPI exposes directly
+- current canonical mechanics values that PokeAPI exposes without a version-group qualifier
+
+That keeps the generated TTL useful without pretending that all mechanics data is historically version-precise.
 
 ## Notes
 

@@ -18,6 +18,7 @@
     "docs/roadmap.md",
     "docs/shapes.ttl",
     "examples/fixtures/froakie-caterpie-seed.ttl",
+    "examples/pokeapi/seed-config.json",
     "examples/replays/gen9vgc2025regjbo3-2414024536-ey54jc53vyjqy20sq0ww1l5nd3bq5qhpw.json",
     "examples/slices/showdown-finals-game1-slice.ttl",
     "ontology/modules/00-header.ttl",
@@ -35,9 +36,11 @@
     "requirements.txt",
     "scripts/check_ttl_parse.py",
     "scripts/parse_showdown_replay.py",
+    "scripts/pokeapi_ingest.py",
     "scripts/replay_to_ttl_builder.py",
     "scripts/summarize_showdown_replay.py",
     "shapes/modules/shapes.ttl",
-    "tests/README.md"
+    "tests/README.md",
+    "tests/test_pokeapi_ingest.py"
   ]
 }

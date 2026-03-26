@@ -1,0 +1,19 @@
+{
+  "accuracy": 100,
+  "id": 145,
+  "name": "bubble",
+  "names": [
+    {
+      "language": {
+        "name": "en"
+      },
+      "name": "Bubble"
+    }
+  ],
+  "power": 40,
+  "pp": 30,
+  "priority": 0,
+  "type": {
+    "name": "water"
+  }
+}

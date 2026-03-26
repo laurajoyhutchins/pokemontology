@@ -1,0 +1,80 @@
+{
+  "abilities": [
+    {
+      "ability": {
+        "name": "torrent"
+      },
+      "is_hidden": false,
+      "slot": 1
+    }
+  ],
+  "id": 656,
+  "moves": [
+    {
+      "move": {
+        "name": "bubble"
+      },
+      "version_group_details": [
+        {
+          "level_learned_at": 10,
+          "move_learn_method": {
+            "name": "level-up"
+          },
+          "version_group": {
+            "name": "x-y"
+          }
+        }
+      ]
+    }
+  ],
+  "name": "froakie",
+  "species": {
+    "name": "froakie"
+  },
+  "stats": [
+    {
+      "base_stat": 41,
+      "stat": {
+        "name": "hp"
+      }
+    },
+    {
+      "base_stat": 56,
+      "stat": {
+        "name": "attack"
+      }
+    },
+    {
+      "base_stat": 40,
+      "stat": {
+        "name": "defense"
+      }
+    },
+    {
+      "base_stat": 62,
+      "stat": {
+        "name": "special-attack"
+      }
+    },
+    {
+      "base_stat": 44,
+      "stat": {
+        "name": "special-defense"
+      }
+    },
+    {
+      "base_stat": 71,
+      "stat": {
+        "name": "speed"
+      }
+    }
+  ],
+  "types": [
+    {
+      "slot": 1,
+      "type": {
+        "name": "water"
+      }
+    }
+  ]
+}

@@ -8,5 +8,6 @@ dist/
 build/*
 !build/ontology.ttl
 !build/shapes.ttl
+data/pokeapi/raw/
 *.zip
 .DS_Store
