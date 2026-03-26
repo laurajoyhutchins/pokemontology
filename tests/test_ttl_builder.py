@@ -102,6 +102,7 @@ def test_builder_materializes_replay_observed_assignments(replay_graph: Graph) -
     assert any(replay_graph.subjects(RDF.type, PKM.SideConditionAssignment))
     assert any(replay_graph.subjects(RDF.type, PKM.CurrentTransformationAssignment))
     assert any(replay_graph.subjects(RDF.type, PKM.VolatileStatusAssignment))
+    assert any(replay_graph.subjects(RDF.type, PKM.ActiveSlotAssignment))
 
 
 def test_builder_emits_damage_and_healing_events(replay_graph: Graph) -> None:
@@ -260,6 +261,70 @@ def test_builder_distinguishes_declared_and_resolved_targets_under_redirection()
         and (resolution, PKM.hasResolutionOutcome, Literal("resolved")) in graph
         for resolution in resolutions
     )
+
+
+def test_builder_projects_persistent_state_and_applies_teardown_events() -> None:
+    payload = {
+        "id": "synthetic-teardown-projection",
+        "format": "[Gen 9] Custom Game",
+        "players": ["Alice", "Bob"],
+        "log": "\n".join([
+            "|turn|1",
+            "|switch|p1a: Pikachu|Pikachu, L50|100/100",
+            "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
+            "|-weather|SunnyDay",
+            "|-fieldstart|move: Psychic Terrain",
+            "|-sidestart|p1: Alice|move: Tailwind",
+            "|-status|p2a: Bulbasaur|par",
+            "|-singleturn|p1a: Pikachu|Protect",
+            "|turn|2",
+            "|upkeep",
+            "|-curestatus|p2a: Bulbasaur|par",
+            "|-weather|none",
+            "|-fieldend|move: Psychic Terrain",
+            "|-sideend|p1: Alice|move: Tailwind",
+            "|-end|p1a: Pikachu|move: Protect",
+        ]),
+    }
+    graph = build_graph(payload)
+
+    upkeep_instant = next(
+        instant for instant in graph.subjects(RDF.type, PKM.Instantaneous)
+        if (instant, PKM.hasReplayStepLabel, Literal("upkeep-t2-e0")) in graph
+    )
+    cure_instant = next(
+        instant for instant in graph.subjects(RDF.type, PKM.Instantaneous)
+        if (instant, PKM.hasReplayStepLabel, Literal("-curestatus-t2-e1")) in graph
+    )
+    weather_clear_instant = next(
+        instant for instant in graph.subjects(RDF.type, PKM.Instantaneous)
+        if (instant, PKM.hasReplayStepLabel, Literal("-weather-t2-e2")) in graph
+    )
+    field_end_instant = next(
+        instant for instant in graph.subjects(RDF.type, PKM.Instantaneous)
+        if (instant, PKM.hasReplayStepLabel, Literal("-fieldend-t2-e3")) in graph
+    )
+    side_end_instant = next(
+        instant for instant in graph.subjects(RDF.type, PKM.Instantaneous)
+        if (instant, PKM.hasReplayStepLabel, Literal("-sideend-t2-e4")) in graph
+    )
+    volatile_end_instant = next(
+        instant for instant in graph.subjects(RDF.type, PKM.Instantaneous)
+        if (instant, PKM.hasReplayStepLabel, Literal("-end-t2-e5")) in graph
+    )
+
+    assert any((assignment, PKM.hasContext, upkeep_instant) in graph for assignment in graph.subjects(RDF.type, PKM.ActiveSlotAssignment))
+    assert any((assignment, PKM.hasContext, upkeep_instant) in graph for assignment in graph.subjects(RDF.type, PKM.CurrentWeatherAssignment))
+    assert any((assignment, PKM.hasContext, upkeep_instant) in graph for assignment in graph.subjects(RDF.type, PKM.CurrentTerrainAssignment))
+    assert any((assignment, PKM.hasContext, upkeep_instant) in graph for assignment in graph.subjects(RDF.type, PKM.SideConditionAssignment))
+    assert any((assignment, PKM.hasContext, upkeep_instant) in graph for assignment in graph.subjects(RDF.type, PKM.CurrentStatusAssignment))
+    assert any((assignment, PKM.hasContext, upkeep_instant) in graph for assignment in graph.subjects(RDF.type, PKM.VolatileStatusAssignment))
+
+    assert not any((assignment, PKM.hasContext, cure_instant) in graph for assignment in graph.subjects(RDF.type, PKM.CurrentStatusAssignment))
+    assert not any((assignment, PKM.hasContext, weather_clear_instant) in graph for assignment in graph.subjects(RDF.type, PKM.CurrentWeatherAssignment))
+    assert not any((assignment, PKM.hasContext, field_end_instant) in graph for assignment in graph.subjects(RDF.type, PKM.CurrentTerrainAssignment))
+    assert not any((assignment, PKM.hasContext, side_end_instant) in graph for assignment in graph.subjects(RDF.type, PKM.SideConditionAssignment))
+    assert not any((assignment, PKM.hasContext, volatile_end_instant) in graph for assignment in graph.subjects(RDF.type, PKM.VolatileStatusAssignment))
 
 
 def test_builder_emits_multiple_resolution_nodes_for_multi_hit_moves() -> None:

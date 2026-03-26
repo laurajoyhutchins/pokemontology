@@ -74,6 +74,33 @@ def test_synthetic_status_and_target_resolution_graph_conforms_to_shapes() -> No
     assert conforms, f"Synthetic status/target-resolution graph violates SHACL:\n{results_text}"
 
 
+def test_synthetic_teardown_projection_graph_conforms_to_shapes() -> None:
+    payload = {
+        "id": "synthetic-teardown-projection",
+        "format": "[Gen 9] Custom Game",
+        "players": ["Alice", "Bob"],
+        "log": "\n".join([
+            "|turn|1",
+            "|switch|p1a: Pikachu|Pikachu, L50|100/100",
+            "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
+            "|-weather|SunnyDay",
+            "|-fieldstart|move: Psychic Terrain",
+            "|-sidestart|p1: Alice|move: Tailwind",
+            "|-status|p2a: Bulbasaur|par",
+            "|-singleturn|p1a: Pikachu|Protect",
+            "|turn|2",
+            "|upkeep",
+            "|-curestatus|p2a: Bulbasaur|par",
+            "|-weather|none",
+            "|-fieldend|move: Psychic Terrain",
+            "|-sideend|p1: Alice|move: Tailwind",
+            "|-end|p1a: Pikachu|move: Protect",
+        ]),
+    }
+    conforms, results_text = _validate_data_graph(build_graph(payload))
+    assert conforms, f"Synthetic teardown/projection graph violates SHACL:\n{results_text}"
+
+
 def test_iv_assignment_rejects_values_above_31() -> None:
     conforms, results_text = _validate_data_graph(
         _parse_ttl(

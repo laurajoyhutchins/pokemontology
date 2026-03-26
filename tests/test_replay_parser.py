@@ -138,15 +138,21 @@ def test_parse_log_keeps_supported_state_events() -> None:
 |move|p1a: Charizard|Flamethrower|p2a: Mewtwo
 |-damage|p2a: Mewtwo|100/200
 |-status|p2a: Mewtwo|brn
+|-curestatus|p2a: Mewtwo|brn
 |-boost|p1a: Charizard|spa|1
 |-miss|p1a: Charizard|p2a: Mewtwo
 |-fail|p2a: Mewtwo
 |-supereffective|p2a: Mewtwo
 |-activate|p1a: Charizard|ability: Blaze
 |cant|p2a: Mewtwo|par
+|-fieldstart|move: Psychic Terrain
+|-fieldend|move: Psychic Terrain
+|-sidestart|p1: Alice|move: Tailwind
+|-sideend|p1: Alice|move: Tailwind
 |replace|p2a: Zoroark|Zoroark, L50|100/100
 |detailschange|p1a: Charizard|Charizard-Mega-X, L50|150/200
 |-singleturn|p1a: Charizard|Protect
+|-end|p1a: Charizard|move: Protect
 |faint|p2a: Mewtwo
 """
     events = parse_log(log)
@@ -157,15 +163,21 @@ def test_parse_log_keeps_supported_state_events() -> None:
         "move",
         "-damage",
         "-status",
+        "-curestatus",
         "-boost",
         "-miss",
         "-fail",
         "-supereffective",
         "-activate",
         "cant",
+        "-fieldstart",
+        "-fieldend",
+        "-sidestart",
+        "-sideend",
         "replace",
         "detailschange",
         "-singleturn",
+        "-end",
         "faint",
     ]
 
