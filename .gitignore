@@ -12,3 +12,5 @@ data/pokeapi/raw/
 data/replays/
 *.zip
 .DS_Store
+*.egg-info/
+uv.lock
