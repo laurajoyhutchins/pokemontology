@@ -88,11 +88,28 @@ def write_dense_schema_index(
 
 
 def write_eval_suite(path: Path, *, tier: str, item: dict[str, object]) -> None:
+    write_eval_suite_payload(
+        path,
+        tiers=[{"tier": tier, "items": [item]}],
+        adversarial=[],
+    )
+
+
+def write_eval_suite_payload(
+    path: Path,
+    *,
+    tiers: list[dict[str, object]],
+    adversarial: list[dict[str, object]],
+) -> None:
     path.write_text(
         json.dumps(
             {
-                "tiers": [{"tier": tier, "items": [item]}],
-                "adversarial": [],
+                "suite_name": "Test Laurel Suite",
+                "version": "test",
+                "scope": "Test scope",
+                "notes": ["Test suite payload."],
+                "tiers": tiers,
+                "adversarial": adversarial,
             }
         ),
         encoding="utf-8",

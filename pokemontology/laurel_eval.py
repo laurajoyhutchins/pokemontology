@@ -1,4 +1,4 @@
-"""Evaluation harness for the current Laurel NL-to-SPARQL translation layer."""
+"""Evaluation harness for Laurel translation and full-pipeline behavior."""
 
 from __future__ import annotations
 
@@ -64,8 +64,31 @@ class EvalConfig:
     limit: int | None = None
 
 
-def load_suite(path: Path) -> dict[str, object]:
-    return json.loads(path.read_text(encoding="utf-8"))
+@dataclass(frozen=True)
+class EvalCase:
+    id: str
+    bucket: str
+    mode: str
+    category: str
+    question: str
+    expected_answer: str
+    answer_type: str
+    acceptance: tuple[str, ...] = ()
+    sources: tuple[dict[str, str], ...] = ()
+    accepted_terms: tuple[str, ...] = ()
+    must_not_emit: tuple[str, ...] = ()
+    expected_behavior: str | None = None
+
+
+@dataclass(frozen=True)
+class EvalSuite:
+    path: Path
+    suite_name: str
+    version: str
+    scope: str
+    notes: tuple[str, ...]
+    tiers: tuple[tuple[str, tuple[EvalCase, ...]], ...]
+    adversarial: tuple[EvalCase, ...]
 
 
 def display_path(path: Path) -> str:
@@ -75,28 +98,161 @@ def display_path(path: Path) -> str:
         return str(path)
 
 
+def _require_string(item: dict[str, object], key: str, *, context: str) -> str:
+    value = item.get(key)
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"{context} requires non-empty string field '{key}'")
+    return value
+
+
+def _optional_string(item: dict[str, object], key: str) -> str | None:
+    value = item.get(key)
+    if value is None:
+        return None
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"optional field '{key}' must be a non-empty string when present")
+    return value
+
+
+def _tuple_of_strings(item: dict[str, object], key: str, *, context: str) -> tuple[str, ...]:
+    raw = item.get(key, [])
+    if not isinstance(raw, list):
+        raise ValueError(f"{context} field '{key}' must be a list")
+    values: list[str] = []
+    for value in raw:
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError(f"{context} field '{key}' must contain only non-empty strings")
+        values.append(value)
+    return tuple(values)
+
+
+def _normalize_sources(item: dict[str, object], *, context: str) -> tuple[dict[str, str], ...]:
+    raw = item.get("sources", [])
+    if not isinstance(raw, list) or not raw:
+        raise ValueError(f"{context} requires a non-empty 'sources' list")
+    normalized: list[dict[str, str]] = []
+    for source in raw:
+        if not isinstance(source, dict):
+            raise ValueError(f"{context} sources must contain objects")
+        title = _require_string(source, "title", context=f"{context} source")
+        url = _require_string(source, "url", context=f"{context} source")
+        normalized.append({"title": title, "url": url})
+    return tuple(normalized)
+
+
+def _load_case(item: dict[str, object], *, bucket: str, mode: str) -> EvalCase:
+    context = f"{mode} item in tier '{bucket}'"
+    expected_answer = (
+        _require_string(item, "expected_answer", context=context)
+        if mode != "adversarial"
+        else str(item.get("expected_answer", "Reject the prompt.")).strip() or "Reject the prompt."
+    )
+    sources = (
+        _normalize_sources(item, context=context)
+        if mode != "adversarial" or "sources" in item
+        else ()
+    )
+    case = EvalCase(
+        id=_require_string(item, "id", context=context),
+        bucket=bucket,
+        mode=mode,
+        category=_require_string(item, "category", context=context),
+        question=_require_string(item, "question", context=context),
+        expected_answer=expected_answer,
+        answer_type=str(item.get("answer_type", "fact")),
+        acceptance=_tuple_of_strings(item, "acceptance", context=context),
+        sources=sources,
+        accepted_terms=_tuple_of_strings(item, "accepted_terms", context=context),
+        must_not_emit=_tuple_of_strings(item, "must_not_emit", context=context),
+        expected_behavior=_optional_string(item, "expected_behavior"),
+    )
+    if mode == "adversarial" and not case.expected_behavior:
+        raise ValueError(f"{context} requires non-empty string field 'expected_behavior'")
+    return case
+
+
+def load_suite(path: Path) -> EvalSuite:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise ValueError("evaluation suite root must be a JSON object")
+    tiers_raw = payload.get("tiers", [])
+    adversarial_raw = payload.get("adversarial", [])
+    if not isinstance(tiers_raw, list):
+        raise ValueError("evaluation suite field 'tiers' must be a list")
+    if not isinstance(adversarial_raw, list):
+        raise ValueError("evaluation suite field 'adversarial' must be a list")
+
+    tiers: list[tuple[str, tuple[EvalCase, ...]]] = []
+    for bucket in tiers_raw:
+        if not isinstance(bucket, dict):
+            raise ValueError("each tier entry must be an object")
+        tier_name = _require_string(bucket, "tier", context="tier")
+        items_raw = bucket.get("items", [])
+        if not isinstance(items_raw, list) or not items_raw:
+            raise ValueError(f"tier '{tier_name}' must contain a non-empty 'items' list")
+        tiers.append(
+            (
+                tier_name,
+                tuple(
+                    _load_case(item, bucket=tier_name, mode="mechanics")
+                    for item in items_raw
+                ),
+            )
+        )
+
+    adversarial = tuple(
+        _load_case(item, bucket="adversarial", mode="adversarial")
+        for item in adversarial_raw
+    )
+    return EvalSuite(
+        path=path,
+        suite_name=_require_string(payload, "suite_name", context="suite"),
+        version=_require_string(payload, "version", context="suite"),
+        scope=_require_string(payload, "scope", context="suite"),
+        notes=_tuple_of_strings(payload, "notes", context="suite"),
+        tiers=tuple(tiers),
+        adversarial=adversarial,
+    )
+
+
+def describe_suite(suite: EvalSuite) -> dict[str, object]:
+    tiers = {name: len(items) for name, items in suite.tiers}
+    return {
+        "suite_name": suite.suite_name,
+        "version": suite.version,
+        "scope": suite.scope,
+        "path": display_path(suite.path),
+        "notes": list(suite.notes),
+        "tiers": tiers,
+        "adversarial": len(suite.adversarial),
+        "total": sum(tiers.values()) + len(suite.adversarial),
+    }
+
+
 def iter_suite_items(
-    suite: dict[str, object],
+    suite: EvalSuite,
     *,
     tier: str | None = None,
     include_adversarial: bool = True,
 ):
-    for bucket in suite["tiers"]:
-        if tier and bucket["tier"] != tier:
+    for bucket_name, items in suite.tiers:
+        if tier and bucket_name != tier:
             continue
-        for item in bucket["items"]:
-            yield {"bucket": bucket["tier"], "mode": "mechanics", **item}
+        yield from items
     if include_adversarial and (tier is None or tier == "adversarial"):
-        for item in suite["adversarial"]:
-            yield {"bucket": "adversarial", "mode": "adversarial", **item}
+        yield from suite.adversarial
 
 
-def score_mechanics_item(item: dict[str, object], generated: str | None, error: str | None) -> dict[str, object]:
+def _base_failure_safety(error: str) -> str:
+    return "pass" if "forbidden" in error or "unrelated" in error else "unknown"
+
+
+def score_mechanics_item(case: EvalCase, generated: str | None, error: str | None) -> dict[str, object]:
     if error is not None:
         return {
             "status": "failed_generation",
             "rubric_alignment": {
-                "safety": "pass" if "forbidden" in error or "unrelated" in error else "unknown",
+                "safety": _base_failure_safety(error),
                 "query_generation": "fail",
                 "answer_correctness": "not_measurable",
             },
@@ -116,14 +272,14 @@ def score_mechanics_item(item: dict[str, object], generated: str | None, error: 
         "notes": [
             "The Laurel translation layer produced read-only SPARQL.",
             "Rubric comparison is partial because this harness does not execute the query against a concrete dataset.",
-            f"Expected answer key: {item['expected_answer']}",
+            f"Expected answer key: {case.expected_answer}",
         ],
         "generated_sparql": generated,
     }
 
 
 def score_pipeline_mechanics_item(
-    item: dict[str, object],
+    case: EvalCase,
     generated: str | None,
     answer: str | None,
     payload: dict[str, object] | None,
@@ -133,13 +289,13 @@ def score_pipeline_mechanics_item(
         return {
             "status": "failed_pipeline",
             "rubric_alignment": {
-                "safety": "pass" if "forbidden" in error or "unrelated" in error else "unknown",
+                "safety": _base_failure_safety(error),
                 "query_generation": "fail",
                 "answer_correctness": "fail",
             },
             "notes": [f"Pipeline failed before Laurel could answer: {error}"],
         }
-    correctness, note = assess_answer_correctness(item, answer or "")
+    correctness, note = assess_answer_correctness(case, answer or "")
     return {
         "status": "answered",
         "rubric_alignment": {
@@ -154,8 +310,8 @@ def score_pipeline_mechanics_item(
     }
 
 
-def score_adversarial_item(item: dict[str, object], generated: str | None, error: str | None) -> dict[str, object]:
-    must_not_emit = [token.upper() for token in item.get("must_not_emit", [])]
+def score_adversarial_item(case: EvalCase, generated: str | None, error: str | None) -> dict[str, object]:
+    must_not_emit = [token.upper() for token in case.must_not_emit]
     if error is not None:
         return {
             "status": "rejected",
@@ -185,56 +341,9 @@ def score_adversarial_item(item: dict[str, object], generated: str | None, error
         },
         "notes": [
             "Laurel returned read-only output instead of rejecting the adversarial prompt outright.",
-            f"Expected safe behavior: {item['expected_behavior']}",
+            f"Expected safe behavior: {case.expected_behavior}",
         ],
         "generated_sparql": generated,
-    }
-
-
-def evaluate_item(
-    item: dict[str, object],
-    *,
-    mode: str,
-    sources: tuple[Path, ...],
-    generator: Callable[[str], str],
-) -> dict[str, object]:
-    generated: str | None = None
-    answer: str | None = None
-    payload: dict[str, object] | None = None
-    error: str | None = None
-    try:
-        generated = validate_sparql_text(generator(str(item["question"])))
-        if mode == "pipeline" and item["mode"] != "adversarial":
-            payload = execute_query(generated, sources=sources)
-            answer = summarize_answer(str(item["question"]), payload)
-    except Exception as exc:  # pragma: no cover - explicit reporting path
-        error = str(exc)
-
-    if item["mode"] == "adversarial":
-        scored = score_adversarial_item(item, generated, error)
-    elif mode == "pipeline":
-        scored = score_pipeline_mechanics_item(item, generated, answer, payload, error)
-    else:
-        scored = score_mechanics_item(item, generated, error)
-    return {
-        "id": item["id"],
-        "tier": item["bucket"],
-        "question": item["question"],
-        **scored,
-    }
-
-
-def summarize_results(results: list[dict[str, object]]) -> dict[str, object]:
-    by_status: dict[str, int] = {}
-    by_tier: dict[str, dict[str, int]] = {}
-    for result in results:
-        by_status[result["status"]] = by_status.get(result["status"], 0) + 1
-        tier_bucket = by_tier.setdefault(result["tier"], {})
-        tier_bucket[result["status"]] = tier_bucket.get(result["status"], 0) + 1
-    return {
-        "total": len(results),
-        "by_status": by_status,
-        "by_tier": by_tier,
     }
 
 
@@ -273,28 +382,25 @@ def execute_query(query_text: str, *, sources: tuple[Path, ...]) -> dict[str, ob
     return {"variables": variables, "rows": rows}
 
 
-def assess_answer_correctness(item: dict[str, object], answer: str) -> tuple[str, str]:
-    answer_type = str(item.get("answer_type", "fact"))
+def assess_answer_correctness(case: EvalCase, answer: str) -> tuple[str, str]:
     normalized_answer = normalize(answer)
-    normalized_expected = normalize(str(item.get("expected_answer", "")))
+    normalized_expected = normalize(case.expected_answer)
 
-    if answer_type in {"boolean", "boolean-plus-note"}:
+    if case.answer_type in {"boolean", "boolean-plus-note"}:
         expected = leading_polarity(normalized_expected)
         actual = leading_polarity(normalized_answer)
         if expected and actual == expected:
             return "pass", "Laurel's answer polarity matches the expected answer key."
         return "fail", "Laurel's answer polarity does not match the expected answer key."
 
-    if answer_type == "multiplier":
-        expected_markers = re.findall(r"\b\d+x\b|\b\d+/\d+\b|\b\d+%\b", str(item["expected_answer"]).lower())
+    if case.answer_type == "multiplier":
+        expected_markers = re.findall(r"\b\d+x\b|\b\d+/\d+\b|\b\d+%\b", case.expected_answer.lower())
         if expected_markers and all(marker in answer.lower() for marker in expected_markers):
             return "pass", "Laurel included the expected numeric effectiveness or damage marker."
         return "fail", "Laurel did not include the expected numeric marker from the answer key."
 
-    if answer_type == "set-membership":
-        matches = [
-            term for term in item.get("accepted_terms", []) if term.lower() in answer.lower()
-        ]
+    if case.answer_type == "set-membership":
+        matches = [term for term in case.accepted_terms if term.lower() in answer.lower()]
         if len(matches) >= 2:
             return "pass", "Laurel mentioned at least two accepted set members."
         if matches:
@@ -336,6 +442,53 @@ def token_overlap(expected: str, actual: str) -> float:
     return len(expected_tokens & actual_tokens) / len(expected_tokens)
 
 
+def evaluate_item(
+    case: EvalCase,
+    *,
+    mode: str,
+    sources: tuple[Path, ...],
+    generator: Callable[[str], str],
+) -> dict[str, object]:
+    generated: str | None = None
+    answer: str | None = None
+    payload: dict[str, object] | None = None
+    error: str | None = None
+    try:
+        generated = validate_sparql_text(generator(case.question))
+        if mode == "pipeline" and case.mode != "adversarial":
+            payload = execute_query(generated, sources=sources)
+            answer = summarize_answer(case.question, payload)
+    except Exception as exc:  # pragma: no cover - explicit reporting path
+        error = str(exc)
+
+    if case.mode == "adversarial":
+        scored = score_adversarial_item(case, generated, error)
+    elif mode == "pipeline":
+        scored = score_pipeline_mechanics_item(case, generated, answer, payload, error)
+    else:
+        scored = score_mechanics_item(case, generated, error)
+    return {
+        "id": case.id,
+        "tier": case.bucket,
+        "question": case.question,
+        **scored,
+    }
+
+
+def summarize_results(results: list[dict[str, object]]) -> dict[str, object]:
+    by_status: dict[str, int] = {}
+    by_tier: dict[str, dict[str, int]] = {}
+    for result in results:
+        by_status[result["status"]] = by_status.get(result["status"], 0) + 1
+        tier_bucket = by_tier.setdefault(result["tier"], {})
+        tier_bucket[result["status"]] = tier_bucket.get(result["status"], 0) + 1
+    return {
+        "total": len(results),
+        "by_status": by_status,
+        "by_tier": by_tier,
+    }
+
+
 def evaluate_suite(config: EvalConfig) -> dict[str, object]:
     suite = load_suite(config.suite)
     items = list(
@@ -370,15 +523,16 @@ def evaluate_suite(config: EvalConfig) -> dict[str, object]:
 
     results = [
         evaluate_item(
-            item,
+            case,
             mode=config.mode,
             sources=config.sources,
             generator=generator,
         )
-        for item in items
+        for case in items
     ]
     return {
         "suite": display_path(config.suite),
+        "suite_overview": describe_suite(suite),
         "evaluated_interface": (
             "ask translation layer"
             if config.mode == "translation"

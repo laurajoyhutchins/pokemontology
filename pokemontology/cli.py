@@ -18,7 +18,7 @@ from .chat import (
     retrieve_matches,
 )
 from .ingest_common import serialize_turtle_to_path
-from .laurel_eval import DEFAULT_SUITE, EvalConfig, evaluate_suite
+from .laurel_eval import DEFAULT_SUITE, EvalConfig, describe_suite, evaluate_suite, load_suite
 from .laurel import summarize_results
 from .turn_order import resolve_action_order
 
@@ -324,6 +324,15 @@ def cmd_laurel(args: argparse.Namespace) -> int:
 
 def cmd_evaluate_laurel(args: argparse.Namespace) -> int:
     try:
+        suite = load_suite(args.suite)
+        if args.list_tiers or args.validate_suite:
+            payload = {
+                "suite": str(args.suite),
+                "suite_overview": describe_suite(suite),
+                "valid": True,
+            }
+            _print_json(payload, pretty=True)
+            return 0
         payload = evaluate_suite(
             EvalConfig(
                 suite=args.suite,
@@ -725,6 +734,16 @@ def build_parser() -> argparse.ArgumentParser:
         "--tier",
         default=None,
         help="Optional tier to evaluate, such as easy, medium, hard, generation-specific, or adversarial.",
+    )
+    eval_parser.add_argument(
+        "--list-tiers",
+        action="store_true",
+        help="Print suite metadata and tier counts without running the model.",
+    )
+    eval_parser.add_argument(
+        "--validate-suite",
+        action="store_true",
+        help="Validate the suite structure and print a summary without running the model.",
     )
     eval_parser.add_argument(
         "--limit",
