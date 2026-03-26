@@ -165,6 +165,108 @@ def test_synthetic_item_and_ability_observation_graph_conforms_to_shapes() -> No
     assert conforms, f"Synthetic item/ability observation graph violates SHACL:\n{results_text}"
 
 
+def test_synthetic_volatile_start_graph_conforms_to_shapes() -> None:
+    payload = {
+        "id": "synthetic-volatile-start",
+        "format": "[Gen 9] Custom Game",
+        "players": ["Alice", "Bob"],
+        "log": "\n".join([
+            "|turn|1",
+            "|switch|p1a: Pikachu|Pikachu, L50|100/100",
+            "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
+            "|move|p1a: Pikachu|Confuse Ray|p2a: Bulbasaur",
+            "|-start|p2a: Bulbasaur|confusion",
+            "|move|p2a: Bulbasaur|Destiny Bond|p2a: Bulbasaur",
+            "|-singlemove|p2a: Bulbasaur|move: Destiny Bond",
+            "|turn|2",
+            "|upkeep",
+            "|-end|p2a: Bulbasaur|confusion",
+        ]),
+    }
+    conforms, results_text = _validate_data_graph(build_graph(payload))
+    assert conforms, f"Synthetic volatile -start graph violates SHACL:\n{results_text}"
+
+
+def test_synthetic_forme_change_graph_conforms_to_shapes() -> None:
+    payload = {
+        "id": "synthetic-formechange",
+        "format": "[Gen 6] Custom Game",
+        "players": ["Alice", "Bob"],
+        "log": "\n".join([
+            "|turn|1",
+            "|switch|p1a: Charizard|Charizard, L50|100/100",
+            "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
+            "|move|p1a: Charizard|Ember|p2a: Bulbasaur",
+            "|-mega|p1a: Charizard|Charizard-Mega-Y|Charizardite Y",
+            "|-formechange|p1a: Charizard|Charizard-Mega-Y, L50|100/100",
+        ]),
+    }
+    conforms, results_text = _validate_data_graph(build_graph(payload))
+    assert conforms, f"Synthetic forme change graph violates SHACL:\n{results_text}"
+
+
+def test_synthetic_boost_operations_graph_conforms_to_shapes() -> None:
+    payload = {
+        "id": "synthetic-boost-ops",
+        "format": "[Gen 9] Custom Game",
+        "players": ["Alice", "Bob"],
+        "log": "\n".join([
+            "|turn|1",
+            "|switch|p1a: Pikachu|Pikachu, L50|100/100",
+            "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
+            "|move|p1a: Pikachu|Belly Drum|p1a: Pikachu",
+            "|-setboost|p1a: Pikachu|atk|6",
+            "|move|p2a: Bulbasaur|Topsy-Turvy|p1a: Pikachu",
+            "|-invertboost|p1a: Pikachu",
+            "|turn|2",
+            "|upkeep",
+            "|move|p1a: Pikachu|Guard Swap|p2a: Bulbasaur",
+            "|-swapboost|p1a: Pikachu|p2a: Bulbasaur|def,spd",
+            "|move|p2a: Bulbasaur|Haze|p1a: Pikachu",
+            "|-clearpositiveboost|p1a: Pikachu|p2a: Bulbasaur|[from] move: Haze",
+        ]),
+    }
+    conforms, results_text = _validate_data_graph(build_graph(payload))
+    assert conforms, f"Synthetic boost-ops graph violates SHACL:\n{results_text}"
+
+
+def test_synthetic_battle_outcome_graph_conforms_to_shapes() -> None:
+    payload = {
+        "id": "synthetic-battle-outcome",
+        "format": "[Gen 9] Custom Game",
+        "players": ["Alice", "Bob"],
+        "log": "\n".join([
+            "|turn|1",
+            "|switch|p1a: Pikachu|Pikachu, L50|100/100",
+            "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
+            "|move|p1a: Pikachu|Thunderbolt|p2a: Bulbasaur",
+            "|-damage|p2a: Bulbasaur|0 fnt",
+            "|faint|p2a: Bulbasaur",
+            "|win|Alice",
+        ]),
+    }
+    conforms, results_text = _validate_data_graph(build_graph(payload))
+    assert conforms, f"Synthetic battle outcome graph violates SHACL:\n{results_text}"
+
+
+def test_synthetic_cureteam_graph_conforms_to_shapes() -> None:
+    payload = {
+        "id": "synthetic-cureteam",
+        "format": "[Gen 9] Custom Game",
+        "players": ["Alice", "Bob"],
+        "log": "\n".join([
+            "|turn|1",
+            "|switch|p1a: Blissey|Blissey, L50|100/100",
+            "|switch|p2a: Venusaur|Venusaur, L50|100/100",
+            "|-status|p1a: Blissey|brn",
+            "|move|p1a: Blissey|Aromatherapy|p1a: Blissey",
+            "|-cureteam|p1a: Blissey",
+        ]),
+    }
+    conforms, results_text = _validate_data_graph(build_graph(payload))
+    assert conforms, f"Synthetic cureteam graph violates SHACL:\n{results_text}"
+
+
 def test_iv_assignment_rejects_values_above_31() -> None:
     conforms, results_text = _validate_data_graph(
         _parse_ttl(

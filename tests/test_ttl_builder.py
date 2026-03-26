@@ -522,3 +522,164 @@ def test_builder_clears_item_and_ability_on_end_events() -> None:
     assert not any(
         graph.value(a, PKM.hasContext) == last_instant for a in ability_assignments
     ), "CurrentAbilityAssignment should not persist after -endability"
+
+
+def test_builder_tracks_volatile_start_and_clears_on_end() -> None:
+    payload = {
+        "id": "volatile-start-test",
+        "format": "[Gen 9] Custom Game",
+        "players": ["Alice", "Bob"],
+        "log": "\n".join([
+            "|turn|1",
+            "|switch|p1a: Pikachu|Pikachu, L50|100/100",
+            "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
+            "|move|p1a: Pikachu|Confuse Ray|p2a: Bulbasaur",
+            "|-start|p2a: Bulbasaur|confusion",
+            "|turn|2",
+            "|upkeep",
+            "|-end|p2a: Bulbasaur|confusion",
+        ]),
+    }
+    graph = build_graph(payload)
+
+    # After -start, VolatileStatusAssignment should be present before the -end
+    start_instant = next(
+        i for i in graph.subjects(RDF.type, PKM.Instantaneous)
+        if (i, PKM.hasReplayStepLabel, Literal("-start-t1-e3")) in graph
+    )
+    end_instant = next(
+        i for i in graph.subjects(RDF.type, PKM.Instantaneous)
+        if (i, PKM.hasReplayStepLabel, Literal("-end-t2-e1")) in graph
+    )
+
+    volatile_assignments = list(graph.subjects(RDF.type, PKM.VolatileStatusAssignment))
+    assert any(
+        (a, PKM.hasContext, start_instant) in graph for a in volatile_assignments
+    ), "VolatileStatusAssignment should be present after -start"
+    assert not any(
+        (a, PKM.hasContext, end_instant) in graph for a in volatile_assignments
+    ), "VolatileStatusAssignment should be removed after -end"
+
+
+def test_builder_handles_setboost_and_invertboost() -> None:
+    payload = {
+        "id": "setboost-invertboost-test",
+        "format": "[Gen 9] Custom Game",
+        "players": ["Alice", "Bob"],
+        "log": "\n".join([
+            "|turn|1",
+            "|switch|p1a: Pikachu|Pikachu, L50|100/100",
+            "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
+            "|move|p1a: Pikachu|Belly Drum|p1a: Pikachu",
+            "|-setboost|p1a: Pikachu|atk|6",
+            "|move|p2a: Bulbasaur|Topsy-Turvy|p1a: Pikachu",
+            "|-invertboost|p1a: Pikachu",
+        ]),
+    }
+    graph = build_graph(payload)
+
+    setboost_instant = next(
+        i for i in graph.subjects(RDF.type, PKM.Instantaneous)
+        if (i, PKM.hasReplayStepLabel, Literal("-setboost-t1-e3")) in graph
+    )
+    invert_instant = next(
+        i for i in graph.subjects(RDF.type, PKM.Instantaneous)
+        if (i, PKM.hasReplayStepLabel, Literal("-invertboost-t1-e5")) in graph
+    )
+
+    # After setboost, Attack should be +6
+    assert any(
+        (a, PKM.hasContext, setboost_instant) in graph
+        and (a, PKM.aboutCombatant, PKM.Combatant_Alice_Pikachu) in graph
+        and (a, PKM.aboutStat, PKM.Stat_Attack) in graph
+        and (a, PKM.hasStageValue, Literal(6)) in graph
+        for a in graph.subjects(RDF.type, PKM.StatStageAssignment)
+    ), "Expected +6 Attack after setboost"
+
+    # After invertboost, Attack should be -6
+    assert any(
+        (a, PKM.hasContext, invert_instant) in graph
+        and (a, PKM.aboutCombatant, PKM.Combatant_Alice_Pikachu) in graph
+        and (a, PKM.aboutStat, PKM.Stat_Attack) in graph
+        and (a, PKM.hasStageValue, Literal(-6)) in graph
+        for a in graph.subjects(RDF.type, PKM.StatStageAssignment)
+    ), "Expected -6 Attack after invertboost"
+
+
+def test_builder_records_battle_outcome_on_win() -> None:
+    payload = {
+        "id": "win-test",
+        "format": "[Gen 9] Custom Game",
+        "players": ["Alice", "Bob"],
+        "log": "\n".join([
+            "|turn|1",
+            "|switch|p1a: Pikachu|Pikachu, L50|100/100",
+            "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
+            "|move|p1a: Pikachu|Thunderbolt|p2a: Bulbasaur",
+            "|-damage|p2a: Bulbasaur|0 fnt",
+            "|faint|p2a: Bulbasaur",
+            "|win|Alice",
+        ]),
+    }
+    graph = build_graph(payload)
+
+    battle = next(graph.subjects(RDF.type, PKM.Battle))
+    outcome = graph.value(battle, PKM.hasBattleOutcome)
+    assert outcome is not None, "Battle should have hasBattleOutcome after |win|"
+    assert str(outcome) == "Alice"
+
+
+def test_builder_records_battle_outcome_on_tie() -> None:
+    payload = {
+        "id": "tie-test",
+        "format": "[Gen 9] Custom Game",
+        "players": ["Alice", "Bob"],
+        "log": "\n".join([
+            "|turn|1",
+            "|switch|p1a: Pikachu|Pikachu, L50|100/100",
+            "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
+            "|tie|",
+        ]),
+    }
+    graph = build_graph(payload)
+
+    battle = next(graph.subjects(RDF.type, PKM.Battle))
+    outcome = graph.value(battle, PKM.hasBattleOutcome)
+    assert outcome is not None, "Battle should have hasBattleOutcome after |tie|"
+    assert str(outcome) == "tie"
+
+
+def test_builder_handles_cureteam() -> None:
+    # Blissey (p1) uses Aromatherapy, curing its own side's status conditions.
+    payload = {
+        "id": "cureteam-test",
+        "format": "[Gen 9] Custom Game",
+        "players": ["Alice", "Bob"],
+        "log": "\n".join([
+            "|turn|1",
+            "|switch|p1a: Blissey|Blissey, L50|100/100",
+            "|switch|p2a: Venusaur|Venusaur, L50|100/100",
+            "|-status|p1a: Blissey|brn",
+            "|move|p1a: Blissey|Aromatherapy|p1a: Blissey",
+            "|-cureteam|p1a: Blissey",
+        ]),
+    }
+    graph = build_graph(payload)
+
+    # Status should be present after -status event
+    status_instant = next(
+        i for i in graph.subjects(RDF.type, PKM.Instantaneous)
+        if (i, PKM.hasReplayStepLabel, Literal("-status-t1-e2")) in graph
+    )
+    cure_instant = next(
+        i for i in graph.subjects(RDF.type, PKM.Instantaneous)
+        if (i, PKM.hasReplayStepLabel, Literal("-cureteam-t1-e4")) in graph
+    )
+
+    status_assignments = list(graph.subjects(RDF.type, PKM.CurrentStatusAssignment))
+    assert any(
+        (a, PKM.hasContext, status_instant) in graph for a in status_assignments
+    ), "Status should be present after -status"
+    assert not any(
+        (a, PKM.hasContext, cure_instant) in graph for a in status_assignments
+    ), "Status should be cleared after -cureteam on the user's side"

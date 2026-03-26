@@ -51,17 +51,73 @@ STAT_TOKEN_TO_NAME = {
 }
 SIDE_CONDITION_TOKEN_TO_NAME = {
     "move: Tailwind": "Tailwind",
+    "move: Reflect": "Reflect",
+    "move: Light Screen": "Light Screen",
+    "move: Aurora Veil": "Aurora Veil",
+    "move: Safeguard": "Safeguard",
+    "move: Mist": "Mist",
+    "move: Lucky Chant": "Lucky Chant",
+    "Spikes": "Spikes",
+    "Toxic Spikes": "Toxic Spikes",
+    "Stealth Rock": "Stealth Rock",
+    "move: Stealth Rock": "Stealth Rock",
+    "Sticky Web": "Sticky Web",
+    "move: Sticky Web": "Sticky Web",
 }
 TERRAIN_TOKEN_TO_NAME = {
     "move: Psychic Terrain": "Psychic Terrain",
+    "move: Electric Terrain": "Electric Terrain",
+    "move: Misty Terrain": "Misty Terrain",
     "move: Grassy Terrain": "Grassy Terrain",
 }
 WEATHER_TOKEN_TO_NAME = {
     "SunnyDay": "Harsh Sunlight",
+    "RainDance": "Rain",
+    "Sandstorm": "Sandstorm",
+    "Hail": "Hail",
+    "Snow": "Snow",
+    "PrimordialSea": "Primordial Sea",
+    "DesolateLand": "Desolate Land",
+    "DeltaStream": "Delta Stream",
 }
 VOLATILE_TOKEN_TO_NAME = {
     "Protect": "Protecting",
     "move: Protect": "Protecting",
+    "move: Detect": "Protecting",
+    "move: King's Shield": "King's Shield",
+    "move: Spiky Shield": "Spiky Shield",
+    "move: Baneful Bunker": "Baneful Bunker",
+    "move: Obstruct": "Obstruct",
+    "move: Silk Trap": "Silk Trap",
+    "confusion": "Confusion",
+    "move: Confusion": "Confusion",
+    "move: Leech Seed": "Leech Seed",
+    "Substitute": "Substitute",
+    "move: Substitute": "Substitute",
+    "move: Taunt": "Taunt",
+    "move: Encore": "Encore",
+    "move: Disable": "Disable",
+    "move: Torment": "Torment",
+    "move: Embargo": "Embargo",
+    "move: Heal Block": "Heal Block",
+    "move: Yawn": "Yawn",
+    "move: Ingrain": "Ingrain",
+    "move: Aqua Ring": "Aqua Ring",
+    "move: Magnet Rise": "Magnet Rise",
+    "move: Destiny Bond": "Destiny Bond",
+    "move: Grudge": "Grudge",
+    "move: Snatch": "Snatch",
+    "move: Telekinesis": "Telekinesis",
+    "move: Octolock": "Octolock",
+    "move: No Retreat": "No Retreat",
+    "move: Tar Shot": "Tar Shot",
+    "move: Syrup Bomb": "Syrup Bomb",
+    "move: Curse": "Curse",
+    "move: Power Trick": "Power Trick",
+    "move: Bide": "Bide",
+    "Truant": "Truant",
+    "Salt Cure": "Salt Cure",
+    "move: Salt Cure": "Salt Cure",
 }
 STATUS_TOKEN_TO_NAME = {
     "brn": "Burn",
@@ -1045,6 +1101,280 @@ def build_graph(payload: dict) -> Graph:
             combatant_iri = maybe_combatant_from_token(ev.fields[0], active_combatants_by_slot, p1_name, p2_name)
             if combatant_iri is not None:
                 state.current_ability.pop(combatant_iri, None)
+
+        elif ev.kind == "-start":
+            # Volatile condition begins (Confusion, Leech Seed, Substitute, Taunt, etc.)
+            combatant_iri = maybe_combatant_from_token(ev.fields[0], active_combatants_by_slot, p1_name, p2_name)
+            volatile_iri = maybe_volatile_iri(g, ev.fields[1]) if len(ev.fields) > 1 else None
+            if combatant_iri is not None and volatile_iri is not None:
+                event_iri = PKM[
+                    f"VolatileEvent_T{ev.turn}_{ev.order}_{sanitize_identifier(actor_display_name(ev.fields[0]))}_{str(volatile_iri).rsplit('#', 1)[-1]}"
+                ]
+                g.add((event_iri, RDF.type, PKM.Event))
+                g.add((event_iri, PKM.occursInInstantaneous, instant))
+                g.add((event_iri, PKM.supportedByArtifact, artifact_iri))
+                g.add((event_iri, PKM.hasReplayTurnIndex, Literal(ev.turn, datatype=XSD.integer)))
+                g.add((event_iri, PKM.hasReplayEventOrder, Literal(ev.order, datatype=XSD.integer)))
+                g.add((event_iri, PKM.hasReplayStepLabel, Literal(f"volatile-start-t{ev.turn}-e{ev.order}")))
+                state.current_volatile_conditions.add((combatant_iri, volatile_iri))
+                event_sources["volatile"][(combatant_iri, volatile_iri)] = event_iri
+
+        elif ev.kind == "-singlemove":
+            # Single-move volatile effect (Destiny Bond, Grudge, Snatch)
+            combatant_iri = maybe_combatant_from_token(ev.fields[0], active_combatants_by_slot, p1_name, p2_name)
+            volatile_iri = maybe_volatile_iri(g, ev.fields[1]) if len(ev.fields) > 1 else None
+            if combatant_iri is not None and volatile_iri is not None:
+                event_iri = PKM[
+                    f"VolatileEvent_T{ev.turn}_{ev.order}_{sanitize_identifier(actor_display_name(ev.fields[0]))}_{str(volatile_iri).rsplit('#', 1)[-1]}"
+                ]
+                g.add((event_iri, RDF.type, PKM.Event))
+                g.add((event_iri, PKM.occursInInstantaneous, instant))
+                g.add((event_iri, PKM.supportedByArtifact, artifact_iri))
+                g.add((event_iri, PKM.hasReplayTurnIndex, Literal(ev.turn, datatype=XSD.integer)))
+                g.add((event_iri, PKM.hasReplayEventOrder, Literal(ev.order, datatype=XSD.integer)))
+                g.add((event_iri, PKM.hasReplayStepLabel, Literal(f"singlemove-t{ev.turn}-e{ev.order}")))
+                state.current_volatile_conditions.add((combatant_iri, volatile_iri))
+                event_sources["volatile"][(combatant_iri, volatile_iri)] = event_iri
+
+        elif ev.kind in {"-formechange", "-mega", "-primal", "-burst"}:
+            # Temporary forme change / mega evolution / ultra burst
+            try:
+                combatant_iri = active_combatants_by_slot.get(
+                    slot_key(ev.fields[0]),
+                    combatant_iri_for_token(ev.fields[0], p1_name, p2_name),
+                )
+            except (ValueError, IndexError):
+                combatant_iri = None
+            if combatant_iri is not None:
+                if ev.kind == "-formechange" and ev.fields:
+                    forme_name = ev.fields[1].strip().split(",")[0] if len(ev.fields) > 1 else "Unknown"
+                    transformation_name = f"Forme: {forme_name}"
+                elif ev.kind == "-mega" and len(ev.fields) > 1:
+                    transformation_name = f"Mega: {ev.fields[1].strip()}"
+                elif ev.kind == "-primal":
+                    transformation_name = f"Primal: {actor_display_name(ev.fields[0])}"
+                elif ev.kind == "-burst" and len(ev.fields) > 1:
+                    transformation_name = f"Ultra Burst: {ev.fields[1].strip()}"
+                else:
+                    transformation_name = f"{ev.kind[1:].title()}: {actor_display_name(ev.fields[0])}"
+                transformation_iri = PKM[f"Transformation_{sanitize_identifier(transformation_name)}"]
+                ensure_named_entity(g, transformation_iri, PKM.TransformationState, transformation_name)
+                event_iri = PKM[
+                    f"FormChangeEvent_T{ev.turn}_{ev.order}_{sanitize_identifier(actor_display_name(ev.fields[0]))}"
+                ]
+                g.add((event_iri, RDF.type, PKM.Event))
+                g.add((event_iri, PKM.occursInInstantaneous, instant))
+                g.add((event_iri, PKM.supportedByArtifact, artifact_iri))
+                g.add((event_iri, PKM.hasReplayTurnIndex, Literal(ev.turn, datatype=XSD.integer)))
+                g.add((event_iri, PKM.hasReplayEventOrder, Literal(ev.order, datatype=XSD.integer)))
+                g.add((event_iri, PKM.hasReplayStepLabel, Literal(f"{ev.kind[1:]}-t{ev.turn}-e{ev.order}")))
+                state.current_transformations[combatant_iri] = transformation_iri
+                event_sources["transformation"][combatant_iri] = event_iri
+
+        elif ev.kind == "-setboost":
+            # Direct stat stage set (e.g. Belly Drum sets Attack to +6)
+            combatant_iri = active_combatants_by_slot.get(
+                slot_key(ev.fields[0]),
+                combatant_iri_for_token(ev.fields[0], p1_name, p2_name),
+            )
+            stat_token = ev.fields[1].strip()
+            target_stage = max(-6, min(6, int(ev.fields[2])))
+            stat_iri = stat_iri_for_token(stat_token)
+            ensure_named_entity(g, stat_iri, PKM.Stat, STAT_TOKEN_TO_NAME.get(stat_token, stat_token))
+            current_stage = state.current_stat_stages.get((combatant_iri, stat_iri), 0)
+            delta = target_stage - current_stage
+            event_iri = PKM[
+                f"StageChange_T{ev.turn}_{ev.order}_{sanitize_identifier(actor_display_name(ev.fields[0]))}_{sanitize_identifier(stat_token)}_set"
+            ]
+            g.add((event_iri, RDF.type, PKM.StatStageChangeEvent))
+            g.add((event_iri, PKM.affectsCombatant, combatant_iri))
+            g.add((event_iri, PKM.aboutStat, stat_iri))
+            g.add((event_iri, PKM.hasStageDelta, Literal(delta, datatype=XSD.integer)))
+            g.add((event_iri, PKM.occursInInstantaneous, instant))
+            g.add((event_iri, PKM.supportedByArtifact, artifact_iri))
+            g.add((event_iri, PKM.hasReplayTurnIndex, Literal(ev.turn, datatype=XSD.integer)))
+            g.add((event_iri, PKM.hasReplayEventOrder, Literal(ev.order, datatype=XSD.integer)))
+            g.add((event_iri, PKM.hasReplayStepLabel, Literal(f"stage-set-t{ev.turn}-e{ev.order}")))
+            state.current_stat_stages[(combatant_iri, stat_iri)] = target_stage
+            event_sources["stage"][(combatant_iri, stat_iri)] = event_iri
+
+        elif ev.kind == "-swapboost":
+            # Swap stat stages between two combatants (Guard Swap, Power Swap, Heart Swap)
+            source_iri = active_combatants_by_slot.get(
+                slot_key(ev.fields[0]),
+                combatant_iri_for_token(ev.fields[0], p1_name, p2_name),
+            )
+            target_iri = maybe_combatant_from_token(ev.fields[1], active_combatants_by_slot, p1_name, p2_name) if len(ev.fields) > 1 else None
+            if target_iri is not None:
+                stats_token = ev.fields[2].strip() if len(ev.fields) > 2 else None
+                stats_to_swap = [s.strip() for s in stats_token.split(",")] if stats_token else list(STAT_TOKEN_TO_NAME.keys())
+                for stat_token in stats_to_swap:
+                    if stat_token not in STAT_TOKEN_TO_NAME:
+                        continue
+                    stat_iri = stat_iri_for_token(stat_token)
+                    ensure_named_entity(g, stat_iri, PKM.Stat, STAT_TOKEN_TO_NAME[stat_token])
+                    s_stage = state.current_stat_stages.get((source_iri, stat_iri), 0)
+                    t_stage = state.current_stat_stages.get((target_iri, stat_iri), 0)
+                    if s_stage == t_stage:
+                        continue
+                    # Source gets target's old stage
+                    if t_stage != 0:
+                        state.current_stat_stages[(source_iri, stat_iri)] = t_stage
+                    elif (source_iri, stat_iri) in state.current_stat_stages:
+                        del state.current_stat_stages[(source_iri, stat_iri)]
+                    # Target gets source's old stage
+                    if s_stage != 0:
+                        state.current_stat_stages[(target_iri, stat_iri)] = s_stage
+                    elif (target_iri, stat_iri) in state.current_stat_stages:
+                        del state.current_stat_stages[(target_iri, stat_iri)]
+                    # Emit one event per stat per affected combatant
+                    for (affected_iri, stage_delta) in [(source_iri, t_stage - s_stage), (target_iri, s_stage - t_stage)]:
+                        ev_iri = PKM[
+                            f"StageChange_T{ev.turn}_{ev.order}_{str(affected_iri).rsplit('#', 1)[-1]}_{sanitize_identifier(stat_token)}_swap"
+                        ]
+                        g.add((ev_iri, RDF.type, PKM.StatStageChangeEvent))
+                        g.add((ev_iri, PKM.affectsCombatant, affected_iri))
+                        g.add((ev_iri, PKM.aboutStat, stat_iri))
+                        g.add((ev_iri, PKM.hasStageDelta, Literal(stage_delta, datatype=XSD.integer)))
+                        g.add((ev_iri, PKM.occursInInstantaneous, instant))
+                        g.add((ev_iri, PKM.supportedByArtifact, artifact_iri))
+                        g.add((ev_iri, PKM.hasReplayTurnIndex, Literal(ev.turn, datatype=XSD.integer)))
+                        g.add((ev_iri, PKM.hasReplayEventOrder, Literal(ev.order, datatype=XSD.integer)))
+                        g.add((ev_iri, PKM.hasReplayStepLabel, Literal(f"stage-swapboost-t{ev.turn}-e{ev.order}")))
+                        event_sources["stage"][(affected_iri, stat_iri)] = ev_iri
+
+        elif ev.kind == "-invertboost":
+            # Negate all stat stages for a combatant (Topsy-Turvy)
+            combatant_iri = active_combatants_by_slot.get(
+                slot_key(ev.fields[0]),
+                combatant_iri_for_token(ev.fields[0], p1_name, p2_name),
+            )
+            matching_keys = [k for k in state.current_stat_stages if k[0] == combatant_iri and state.current_stat_stages[k] != 0]
+            for key in matching_keys:
+                _c, stat_iri = key
+                prior_stage = state.current_stat_stages[key]
+                ev_iri = PKM[
+                    f"StageChange_T{ev.turn}_{ev.order}_{str(combatant_iri).rsplit('#', 1)[-1]}_{str(stat_iri).rsplit('#', 1)[-1]}_invert"
+                ]
+                g.add((ev_iri, RDF.type, PKM.StatStageChangeEvent))
+                g.add((ev_iri, PKM.affectsCombatant, combatant_iri))
+                g.add((ev_iri, PKM.aboutStat, stat_iri))
+                g.add((ev_iri, PKM.hasStageDelta, Literal(-2 * prior_stage, datatype=XSD.integer)))
+                g.add((ev_iri, PKM.occursInInstantaneous, instant))
+                g.add((ev_iri, PKM.supportedByArtifact, artifact_iri))
+                g.add((ev_iri, PKM.hasReplayTurnIndex, Literal(ev.turn, datatype=XSD.integer)))
+                g.add((ev_iri, PKM.hasReplayEventOrder, Literal(ev.order, datatype=XSD.integer)))
+                g.add((ev_iri, PKM.hasReplayStepLabel, Literal(f"stage-invertboost-t{ev.turn}-e{ev.order}")))
+                state.current_stat_stages[key] = -prior_stage
+                event_sources["stage"][key] = ev_iri
+
+        elif ev.kind == "-copyboost":
+            # Copy stat stages from source to target (Psych Up)
+            target_iri = active_combatants_by_slot.get(
+                slot_key(ev.fields[0]),
+                combatant_iri_for_token(ev.fields[0], p1_name, p2_name),
+            )
+            source_iri = maybe_combatant_from_token(ev.fields[1], active_combatants_by_slot, p1_name, p2_name) if len(ev.fields) > 1 else None
+            if source_iri is not None:
+                all_stat_iris = {k[1] for k in state.current_stat_stages if k[0] in (source_iri, target_iri)}
+                for stat_iri in all_stat_iris:
+                    source_stage = state.current_stat_stages.get((source_iri, stat_iri), 0)
+                    target_old = state.current_stat_stages.get((target_iri, stat_iri), 0)
+                    delta = source_stage - target_old
+                    if delta == 0:
+                        continue
+                    ev_iri = PKM[
+                        f"StageChange_T{ev.turn}_{ev.order}_{str(target_iri).rsplit('#', 1)[-1]}_{str(stat_iri).rsplit('#', 1)[-1]}_copy"
+                    ]
+                    g.add((ev_iri, RDF.type, PKM.StatStageChangeEvent))
+                    g.add((ev_iri, PKM.affectsCombatant, target_iri))
+                    g.add((ev_iri, PKM.aboutStat, stat_iri))
+                    g.add((ev_iri, PKM.hasStageDelta, Literal(delta, datatype=XSD.integer)))
+                    g.add((ev_iri, PKM.occursInInstantaneous, instant))
+                    g.add((ev_iri, PKM.supportedByArtifact, artifact_iri))
+                    g.add((ev_iri, PKM.hasReplayTurnIndex, Literal(ev.turn, datatype=XSD.integer)))
+                    g.add((ev_iri, PKM.hasReplayEventOrder, Literal(ev.order, datatype=XSD.integer)))
+                    g.add((ev_iri, PKM.hasReplayStepLabel, Literal(f"stage-copyboost-t{ev.turn}-e{ev.order}")))
+                    if source_stage != 0:
+                        state.current_stat_stages[(target_iri, stat_iri)] = source_stage
+                    elif (target_iri, stat_iri) in state.current_stat_stages:
+                        del state.current_stat_stages[(target_iri, stat_iri)]
+                    event_sources["stage"][(target_iri, stat_iri)] = ev_iri
+
+        elif ev.kind in {"-clearpositiveboost", "-clearnegativeboost"}:
+            # Partial boost clearing
+            combatant_iri = maybe_combatant_from_token(ev.fields[0], active_combatants_by_slot, p1_name, p2_name)
+            if combatant_iri is not None:
+                positive = ev.kind == "-clearpositiveboost"
+                matching_keys = [
+                    k for k in state.current_stat_stages
+                    if k[0] == combatant_iri and (state.current_stat_stages[k] > 0 if positive else state.current_stat_stages[k] < 0)
+                ]
+                for key in matching_keys:
+                    _c, stat_iri = key
+                    prior_stage = state.current_stat_stages[key]
+                    ev_iri = PKM[
+                        f"StageChange_T{ev.turn}_{ev.order}_{str(combatant_iri).rsplit('#', 1)[-1]}_{str(stat_iri).rsplit('#', 1)[-1]}_partialclear"
+                    ]
+                    g.add((ev_iri, RDF.type, PKM.StatStageChangeEvent))
+                    g.add((ev_iri, PKM.affectsCombatant, combatant_iri))
+                    g.add((ev_iri, PKM.aboutStat, stat_iri))
+                    g.add((ev_iri, PKM.hasStageDelta, Literal(-prior_stage, datatype=XSD.integer)))
+                    g.add((ev_iri, PKM.occursInInstantaneous, instant))
+                    g.add((ev_iri, PKM.supportedByArtifact, artifact_iri))
+                    g.add((ev_iri, PKM.hasReplayTurnIndex, Literal(ev.turn, datatype=XSD.integer)))
+                    g.add((ev_iri, PKM.hasReplayEventOrder, Literal(ev.order, datatype=XSD.integer)))
+                    g.add((ev_iri, PKM.hasReplayStepLabel, Literal(f"stage-partial-clear-t{ev.turn}-e{ev.order}")))
+                    state.current_stat_stages[key] = 0
+                    event_sources["stage"][key] = ev_iri
+
+        elif ev.kind == "-cureteam":
+            # Aromatherapy / Heal Bell: cure status on all Pokémon on one side
+            try:
+                player_id = parse_player_slot(ev.fields[0])[0] if ev.fields else None
+            except ValueError:
+                player_id = None
+            if player_id is not None:
+                side_participants = {PKM[iri] for iri, info in participants.items() if info["player_id"] == player_id}
+                for c_iri in list(state.current_status.keys()):
+                    if c_iri in side_participants:
+                        state.current_status.pop(c_iri, None)
+
+        elif ev.kind in {"win", "tie"}:
+            # Battle result
+            outcome = ev.fields[0].strip() if ev.kind == "win" and ev.fields else "tie"
+            g.set((battle_iri, PKM.hasBattleOutcome, Literal(outcome, datatype=XSD.string)))
+
+        elif ev.kind == "-notarget":
+            # Move had no valid target (target fainted before resolution)
+            if current_action is not None:
+                for target_iri in list(current_action.candidate_targets):
+                    if target_iri not in current_action.resolved_targets and target_iri not in current_action.failed_targets:
+                        emit_target_resolution(g, current_action.action_iri, target_iri, instant, "failed", artifact_iri, ev.turn, ev.order)
+                        current_action.failed_targets.add(target_iri)
+
+        elif ev.kind == "-block":
+            # Effect blocked (e.g. ability negates a move)
+            combatant_iri = maybe_combatant_from_token(ev.fields[0], active_combatants_by_slot, p1_name, p2_name) if ev.fields else None
+            if combatant_iri is not None and current_action is not None:
+                mark_redirection(current_action, combatant_iri)
+
+        elif ev.kind == "-crit":
+            # Critical hit — update the current target resolution if possible
+            combatant_iri = maybe_combatant_from_token(ev.fields[0], active_combatants_by_slot, p1_name, p2_name) if ev.fields else None
+            if combatant_iri is not None and current_action is not None:
+                mark_redirection(current_action, combatant_iri)
+
+        elif ev.kind in {"-prepare", "-hitcount", "-zpower", "-zbroken", "-mustrecharge"}:
+            # Minor annotation events — emit an event node for provenance
+            tag_label = ev.kind.lstrip("-")
+            event_iri = PKM[f"Event_{sanitize_identifier(tag_label)}_T{ev.turn}_{ev.order}"]
+            g.add((event_iri, RDF.type, PKM.Event))
+            g.add((event_iri, PKM.occursInInstantaneous, instant))
+            g.add((event_iri, PKM.supportedByArtifact, artifact_iri))
+            g.add((event_iri, PKM.hasReplayTurnIndex, Literal(ev.turn, datatype=XSD.integer)))
+            g.add((event_iri, PKM.hasReplayEventOrder, Literal(ev.order, datatype=XSD.integer)))
+            g.add((event_iri, PKM.hasReplayStepLabel, Literal(f"{tag_label}-t{ev.turn}-e{ev.order}")))
 
         elif ev.kind == "-fail":
             combatant_iri = maybe_combatant_from_token(ev.fields[0], active_combatants_by_slot, p1_name, p2_name)

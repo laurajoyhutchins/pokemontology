@@ -1401,6 +1401,15 @@ pkm:hasBranchLabel
     rdfs:domain pkm:OutcomeBranch ;
     rdfs:range xsd:string .
 
+# Battle outcome
+pkm:hasBattleOutcome
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasBattleOutcome" ;
+    rdfs:comment "Records the outcome of a battle as observed in the replay log. Value is the winning player's name, or 'tie' for draws." ;
+    rdfs:domain pkm:Battle ;
+    rdfs:range xsd:string .
+
 # Canonical random mechanic individuals for reuse
 pkm:RandomMechanic_AccuracyCheck
     a pkm:RandomMechanic ;
