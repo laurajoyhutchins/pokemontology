@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from rdflib import Graph, Namespace, RDF, RDFS
+from rdflib import Graph, Namespace, OWL, RDF, RDFS
 
 PKM = Namespace("https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#")
 
@@ -160,3 +160,11 @@ def test_move_slot_abstraction_covers_pp_tracking(ontology_graph: Graph) -> None
     assert (PKM.aboutMoveSlot, RDFS.range, PKM.MoveSlot) in ontology_graph
     assert (PKM.hasSlot, RDFS.domain, PKM.MoveSlot) in ontology_graph
     assert (PKM.knowsMove, RDFS.domain, PKM.MoveSlot) in ontology_graph
+
+
+def test_rulesets_can_be_modeled_as_composites(ontology_graph: Graph) -> None:
+    """Rulesets should support layered composition without changing battle anchoring."""
+    assert (PKM.composedOf, RDF.type, OWL.ObjectProperty) in ontology_graph
+    assert (PKM.composedOf, RDF.type, OWL.TransitiveProperty) in ontology_graph
+    assert (PKM.composedOf, RDFS.domain, PKM.Ruleset) in ontology_graph
+    assert (PKM.composedOf, RDFS.range, PKM.Ruleset) in ontology_graph

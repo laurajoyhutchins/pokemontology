@@ -124,7 +124,7 @@ pkm:Ruleset
     a owl:Class ;
     rdfs:label "Ruleset" ;
     rdfs:subClassOf pkm:Context ;
-    rdfs:comment "A mechanics context defining what is true under a game version or competitive format." .
+    rdfs:comment "A mechanics context defining what is true under a game version or competitive format. A ruleset may also be a composite wrapper that layers multiple component rulesets, such as generation mechanics plus a tournament regulation set." .
 
 pkm:VersionGroup
     a owl:Class ;
@@ -142,7 +142,7 @@ pkm:Battle
     a owl:Class ;
     rdfs:label "Battle" ;
     rdfs:subClassOf pkm:Context ;
-    rdfs:comment "An encounter-local context." ;
+    rdfs:comment "An encounter-local context. A battle still operates under one effective ruleset individual, but that ruleset may itself be composed from multiple layered component rulesets." ;
     rdfs:subClassOf [
         a owl:Restriction ;
         owl:onProperty pkm:operatesUnderRuleset ;
@@ -212,7 +212,16 @@ pkm:operatesUnderRuleset
     a owl:FunctionalProperty ;
     rdfs:label "operatesUnderRuleset" ;
     rdfs:domain pkm:Battle ;
-    rdfs:range pkm:Ruleset .
+    rdfs:range pkm:Ruleset ;
+    rdfs:comment "Links a battle to its single effective ruleset context. When multiple layers apply, point to a composite Ruleset that references its components via composedOf." .
+
+pkm:composedOf
+    a owl:ObjectProperty ;
+    a owl:TransitiveProperty ;
+    rdfs:label "composedOf" ;
+    rdfs:domain pkm:Ruleset ;
+    rdfs:range pkm:Ruleset ;
+    rdfs:comment "Relates a composite ruleset to one or more component rulesets that contribute mechanics or legality constraints, such as a base generation ruleset plus a tournament regulation layer." .
 
 pkm:hasVersionGroup
     a owl:ObjectProperty ;
