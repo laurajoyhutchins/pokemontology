@@ -19,12 +19,12 @@
           </span>
         </a>
         <nav class="nav-links" aria-label="Primary">
+          <a href="#query">Query</a>
           <a href="#artifacts">Artifacts</a>
           <a href="#modules">Modules</a>
           <a href="#examples">Examples</a>
           <a href="#pipelines">Pipelines</a>
-          <a href="./repo-structure.md">Repo Structure</a>
-          <a href="./roadmap.md">Roadmap</a>
+          <a href="./repo-structure.md">Repo</a>
         </nav>
         <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false" aria-label="Toggle dark mode">
           <span data-theme-label>Dark</span>
@@ -34,60 +34,66 @@
   </header>
 
   <main>
-    <section class="section section-tight">
+    <section class="qe-section" id="query">
       <div class="site-shell">
-        <div class="warning-banner fade-up" role="note" aria-label="Work in progress notice">
-          <strong>Warning:</strong>
-          This public site is still a work in progress. The current frontend remains largely AI generated,
-          and a full manual editing pass is still left to do.
-        </div>
-      </div>
-    </section>
-
-    <section class="hero">
-      <div class="site-shell hero-grid">
-        <div class="hero-copy fade-up">
-          <p class="eyebrow">Field Guide No. 001</p>
-          <h1>A battle mechanics index built from replay logs.</h1>
-          <p>
-            Pokemontology tracks a battle as a sequence of states, actions, and events. It publishes
-            an OWL ontology, SHACL validation shapes, replay tooling, and import pipelines for
-            outside data sources.
-          </p>
-          <div class="hero-actions">
-            <a class="button button-primary" href="./ontology.ttl">Open ontology.ttl</a>
-            <a class="button button-secondary" href="./shapes.ttl">Open shapes.ttl</a>
-            <a class="button button-secondary" href="https://github.com/laurajoyhutchins/pokemontology" data-repository-url>View source</a>
+        <div class="qe-header fade-up">
+          <div class="qe-intro">
+            <p class="eyebrow">Field Guide No. 001</p>
+            <h1 class="qe-title">Query the ontology.</h1>
+            <p class="qe-lead">SPARQL against the published graph, live in your browser.</p>
           </div>
-          <div class="hero-stats">
-            <div class="stat-chip fade-up delay-1">
-              <strong data-module-count>0</strong>
-              <span>source modules</span>
-            </div>
-            <div class="stat-chip fade-up delay-2">
-              <strong data-artifact-count>0</strong>
-              <span>published bundles</span>
-            </div>
-            <div class="stat-chip fade-up delay-3">
-              <strong data-pipeline-count>0</strong>
-              <span>data routes</span>
-            </div>
-            <div class="stat-chip fade-up delay-1">
-              <strong data-example-count>0</strong>
-              <span>sample files</span>
-            </div>
+          <div class="qe-artifact-links">
+            <a class="button button-secondary" href="./ontology.ttl">ontology.ttl</a>
+            <a class="button button-secondary" href="./shapes.ttl">shapes.ttl</a>
+            <a class="button button-secondary" href="https://github.com/laurajoyhutchins/pokemontology" data-repository-url>Source</a>
           </div>
         </div>
 
-        <aside class="hero-panel fade-up delay-1">
-          <p class="panel-kicker">Published Cartridge</p>
-          <div class="artifact-stack" data-artifacts></div>
-          <p class="lede">
-            Base path:
-            <code data-pages-base-url>https://laurajoyhutchins.github.io/pokemontology/</code>
-          </p>
-          <p class="lede" data-site-error hidden></p>
-        </aside>
+        <div class="qe-toolbar fade-up delay-1">
+          <div class="qe-source-group">
+            <span class="toolbar-label">Sources</span>
+            <label class="source-toggle">
+              <input type="checkbox" id="src-ontology" checked>
+              <span>ontology.ttl</span>
+            </label>
+            <label class="source-toggle">
+              <input type="checkbox" id="src-shapes">
+              <span>shapes.ttl</span>
+            </label>
+          </div>
+          <div class="qe-example-group">
+            <label for="example-select" class="toolbar-label">Example</label>
+            <select id="example-select" class="qe-select">
+              <option value="">— pick a query —</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="qe-workspace fade-up delay-2">
+          <div class="qe-editor-col">
+            <textarea
+              id="sparql-editor"
+              class="qe-textarea"
+              spellcheck="false"
+              autocorrect="off"
+              autocapitalize="off"
+              aria-label="SPARQL query editor"
+            ></textarea>
+            <div class="qe-run-bar">
+              <button id="run-btn" class="button button-primary qe-run-btn" disabled>
+                <span id="run-btn-label">Loading engine…</span>
+              </button>
+              <span id="qe-status" class="qe-status" aria-live="polite"></span>
+              <span class="qe-hint">Ctrl+Enter to run</span>
+            </div>
+          </div>
+          <div class="qe-results-col" id="qe-results" aria-live="polite">
+            <div class="qe-placeholder">
+              <span class="qe-placeholder-icon">▶</span>
+              <p>Run a query to see results here.</p>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -108,7 +114,7 @@
             </div>
             <div class="highlight">
               <strong>Built from modules</strong>
-              <p>The `.ttl` files here are generated from the modular sources in the repository, not edited by hand.</p>
+              <p>The <code>.ttl</code> files here are generated from the modular sources in the repository, not edited by hand.</p>
             </div>
             <div class="highlight">
               <strong>Validation ships with it</strong>
@@ -117,13 +123,11 @@
           </div>
         </div>
         <div class="callout fade-up delay-1">
-          <h2>Boot sequence</h2>
-          <p>Rebuild the ontology and refresh the published files with:</p>
-          <pre><code>python3 -m pokemontology build</code></pre>
-          <p>
-            This updates <code>build/ontology.ttl</code>, <code>build/shapes.ttl</code>, and the
-            published copies under <code>docs/</code>.
-          </p>
+          <h2>Published Cartridge</h2>
+          <p>Base path:</p>
+          <pre><code data-pages-base-url>https://laurajoyhutchins.github.io/pokemontology/</code></pre>
+          <div class="artifact-stack" data-artifacts></div>
+          <p class="lede" data-site-error hidden></p>
         </div>
       </div>
     </section>
@@ -132,7 +136,7 @@
       <div class="site-shell">
         <div class="section-head">
           <h2>Source Modules</h2>
-          <p class="lede">The published bundle is assembled from these source files.</p>
+          <p class="lede">The published bundle is assembled from these source files. <strong data-module-count>0</strong> modules total.</p>
         </div>
         <div class="module-list" data-modules></div>
       </div>
