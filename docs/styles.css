@@ -1,5 +1,7 @@
 :root {
+  color-scheme: light;
   --bg: #f6f1e6;
+  --bg-top: #fbf6ec;
   --paper: rgba(255, 250, 240, 0.78);
   --panel: rgba(255, 252, 246, 0.94);
   --ink: #1e2a2f;
@@ -8,6 +10,19 @@
   --teal: #0f6d72;
   --rust: #b85d31;
   --gold: #d9a441;
+  --glow-teal: rgba(15, 109, 114, 0.16);
+  --glow-gold: rgba(217, 164, 65, 0.18);
+  --glow-rust: rgba(184, 93, 49, 0.12);
+  --topbar-bg: rgba(255, 249, 240, 0.74);
+  --control-bg: rgba(255, 252, 245, 0.7);
+  --control-border-hover: rgba(184, 93, 49, 0.3);
+  --chip-bg: rgba(255, 253, 248, 0.8);
+  --chip-line: rgba(40, 58, 63, 0.1);
+  --card-line: rgba(40, 58, 63, 0.1);
+  --highlight-bg: rgba(255, 253, 249, 0.72);
+  --highlight-line: rgba(40, 58, 63, 0.08);
+  --code-bg: #1e2a2f;
+  --code-fg: #fff4df;
   --shadow: 0 18px 60px rgba(30, 42, 47, 0.14);
   --radius-lg: 28px;
   --radius-md: 18px;
@@ -15,7 +30,9 @@
 }
 
 :root[data-theme="dark"] {
+  color-scheme: dark;
   --bg: #0c171b;
+  --bg-top: #122227;
   --paper: rgba(18, 29, 34, 0.84);
   --panel: rgba(21, 35, 40, 0.95);
   --ink: #ecf1e8;
@@ -24,6 +41,19 @@
   --teal: #7bd3cf;
   --rust: #f09b6d;
   --gold: #e2be64;
+  --glow-teal: rgba(123, 211, 207, 0.14);
+  --glow-gold: rgba(226, 190, 100, 0.12);
+  --glow-rust: rgba(240, 155, 109, 0.12);
+  --topbar-bg: rgba(25, 38, 44, 0.76);
+  --control-bg: rgba(25, 38, 44, 0.76);
+  --control-border-hover: rgba(240, 155, 109, 0.34);
+  --chip-bg: rgba(25, 38, 44, 0.76);
+  --chip-line: rgba(219, 230, 228, 0.12);
+  --card-line: rgba(219, 230, 228, 0.12);
+  --highlight-bg: rgba(25, 38, 44, 0.76);
+  --highlight-line: rgba(219, 230, 228, 0.12);
+  --code-bg: #081115;
+  --code-fg: #f6e8c8;
   --shadow: 0 18px 60px rgba(0, 0, 0, 0.34);
 }
 
@@ -40,11 +70,11 @@ body {
   color: var(--ink);
   font-family: "Alegreya Sans", "Trebuchet MS", sans-serif;
   background:
-    radial-gradient(circle at top left, color-mix(in srgb, var(--teal) 20%, transparent), transparent 28rem),
-    radial-gradient(circle at 85% 15%, color-mix(in srgb, var(--gold) 22%, transparent), transparent 24rem),
-    radial-gradient(circle at bottom right, color-mix(in srgb, var(--rust) 16%, transparent), transparent 30rem),
-    linear-gradient(180deg, color-mix(in srgb, var(--bg) 35%, white) 0%, var(--bg) 100%);
-  transition: background-color 180ms ease, color 180ms ease;
+    radial-gradient(circle at top left, var(--glow-teal), transparent 28rem),
+    radial-gradient(circle at 85% 15%, var(--glow-gold), transparent 24rem),
+    radial-gradient(circle at bottom right, var(--glow-rust), transparent 30rem),
+    linear-gradient(180deg, var(--bg-top) 0%, var(--bg) 100%);
+  transition: background 180ms ease, color 180ms ease;
 }
 
 a {
@@ -79,7 +109,7 @@ pre {
   padding: 0.85rem 1rem;
   border: 1px solid var(--line);
   border-radius: 999px;
-  background: rgba(255, 249, 240, 0.74);
+  background: var(--topbar-bg);
   backdrop-filter: blur(14px);
   box-shadow: 0 10px 30px rgba(30, 42, 47, 0.08);
 }
@@ -89,7 +119,7 @@ pre {
   padding: 0.55rem 0.9rem;
   border-radius: 999px;
   border: 1px solid var(--line);
-  background: rgba(255, 252, 245, 0.7);
+  background: var(--control-bg);
   color: var(--ink);
   font: inherit;
   font-weight: 700;
@@ -98,7 +128,7 @@ pre {
 
 .theme-toggle:hover {
   color: var(--rust);
-  border-color: color-mix(in srgb, var(--rust) 30%, var(--line));
+  border-color: var(--control-border-hover);
 }
 
 .brand {
@@ -221,7 +251,7 @@ pre {
 }
 
 .button-secondary {
-  background: rgba(255, 252, 245, 0.7);
+  background: var(--control-bg);
   color: var(--ink);
   border-color: var(--line);
 }
@@ -236,8 +266,8 @@ pre {
 .stat-chip {
   padding: 0.9rem 1rem;
   border-radius: var(--radius-md);
-  background: rgba(255, 253, 248, 0.8);
-  border: 1px solid rgba(40, 58, 63, 0.1);
+  background: var(--chip-bg);
+  border: 1px solid var(--chip-line);
 }
 
 .stat-chip strong {
@@ -277,7 +307,7 @@ pre {
 .module-card,
 .pipeline-card,
 .example-card {
-  border: 1px solid rgba(40, 58, 63, 0.1);
+  border: 1px solid var(--card-line);
   border-radius: var(--radius-md);
   background: var(--panel);
   padding: 1rem;
@@ -383,8 +413,8 @@ pre {
   margin: 0.85rem 0 0;
   padding: 0.9rem;
   border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--ink) 92%, black);
-  color: #fff4df;
+  background: var(--code-bg);
+  color: var(--code-fg);
   overflow-x: auto;
   font-size: 0.83rem;
 }
@@ -392,16 +422,8 @@ pre {
 .highlight {
   padding: 1rem;
   border-radius: var(--radius-md);
-  background: rgba(255, 253, 249, 0.72);
-  border: 1px solid rgba(40, 58, 63, 0.08);
-}
-
-:root[data-theme="dark"] .topbar,
-:root[data-theme="dark"] .button-secondary,
-:root[data-theme="dark"] .theme-toggle,
-:root[data-theme="dark"] .highlight,
-:root[data-theme="dark"] .stat-chip {
-  background: rgba(25, 38, 44, 0.76);
+  background: var(--highlight-bg);
+  border: 1px solid var(--highlight-line);
 }
 
 :root[data-theme="dark"] .brand-mark {
@@ -412,10 +434,6 @@ pre {
 :root[data-theme="dark"] .example-kind {
   background: rgba(226, 190, 100, 0.18);
   color: #f2d58f;
-}
-
-:root[data-theme="dark"] .pipeline-card pre {
-  color: #f6e8c8;
 }
 
 .highlight strong {
