@@ -124,14 +124,48 @@ export function renderFindingsSummary(text) {
   );
 }
 
-export function renderQueryResults(result) {
+export function summarizeQueryResult(question, result) {
+  if (result.type === "boolean") {
+    return `${result.value ? "Yes." : "No."} ${question}`.trim();
+  }
+  if (result.type === "quads") {
+    return `Laurel assembled ${result.quads.length} triples from the generated SPARQL.`;
+  }
+  const { vars, bindings } = result;
+  if (!bindings.length) {
+    return "Laurel found no matching results.";
+  }
+  if (vars.length === 1) {
+    const values = bindings
+      .map((binding) => binding.get(vars[0])?.value)
+      .filter(Boolean);
+    if (values.length === 1) {
+      return `Laurel found 1 result: ${values[0]}.`;
+    }
+    if (values.length > 1) {
+      const preview = values.slice(0, 5).join(", ");
+      return `Laurel found ${values.length} results: ${preview}${values.length > 5 ? ", …" : ""}.`;
+    }
+  }
+  if (bindings.length === 1) {
+    const fields = vars
+      .map((variable) => `${variable}=${bindings[0].get(variable)?.value ?? "—"}`)
+      .join(", ");
+    return `Laurel found 1 matching row: ${fields}.`;
+  }
+  return `Laurel found ${bindings.length} matching rows.`;
+}
+
+export function renderQueryResults(result, question = "") {
   lastSelectResult = null;
   showExportBtn(false);
+  const summary = question ? summarizeQueryResult(question, result) : "";
 
   if (result.type === "boolean") {
     const cls = result.value ? "qe-ask-true" : "qe-ask-false";
     setResultsContent(
-      `<div class="qe-ask-result ${cls}">
+      `<div class="laurel-answer-inline">${escapeHtml(summary)}</div>
+      <div class="qe-ask-result ${cls}">
         <span class="ask-label">ASK</span>
         <span class="ask-value">${result.value ? "TRUE" : "FALSE"}</span>
       </div>`,
@@ -151,7 +185,8 @@ export function renderQueryResults(result) {
       )
       .join("\n");
     setResultsContent(
-      `<div class="qe-construct">
+      `<div class="laurel-answer-inline">${escapeHtml(summary)}</div>
+      <div class="qe-construct">
         <pre class="qe-construct-pre"><code>${escapeHtml(lines)}</code></pre>
         <p class="qe-count">${result.quads.length} triple${result.quads.length !== 1 ? "s" : ""}</p>
       </div>`,
@@ -178,7 +213,8 @@ export function renderQueryResults(result) {
     .join("");
 
   setResultsContent(
-    `<div class="qe-table-wrap">
+    `${summary ? `<div class="laurel-answer-inline">${escapeHtml(summary)}</div>` : ""}
+    <div class="qe-table-wrap">
       <table class="qe-table">
         <thead><tr>${headerCells}</tr></thead>
         <tbody>${rows}</tbody>

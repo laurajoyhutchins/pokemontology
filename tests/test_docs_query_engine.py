@@ -35,6 +35,7 @@ def test_query_engine_no_longer_depends_on_stream_variables() -> None:
     assert "executeBindingsQuery" in text
     assert "inferBindingVars" in text
     assert "stream.variables" not in text
+    assert "summarizeQueryResult" in text
 
 
 def test_query_engine_uses_generated_query_examples_and_schema_pack() -> None:

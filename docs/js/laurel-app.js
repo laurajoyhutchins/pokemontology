@@ -7,7 +7,6 @@ import {
   loadComunicaEngine,
   renderGeneratedQuery,
   renderGrounding,
-  renderFindingsSummary,
   renderQueryResults,
   renderValidation,
   setResultsContent,
@@ -273,7 +272,9 @@ async function runLaurelPipeline(state) {
     webgpuAvailable: supportsWebGpu(),
   });
   setStatus("[data-status-model]", generation.backend);
-  renderFindingsSummary(generation.summary);
+  setResultsContent(
+    '<div class="laurel-answer"><p class="laurel-answer-kicker">Professor Laurel</p><p>Translation complete. Running the generated SPARQL now.</p></div>',
+  );
   renderGeneratedQuery(generation.sparql);
   if (editor) editor.value = generation.sparql;
 
@@ -296,6 +297,7 @@ async function runLaurelPipeline(state) {
 async function executeEditorQuery() {
   const editor = document.getElementById("sparql-editor");
   const status = document.getElementById("qe-status");
+  const question = document.getElementById("nl-question")?.value.trim() || "";
   const sources = buildSources();
   if (!editor) return;
   if (!editor.value.trim()) return;
@@ -308,7 +310,7 @@ async function executeEditorQuery() {
   const started = performance.now();
   try {
     const result = await executeQuery(editor.value, sources);
-    renderQueryResults(result);
+    renderQueryResults(result, question);
     if (status) status.textContent = `${Math.round(performance.now() - started)}ms`;
     setInlineStatus("Field query complete.");
   } catch (error) {

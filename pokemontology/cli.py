@@ -14,6 +14,7 @@ from ._script_loader import REPO_ROOT
 from .chat import DEFAULT_OLLAMA_ENDPOINT, DEFAULT_OLLAMA_MODEL, generate_sparql
 from .ingest_common import serialize_turtle_to_path
 from .laurel_eval import DEFAULT_SUITE, EvalConfig, evaluate_suite
+from .laurel import summarize_results
 from .turn_order import resolve_action_order
 
 from pokemontology.build import build_ontology, check_ttl_parse
@@ -176,13 +177,12 @@ def cmd_resolve_order(args: argparse.Namespace) -> int:
     return 0
 
 
-def _execute_query_text(
+def _run_query_text(
     query_text: str,
     *,
     sources: Sequence[Path],
-    pretty: bool = False,
     query_label: str,
-) -> int:
+) -> dict[str, object]:
     graph = _load_turtle_sources(sources)
     try:
         result = graph.query(query_text)
@@ -190,7 +190,37 @@ def _execute_query_text(
         raise CliUsageError(
             f"failed to execute SPARQL query {query_label}: {exc}"
         ) from exc
-    _print_json(_query_results_to_json(result), pretty=pretty)
+    if getattr(result, "type", None) == "ASK":
+        return {"boolean": bool(result.askAnswer)}
+    if getattr(result, "type", None) in {"CONSTRUCT", "DESCRIBE"}:
+        rows = []
+        for subject, predicate, obj in result.graph:
+            rows.append(
+                {
+                    "subject": str(subject),
+                    "predicate": str(predicate),
+                    "object": str(obj),
+                }
+            )
+        return {
+            "answer": f"Laurel produced a graph result with {len(rows)} triples.",
+            "variables": ["subject", "predicate", "object"],
+            "rows": rows,
+        }
+    return _query_results_to_json(result)
+
+
+def _execute_query_text(
+    query_text: str,
+    *,
+    sources: Sequence[Path],
+    pretty: bool = False,
+    query_label: str,
+) -> int:
+    _print_json(
+        _run_query_text(query_text, sources=sources, query_label=query_label),
+        pretty=pretty,
+    )
     return 0
 
 
@@ -214,14 +244,40 @@ def cmd_ask(args: argparse.Namespace) -> int:
         )
     except Exception as exc:
         raise CliUsageError(f"failed to generate SPARQL from question: {exc}") from exc
+    print(query_text)
+    return 0
+
+
+def cmd_laurel(args: argparse.Namespace) -> int:
+    try:
+        query_text = generate_sparql(
+            args.question,
+            model=args.model,
+            endpoint=args.endpoint,
+            timeout=args.timeout,
+        )
+    except Exception as exc:
+        raise CliUsageError(f"failed to generate SPARQL from question: {exc}") from exc
     if args.print_sparql:
         print(query_text)
-    return _execute_query_text(
+    payload = _run_query_text(
         query_text,
         sources=args.sources,
-        pretty=args.pretty,
         query_label="<generated>",
     )
+    if args.json:
+        _print_json(
+            {
+                "question": args.question,
+                "sparql": query_text,
+                "result": payload,
+                "answer": summarize_results(args.question, payload),
+            },
+            pretty=True,
+        )
+        return 0
+    print(summarize_results(args.question, payload))
+    return 0
 
 
 def cmd_evaluate_laurel(args: argparse.Namespace) -> int:
@@ -523,16 +579,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     ask_parser = subparsers.add_parser(
         "ask",
-        aliases=["laurel"],
-        help="Translate a natural-language question to SPARQL with a local Ollama model and execute it.",
+        help="Translate a natural-language question to SPARQL with a local Ollama model.",
     )
     ask_parser.add_argument("question", help="Natural-language question to translate.")
-    ask_parser.add_argument(
-        "sources",
-        nargs="+",
-        type=Path,
-        help="One or more Turtle files to load into the query graph.",
-    )
     ask_parser.add_argument(
         "--model",
         default=DEFAULT_OLLAMA_MODEL,
@@ -549,15 +598,46 @@ def build_parser() -> argparse.ArgumentParser:
         default=240.0,
         help="Timeout in seconds for the Ollama request.",
     )
-    ask_parser.add_argument(
+    ask_parser.set_defaults(func=cmd_ask)
+
+    laurel_parser = subparsers.add_parser(
+        "laurel",
+        help="Translate a natural-language question to SPARQL, execute it, and summarize the results in natural language.",
+    )
+    laurel_parser.add_argument("question", help="Natural-language question to translate.")
+    laurel_parser.add_argument(
+        "sources",
+        nargs="+",
+        type=Path,
+        help="One or more Turtle files to load into the query graph.",
+    )
+    laurel_parser.add_argument(
+        "--model",
+        default=DEFAULT_OLLAMA_MODEL,
+        help="Local Ollama model name to use for translation.",
+    )
+    laurel_parser.add_argument(
+        "--endpoint",
+        default=DEFAULT_OLLAMA_ENDPOINT,
+        help="Ollama generate endpoint URL.",
+    )
+    laurel_parser.add_argument(
+        "--timeout",
+        type=float,
+        default=240.0,
+        help="Timeout in seconds for the Ollama request.",
+    )
+    laurel_parser.add_argument(
         "--print-sparql",
         action="store_true",
-        help="Print the generated SPARQL before executing it.",
+        help="Print the generated SPARQL before answering.",
     )
-    ask_parser.add_argument(
-        "--pretty", action="store_true", help="Print query results as indented JSON."
+    laurel_parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Print question, generated SPARQL, raw results, and synthesized answer as JSON.",
     )
-    ask_parser.set_defaults(func=cmd_ask)
+    laurel_parser.set_defaults(func=cmd_laurel)
 
     eval_parser = subparsers.add_parser(
         "evaluate-laurel",

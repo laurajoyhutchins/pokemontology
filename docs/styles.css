@@ -484,6 +484,15 @@ textarea {
   font-size: 0.78rem;
 }
 
+.laurel-answer-inline {
+  margin-bottom: 0.9rem;
+  padding: 0.85rem 0.95rem;
+  border: 2px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: rgba(84, 121, 92, 0.08);
+  color: var(--ink);
+}
+
 .qe-results-body {
   min-height: 15rem;
   border: 2px dashed rgba(47, 85, 71, 0.3);

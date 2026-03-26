@@ -160,39 +160,18 @@ def test_load_turtle_sources_reuses_cached_graph(
     assert parse_calls == 2
 
 
-def test_ask_command_executes_generated_query(
-    built_ontology_path: str, tmp_path: Path, capsys, monkeypatch: object
-) -> None:
-    fixture_path = tmp_path / "super-effective-fixture.ttl"
-    _write_super_effective_fixture(fixture_path)
-
+def test_ask_command_outputs_generated_sparql(capsys, monkeypatch: object) -> None:
     generated_query = SUPER_EFFECTIVE_QUERY.read_text(encoding="utf-8")
     monkeypatch.setattr(cli, "generate_sparql", lambda *args, **kwargs: generated_query)
 
-    exit_code = cli.main(
-        [
-            "ask",
-            "Which of my moves are effective against Bulbasaur?",
-            built_ontology_path,
-            str(fixture_path),
-            "--pretty",
-        ]
-    )
+    exit_code = cli.main(["ask", "Which of my moves are effective against Bulbasaur?"])
 
     assert exit_code == 0
-    output = json.loads(capsys.readouterr().out)
-    assert output["rows"] == [
-        {
-            "myMoveLabel": "Ember",
-            "moveTypeName": "Fire",
-            "opponentLabel": "Bulbasaur",
-            "effectiveTypeName": "Grass",
-            "factor": "2.0",
-        }
-    ]
+    output = capsys.readouterr().out
+    assert "SELECT ?myMoveLabel ?moveTypeName ?opponentLabel" in output
 
 
-def test_laurel_alias_executes_generated_query(
+def test_laurel_command_answers_from_generated_query(
     built_ontology_path: str, tmp_path: Path, capsys, monkeypatch: object
 ) -> None:
     fixture_path = tmp_path / "super-effective-fixture.ttl"
@@ -207,13 +186,38 @@ def test_laurel_alias_executes_generated_query(
             "Which of my moves are effective against Bulbasaur?",
             built_ontology_path,
             str(fixture_path),
-            "--pretty",
+        ]
+    )
+
+    assert exit_code == 0
+    output = capsys.readouterr().out
+    assert "Laurel found 1 matching row:" in output
+    assert "myMoveLabel=Ember" in output
+
+
+def test_laurel_command_can_emit_json(
+    built_ontology_path: str, tmp_path: Path, capsys, monkeypatch: object
+) -> None:
+    fixture_path = tmp_path / "super-effective-fixture.ttl"
+    _write_super_effective_fixture(fixture_path)
+
+    generated_query = SUPER_EFFECTIVE_QUERY.read_text(encoding="utf-8")
+    monkeypatch.setattr(cli, "generate_sparql", lambda *args, **kwargs: generated_query)
+
+    exit_code = cli.main(
+        [
+            "laurel",
+            "Which of my moves are effective against Bulbasaur?",
+            built_ontology_path,
+            str(fixture_path),
+            "--json",
         ]
     )
 
     assert exit_code == 0
     output = json.loads(capsys.readouterr().out)
-    assert output["rows"][0]["myMoveLabel"] == "Ember"
+    assert output["answer"].startswith("Laurel found 1 matching row:")
+    assert "SELECT ?myMoveLabel" in output["sparql"]
 
 
 def test_validate_sparql_text_rejects_updates() -> None:
