@@ -153,9 +153,10 @@ def build_graph(payload: dict) -> Graph:
                 transition = PKM[f"Transition_{transition_count}"]
                 next_instant = PKM[f"I_{idx + 1}"]
                 g.add((transition, RDF.type, PKM.StateTransition))
-                g.add((transition, PKM.hasInputState, instant))
-                g.add((transition, PKM.hasOutputState, next_instant))
-                g.add((transition, PKM.triggeredBy, action_iri))
+                g.add((transition, PKM.fromInstantaneous, instant))
+                g.add((transition, PKM.toInstantaneous, next_instant))
+                g.add((transition, PKM.triggeredByAction, action_iri))
+                g.add((transition, PKM.transitionOccursInBattle, battle_iri))
                 transition_count += 1
 
         elif ev.kind == "faint":
@@ -169,8 +170,8 @@ def build_graph(payload: dict) -> Graph:
             event_iri = PKM[f"Faint_T{ev.turn}_{ev.order}_{sanitize_identifier(fainted_name)}"]
 
             g.add((event_iri, RDF.type, PKM.FaintEvent))
-            g.add((event_iri, PKM.aboutCombatant, fainted_iri))
-            g.add((event_iri, PKM.occursAtInstantaneous, instant))
+            g.add((event_iri, PKM.affectsCombatant, fainted_iri))
+            g.add((event_iri, PKM.occursInInstantaneous, instant))
             g.add((event_iri, PKM.hasReplayTurnIndex, Literal(ev.turn, datatype=XSD.integer)))
             g.add((event_iri, PKM.hasReplayEventOrder, Literal(ev.order, datatype=XSD.integer)))
             g.add((event_iri, PKM.supportedByArtifact, artifact_iri))

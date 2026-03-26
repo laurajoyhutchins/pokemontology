@@ -171,3 +171,18 @@ def test_typing_assignment_rejects_duplicate_type_slots_per_variant_and_ruleset(
     )
     assert not conforms
     assert "per variant/ruleset/type-slot" in results_text
+
+
+def test_shacl_rejects_undeclared_pkm_predicates() -> None:
+    conforms, results_text = _validate_data_graph(
+        _parse_ttl(
+            """
+            @prefix pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#> .
+
+            pkm:Battle1 a pkm:Battle ;
+                pkm:notDeclaredPredicate pkm:Anything .
+            """
+        )
+    )
+    assert not conforms
+    assert "declared as an ontology property" in results_text

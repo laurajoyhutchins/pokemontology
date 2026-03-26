@@ -1,6 +1,7 @@
 @prefix sh:   <http://www.w3.org/ns/shacl#> .
 @prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
 @prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
 @prefix pkm:  <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#> .
 @prefix pkmsh: <https://laurajoyhutchins.github.io/pokemontology/shapes.ttl#> .
@@ -58,6 +59,30 @@ pkmsh:InstantaneousProjectionProfileShape
         sh:maxCount 1 ;
         sh:class pkm:ProjectionProfile ;
         sh:message "If present, an Instantaneous must reference at most one ProjectionProfile."
+    ] .
+
+pkmsh:DeclaredPokemonPredicateShape
+    a sh:NodeShape ;
+    sh:targetClass pkm:Battle ;
+    sh:sparql [
+        sh:message "Every pkm: predicate used in data must be declared as an ontology property." ;
+        sh:select """
+            SELECT DISTINCT $this
+            WHERE {
+              ?subject ?predicate ?value .
+              FILTER(STRSTARTS(STR(?predicate), "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#"))
+              FILTER NOT EXISTS {
+                ?predicate a ?propertyType .
+                FILTER(
+                  ?propertyType IN (
+                    owl:AnnotationProperty,
+                    owl:ObjectProperty,
+                    owl:DatatypeProperty
+                  )
+                )
+              }
+            }
+        """
     ] .
 
 pkmsh:ParticipantStateAssignmentShape
