@@ -137,9 +137,11 @@ def test_parse_log_keeps_supported_state_events() -> None:
 |drag|p2a: Mewtwo|Mewtwo, L50|100/100
 |move|p1a: Charizard|Flamethrower|p2a: Mewtwo
 |-damage|p2a: Mewtwo|100/200
+|-sethp|p1a: Charizard|150/200|p2a: Mewtwo|120/200|[from] move: Pain Split
 |-status|p2a: Mewtwo|brn
 |-curestatus|p2a: Mewtwo|brn
 |-boost|p1a: Charizard|spa|1
+|-clearboost|p1a: Charizard
 |-miss|p1a: Charizard|p2a: Mewtwo
 |-fail|p2a: Mewtwo
 |-supereffective|p2a: Mewtwo
@@ -162,9 +164,11 @@ def test_parse_log_keeps_supported_state_events() -> None:
         "drag",
         "move",
         "-damage",
+        "-sethp",
         "-status",
         "-curestatus",
         "-boost",
+        "-clearboost",
         "-miss",
         "-fail",
         "-supereffective",

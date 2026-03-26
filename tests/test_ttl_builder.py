@@ -108,6 +108,7 @@ def test_builder_materializes_replay_observed_assignments(replay_graph: Graph) -
 def test_builder_emits_damage_and_healing_events(replay_graph: Graph) -> None:
     assert any(replay_graph.subjects(RDF.type, PKM.DamageEvent))
     assert any(replay_graph.subjects(RDF.type, PKM.HealingEvent))
+    assert any(replay_graph.subjects(RDF.type, PKM.StatStageChangeEvent))
 
 
 def test_builder_emits_status_and_target_resolution_for_supported_minor_actions() -> None:
@@ -325,6 +326,78 @@ def test_builder_projects_persistent_state_and_applies_teardown_events() -> None
     assert not any((assignment, PKM.hasContext, field_end_instant) in graph for assignment in graph.subjects(RDF.type, PKM.CurrentTerrainAssignment))
     assert not any((assignment, PKM.hasContext, side_end_instant) in graph for assignment in graph.subjects(RDF.type, PKM.SideConditionAssignment))
     assert not any((assignment, PKM.hasContext, volatile_end_instant) in graph for assignment in graph.subjects(RDF.type, PKM.VolatileStatusAssignment))
+
+
+def test_builder_projects_stat_stage_state_and_handles_sethp() -> None:
+    payload = {
+        "id": "synthetic-stage-projection",
+        "format": "[Gen 9] Custom Game",
+        "players": ["Alice", "Bob"],
+        "log": "\n".join([
+            "|turn|1",
+            "|switch|p1a: Pikachu|Pikachu, L50|100/100",
+            "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
+            "|move|p1a: Pikachu|Nasty Plot|p1a: Pikachu",
+            "|-boost|p1a: Pikachu|spa|2",
+            "|turn|2",
+            "|upkeep",
+            "|move|p1a: Pikachu|Pain Split|p2a: Bulbasaur",
+            "|-sethp|p1a: Pikachu|70/100|p2a: Bulbasaur|70/100|[from] move: Pain Split",
+            "|-clearboost|p1a: Pikachu",
+        ]),
+    }
+    graph = build_graph(payload)
+
+    boost_instant = next(
+        instant for instant in graph.subjects(RDF.type, PKM.Instantaneous)
+        if (instant, PKM.hasReplayStepLabel, Literal("-boost-t1-e3")) in graph
+    )
+    upkeep_instant = next(
+        instant for instant in graph.subjects(RDF.type, PKM.Instantaneous)
+        if (instant, PKM.hasReplayStepLabel, Literal("upkeep-t2-e0")) in graph
+    )
+    sethp_instant = next(
+        instant for instant in graph.subjects(RDF.type, PKM.Instantaneous)
+        if (instant, PKM.hasReplayStepLabel, Literal("-sethp-t2-e2")) in graph
+    )
+    clear_instant = next(
+        instant for instant in graph.subjects(RDF.type, PKM.Instantaneous)
+        if (instant, PKM.hasReplayStepLabel, Literal("-clearboost-t2-e3")) in graph
+    )
+
+    assert any(
+        (assignment, PKM.hasContext, boost_instant) in graph
+        and (assignment, PKM.aboutCombatant, PKM.Combatant_Alice_Pikachu) in graph
+        and (assignment, PKM.aboutStat, PKM.Stat_Special_Attack) in graph
+        and (assignment, PKM.hasStageValue, Literal(2)) in graph
+        for assignment in graph.subjects(RDF.type, PKM.StatStageAssignment)
+    )
+    assert any(
+        (assignment, PKM.hasContext, upkeep_instant) in graph
+        and (assignment, PKM.aboutCombatant, PKM.Combatant_Alice_Pikachu) in graph
+        and (assignment, PKM.aboutStat, PKM.Stat_Special_Attack) in graph
+        and (assignment, PKM.hasStageValue, Literal(2)) in graph
+        for assignment in graph.subjects(RDF.type, PKM.StatStageAssignment)
+    )
+    assert any(
+        (assignment, PKM.hasContext, clear_instant) in graph
+        and (assignment, PKM.aboutCombatant, PKM.Combatant_Alice_Pikachu) in graph
+        and (assignment, PKM.aboutStat, PKM.Stat_Special_Attack) in graph
+        and (assignment, PKM.hasStageValue, Literal(0)) in graph
+        for assignment in graph.subjects(RDF.type, PKM.StatStageAssignment)
+    )
+    assert any(
+        (assignment, PKM.hasContext, sethp_instant) in graph
+        and (assignment, PKM.aboutCombatant, PKM.Combatant_Alice_Pikachu) in graph
+        and (assignment, PKM.hasCurrentHPValue, Literal(70)) in graph
+        for assignment in graph.subjects(RDF.type, PKM.CurrentHPAssignment)
+    )
+    assert any(
+        (assignment, PKM.hasContext, sethp_instant) in graph
+        and (assignment, PKM.aboutCombatant, PKM.Combatant_Bob_Bulbasaur) in graph
+        and (assignment, PKM.hasCurrentHPValue, Literal(70)) in graph
+        for assignment in graph.subjects(RDF.type, PKM.CurrentHPAssignment)
+    )
 
 
 def test_builder_emits_multiple_resolution_nodes_for_multi_hit_moves() -> None:

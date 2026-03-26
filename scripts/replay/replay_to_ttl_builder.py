@@ -90,6 +90,7 @@ class ActionExecutionContext:
 @dataclass
 class StateSnapshot:
     current_hp: dict[URIRef, int] = field(default_factory=dict)
+    current_stat_stages: dict[tuple[URIRef, URIRef], int] = field(default_factory=dict)
     current_status: dict[URIRef, URIRef] = field(default_factory=dict)
     current_weather: URIRef | None = None
     current_terrain: URIRef | None = None
@@ -213,6 +214,24 @@ def emit_projected_state(
         g.add((assignment_iri, PKM.hasReplayTurnIndex, Literal(turn, datatype=XSD.integer)))
         g.add((assignment_iri, PKM.hasReplayEventOrder, Literal(order, datatype=XSD.integer)))
         g.add((assignment_iri, PKM.hasReplayStepLabel, Literal(f"hp-state-t{turn}-e{order}")))
+
+    for (combatant_iri, stat_iri), stage_value in sorted(
+        state.current_stat_stages.items(),
+        key=lambda item: (str(item[0][0]), str(item[0][1])),
+    ):
+        label = str(combatant_iri).rsplit("#", 1)[-1]
+        stat_label = str(stat_iri).rsplit("#", 1)[-1]
+        assignment_iri = PKM[f"Stage_{instant_name}_{label}_{stat_label}"]
+        g.add((assignment_iri, RDF.type, PKM.StatStageAssignment))
+        g.add((assignment_iri, PKM.aboutCombatant, combatant_iri))
+        g.add((assignment_iri, PKM.aboutStat, stat_iri))
+        g.add((assignment_iri, PKM.hasContext, instant))
+        g.add((assignment_iri, PKM.hasStageValue, Literal(stage_value, datatype=XSD.integer)))
+        add_materialization_provenance(g, assignment_iri, event_sources["stage"].get((combatant_iri, stat_iri)), previous_instant)
+        g.add((assignment_iri, PKM.supportedByArtifact, artifact_iri))
+        g.add((assignment_iri, PKM.hasReplayTurnIndex, Literal(turn, datatype=XSD.integer)))
+        g.add((assignment_iri, PKM.hasReplayEventOrder, Literal(order, datatype=XSD.integer)))
+        g.add((assignment_iri, PKM.hasReplayStepLabel, Literal(f"stage-state-t{turn}-e{order}")))
 
     for combatant_iri, status_iri in state.current_status.items():
         label = str(combatant_iri).rsplit("#", 1)[-1]
@@ -548,6 +567,7 @@ def build_graph(payload: dict) -> Graph:
         instant = PKM[f"I_{idx}"]
         event_sources: dict[str, dict[object, URIRef]] = {
             "hp": {},
+            "stage": {},
             "status": {},
             "weather": {},
             "terrain": {},
@@ -662,15 +682,15 @@ def build_graph(payload: dict) -> Graph:
                 g.add((transition, PKM.transitionOccursInBattle, battle_iri))
                 transition_count += 1
 
-        elif ev.kind in {"-damage", "-heal"}:
+        elif ev.kind in {"-damage", "-heal", "-sethp"}:
             combatant_iri = active_combatants_by_slot.get(
                 slot_key(ev.fields[0]),
                 combatant_iri_for_token(ev.fields[0], p1_name, p2_name),
             )
             hp_value = parse_hp_value(ev.fields[1])
             if hp_value is not None:
-                event_prefix = "Damage" if ev.kind == "-damage" else "Heal"
-                event_type = PKM.DamageEvent if ev.kind == "-damage" else PKM.HealingEvent
+                event_prefix = "Damage" if ev.kind == "-damage" else "Heal" if ev.kind == "-heal" else "SetHP"
+                event_type = PKM.DamageEvent if ev.kind == "-damage" else PKM.HealingEvent if ev.kind == "-heal" else PKM.Event
                 event_iri = PKM[f"{event_prefix}_T{ev.turn}_{ev.order}_{sanitize_identifier(actor_display_name(ev.fields[0]))}"]
 
                 g.add((event_iri, RDF.type, event_type))
@@ -701,6 +721,28 @@ def build_graph(payload: dict) -> Graph:
 
                 state.current_hp[combatant_iri] = hp_value
                 event_sources["hp"][combatant_iri] = event_iri
+
+                if ev.kind == "-sethp" and len(ev.fields) >= 4:
+                    partner_iri = active_combatants_by_slot.get(
+                        slot_key(ev.fields[2]),
+                        combatant_iri_for_token(ev.fields[2], p1_name, p2_name),
+                    )
+                    partner_hp_value = parse_hp_value(ev.fields[3])
+                    if partner_hp_value is not None:
+                        partner_event_iri = PKM[
+                            f"SetHP_T{ev.turn}_{ev.order}_{sanitize_identifier(actor_display_name(ev.fields[2]))}"
+                        ]
+                        g.add((partner_event_iri, RDF.type, PKM.Event))
+                        g.add((partner_event_iri, PKM.affectsCombatant, partner_iri))
+                        g.add((partner_event_iri, PKM.occursInInstantaneous, instant))
+                        g.add((partner_event_iri, PKM.hasReplayTurnIndex, Literal(ev.turn, datatype=XSD.integer)))
+                        g.add((partner_event_iri, PKM.hasReplayEventOrder, Literal(ev.order, datatype=XSD.integer)))
+                        g.add((partner_event_iri, PKM.hasReplayStepLabel, Literal(f"sethp-t{ev.turn}-e{ev.order}")))
+                        g.add((partner_event_iri, PKM.supportedByArtifact, artifact_iri))
+                        if should_attribute_minor_event_to_action(current_action, ev.fields[4:]):
+                            g.add((partner_event_iri, PKM.causedByAction, current_action.action_iri))
+                        state.current_hp[partner_iri] = partner_hp_value
+                        event_sources["hp"][partner_iri] = partner_event_iri
 
         elif ev.kind == "-status":
             combatant_iri = maybe_combatant_from_token(ev.fields[0], active_combatants_by_slot, p1_name, p2_name)
@@ -762,22 +804,54 @@ def build_graph(payload: dict) -> Graph:
             )
             stat_token = ev.fields[1].strip()
             stage_delta = int(ev.fields[2])
-            stage_value = stage_delta if ev.kind == "-boost" else -stage_delta
+            stage_delta = stage_delta if ev.kind == "-boost" else -stage_delta
             stat_iri = stat_iri_for_token(stat_token)
             ensure_named_entity(g, stat_iri, PKM.Stat, STAT_TOKEN_TO_NAME.get(stat_token, stat_token))
-
-            assignment_iri = PKM[
-                f"Stage_T{ev.turn}_{ev.order}_{sanitize_identifier(actor_display_name(ev.fields[0]))}_{sanitize_identifier(stat_token)}"
+            event_iri = PKM[
+                f"StageChange_T{ev.turn}_{ev.order}_{sanitize_identifier(actor_display_name(ev.fields[0]))}_{sanitize_identifier(stat_token)}"
             ]
-            g.add((assignment_iri, RDF.type, PKM.StatStageAssignment))
-            g.add((assignment_iri, PKM.aboutCombatant, combatant_iri))
-            g.add((assignment_iri, PKM.aboutStat, stat_iri))
-            g.add((assignment_iri, PKM.hasContext, instant))
-            g.add((assignment_iri, PKM.hasStageValue, Literal(stage_value, datatype=XSD.integer)))
-            g.add((assignment_iri, PKM.supportedByArtifact, artifact_iri))
-            g.add((assignment_iri, PKM.hasReplayTurnIndex, Literal(ev.turn, datatype=XSD.integer)))
-            g.add((assignment_iri, PKM.hasReplayEventOrder, Literal(ev.order, datatype=XSD.integer)))
-            g.add((assignment_iri, PKM.hasReplayStepLabel, Literal(f"stage-{ev.kind[1:]}-t{ev.turn}-e{ev.order}")))
+            g.add((event_iri, RDF.type, PKM.StatStageChangeEvent))
+            g.add((event_iri, PKM.affectsCombatant, combatant_iri))
+            g.add((event_iri, PKM.aboutStat, stat_iri))
+            g.add((event_iri, PKM.hasStageDelta, Literal(stage_delta, datatype=XSD.integer)))
+            g.add((event_iri, PKM.occursInInstantaneous, instant))
+            g.add((event_iri, PKM.supportedByArtifact, artifact_iri))
+            g.add((event_iri, PKM.hasReplayTurnIndex, Literal(ev.turn, datatype=XSD.integer)))
+            g.add((event_iri, PKM.hasReplayEventOrder, Literal(ev.order, datatype=XSD.integer)))
+            g.add((event_iri, PKM.hasReplayStepLabel, Literal(f"stage-{ev.kind[1:]}-t{ev.turn}-e{ev.order}")))
+            current_stage = state.current_stat_stages.get((combatant_iri, stat_iri), 0)
+            state.current_stat_stages[(combatant_iri, stat_iri)] = max(-6, min(6, current_stage + stage_delta))
+            event_sources["stage"][(combatant_iri, stat_iri)] = event_iri
+
+        elif ev.kind in {"-clearboost", "-clearallboost"}:
+            if ev.kind == "-clearboost":
+                combatants = [
+                    active_combatants_by_slot.get(
+                        slot_key(ev.fields[0]),
+                        combatant_iri_for_token(ev.fields[0], p1_name, p2_name),
+                    )
+                ]
+            else:
+                combatants = sorted(set(active_combatants_by_slot.values()), key=str)
+            for combatant_iri in combatants:
+                matching_keys = [key for key in state.current_stat_stages if key[0] == combatant_iri and state.current_stat_stages[key] != 0]
+                for key in matching_keys:
+                    _combatant_iri, stat_iri = key
+                    prior_stage = state.current_stat_stages[key]
+                    event_iri = PKM[
+                        f"StageChange_T{ev.turn}_{ev.order}_{str(combatant_iri).rsplit('#', 1)[-1]}_{str(stat_iri).rsplit('#', 1)[-1]}_clear"
+                    ]
+                    g.add((event_iri, RDF.type, PKM.StatStageChangeEvent))
+                    g.add((event_iri, PKM.affectsCombatant, combatant_iri))
+                    g.add((event_iri, PKM.aboutStat, stat_iri))
+                    g.add((event_iri, PKM.hasStageDelta, Literal(-prior_stage, datatype=XSD.integer)))
+                    g.add((event_iri, PKM.occursInInstantaneous, instant))
+                    g.add((event_iri, PKM.supportedByArtifact, artifact_iri))
+                    g.add((event_iri, PKM.hasReplayTurnIndex, Literal(ev.turn, datatype=XSD.integer)))
+                    g.add((event_iri, PKM.hasReplayEventOrder, Literal(ev.order, datatype=XSD.integer)))
+                    g.add((event_iri, PKM.hasReplayStepLabel, Literal(f"stage-clear-t{ev.turn}-e{ev.order}")))
+                    state.current_stat_stages[key] = 0
+                    event_sources["stage"][key] = event_iri
 
         elif ev.kind == "-weather":
             weather_token = ev.fields[0].strip()

@@ -101,6 +101,28 @@ def test_synthetic_teardown_projection_graph_conforms_to_shapes() -> None:
     assert conforms, f"Synthetic teardown/projection graph violates SHACL:\n{results_text}"
 
 
+def test_synthetic_stage_projection_graph_conforms_to_shapes() -> None:
+    payload = {
+        "id": "synthetic-stage-projection",
+        "format": "[Gen 9] Custom Game",
+        "players": ["Alice", "Bob"],
+        "log": "\n".join([
+            "|turn|1",
+            "|switch|p1a: Pikachu|Pikachu, L50|100/100",
+            "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
+            "|move|p1a: Pikachu|Nasty Plot|p1a: Pikachu",
+            "|-boost|p1a: Pikachu|spa|2",
+            "|turn|2",
+            "|upkeep",
+            "|move|p1a: Pikachu|Pain Split|p2a: Bulbasaur",
+            "|-sethp|p1a: Pikachu|70/100|p2a: Bulbasaur|70/100|[from] move: Pain Split",
+            "|-clearboost|p1a: Pikachu",
+        ]),
+    }
+    conforms, results_text = _validate_data_graph(build_graph(payload))
+    assert conforms, f"Synthetic stage projection graph violates SHACL:\n{results_text}"
+
+
 def test_iv_assignment_rejects_values_above_31() -> None:
     conforms, results_text = _validate_data_graph(
         _parse_ttl(
