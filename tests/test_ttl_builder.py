@@ -9,8 +9,8 @@ from rdflib import Graph, Literal, Namespace
 from rdflib.namespace import OWL, RDF
 
 from pokemontology._script_loader import repo_path
-from scripts.replay.replay_parser import parse_log
-from scripts.replay.replay_to_ttl_builder import build_graph
+from pokemontology.replay.replay_parser import parse_log
+from pokemontology.replay.replay_to_ttl_builder import build_graph
 
 REPO = repo_path()
 REPLAY_JSON = (

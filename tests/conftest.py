@@ -6,7 +6,7 @@ import pytest
 from rdflib import Graph
 
 from pokemontology._script_loader import repo_path
-from scripts.build import build_ontology
+from pokemontology.build import build_ontology
 
 
 REPO = repo_path()

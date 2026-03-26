@@ -17,7 +17,7 @@ dependencies = [
 pokemontology = "pokemontology.cli:main"
 
 [tool.setuptools.packages.find]
-include = ["pokemontology*", "scripts*"]
+include = ["pokemontology*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

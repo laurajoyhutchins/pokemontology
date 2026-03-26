@@ -10,7 +10,7 @@ from pyshacl import validate
 from rdflib import Graph
 
 from pokemontology._script_loader import repo_path
-from scripts.replay.replay_to_ttl_builder import build_graph
+from pokemontology.replay.replay_to_ttl_builder import build_graph
 
 REPO = repo_path()
 

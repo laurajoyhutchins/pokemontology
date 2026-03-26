@@ -13,9 +13,9 @@ from rdflib import Graph
 from ._script_loader import REPO_ROOT
 from .turn_order import resolve_action_order
 
-from scripts.build import build_ontology, check_ttl_parse
-from scripts.ingest import pokeapi_ingest, veekun_ingest
-from scripts.replay import (
+from pokemontology.build import build_ontology, check_ttl_parse
+from pokemontology.ingest import pokeapi_ingest, veekun_ingest
+from pokemontology.replay import (
     parse_showdown_replay,
     replay_dataset,
     replay_to_ttl_builder,

@@ -9,7 +9,7 @@ from rdflib import Graph, Namespace
 from rdflib.namespace import RDF
 
 from pokemontology._script_loader import repo_path
-from scripts.ingest import veekun_ingest
+from pokemontology.ingest import veekun_ingest
 
 
 REPO = repo_path()

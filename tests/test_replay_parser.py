@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from scripts.replay.replay_parser import (
+from pokemontology.replay.replay_parser import (
     ReplayEvent,
     compact_species_name,
     discover_moves,

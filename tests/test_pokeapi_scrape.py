@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 
-from scripts.ingest import pokeapi_scrape
+from pokemontology.ingest import pokeapi_scrape
 
 
 def test_scrape_resource_fetches_pages_and_details_then_reuses_cache(
