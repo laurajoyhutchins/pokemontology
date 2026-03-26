@@ -63,10 +63,6 @@ def entity_name_literal(payload: dict) -> Literal:
     return Literal(english_name(payload) or titleize_name(payload_name(payload)))
 
 
-def integer_literal(value: int) -> Literal:
-    return Literal(int(value), datatype=XSD.integer)
-
-
 def boolean_literal(value: bool) -> Literal:
     return Literal(bool(value), datatype=XSD.boolean)
 
@@ -202,24 +198,6 @@ def add_named_resource(g: Graph, iri: URIRef, rdf_class: URIRef, payload: dict, 
         g.add((iri, PKM.hasIdentifier, Literal(f"pokeapi:{resource}:{payload_name(payload)}")))
 
 
-def snapshot_ruleset_iri() -> URIRef:
-    return PKM.Ruleset_PokeAPI_CanonicalSnapshot
-
-
-def add_snapshot_ruleset(g: Graph) -> None:
-    iri = snapshot_ruleset_iri()
-    g.add((iri, RDF.type, PKM.Ruleset))
-    g.add((iri, RDFS.label, Literal("PokeAPI Canonical Snapshot")))
-    g.add((
-        iri,
-        RDFS.comment,
-        Literal(
-            "Ruleset-like context for mechanics values sourced from current PokeAPI payloads "
-            "that are not explicitly version-group scoped."
-        ),
-    ))
-
-
 def add_version_group_context(g: Graph, payload: dict) -> URIRef:
     version_group_name = payload_name(payload)
     version_group_iri = iri_for("VersionGroup", version_group_name)
@@ -261,12 +239,10 @@ def build_graph_from_raw(raw_dir: Path) -> Graph:
         RDFS.comment,
         Literal(
             "Auto-generated TTL dataset built from cached PokeAPI payloads. "
-            "Entities are canonicalized into the ontology namespace; version-group-scoped "
-            "learnability is preserved where the source payload exposes it."
+            "Only data that maps cleanly into the ontology is emitted: canonical entities, "
+            "variant-to-species links, version-group contexts, and version-group-scoped move learnability."
         ),
     ))
-
-    add_snapshot_ruleset(g)
 
     for payload in payloads["type"]:
         add_named_resource(g, iri_for("Type", payload_name(payload)), PKM.Type, payload, "type")
@@ -278,25 +254,7 @@ def build_graph_from_raw(raw_dir: Path) -> Graph:
         add_named_resource(g, iri_for("Ability", payload_name(payload)), PKM.Ability, payload, "ability")
 
     for payload in payloads["move"]:
-        move_iri = iri_for("Move", payload_name(payload))
-        add_named_resource(g, move_iri, PKM.Move, payload, "move")
-
-        assignment_iri = iri_for("MovePropertyAssignment", payload_name(payload))
-        g.add((assignment_iri, RDF.type, PKM.MovePropertyAssignment))
-        g.add((assignment_iri, PKM.aboutMove, move_iri))
-        g.add((assignment_iri, PKM.hasContext, snapshot_ruleset_iri()))
-
-        if payload.get("power") is not None:
-            g.add((assignment_iri, PKM.hasBasePower, integer_literal(payload["power"])))
-        if payload.get("accuracy") is not None:
-            g.add((assignment_iri, PKM.hasAccuracy, integer_literal(payload["accuracy"])))
-        if payload.get("pp") is not None:
-            g.add((assignment_iri, PKM.hasPP, integer_literal(payload["pp"])))
-        if payload.get("priority") is not None:
-            g.add((assignment_iri, PKM.hasPriority, integer_literal(payload["priority"])))
-        move_type = payload.get("type", {}).get("name")
-        if move_type:
-            g.add((assignment_iri, PKM.hasMoveType, iri_for("Type", move_type)))
+        add_named_resource(g, iri_for("Move", payload_name(payload)), PKM.Move, payload, "move")
 
     for payload in payloads["pokemon-species"]:
         add_named_resource(g, iri_for("Species", payload_name(payload)), PKM.Species, payload, "pokemon-species")
@@ -317,41 +275,6 @@ def build_graph_from_raw(raw_dir: Path) -> Graph:
         g.add((variant_iri, PKM.belongsToSpecies, species_iri))
         g.add((variant_iri, PKM.hasName, Literal(default_variant_name(payload, species_by_name))))
         g.add((variant_iri, PKM.hasIdentifier, Literal(f"pokeapi:pokemon:{payload['id']}")))
-
-        for type_slot in payload.get("types", []):
-            type_name = type_slot.get("type", {}).get("name")
-            slot = type_slot.get("slot")
-            if not type_name or slot is None:
-                continue
-            assignment_iri = iri_for("TypingAssignment", f"{pokemon_name}_{type_name}_{slot}")
-            g.add((assignment_iri, RDF.type, PKM.TypingAssignment))
-            g.add((assignment_iri, PKM.aboutVariant, variant_iri))
-            g.add((assignment_iri, PKM.aboutType, iri_for("Type", type_name)))
-            g.add((assignment_iri, PKM.hasContext, snapshot_ruleset_iri()))
-            g.add((assignment_iri, PKM.hasTypeSlot, integer_literal(slot)))
-
-        for stat_entry in payload.get("stats", []):
-            stat_name = stat_entry.get("stat", {}).get("name")
-            base_stat = stat_entry.get("base_stat")
-            if not stat_name or base_stat is None:
-                continue
-            assignment_iri = iri_for("StatAssignment", f"{pokemon_name}_{stat_name}")
-            g.add((assignment_iri, RDF.type, PKM.StatAssignment))
-            g.add((assignment_iri, PKM.aboutVariant, variant_iri))
-            g.add((assignment_iri, PKM.aboutStat, iri_for("Stat", stat_name)))
-            g.add((assignment_iri, PKM.hasContext, snapshot_ruleset_iri()))
-            g.add((assignment_iri, PKM.hasValue, integer_literal(base_stat)))
-
-        for ability_entry in payload.get("abilities", []):
-            ability_name = ability_entry.get("ability", {}).get("name")
-            if not ability_name:
-                continue
-            assignment_iri = iri_for("AbilityAssignment", f"{pokemon_name}_{ability_name}")
-            g.add((assignment_iri, RDF.type, PKM.AbilityAssignment))
-            g.add((assignment_iri, PKM.aboutVariant, variant_iri))
-            g.add((assignment_iri, PKM.aboutAbility, iri_for("Ability", ability_name)))
-            g.add((assignment_iri, PKM.hasContext, snapshot_ruleset_iri()))
-            g.add((assignment_iri, PKM.isHiddenAbility, boolean_literal(bool(ability_entry.get("is_hidden")))))
 
         for move_entry in payload.get("moves", []):
             move_name = move_entry.get("move", {}).get("name")

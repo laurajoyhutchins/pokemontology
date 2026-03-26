@@ -73,64 +73,82 @@ pokemontology/
 Rebuild the consumer ontology after editing source modules:
 
 ```bash
-python3 scripts/build_ontology.py
+python3 -m pokemontology build
 ```
 
 This also refreshes the GitHub Pages artifacts under `docs/`.
 
+## CLI
+
+The repository now exposes a unified CLI:
+
+```bash
+python3 -m pokemontology --help
+```
+
+If installed as a console script, the same commands are available under:
+
+```bash
+pokemontology --help
+```
+
 ## Example commands
 
 ```bash
-python scripts/parse_showdown_replay.py       examples/replays/gen9vgc2025regjbo3-2414024536-ey54jc53vyjqy20sq0ww1l5nd3bq5qhpw.json       --pretty
+python3 -m pokemontology parse-replay \
+      examples/replays/gen9vgc2025regjbo3-2414024536-ey54jc53vyjqy20sq0ww1l5nd3bq5qhpw.json \
+      --pretty
 ```
 
 ```bash
-python scripts/summarize_showdown_replay.py       examples/replays/gen9vgc2025regjbo3-2414024536-ey54jc53vyjqy20sq0ww1l5nd3bq5qhpw.json
+python3 -m pokemontology summarize-replay \
+      examples/replays/gen9vgc2025regjbo3-2414024536-ey54jc53vyjqy20sq0ww1l5nd3bq5qhpw.json
 ```
 
 ```bash
-python scripts/replay_to_ttl_builder.py       examples/replays/gen9vgc2025regjbo3-2414024536-ey54jc53vyjqy20sq0ww1l5nd3bq5qhpw.json       -o examples/slices/generated-slice.ttl
+python3 -m pokemontology build-slice \
+      examples/replays/gen9vgc2025regjbo3-2414024536-ey54jc53vyjqy20sq0ww1l5nd3bq5qhpw.json \
+      -o examples/slices/generated-slice.ttl
 ```
 
 ```bash
-python3 scripts/check_ttl_parse.py       build/ontology.ttl       build/shapes.ttl       examples/fixtures/froakie-caterpie-seed.ttl       examples/slices/showdown-finals-game1-slice.ttl
+python3 -m pokemontology check-ttl \
+      build/ontology.ttl \
+      build/shapes.ttl \
+      examples/fixtures/froakie-caterpie-seed.ttl \
+      examples/slices/showdown-finals-game1-slice.ttl
 ```
 
 ```bash
-python3 scripts/pokeapi_ingest.py ingest \
+python3 -m pokemontology pokeapi ingest \
       examples/pokeapi/seed-config.json \
       --raw-dir data/pokeapi/raw \
       --output build/pokeapi.ttl
 ```
 
 ```bash
-python3 scripts/check_ttl_parse.py build/pokeapi.ttl
+python3 -m pokemontology check-ttl build/pokeapi.ttl
 ```
 
 ## PokeAPI ingestion pipeline
 
 The repo now includes a two-stage PokeAPI pipeline:
 
-1. `fetch` caches raw JSON under `data/pokeapi/raw/`
-2. `transform` converts cached payloads into ontology-native Turtle
-3. `ingest` runs both steps in sequence
+1. `pokemontology pokeapi fetch` caches raw JSON under `data/pokeapi/raw/`
+2. `pokemontology pokeapi transform` converts cached payloads into ontology-native Turtle
+3. `pokemontology pokeapi ingest` runs both steps in sequence
 
 Current mapping scope:
 - `pokemon-species` -> `pkm:Species`
 - `pokemon` -> `pkm:Variant`
-- `move` -> `pkm:Move` plus snapshot `pkm:MovePropertyAssignment`
+- `move` -> `pkm:Move`
 - `ability` -> `pkm:Ability`
 - `type` -> `pkm:Type`
 - `stat` -> `pkm:Stat`
 - `version-group` -> `pkm:VersionGroup` plus linked `pkm:Ruleset`
 - Pokémon move learnsets -> `pkm:MoveLearnRecord` per variant/move/version-group
-- Pokémon current types, stats, and abilities -> snapshot assignments in `pkm:Ruleset_PokeAPI_CanonicalSnapshot`
 
-The transform intentionally distinguishes between:
-- version-group-scoped learnability data that PokeAPI exposes directly
-- current canonical mechanics values that PokeAPI exposes without a version-group qualifier
-
-That keeps the generated TTL useful without pretending that all mechanics data is historically version-precise.
+The transform intentionally excludes data that PokeAPI exposes only as a current canonical snapshot without a clean ontology context. In particular, it does not emit `pkm:TypingAssignment`, `pkm:StatAssignment`, `pkm:AbilityAssignment`, or `pkm:MovePropertyAssignment`, because those are contextual facts in the ontology and PokeAPI does not provide the necessary ruleset precision for them.
 
 ## Notes
 

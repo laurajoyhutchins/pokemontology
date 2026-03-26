@@ -55,13 +55,12 @@ def test_build_graph_from_raw_emits_expected_ontology_nodes(tmp_path) -> None:
 
     species = PKM.Species_froakie
     variant = PKM.Variant_froakie
-    snapshot_ruleset = PKM.Ruleset_PokeAPI_CanonicalSnapshot
     move_record = PKM.MoveLearnRecord_froakie_bubble_x_y
 
     assert (species, RDF.type, PKM.Species) in graph
     assert (variant, RDF.type, PKM.Variant) in graph
     assert (variant, PKM.belongsToSpecies, species) in graph
-    assert (snapshot_ruleset, RDF.type, PKM.Ruleset) in graph
+    assert (PKM.Ruleset_x_y, RDF.type, PKM.Ruleset) in graph
     assert (move_record, RDF.type, PKM.MoveLearnRecord) in graph
     assert (move_record, PKM.hasContext, PKM.Ruleset_x_y) in graph
 
@@ -75,4 +74,8 @@ def test_build_ttl_from_raw_serializes_valid_turtle(tmp_path) -> None:
     graph.parse(data=ttl, format="turtle")
 
     assert len(graph) > 0
-    assert any(graph.triples((None, RDF.type, PKM.MovePropertyAssignment)))
+    assert any(graph.triples((None, RDF.type, PKM.MoveLearnRecord)))
+    assert not any(graph.triples((None, RDF.type, PKM.MovePropertyAssignment)))
+    assert not any(graph.triples((None, RDF.type, PKM.TypingAssignment)))
+    assert not any(graph.triples((None, RDF.type, PKM.StatAssignment)))
+    assert not any(graph.triples((None, RDF.type, PKM.AbilityAssignment)))
