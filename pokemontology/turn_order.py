@@ -789,6 +789,157 @@ def _branch_result(
     return branch
 
 
+def _priority_values(combatants: list[CombatantOrderInput]) -> tuple[int, int]:
+    return tuple(combatant.derived_move_priority() for combatant in combatants)
+
+
+def _resolve_priority_branches(
+    combatants: list[CombatantOrderInput],
+) -> tuple[list[dict], int] | None:
+    first_priority, second_priority = _priority_values(combatants)
+    if first_priority == second_priority:
+        return None
+    ordered = sorted(
+        combatants, key=lambda combatant: -combatant.derived_move_priority()
+    )
+    first, second = ordered
+    priority_bracket = first.derived_move_priority()
+    return (
+        [
+            _branch_result(
+                first,
+                second,
+                Fraction(1, 1),
+                "higher derived move priority",
+                priority_bracket,
+            )
+        ],
+        priority_bracket,
+    )
+
+
+def _speed_ordered_combatants(
+    combatants: list[CombatantOrderInput],
+    trick_room: bool,
+    weather: str | None,
+    terrain: str | None,
+) -> tuple[CombatantOrderInput, CombatantOrderInput]:
+    ordered = sorted(
+        combatants,
+        key=lambda combatant: _speed_sort_key(combatant, trick_room, weather, terrain),
+    )
+    return ordered[0], ordered[1]
+
+
+def _speed_tie(
+    first: CombatantOrderInput,
+    second: CombatantOrderInput,
+    weather: str | None,
+    terrain: str | None,
+) -> bool:
+    return _forced_last_group(first) == _forced_last_group(
+        second
+    ) and first.effective_speed(weather, terrain) == second.effective_speed(
+        weather, terrain
+    )
+
+
+def _resolve_quick_claw_speed_branches(
+    combatants: list[CombatantOrderInput],
+    priority_bracket: int,
+    trick_room: bool,
+    weather: str | None,
+    terrain: str | None,
+) -> list[dict]:
+    branches: list[dict] = []
+    for qc_states in product((False, True), repeat=2):
+        probability = _quick_claw_probability(
+            combatants[0], qc_states[0]
+        ) * _quick_claw_probability(combatants[1], qc_states[1])
+        if probability == 0:
+            continue
+        if qc_states[0] != qc_states[1]:
+            quick_index = 0 if qc_states[0] else 1
+            slow_index = 1 - quick_index
+            branches.append(
+                _branch_result(
+                    combatants[quick_index],
+                    combatants[slow_index],
+                    probability,
+                    "Quick Claw activation",
+                    priority_bracket,
+                )
+            )
+            continue
+
+        first, second = _speed_ordered_combatants(
+            combatants, trick_room, weather, terrain
+        )
+        reason = _speed_comparison_reason(first, second, trick_room, weather, terrain)
+        if _speed_tie(first, second, weather, terrain):
+            split_probability = probability / 2
+            branches.append(
+                _branch_result(
+                    first,
+                    second,
+                    split_probability,
+                    reason,
+                    priority_bracket,
+                    random_tie=True,
+                )
+            )
+            branches.append(
+                _branch_result(
+                    second,
+                    first,
+                    split_probability,
+                    reason,
+                    priority_bracket,
+                    random_tie=True,
+                )
+            )
+            continue
+
+        branches.append(
+            _branch_result(
+                first,
+                second,
+                probability,
+                reason,
+                priority_bracket,
+            )
+        )
+    return branches
+
+
+def _serialize_combatant(
+    combatant: CombatantOrderInput, weather: str | None, terrain: str | None
+) -> dict:
+    effective_speed = combatant.effective_speed(weather, terrain)
+    return {
+        "side": combatant.side,
+        "speed_tier": combatant.speed_tier,
+        "move_name": combatant.move_name,
+        "move_priority": combatant.move_priority,
+        "derived_move_priority": combatant.derived_move_priority(),
+        "speed_stage": combatant.speed_stage,
+        "tailwind": combatant.tailwind,
+        "item": combatant.item,
+        "ability": combatant.ability,
+        "status": combatant.status,
+        "move_type": combatant.move_type,
+        "move_category": combatant.move_category,
+        "move_tags": list(combatant.move_tags),
+        "unburden_active": combatant.unburden_active,
+        "slow_start_active": combatant.slow_start_active,
+        "at_full_hp": combatant.at_full_hp,
+        "effective_speed": {
+            "numerator": effective_speed.numerator,
+            "denominator": effective_speed.denominator,
+        },
+    }
+
+
 def _sorted_membership(
     values: tuple[str | None, ...], supported: set[str]
 ) -> tuple[list[str], list[str]]:
@@ -823,98 +974,18 @@ def resolve_action_order(payload: dict) -> dict:
         ability_values, set(SUPPORTED_MOVE_PRIORITY_ABILITIES)
     )
 
-    branches: list[dict] = []
-    priority_values = {
-        combatants[0].derived_move_priority(),
-        combatants[1].derived_move_priority(),
-    }
-    if len(priority_values) > 1:
-        ordered = sorted(
-            combatants, key=lambda combatant: -combatant.derived_move_priority()
-        )
-        first, second = ordered
-        branches.append(
-            _branch_result(
-                first,
-                second,
-                Fraction(1, 1),
-                "higher derived move priority",
-                first.derived_move_priority(),
-            )
-        )
+    priority_resolution = _resolve_priority_branches(combatants)
+    if priority_resolution is not None:
+        branches, priority_bracket = priority_resolution
     else:
         priority_bracket = combatants[0].derived_move_priority()
-        for qc_states in product((False, True), repeat=2):
-            probability = _quick_claw_probability(
-                combatants[0], qc_states[0]
-            ) * _quick_claw_probability(combatants[1], qc_states[1])
-            if probability == 0:
-                continue
-            if qc_states[0] != qc_states[1]:
-                quick_index = 0 if qc_states[0] else 1
-                slow_index = 1 - quick_index
-                branches.append(
-                    _branch_result(
-                        combatants[quick_index],
-                        combatants[slow_index],
-                        probability,
-                        "Quick Claw activation",
-                        priority_bracket,
-                    )
-                )
-                continue
-
-            ordered = sorted(
-                combatants,
-                key=lambda combatant: _speed_sort_key(
-                    combatant, trick_room, weather, terrain
-                ),
-            )
-            first, second = ordered
-            random_tie = _forced_last_group(first) == _forced_last_group(
-                second
-            ) and first.effective_speed(weather, terrain) == second.effective_speed(
-                weather, terrain
-            )
-            if random_tie:
-                split_probability = probability / 2
-                branches.append(
-                    _branch_result(
-                        first,
-                        second,
-                        split_probability,
-                        _speed_comparison_reason(
-                            first, second, trick_room, weather, terrain
-                        ),
-                        priority_bracket,
-                        random_tie=True,
-                    )
-                )
-                branches.append(
-                    _branch_result(
-                        second,
-                        first,
-                        split_probability,
-                        _speed_comparison_reason(
-                            second, first, trick_room, weather, terrain
-                        ),
-                        priority_bracket,
-                        random_tie=True,
-                    )
-                )
-                continue
-
-            branches.append(
-                _branch_result(
-                    first,
-                    second,
-                    probability,
-                    _speed_comparison_reason(
-                        first, second, trick_room, weather, terrain
-                    ),
-                    priority_bracket,
-                )
-            )
+        branches = _resolve_quick_claw_speed_branches(
+            combatants,
+            priority_bracket,
+            trick_room,
+            weather,
+            terrain,
+        )
 
     collapsed: dict[tuple[str, str, int, int, str, bool], Fraction] = {}
     for branch in branches:
@@ -966,35 +1037,12 @@ def resolve_action_order(payload: dict) -> dict:
     ]
 
     return {
-        "priority_bracket": max(priority_values),
+        "priority_bracket": priority_bracket,
         "trick_room": trick_room,
         "weather": weather,
         "terrain": terrain,
         "combatants": [
-            {
-                "side": combatant.side,
-                "speed_tier": combatant.speed_tier,
-                "move_name": combatant.move_name,
-                "move_priority": combatant.move_priority,
-                "derived_move_priority": combatant.derived_move_priority(),
-                "speed_stage": combatant.speed_stage,
-                "tailwind": combatant.tailwind,
-                "item": combatant.item,
-                "ability": combatant.ability,
-                "status": combatant.status,
-                "move_type": combatant.move_type,
-                "move_category": combatant.move_category,
-                "move_tags": list(combatant.move_tags),
-                "unburden_active": combatant.unburden_active,
-                "slow_start_active": combatant.slow_start_active,
-                "at_full_hp": combatant.at_full_hp,
-                "effective_speed": {
-                    "numerator": combatant.effective_speed(weather, terrain).numerator,
-                    "denominator": combatant.effective_speed(
-                        weather, terrain
-                    ).denominator,
-                },
-            }
+            _serialize_combatant(combatant, weather, terrain)
             for combatant in combatants
         ],
         "branches": ordered_branches,
