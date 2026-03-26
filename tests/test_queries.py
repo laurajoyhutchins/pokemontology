@@ -132,3 +132,28 @@ def test_query_command_outputs_json_results(
             "factor": "2.0",
         }
     ]
+
+
+def test_load_turtle_sources_reuses_cached_graph(
+    built_ontology_path: str, tmp_path: Path, monkeypatch: object
+) -> None:
+    fixture_path = tmp_path / "super-effective-fixture.ttl"
+    _write_super_effective_fixture(fixture_path)
+
+    parse_calls = 0
+    original_parse = Graph.parse
+
+    def counting_parse(self, *args, **kwargs):
+        nonlocal parse_calls
+        parse_calls += 1
+        return original_parse(self, *args, **kwargs)
+
+    monkeypatch.setattr(Graph, "parse", counting_parse)
+    cli._TURTLE_SOURCE_CACHE.clear()
+
+    sources = [Path(built_ontology_path), fixture_path]
+    first = cli._load_turtle_sources(sources)
+    second = cli._load_turtle_sources(sources)
+
+    assert first is second
+    assert parse_calls == 2

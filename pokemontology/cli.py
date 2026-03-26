@@ -11,6 +11,7 @@ from typing import Sequence
 from rdflib import Graph
 
 from ._script_loader import REPO_ROOT
+from .ingest_common import serialize_turtle_to_path
 from .turn_order import resolve_action_order
 
 from pokemontology.build import build_ontology, check_ttl_parse
@@ -25,6 +26,9 @@ from pokemontology.replay import (
 
 class CliUsageError(ValueError):
     """Raised when CLI input is syntactically valid but unusable."""
+
+
+_TURTLE_SOURCE_CACHE: dict[tuple[tuple[str, int, int], ...], Graph] = {}
 
 
 def _repo_relative(path: Path) -> str:
@@ -64,6 +68,17 @@ def _read_text(path: Path, *, label: str) -> str:
 
 
 def _load_turtle_sources(paths: Sequence[Path]) -> Graph:
+    cache_key = tuple(
+        (
+            str(path.resolve()),
+            path.stat().st_mtime_ns,
+            path.stat().st_size,
+        )
+        for path in paths
+    )
+    cached = _TURTLE_SOURCE_CACHE.get(cache_key)
+    if cached is not None:
+        return cached
     graph = Graph()
     for path in paths:
         try:
@@ -72,6 +87,7 @@ def _load_turtle_sources(paths: Sequence[Path]) -> Graph:
             raise CliUsageError(
                 f"failed to parse Turtle source {_repo_relative(path)}: {exc}"
             ) from exc
+    _TURTLE_SOURCE_CACHE[cache_key] = graph
     return graph
 
 
@@ -143,11 +159,10 @@ def cmd_summarize_replay(args: argparse.Namespace) -> int:
 
 def cmd_build_slice(args: argparse.Namespace) -> int:
     payload = _load_json_object(args.replay_json, label="replay JSON")
-    ttl = replay_to_ttl_builder.build_ttl(payload)
     output_path = args.output or args.replay_json.with_name(
         f"{args.replay_json.stem}-slice.ttl"
     )
-    output_path.write_text(ttl, encoding="utf-8")
+    serialize_turtle_to_path(replay_to_ttl_builder.build_graph(payload), output_path)
     print(output_path)
     return 0
 

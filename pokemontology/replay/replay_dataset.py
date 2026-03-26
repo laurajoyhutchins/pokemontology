@@ -19,7 +19,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from pokemontology.ingest_common import REPO_ROOT
+from pokemontology.ingest_common import REPO_ROOT, serialize_turtle_to_path
 from pokemontology.replay import replay_to_ttl_builder
 
 
@@ -293,9 +293,8 @@ def transform_replays(
             )
 
         payload = read_json(payload_path)
-        ttl = replay_to_ttl_builder.build_ttl(payload)
         ttl_path = output_dir / f"{replay_id}.ttl"
-        ttl_path.write_text(ttl, encoding="utf-8")
+        serialize_turtle_to_path(replay_to_ttl_builder.build_graph(payload), ttl_path)
         manifest.append({"id": replay_id, "ttl_path": str(ttl_path)})
         stats.slices_written += 1
 

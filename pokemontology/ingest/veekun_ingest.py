@@ -23,6 +23,7 @@ from pokemontology.ingest_common import (
     add_external_reference as add_external_reference_node,
     bind_namespaces,
     iri_for,
+    serialize_turtle_to_path,
 )
 
 
@@ -408,9 +409,7 @@ def build_ttl_from_csv(source_dir: Path) -> str:
 
 
 def cmd_transform(args: argparse.Namespace) -> None:
-    ttl = build_ttl_from_csv(args.source_dir)
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(ttl, encoding="utf-8")
+    serialize_turtle_to_path(build_graph_from_csv(args.source_dir), args.output)
     print(args.output)
 
 

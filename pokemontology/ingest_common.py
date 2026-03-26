@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from rdflib import Graph, Literal, Namespace, URIRef
 from rdflib.namespace import RDF, RDFS, XSD
 
@@ -63,3 +65,8 @@ def add_external_reference(
     g.add((ref_iri, PKM.describedByArtifact, artifact_iri))
     g.add((ref_iri, PKM.hasExternalIRI, Literal(external_iri, datatype=XSD.anyURI)))
     return ref_iri
+
+
+def serialize_turtle_to_path(graph: Graph, path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    graph.serialize(destination=str(path), format="turtle")

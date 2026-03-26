@@ -23,6 +23,7 @@ from pokemontology.ingest_common import (
     add_external_reference,
     bind_namespaces,
     iri_for,
+    serialize_turtle_to_path,
     sanitize_identifier,
 )
 
@@ -486,17 +487,13 @@ def cmd_fetch(args: argparse.Namespace) -> None:
 
 
 def cmd_transform(args: argparse.Namespace) -> None:
-    ttl = build_ttl_from_raw(args.raw_dir)
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(ttl, encoding="utf-8")
+    serialize_turtle_to_path(build_graph_from_raw(args.raw_dir), args.output)
     print(args.output)
 
 
 def cmd_ingest(args: argparse.Namespace) -> None:
     fetch_seed_data(load_seed_config(args.seed), args.raw_dir, args.timeout)
-    ttl = build_ttl_from_raw(args.raw_dir)
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(ttl, encoding="utf-8")
+    serialize_turtle_to_path(build_graph_from_raw(args.raw_dir), args.output)
     print(args.output)
 
 

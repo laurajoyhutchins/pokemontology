@@ -26,6 +26,7 @@ from dataclasses import dataclass, field
 from rdflib import Graph, Literal, Namespace, URIRef
 from rdflib.namespace import RDF, RDFS, XSD
 
+from pokemontology.ingest_common import serialize_turtle_to_path
 from pokemontology.replay.replay_parser import (
     PKM_PREFIX,
     actor_display_name,
@@ -2641,12 +2642,10 @@ def main() -> None:
     args = parser.parse_args()
 
     payload = json.loads(args.replay_json.read_text(encoding="utf-8"))
-    ttl = build_ttl(payload)
-
     output_path = args.output or args.replay_json.with_name(
         f"{args.replay_json.stem}-slice.ttl"
     )
-    output_path.write_text(ttl, encoding="utf-8")
+    serialize_turtle_to_path(build_graph(payload), output_path)
     print(output_path)
 
 
