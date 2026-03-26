@@ -10,7 +10,7 @@ from ._script_loader import REPO_ROOT
 
 from scripts.build import build_ontology, check_ttl_parse
 from scripts.ingest import pokeapi_ingest, veekun_ingest
-from scripts.replay import parse_showdown_replay, replay_to_ttl_builder, summarize_showdown_replay
+from scripts.replay import parse_showdown_replay, replay_dataset, replay_to_ttl_builder, summarize_showdown_replay
 
 
 def _repo_relative(path: Path) -> str:
@@ -64,6 +64,84 @@ def cmd_build_slice(args: argparse.Namespace) -> int:
     output_path.write_text(ttl, encoding="utf-8")
     print(output_path)
     return 0
+
+
+def add_replay_dataset_subcommands(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
+    replay_parser = subparsers.add_parser("replay", help="Acquire, curate, and transform replay datasets.")
+    replay_subparsers = replay_parser.add_subparsers(dest="replay_command", required=True)
+
+    fetch_index_parser = replay_subparsers.add_parser("fetch-index", help="Fetch and cache replay search pages.")
+    fetch_index_parser.add_argument("--format", dest="formatid", required=True, help="Showdown format identifier.")
+    fetch_index_parser.add_argument(
+        "--index-dir",
+        type=Path,
+        default=replay_dataset.DEFAULT_INDEX_DIR,
+        help="Directory for cached replay search pages.",
+    )
+    fetch_index_parser.add_argument("--max-pages", type=int, default=1, help="Maximum number of search pages to fetch.")
+    fetch_index_parser.add_argument("--user", default=None, help="Optional Showdown username filter.")
+    fetch_index_parser.add_argument("--delay-seconds", type=float, default=replay_dataset.DEFAULT_DELAY_SECONDS, help="Delay after each network request.")
+    fetch_index_parser.add_argument("--timeout", type=float, default=replay_dataset.DEFAULT_TIMEOUT_SECONDS, help="HTTP timeout in seconds.")
+    fetch_index_parser.add_argument("--force", action="store_true", help="Refetch index pages even if cached.")
+    fetch_index_parser.set_defaults(func=lambda args: (replay_dataset.cmd_fetch_index(args), 0)[1])
+
+    curate_parser = replay_subparsers.add_parser("curate", help="Curate replay IDs from cached search pages.")
+    curate_parser.add_argument(
+        "--index-dir",
+        type=Path,
+        default=replay_dataset.DEFAULT_INDEX_DIR,
+        help="Directory containing cached replay search pages.",
+    )
+    curate_parser.add_argument(
+        "--output",
+        type=Path,
+        default=replay_dataset.DEFAULT_CURATED_PATH,
+        help="Path to curated replay list JSON.",
+    )
+    curate_parser.add_argument("--format", dest="formats", action="append", default=None, help="Required format identifier. Repeatable.")
+    curate_parser.add_argument("--min-rating", type=int, default=None, help="Minimum rating required for inclusion.")
+    curate_parser.add_argument("--min-uploadtime", type=int, default=None, help="Minimum upload timestamp for inclusion.")
+    curate_parser.add_argument("--allow-non-heads-up", action="store_true", help="Allow index entries without exactly two players.")
+    curate_parser.set_defaults(func=lambda args: (replay_dataset.cmd_curate(args), 0)[1])
+
+    fetch_parser = replay_subparsers.add_parser("fetch", help="Fetch cached replay JSON payloads for curated replay IDs.")
+    fetch_parser.add_argument(
+        "--curated",
+        type=Path,
+        default=replay_dataset.DEFAULT_CURATED_PATH,
+        help="Path to curated replay list JSON.",
+    )
+    fetch_parser.add_argument(
+        "--raw-dir",
+        type=Path,
+        default=replay_dataset.DEFAULT_RAW_DIR,
+        help="Directory for cached replay JSON.",
+    )
+    fetch_parser.add_argument("--delay-seconds", type=float, default=replay_dataset.DEFAULT_DELAY_SECONDS, help="Delay after each network request.")
+    fetch_parser.add_argument("--timeout", type=float, default=replay_dataset.DEFAULT_TIMEOUT_SECONDS, help="HTTP timeout in seconds.")
+    fetch_parser.add_argument("--force", action="store_true", help="Refetch replay JSON even if cached.")
+    fetch_parser.set_defaults(func=lambda args: (replay_dataset.cmd_fetch(args), 0)[1])
+
+    transform_parser = replay_subparsers.add_parser("transform", help="Build one replay slice TTL per curated cached replay.")
+    transform_parser.add_argument(
+        "--curated",
+        type=Path,
+        default=replay_dataset.DEFAULT_CURATED_PATH,
+        help="Path to curated replay list JSON.",
+    )
+    transform_parser.add_argument(
+        "--raw-dir",
+        type=Path,
+        default=replay_dataset.DEFAULT_RAW_DIR,
+        help="Directory containing cached replay JSON.",
+    )
+    transform_parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=replay_dataset.DEFAULT_OUTPUT_DIR,
+        help="Directory where replay slice TTL files will be written.",
+    )
+    transform_parser.set_defaults(func=lambda args: (replay_dataset.cmd_transform(args), 0)[1])
 
 
 def add_pokeapi_subcommands(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
@@ -171,6 +249,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     slice_parser.set_defaults(func=cmd_build_slice)
 
+    add_replay_dataset_subcommands(subparsers)
     add_pokeapi_subcommands(subparsers)
     add_veekun_subcommands(subparsers)
     return parser

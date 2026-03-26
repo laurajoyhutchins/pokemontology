@@ -37,3 +37,38 @@ def test_build_slice_command_writes_file(tmp_path, capsys) -> None:
 
     printed = capsys.readouterr().out.strip()
     assert printed == str(output_path)
+
+
+def test_replay_curate_command_writes_curated_file(tmp_path, capsys) -> None:
+    index_dir = tmp_path / "index" / "gen9vgc2025reggbo3" / "all"
+    index_dir.mkdir(parents=True)
+    (index_dir / "page_1.json").write_text(
+        json.dumps(
+            [
+                {"id": "battle-1", "format": "gen9vgc2025reggbo3", "players": ["Alice", "Bob"], "rating": 1700},
+                {"id": "battle-2", "format": "gen9vgc2025reggbo3", "players": ["Solo"], "rating": 1800},
+            ]
+        ),
+        encoding="utf-8",
+    )
+    curated = tmp_path / "curated.json"
+
+    exit_code = cli.main(
+        [
+            "replay",
+            "curate",
+            "--index-dir",
+            str(tmp_path / "index"),
+            "--output",
+            str(curated),
+            "--format",
+            "gen9vgc2025reggbo3",
+            "--min-rating",
+            "1600",
+        ]
+    )
+    assert exit_code == 0
+    payload = json.loads(curated.read_text(encoding="utf-8"))
+    assert payload["replay_ids"] == ["battle-1"]
+    output = json.loads(capsys.readouterr().out)
+    assert output["replay_count"] == 1

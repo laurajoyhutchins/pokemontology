@@ -37,6 +37,7 @@ pokemontology/
 │   │   └── veekun_ingest.py
 │   ├── replay/
 │   │   ├── parse_showdown_replay.py
+│   │   ├── replay_dataset.py
 │   │   ├── replay_parser.py
 │   │   ├── replay_to_ttl_builder.py
 │   │   └── summarize_showdown_replay.py
@@ -118,6 +119,27 @@ python3 -m pokemontology build-slice \
 ```
 
 ```bash
+python3 -m pokemontology replay fetch-index \
+      --format gen9vgc2025reggbo3 \
+      --max-pages 3
+```
+
+```bash
+python3 -m pokemontology replay curate \
+      --format gen9vgc2025reggbo3 \
+      --min-rating 1600
+```
+
+```bash
+python3 -m pokemontology replay fetch
+```
+
+```bash
+python3 -m pokemontology replay transform \
+      --output-dir build/replays
+```
+
+```bash
 python3 -m pokemontology check-ttl \
       build/ontology.ttl \
       build/shapes.ttl \
@@ -186,6 +208,31 @@ All transforms should:
 - emit contextual facts only when the source provides real context, not just a current snapshot
 
 The shared helper implementation for this contract lives in `pokemontology/ingest_common.py`.
+
+## Replay acquisition pipeline
+
+The repo now includes a replay acquisition pipeline at `scripts/replay/replay_dataset.py`.
+
+It follows the same staged contract as the other source integrations:
+
+1. `pokemontology replay fetch-index` caches replay search/index pages from Pokémon Showdown
+2. `pokemontology replay curate` derives a curated replay ID list from cached index entries
+3. `pokemontology replay fetch` caches replay JSON payloads for curated replay IDs
+4. `pokemontology replay transform` builds one replay slice TTL per cached replay JSON
+
+Default storage layout:
+- `data/replays/index/showdown/` for cached search/index pages
+- `data/replays/raw/showdown/` for cached replay JSON payloads
+- `data/replays/curated/` for curated replay ID lists
+- `build/replays/` for generated replay slice TTL files
+
+The curation step currently supports simple competitive filters:
+- format ID
+- minimum rating
+- minimum upload timestamp
+- exact two-player requirement
+
+This is designed as a cache-first acquisition layer for public replay sources, not as a claim that every cached replay is tournament-valid. Tournament or community enrichment should remain a separate curation/provenance layer.
 
 ## PokeAPI scraping
 

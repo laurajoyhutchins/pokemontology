@@ -9,5 +9,6 @@ build/*
 !build/ontology.ttl
 !build/shapes.ttl
 data/pokeapi/raw/
+data/replays/
 *.zip
 .DS_Store
