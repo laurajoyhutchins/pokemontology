@@ -4,6 +4,7 @@ self.onmessage = (event) => {
   const vectors = schemaPack?.vectors || [];
   const items = schemaPack?.items || [];
   const queryVector = vectorize(question || "", vocabulary);
+  const minScore = minimumScore(question || "");
 
   const matches = items
     .map((item, index) => ({
@@ -12,7 +13,7 @@ self.onmessage = (event) => {
     }))
     .sort((a, b) => b.score - a.score)
     .slice(0, topK)
-    .filter((item) => item.score > 0);
+    .filter((item) => item.score >= minScore);
 
   self.postMessage({ matches });
 };
@@ -45,4 +46,11 @@ function cosine(left, right) {
   }
   if (!leftNorm || !rightNorm) return 0;
   return dot / (Math.sqrt(leftNorm) * Math.sqrt(rightNorm));
+}
+
+function minimumScore(question) {
+  const tokenCount = tokenize(question).length;
+  if (tokenCount <= 2) return 0.34;
+  if (tokenCount <= 5) return 0.24;
+  return 0.16;
 }

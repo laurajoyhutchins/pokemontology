@@ -64,6 +64,11 @@ def test_docs_workers_are_present() -> None:
     assert (REPO / "docs" / "workers" / "retrieval-worker.js").exists()
     assert (REPO / "docs" / "workers" / "llm-worker.js").exists()
     assert (REPO / "docs" / "workers" / "query-worker.js").exists()
+    retrieval_text = (REPO / "docs" / "workers" / "retrieval-worker.js").read_text(
+        encoding="utf-8"
+    )
+    assert "minimumScore" in retrieval_text
+    assert "tokenCount <= 2" in retrieval_text
 
 
 def test_query_validator_enforces_ast_or_safe_fallback() -> None:
