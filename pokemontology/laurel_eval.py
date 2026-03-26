@@ -1,4 +1,4 @@
-"""Evaluation harness for the current Laurel NL-to-SPARQL path."""
+"""Evaluation harness for the current Laurel NL-to-SPARQL translation layer."""
 
 from __future__ import annotations
 
@@ -60,8 +60,8 @@ def score_mechanics_item(item: dict[str, object], generated: str | None, error: 
                 "answer_correctness": "not_measurable",
             },
             "notes": [
-                "Current Laurel CLI emits SPARQL, not a prose mechanics answer.",
-                "This harness can evaluate translation and safety, but not full rubric correctness from text alone.",
+                "This harness currently evaluates the Laurel translation layer in isolation.",
+                "It does not execute the generated query against sources, so full answer correctness is not measured here.",
                 f"Generation failed: {error}",
             ],
         }
@@ -73,8 +73,8 @@ def score_mechanics_item(item: dict[str, object], generated: str | None, error: 
             "answer_correctness": "not_measurable",
         },
         "notes": [
-            "Current Laurel CLI path produced read-only SPARQL.",
-            "Rubric comparison is partial because the evaluated system does not emit a natural-language answer.",
+            "The Laurel translation layer produced read-only SPARQL.",
+            "Rubric comparison is partial because this harness does not execute the query against a concrete dataset.",
             f"Expected answer key: {item['expected_answer']}",
         ],
         "generated_sparql": generated,
@@ -179,6 +179,7 @@ def evaluate_suite(config: EvalConfig) -> dict[str, object]:
     results = [evaluate_item(item, generator=generator) for item in items]
     return {
         "suite": str(config.suite.relative_to(repo_path())),
+        "evaluated_interface": "ask translation layer",
         "model": config.model,
         "endpoint": config.endpoint,
         "summary": summarize_results(results),

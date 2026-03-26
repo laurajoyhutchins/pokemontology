@@ -17,6 +17,7 @@ def test_evaluate_suite_marks_mechanics_as_partial_when_query_is_generated(
     payload = evaluate_suite(EvalConfig(limit=1, include_adversarial=False))
 
     assert payload["summary"]["total"] == 1
+    assert payload["evaluated_interface"] == "ask translation layer"
     assert payload["results"][0]["status"] == "generated_query"
     assert (
         payload["results"][0]["rubric_alignment"]["answer_correctness"]
