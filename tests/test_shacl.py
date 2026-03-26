@@ -104,6 +104,44 @@ def test_ev_assignment_rejects_total_above_510() -> None:
     assert "must not exceed 510" in results_text
 
 
+def test_ev_assignment_allows_total_of_510() -> None:
+    conforms, results_text = _validate_data_graph(
+        _parse_ttl(
+            """
+            @prefix pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#> .
+
+            pkm:Save1 a pkm:SaveFile .
+            pkm:Mon1 a pkm:OwnedPokemon .
+            pkm:HP a pkm:Stat .
+            pkm:Attack a pkm:Stat .
+            pkm:Defense a pkm:Stat .
+
+            pkm:EV1
+                a pkm:EVAssignment ;
+                pkm:aboutOwnedPokemon pkm:Mon1 ;
+                pkm:aboutStat pkm:HP ;
+                pkm:hasContext pkm:Save1 ;
+                pkm:hasEVValue 252 .
+
+            pkm:EV2
+                a pkm:EVAssignment ;
+                pkm:aboutOwnedPokemon pkm:Mon1 ;
+                pkm:aboutStat pkm:Attack ;
+                pkm:hasContext pkm:Save1 ;
+                pkm:hasEVValue 252 .
+
+            pkm:EV3
+                a pkm:EVAssignment ;
+                pkm:aboutOwnedPokemon pkm:Mon1 ;
+                pkm:aboutStat pkm:Defense ;
+                pkm:hasContext pkm:Save1 ;
+                pkm:hasEVValue 6 .
+            """
+        )
+    )
+    assert conforms, f"510-total EV spread should conform, but got:\n{results_text}"
+
+
 def test_typing_assignment_rejects_duplicate_type_slots_per_variant_and_ruleset() -> None:
     conforms, results_text = _validate_data_graph(
         _parse_ttl(
