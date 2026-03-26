@@ -1,184 +1,199 @@
-# Pokémon Battle Mechanics Ontology
+# Pokemontology
 
-RDF/OWL + SHACL project for modeling Pokémon battles as replay-backed state transitions with explicit event provenance, materialized state assignments, and validation constraints.
+Pokemontology is an RDF/OWL + SHACL project for representing Pokemon battle mechanics as explicit, replay-backed state transitions.
 
-## Repository layout
+It combines:
+- a published ontology namespace
+- published SHACL validation shapes
+- replay parsing and slice generation tools
+- provenance-aware ingestion pipelines for external Pokemon data sources
 
-```text
-pokemontology/
-├── build/
-│   └── ontology.ttl
-│   └── shapes.ttl
-├── ontology/
-│   └── modules/
-│       ├── 00-header.ttl
-│       ├── 10-core.ttl
-│       ├── ...
-│       └── 80-materialized-state.ttl
-├── shapes/
-│   └── modules/
-│       └── shapes.ttl
-├── examples/
-│   ├── fixtures/
-│   │   └── froakie-caterpie-seed.ttl
-│   ├── pokeapi/
-│   │   └── seed-config.json
-│   ├── replays/
-│   │   └── gen9vgc2025regjbo3-2414024536-ey54jc53vyjqy20sq0ww1l5nd3bq5qhpw.json
-│   └── slices/
-│       └── showdown-finals-game1-slice.ttl
-├── scripts/
-│   ├── build/
-│   │   ├── build_ontology.py
-│   │   └── check_ttl_parse.py
-│   ├── ingest/
-│   │   ├── pokeapi_ingest.py
-│   │   ├── pokeapi_scrape.py
-│   │   └── veekun_ingest.py
-│   ├── replay/
-│   │   ├── parse_showdown_replay.py
-│   │   ├── replay_dataset.py
-│   │   ├── replay_parser.py
-│   │   ├── replay_to_ttl_builder.py
-│   │   └── summarize_showdown_replay.py
-├── docs/
-│   ├── index.html
-│   ├── ontology.ttl
-│   ├── shapes.ttl
-│   ├── repo-structure.md
-│   └── roadmap.md
-├── tests/
-│   └── README.md
-├── .gitignore
-├── MANIFEST.json
-├── pyproject.toml
-└── requirements.txt
+## Public artifacts
+
+- GitHub Pages site: `https://laurajoyhutchins.github.io/pokemontology/`
+- Ontology: `https://laurajoyhutchins.github.io/pokemontology/ontology.ttl`
+- SHACL shapes: `https://laurajoyhutchins.github.io/pokemontology/shapes.ttl`
+
+The public site is the canonical namespace for the built ontology and shapes.
+
+## What this models
+
+Pokemontology is aimed at the mechanics layer of Pokemon, not just a static encyclopedia.
+
+Core modeling areas:
+- ruleset-scoped mechanics such as move learnability and contextual assignments
+- save-state entities such as owned Pokemon, slots, IVs, EVs, and inventory data
+- battle participants, actions, events, and state transitions
+- instantaneous and materialized battle state
+- provenance and evidence for externally sourced or replay-derived assertions
+
+This makes it suitable for:
+- replay-backed battle analysis
+- ontology-native validation with SHACL
+- structured ingestion from sources like PokeAPI and Veekun
+- building a machine-readable mechanics knowledge base with explicit context
+
+## Project status
+
+The repo already includes:
+- a modular source ontology under `ontology/modules/`
+- built consumer artifacts under `build/`
+- published Pages artifacts under `docs/`
+- replay tooling for parsing public Pokemon Showdown replays into TTL slices
+- ingestion pipelines for PokeAPI and Veekun-shaped exports
+- test coverage for ontology parsing, SHACL conformance, replay conversion, and ingestion contracts
+
+## Quick start
+
+Install the project:
+
+```bash
+python3 -m pip install .
 ```
 
-## Included files
-
-- Modular ontology source fragments under `ontology/modules/`
-- Built consumer ontology at `build/ontology.ttl`
-- Built consumer shapes at `build/shapes.ttl`
-- Published Pages ontology at `https://laurajoyhutchins.github.io/pokemontology/ontology.ttl`
-- Canonical SHACL shapes TTL
-- Published Pages shapes at `https://laurajoyhutchins.github.io/pokemontology/shapes.ttl`
-- Seed/example fixture extracted from the ontology source
-- Replay JSON used as source corpus
-- Replay-backed TTL slice
-- Sample PokeAPI seed config and an ingestion pipeline for caching raw API data and building TTL
-- Script implementations organized by `build`, `ingest`, and `replay`
-
-## Suggested workflow
-
-1. Put a Showdown replay JSON under `examples/replays/`.
-2. Generate a minimal event-layer slice with `python3 -m pokemontology build-slice ...`.
-3. Enrich the slice with materialized state assignments where needed.
-4. Validate ontology + shapes + slice together.
-5. Add regression tests for each modeling extension.
-
-Rebuild the consumer ontology after editing source modules:
+Build the published ontology and shapes:
 
 ```bash
 python3 -m pokemontology build
 ```
 
-This also refreshes the GitHub Pages artifacts under `docs/`.
+Run the test suite:
 
-## CLI
+```bash
+python3 -m pytest
+```
 
-The repository now exposes a unified CLI:
+See the CLI:
 
 ```bash
 python3 -m pokemontology --help
 ```
 
-If installed as a console script, the same commands are available under:
+## Common workflows
 
-```bash
-pokemontology --help
-```
+### Build a replay-backed slice
 
-## Example commands
+Parse a replay:
 
 ```bash
 python3 -m pokemontology parse-replay \
-      examples/replays/gen9vgc2025regjbo3-2414024536-ey54jc53vyjqy20sq0ww1l5nd3bq5qhpw.json \
-      --pretty
+  examples/replays/gen9vgc2025regjbo3-2414024536-ey54jc53vyjqy20sq0ww1l5nd3bq5qhpw.json \
+  --pretty
 ```
+
+Summarize a replay:
 
 ```bash
 python3 -m pokemontology summarize-replay \
-      examples/replays/gen9vgc2025regjbo3-2414024536-ey54jc53vyjqy20sq0ww1l5nd3bq5qhpw.json
+  examples/replays/gen9vgc2025regjbo3-2414024536-ey54jc53vyjqy20sq0ww1l5nd3bq5qhpw.json
 ```
+
+Generate a Turtle slice:
 
 ```bash
 python3 -m pokemontology build-slice \
-      examples/replays/gen9vgc2025regjbo3-2414024536-ey54jc53vyjqy20sq0ww1l5nd3bq5qhpw.json \
-      -o examples/slices/generated-slice.ttl
+  examples/replays/gen9vgc2025regjbo3-2414024536-ey54jc53vyjqy20sq0ww1l5nd3bq5qhpw.json \
+  -o examples/slices/generated-slice.ttl
 ```
+
+Validate ontology, shapes, and example data together:
+
+```bash
+python3 -m pokemontology check-ttl \
+  build/ontology.ttl \
+  build/shapes.ttl \
+  examples/fixtures/froakie-caterpie-seed.ttl \
+  examples/slices/showdown-finals-game1-slice.ttl
+```
+
+### Acquire and transform replay corpora
+
+Fetch replay search/index pages:
 
 ```bash
 python3 -m pokemontology replay fetch-index \
-      --format gen9vgc2025reggbo3 \
-      --max-pages 3
+  --format gen9vgc2025reggbo3 \
+  --max-pages 3
 ```
+
+Curate a competitive subset:
 
 ```bash
 python3 -m pokemontology replay curate \
-      --format gen9vgc2025reggbo3 \
-      --min-rating 1600
+  --format gen9vgc2025reggbo3 \
+  --min-rating 1600
 ```
+
+Fetch replay payloads:
 
 ```bash
 python3 -m pokemontology replay fetch
 ```
 
-```bash
-python3 -m pokemontology replay transform \
-      --output-dir build/replays
-```
+Transform cached replays into TTL:
 
 ```bash
-python3 -m pokemontology check-ttl \
-      build/ontology.ttl \
-      build/shapes.ttl \
-      examples/fixtures/froakie-caterpie-seed.ttl \
-      examples/slices/showdown-finals-game1-slice.ttl
+python3 -m pokemontology replay transform \
+  --output-dir build/replays
 ```
+
+### Ingest PokeAPI data
+
+Fetch and transform the cleanly mappable subset:
 
 ```bash
 python3 -m pokemontology pokeapi ingest \
-      examples/pokeapi/seed-config.json \
-      --raw-dir data/pokeapi/raw \
-      --output build/pokeapi.ttl
+  examples/pokeapi/seed-config.json \
+  --raw-dir data/pokeapi/raw \
+  --output build/pokeapi.ttl
 ```
+
+Validate the result:
 
 ```bash
 python3 -m pokemontology check-ttl build/pokeapi.ttl
 ```
 
+Fair-use raw scraping is also available:
+
 ```bash
 python3 scripts/ingest/pokeapi_scrape.py move \
-      --details \
-      --max-pages 1 \
-      --max-details 25 \
-      --delay-seconds 0.5
+  --details \
+  --max-pages 1 \
+  --max-details 25 \
+  --delay-seconds 0.5
 ```
+
+### Transform Veekun exports
 
 ```bash
 python3 -m pokemontology veekun transform \
-      --source-dir tests/fixtures/veekun_export \
-      --output build/veekun.ttl
+  --source-dir tests/fixtures/veekun_export \
+  --output build/veekun.ttl
 ```
 
-## PokeAPI ingestion pipeline
+## External data policy
 
-The repo now includes a two-stage PokeAPI pipeline:
+External-source integrations in this repo follow a consistent contract:
 
-1. `pokemontology pokeapi fetch` caches raw JSON under `data/pokeapi/raw/`
-2. `pokemontology pokeapi transform` converts cached payloads into ontology-native Turtle
-3. `pokemontology pokeapi ingest` runs both steps in sequence
+1. Acquire or cache source data without ontology assumptions
+2. Normalize it into a stable source-local format
+3. Transform only the subset that maps cleanly into pokemontology
+
+All ingesters are expected to:
+- emit one `pkm:EvidenceArtifact` per upstream source
+- emit `pkm:ExternalEntityReference` nodes for local-to-upstream links
+- use `pkm:refersToEntity`, `pkm:describedByArtifact`, and `pkm:hasExternalIRI`
+- avoid `owl:sameAs` by default
+- emit contextual facts only when the source provides real context
+
+Shared helper code for this lives in `pokemontology/ingest_common.py`.
+
+## Data source coverage
+
+### PokeAPI
+
+PokeAPI is used for the subset that maps cleanly to canonical entities and version-group-scoped learnset facts.
 
 Current mapping scope:
 - `pokemon-species` -> `pkm:Species`
@@ -188,72 +203,15 @@ Current mapping scope:
 - `type` -> `pkm:Type`
 - `stat` -> `pkm:Stat`
 - `version-group` -> `pkm:VersionGroup` plus linked `pkm:Ruleset`
-- Pokémon move learnsets -> `pkm:MoveLearnRecord` per variant/move/version-group
+- move learnsets -> `pkm:MoveLearnRecord`
 
-The transform intentionally excludes data that PokeAPI exposes only as a current canonical snapshot without a clean ontology context. In particular, it does not emit `pkm:TypingAssignment`, `pkm:StatAssignment`, `pkm:AbilityAssignment`, or `pkm:MovePropertyAssignment`, because those are contextual facts in the ontology and PokeAPI does not provide the necessary ruleset precision for them.
+The transform intentionally does not emit contextual mechanics facts that PokeAPI exposes only as a current snapshot.
 
-## Ingestion standard
+### Veekun
 
-External-source integrations in this repo now follow a standard contract:
+The Veekun pipeline is local-only and aimed at ontology areas where Veekun is stronger than PokeAPI, especially version-group-scoped mechanics.
 
-1. Acquire/cache source data without ontology assumptions
-2. Normalize it into a stable source-local export format
-3. Transform only the subset that maps cleanly into pokemontology
-
-All transforms should:
-- emit one `pkm:EvidenceArtifact` per upstream source
-- emit `pkm:ExternalEntityReference` nodes for local-to-upstream links
-- use `pkm:refersToEntity`, `pkm:describedByArtifact`, and `pkm:hasExternalIRI`
-- avoid `owl:sameAs` by default
-- emit contextual facts only when the source provides real context, not just a current snapshot
-
-The shared helper implementation for this contract lives in `pokemontology/ingest_common.py`.
-
-## Replay acquisition pipeline
-
-The repo now includes a replay acquisition pipeline at `scripts/replay/replay_dataset.py`.
-
-It follows the same staged contract as the other source integrations:
-
-1. `pokemontology replay fetch-index` caches replay search/index pages from Pokémon Showdown
-2. `pokemontology replay curate` derives a curated replay ID list from cached index entries
-3. `pokemontology replay fetch` caches replay JSON payloads for curated replay IDs
-4. `pokemontology replay transform` builds one replay slice TTL per cached replay JSON
-
-Default storage layout:
-- `data/replays/index/showdown/` for cached search/index pages
-- `data/replays/raw/showdown/` for cached replay JSON payloads
-- `data/replays/curated/` for curated replay ID lists
-- `build/replays/` for generated replay slice TTL files
-
-The curation step currently supports simple competitive filters:
-- format ID
-- minimum rating
-- minimum upload timestamp
-- exact two-player requirement
-
-This is designed as a cache-first acquisition layer for public replay sources, not as a claim that every cached replay is tournament-valid. Tournament or community enrichment should remain a separate curation/provenance layer.
-
-## PokeAPI scraping
-
-The repo also includes a dedicated scraper at `scripts/ingest/pokeapi_scrape.py` for pulling raw PokeAPI data while following the project’s published fair-use guidance:
-- cache every response to disk
-- send an explicit `User-Agent`
-- pace requests with a configurable delay
-- support resumable runs by skipping already cached pages/details
-- stay within an allowlist of supported resources
-
-This follows PokeAPI’s official documentation and fair-use policy, which says developers should locally cache resources and limit request frequency:
-- https://staging.pokeapi.co/docs/v2
-
-The scraper is for raw collection only. Use the ingestion pipeline afterward to convert the subset that maps cleanly into ontology-native Turtle.
-
-## Veekun ingestion scaffold
-
-The repo also includes a local-only Veekun transform at `scripts/ingest/veekun_ingest.py`.
-
-This scaffold expects a normalized CSV export directory, not a live download. It is designed for the ontology areas where Veekun is stronger than PokeAPI:
-- `pkm:VersionGroup` / `pkm:Ruleset`
+Targeted outputs include:
 - `pkm:TypingAssignment`
 - `pkm:AbilityAssignment`
 - `pkm:StatAssignment`
@@ -261,15 +219,27 @@ This scaffold expects a normalized CSV export directory, not a live download. It
 - `pkm:MoveLearnRecord`
 - `pkm:TypeEffectivenessAssignment`
 
-It also emits `pkm:ExternalEntityReference` nodes back to `pkm:DatasetArtifact_Veekun`.
+## Repository layout
 
-The scaffold is intentionally local-only because Veekun’s software is MIT-licensed, but upstream notes that included game-derived data is used at the user’s own legal risk. That makes Veekun a strong source for internal/reference workflows, but not something this repo should blindly repackage in bulk.
+```text
+pokemontology/
+├── ontology/modules/      modular ontology source
+├── shapes/modules/        SHACL source
+├── build/                 generated consumer artifacts
+├── docs/                  GitHub Pages site and published TTL files
+├── examples/              fixtures, replay JSON, and example slices
+├── scripts/build/         build and validation scripts
+├── scripts/ingest/        external data acquisition and transform scripts
+├── scripts/replay/        replay parsing and replay-dataset tooling
+└── tests/                 regression coverage
+```
 
 ## Notes
 
-- The included replay-backed slice is still a partial state reconstruction, not a dense full-state model.
-- The built consumer ontology is generated from modular source fragments under `ontology/modules/`.
-- This repo sketch packages the latest files actually present in the workspace:
-  - ontology v1.1
-  - shapes v0.7
-  - replay slice v0.7
+- The built ontology is generated from the modular sources under `ontology/modules/`.
+- The published Pages site is refreshed by `python3 -m pokemontology build`.
+- Replay-backed slices are still partial reconstructions, not dense full-state captures of every battle fact.
+
+## License
+
+This repository is licensed under the MIT License. See `LICENSE`.
