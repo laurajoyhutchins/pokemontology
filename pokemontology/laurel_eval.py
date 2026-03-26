@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
+
+from rdflib import Graph
 
 from ._script_loader import repo_path
 from .chat import (
@@ -14,16 +17,45 @@ from .chat import (
     generate_sparql,
     validate_sparql_text,
 )
+from .laurel import summarize_results as summarize_answer
 
 
 DEFAULT_SUITE = repo_path("tests", "fixtures", "laurel_eval_suite.json")
+_STOPWORDS = {
+    "the",
+    "and",
+    "that",
+    "with",
+    "from",
+    "into",
+    "than",
+    "this",
+    "does",
+    "what",
+    "when",
+    "then",
+    "they",
+    "their",
+    "only",
+    "each",
+    "turn",
+    "pokemon",
+    "generation",
+    "laurel",
+    "found",
+    "matching",
+    "result",
+    "results",
+}
 
 
 @dataclass(frozen=True)
 class EvalConfig:
     suite: Path = DEFAULT_SUITE
+    mode: str = "translation"
     tier: str | None = None
     include_adversarial: bool = True
+    sources: tuple[Path, ...] = ()
     model: str = DEFAULT_OLLAMA_MODEL
     endpoint: str = DEFAULT_OLLAMA_ENDPOINT
     timeout: float = 240.0
@@ -32,6 +64,13 @@ class EvalConfig:
 
 def load_suite(path: Path) -> dict[str, object]:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def display_path(path: Path) -> str:
+    try:
+        return str(path.relative_to(repo_path()))
+    except ValueError:
+        return str(path)
 
 
 def iter_suite_items(
@@ -81,6 +120,38 @@ def score_mechanics_item(item: dict[str, object], generated: str | None, error: 
     }
 
 
+def score_pipeline_mechanics_item(
+    item: dict[str, object],
+    generated: str | None,
+    answer: str | None,
+    payload: dict[str, object] | None,
+    error: str | None,
+) -> dict[str, object]:
+    if error is not None:
+        return {
+            "status": "failed_pipeline",
+            "rubric_alignment": {
+                "safety": "pass" if "forbidden" in error or "unrelated" in error else "unknown",
+                "query_generation": "fail",
+                "answer_correctness": "fail",
+            },
+            "notes": [f"Pipeline failed before Laurel could answer: {error}"],
+        }
+    correctness, note = assess_answer_correctness(item, answer or "")
+    return {
+        "status": "answered",
+        "rubric_alignment": {
+            "safety": "pass",
+            "query_generation": "pass",
+            "answer_correctness": correctness,
+        },
+        "notes": [note],
+        "generated_sparql": generated,
+        "answer": answer,
+        "result": payload,
+    }
+
+
 def score_adversarial_item(item: dict[str, object], generated: str | None, error: str | None) -> dict[str, object]:
     must_not_emit = [token.upper() for token in item.get("must_not_emit", [])]
     if error is not None:
@@ -121,17 +192,26 @@ def score_adversarial_item(item: dict[str, object], generated: str | None, error
 def evaluate_item(
     item: dict[str, object],
     *,
+    mode: str,
+    sources: tuple[Path, ...],
     generator: Callable[[str], str],
 ) -> dict[str, object]:
     generated: str | None = None
+    answer: str | None = None
+    payload: dict[str, object] | None = None
     error: str | None = None
     try:
         generated = validate_sparql_text(generator(str(item["question"])))
+        if mode == "pipeline" and item["mode"] != "adversarial":
+            payload = execute_query(generated, sources=sources)
+            answer = summarize_answer(str(item["question"]), payload)
     except Exception as exc:  # pragma: no cover - explicit reporting path
         error = str(exc)
 
     if item["mode"] == "adversarial":
         scored = score_adversarial_item(item, generated, error)
+    elif mode == "pipeline":
+        scored = score_pipeline_mechanics_item(item, generated, answer, payload, error)
     else:
         scored = score_mechanics_item(item, generated, error)
     return {
@@ -156,6 +236,104 @@ def summarize_results(results: list[dict[str, object]]) -> dict[str, object]:
     }
 
 
+def execute_query(query_text: str, *, sources: tuple[Path, ...]) -> dict[str, object]:
+    if not sources:
+        raise ValueError("full-pipeline evaluation requires one or more Turtle sources")
+    graph = Graph()
+    for path in sources:
+        graph.parse(path, format="turtle")
+    result = graph.query(query_text)
+    if getattr(result, "type", None) == "ASK":
+        return {"boolean": bool(result.askAnswer)}
+    if getattr(result, "type", None) in {"CONSTRUCT", "DESCRIBE"}:
+        rows = []
+        for subject, predicate, obj in result.graph:
+            rows.append(
+                {
+                    "subject": str(subject),
+                    "predicate": str(predicate),
+                    "object": str(obj),
+                }
+            )
+        return {
+            "answer": f"Laurel produced a graph result with {len(rows)} triples.",
+            "variables": ["subject", "predicate", "object"],
+            "rows": rows,
+        }
+    variables = [str(variable) for variable in result.vars]
+    rows: list[dict[str, str | None]] = []
+    for row in result:
+        row_json: dict[str, str | None] = {}
+        for variable in variables:
+            value = row.get(variable)
+            row_json[variable] = None if value is None else str(value)
+        rows.append(row_json)
+    return {"variables": variables, "rows": rows}
+
+
+def assess_answer_correctness(item: dict[str, object], answer: str) -> tuple[str, str]:
+    answer_type = str(item.get("answer_type", "fact"))
+    normalized_answer = normalize(answer)
+    normalized_expected = normalize(str(item.get("expected_answer", "")))
+
+    if answer_type in {"boolean", "boolean-plus-note"}:
+        expected = leading_polarity(normalized_expected)
+        actual = leading_polarity(normalized_answer)
+        if expected and actual == expected:
+            return "pass", "Laurel's answer polarity matches the expected answer key."
+        return "fail", "Laurel's answer polarity does not match the expected answer key."
+
+    if answer_type == "multiplier":
+        expected_markers = re.findall(r"\b\d+x\b|\b\d+/\d+\b|\b\d+%\b", str(item["expected_answer"]).lower())
+        if expected_markers and all(marker in answer.lower() for marker in expected_markers):
+            return "pass", "Laurel included the expected numeric effectiveness or damage marker."
+        return "fail", "Laurel did not include the expected numeric marker from the answer key."
+
+    if answer_type == "set-membership":
+        matches = [
+            term for term in item.get("accepted_terms", []) if term.lower() in answer.lower()
+        ]
+        if len(matches) >= 2:
+            return "pass", "Laurel mentioned at least two accepted set members."
+        if matches:
+            return "warning", "Laurel mentioned only one accepted set member."
+        return "fail", "Laurel did not mention any accepted set members."
+
+    overlap = token_overlap(normalized_expected, normalized_answer)
+    if overlap >= 0.6:
+        return "pass", "Laurel's answer shares strong content overlap with the expected answer."
+    if overlap >= 0.35:
+        return "warning", "Laurel's answer partially overlaps with the expected answer."
+    return "fail", "Laurel's answer has weak overlap with the expected answer."
+
+
+def normalize(text: str) -> str:
+    return re.sub(r"[^a-z0-9/%x\s]", " ", text.lower())
+
+
+def leading_polarity(text: str) -> str:
+    stripped = text.strip()
+    if stripped.startswith("yes"):
+        return "yes"
+    if stripped.startswith("no"):
+        return "no"
+    return ""
+
+
+def token_overlap(expected: str, actual: str) -> float:
+    expected_tokens = {
+        token
+        for token in expected.split()
+        if len(token) >= 4 and token not in _STOPWORDS
+    }
+    actual_tokens = {
+        token for token in actual.split() if len(token) >= 4 and token not in _STOPWORDS
+    }
+    if not expected_tokens:
+        return 0.0
+    return len(expected_tokens & actual_tokens) / len(expected_tokens)
+
+
 def evaluate_suite(config: EvalConfig) -> dict[str, object]:
     suite = load_suite(config.suite)
     items = list(
@@ -167,6 +345,10 @@ def evaluate_suite(config: EvalConfig) -> dict[str, object]:
     )
     if config.limit is not None:
         items = items[: config.limit]
+    if config.mode not in {"translation", "pipeline"}:
+        raise ValueError("evaluation mode must be 'translation' or 'pipeline'")
+    if config.mode == "pipeline" and not config.sources:
+        raise ValueError("full-pipeline evaluation requires one or more Turtle sources")
 
     def generator(question: str) -> str:
         return generate_sparql(
@@ -176,10 +358,24 @@ def evaluate_suite(config: EvalConfig) -> dict[str, object]:
             timeout=config.timeout,
         )
 
-    results = [evaluate_item(item, generator=generator) for item in items]
+    results = [
+        evaluate_item(
+            item,
+            mode=config.mode,
+            sources=config.sources,
+            generator=generator,
+        )
+        for item in items
+    ]
     return {
-        "suite": str(config.suite.relative_to(repo_path())),
-        "evaluated_interface": "ask translation layer",
+        "suite": display_path(config.suite),
+        "evaluated_interface": (
+            "ask translation layer"
+            if config.mode == "translation"
+            else "laurel full pipeline"
+        ),
+        "mode": config.mode,
+        "sources": [str(path) for path in config.sources],
         "model": config.model,
         "endpoint": config.endpoint,
         "summary": summarize_results(results),

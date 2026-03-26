@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 from pokemontology import cli
 from pokemontology.laurel_eval import EvalConfig, evaluate_suite
 
@@ -18,6 +20,7 @@ def test_evaluate_suite_marks_mechanics_as_partial_when_query_is_generated(
 
     assert payload["summary"]["total"] == 1
     assert payload["evaluated_interface"] == "ask translation layer"
+    assert payload["mode"] == "translation"
     assert payload["results"][0]["status"] == "generated_query"
     assert (
         payload["results"][0]["rubric_alignment"]["answer_correctness"]
@@ -51,3 +54,93 @@ def test_evaluate_laurel_cli_outputs_json(monkeypatch: object, capsys) -> None:
     output = capsys.readouterr().out
     assert '"summary"' in output
     assert '"results"' in output
+
+
+def test_evaluate_suite_pipeline_mode_scores_answer(
+    monkeypatch: object, tmp_path
+) -> None:
+    suite_path = tmp_path / "suite.json"
+    source_path = tmp_path / "source.ttl"
+    suite_path.write_text(
+        json.dumps(
+            {
+                "tiers": [
+                    {
+                        "tier": "custom",
+                        "items": [
+                            {
+                                "id": "custom-fire",
+                                "category": "custom",
+                                "question": "Is Charizard a Fire type?",
+                                "expected_answer": "Yes. Charizard is Fire type.",
+                                "answer_type": "boolean",
+                                "sources": [{"url": "https://example.test"}],
+                            }
+                        ],
+                    }
+                ],
+                "adversarial": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+    source_path.write_text(
+        """
+@prefix pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+pkm:Species_charizard a pkm:Species ;
+    rdfs:label "Charizard" .
+
+pkm:Variant_charizard a pkm:Variant ;
+    pkm:belongsToSpecies pkm:Species_charizard .
+
+pkm:Type_fire a pkm:Type ;
+    rdfs:label "Fire" .
+
+pkm:TypingAssignment_charizard_fire a pkm:TypingAssignment ;
+    pkm:aboutVariant pkm:Variant_charizard ;
+    pkm:aboutType pkm:Type_fire .
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        "pokemontology.laurel_eval.generate_sparql",
+        lambda *args, **kwargs: """PREFIX pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+ASK {
+  ?species a pkm:Species ;
+           rdfs:label "Charizard" .
+  ?variant a pkm:Variant ;
+           pkm:belongsToSpecies ?species .
+  ?assignment a pkm:TypingAssignment ;
+              pkm:aboutVariant ?variant ;
+              pkm:aboutType ?type .
+  ?type rdfs:label "Fire" .
+}""",
+    )
+
+    payload = evaluate_suite(
+        EvalConfig(
+            suite=suite_path,
+            mode="pipeline",
+            sources=(source_path,),
+            include_adversarial=False,
+        )
+    )
+
+    assert payload["evaluated_interface"] == "laurel full pipeline"
+    assert payload["results"][0]["status"] == "answered"
+    assert payload["results"][0]["rubric_alignment"]["answer_correctness"] == "pass"
+
+
+def test_evaluate_laurel_cli_pipeline_requires_sources(capsys) -> None:
+    try:
+        cli.main(["evaluate-laurel", "--mode", "pipeline", "--limit", "1"])
+    except SystemExit as exc:
+        assert exc.code == 2
+    else:
+        raise AssertionError("expected pipeline mode without sources to fail")
+    error = capsys.readouterr().err
+    assert "requires one or more Turtle sources" in error

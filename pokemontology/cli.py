@@ -281,17 +281,22 @@ def cmd_laurel(args: argparse.Namespace) -> int:
 
 
 def cmd_evaluate_laurel(args: argparse.Namespace) -> int:
-    payload = evaluate_suite(
-        EvalConfig(
-            suite=args.suite,
-            tier=args.tier,
-            include_adversarial=args.include_adversarial,
-            model=args.model,
-            endpoint=args.endpoint,
-            timeout=args.timeout,
-            limit=args.limit,
+    try:
+        payload = evaluate_suite(
+            EvalConfig(
+                suite=args.suite,
+                mode=args.mode,
+                tier=args.tier,
+                include_adversarial=args.include_adversarial,
+                sources=tuple(args.sources),
+                model=args.model,
+                endpoint=args.endpoint,
+                timeout=args.timeout,
+                limit=args.limit,
+            )
         )
-    )
+    except ValueError as exc:
+        raise CliUsageError(str(exc)) from exc
     _print_json(payload, pretty=True)
     return 0
 
@@ -650,6 +655,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Path to the Laurel evaluation suite JSON.",
     )
     eval_parser.add_argument(
+        "--mode",
+        choices=["translation", "pipeline"],
+        default="translation",
+        help="Whether to evaluate just NL-to-SPARQL translation or the full Laurel answer pipeline.",
+    )
+    eval_parser.add_argument(
         "--tier",
         default=None,
         help="Optional tier to evaluate, such as easy, medium, hard, generation-specific, or adversarial.",
@@ -665,6 +676,12 @@ def build_parser() -> argparse.ArgumentParser:
         action=argparse.BooleanOptionalAction,
         default=True,
         help="Whether to include adversarial prompts in the evaluation run.",
+    )
+    eval_parser.add_argument(
+        "sources",
+        nargs="*",
+        type=Path,
+        help="Optional Turtle sources. Required when --mode pipeline is used.",
     )
     eval_parser.add_argument(
         "--model",
