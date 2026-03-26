@@ -23,7 +23,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Build published ontology artifacts
-        run: python3 scripts/build/build_ontology.py
+        run: python3 -m pokemontology build
       - uses: actions/upload-pages-artifact@v3
         with:
           path: docs
