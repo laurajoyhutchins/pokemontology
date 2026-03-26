@@ -7,11 +7,14 @@ from textwrap import dedent
 from pyshacl import validate
 from rdflib import Graph
 
+from scripts.replay.replay_to_ttl_builder import build_graph
+
 REPO = Path(__file__).parent.parent
 
 ONTOLOGY = REPO / "build" / "ontology.ttl"
 SHAPES = REPO / "build" / "shapes.ttl"
 SLICE = REPO / "examples" / "slices" / "showdown-finals-game1-slice.ttl"
+REPLAY_JSON = REPO / "examples" / "replays" / "gen9vgc2025regjbo3-2414024536-ey54jc53vyjqy20sq0ww1l5nd3bq5qhpw.json"
 
 
 def _load(path: Path) -> Graph:
@@ -40,6 +43,14 @@ def _parse_ttl(ttl: str) -> Graph:
 def test_slice_conforms_to_shapes() -> None:
     conforms, results_text = _validate_data_graph(_load(SLICE))
     assert conforms, f"SHACL violations found:\n{results_text}"
+
+
+def test_generated_replay_graph_conforms_to_shapes() -> None:
+    import json
+
+    payload = json.loads(REPLAY_JSON.read_text(encoding="utf-8"))
+    conforms, results_text = _validate_data_graph(build_graph(payload))
+    assert conforms, f"Generated replay graph violates SHACL:\n{results_text}"
 
 
 def test_iv_assignment_rejects_values_above_31() -> None:

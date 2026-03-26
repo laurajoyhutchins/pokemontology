@@ -94,6 +94,21 @@ def test_faint_events_use_declared_event_predicates(replay_graph: Graph) -> None
         assert (event, PKM.occursAtInstantaneous, None) not in replay_graph
 
 
+def test_builder_materializes_replay_observed_assignments(replay_graph: Graph) -> None:
+    assert any(replay_graph.subjects(RDF.type, PKM.CurrentHPAssignment))
+    assert any(replay_graph.subjects(RDF.type, PKM.StatStageAssignment))
+    assert any(replay_graph.subjects(RDF.type, PKM.CurrentWeatherAssignment))
+    assert any(replay_graph.subjects(RDF.type, PKM.CurrentTerrainAssignment))
+    assert any(replay_graph.subjects(RDF.type, PKM.SideConditionAssignment))
+    assert any(replay_graph.subjects(RDF.type, PKM.CurrentTransformationAssignment))
+    assert any(replay_graph.subjects(RDF.type, PKM.VolatileStatusAssignment))
+
+
+def test_builder_emits_damage_and_healing_events(replay_graph: Graph) -> None:
+    assert any(replay_graph.subjects(RDF.type, PKM.DamageEvent))
+    assert any(replay_graph.subjects(RDF.type, PKM.HealingEvent))
+
+
 def test_builder_uses_only_declared_pkm_predicates(replay_graph: Graph, ontology_graph: Graph) -> None:
     declared = {
         predicate

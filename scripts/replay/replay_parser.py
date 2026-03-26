@@ -18,6 +18,20 @@ from typing import Iterable
 
 
 PKM_PREFIX = "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#"
+SUPPORTED_EVENT_TAGS = {
+    "switch",
+    "move",
+    "faint",
+    "-damage",
+    "-heal",
+    "-boost",
+    "-unboost",
+    "-weather",
+    "-fieldstart",
+    "-sidestart",
+    "-terastallize",
+    "-singleturn",
+}
 
 
 def sanitize_identifier(text: str) -> str:
@@ -58,6 +72,14 @@ def parse_player_slot(raw: str) -> tuple[str, str]:
     return match.group(1), match.group(2)
 
 
+def parse_side_token(raw: str) -> str:
+    """Return 'p1' or 'p2' from strings like 'p1: Alice'."""
+    match = re.match(r"^(p[12]):", raw.strip())
+    if not match:
+        raise ValueError(f"Could not parse side token from {raw!r}")
+    return match.group(1)
+
+
 @dataclass
 class ReplayEvent:
     turn: int
@@ -68,7 +90,7 @@ class ReplayEvent:
 
 
 def parse_log(log: str) -> list[ReplayEvent]:
-    """Parse replay log lines, returning only switch/move/faint events."""
+    """Parse replay log lines for the replay-backed event/state slice."""
     turn = 0
     order = 0
     events: list[ReplayEvent] = []
@@ -84,7 +106,7 @@ def parse_log(log: str) -> list[ReplayEvent]:
             continue
         if turn == 0:
             continue
-        if tag in {"switch", "move", "faint"}:
+        if tag in SUPPORTED_EVENT_TAGS:
             events.append(ReplayEvent(turn=turn, order=order, kind=tag, fields=parts[2:], raw=raw_line))
             order += 1
 

@@ -32,11 +32,94 @@ from scripts.replay.replay_parser import (
     parse_log,
     parse_player_slot,
     parse_replay_payload,
+    parse_side_token,
     sanitize_identifier,
 )
 
 PKM = Namespace(PKM_PREFIX)
 SITE_BASE = "https://laurajoyhutchins.github.io/pokemontology"
+
+STAT_TOKEN_TO_NAME = {
+    "atk": "Attack",
+    "def": "Defense",
+    "spa": "Special Attack",
+    "spd": "Special Defense",
+    "spe": "Speed",
+    "accuracy": "Accuracy",
+    "evasion": "Evasion",
+}
+SIDE_CONDITION_TOKEN_TO_NAME = {
+    "move: Tailwind": "Tailwind",
+}
+TERRAIN_TOKEN_TO_NAME = {
+    "move: Psychic Terrain": "Psychic Terrain",
+    "move: Grassy Terrain": "Grassy Terrain",
+}
+WEATHER_TOKEN_TO_NAME = {
+    "SunnyDay": "Harsh Sunlight",
+}
+VOLATILE_TOKEN_TO_NAME = {
+    "Protect": "Protecting",
+}
+
+
+def combatant_iri_for_token(token: str, p1_name: str, p2_name: str) -> URIRef:
+    player_id, _slot = parse_player_slot(token)
+    trainer = p1_name if player_id == "p1" else p2_name
+    actor_name = actor_display_name(token)
+    return PKM[f"Combatant_{sanitize_identifier(trainer)}_{compact_species_name(actor_name)}"]
+
+
+def slot_key(token: str) -> str:
+    player_id, slot = parse_player_slot(token)
+    return f"{player_id}{slot}"
+
+
+def combatant_iri_for_switch(token: str, species_token: str, p1_name: str, p2_name: str) -> URIRef:
+    player_id, _slot = parse_player_slot(token)
+    trainer = p1_name if player_id == "p1" else p2_name
+    return PKM[f"Combatant_{sanitize_identifier(trainer)}_{compact_species_name(species_token)}"]
+
+
+def side_iri_for_token(token: str, p1_name: str, p2_name: str) -> URIRef:
+    side_id = parse_side_token(token)
+    trainer = p1_name if side_id == "p1" else p2_name
+    return PKM[f"Side_{sanitize_identifier(trainer)}"]
+
+
+def stat_iri_for_token(token: str) -> URIRef:
+    stat_name = STAT_TOKEN_TO_NAME.get(token, token)
+    return PKM[f"Stat_{sanitize_identifier(stat_name)}"]
+
+
+def ensure_named_entity(g: Graph, iri: URIRef, rdf_type: URIRef, name: str) -> None:
+    g.add((iri, RDF.type, rdf_type))
+    g.add((iri, PKM.hasName, Literal(name)))
+
+
+def parse_hp_value(hp_status: str) -> int | None:
+    hp_token = hp_status.strip().split()[0]
+    if hp_token == "0":
+        return 0
+    if "/" not in hp_token:
+        return None
+    numerator, _sep, _denominator = hp_token.partition("/")
+    if not numerator.isdigit():
+        return None
+    return int(numerator)
+
+
+def discover_pre_turn_switches(log: str) -> list[tuple[str, str]]:
+    switches: list[tuple[str, str]] = []
+    for raw_line in log.splitlines():
+        if raw_line == "|turn|1":
+            break
+        if not raw_line.startswith("|switch|"):
+            continue
+        parts = raw_line.split("|")
+        if len(parts) >= 4:
+            switches.append((parts[2], parts[3]))
+    return switches
 
 
 def build_graph(payload: dict) -> Graph:
@@ -49,6 +132,19 @@ def build_graph(payload: dict) -> Graph:
     replay_id, fmt, source_url, p1_name, p2_name = parse_replay_payload(payload)
     events = parse_log(payload["log"])
     participants = discover_participants(events, p1_name, p2_name)
+    for slot_token, species_token in discover_pre_turn_switches(payload["log"]):
+        player_id, _slot = parse_player_slot(slot_token)
+        trainer = p1_name if player_id == "p1" else p2_name
+        iri = f"Combatant_{sanitize_identifier(trainer)}_{compact_species_name(species_token)}"
+        participants.setdefault(
+            iri,
+            {
+                "player_id": player_id,
+                "trainer": trainer,
+                "species_raw": species_token.split(",")[0].strip(),
+                "label": f"{trainer} {species_token.split(',')[0].strip()}",
+            },
+        )
     moves = discover_moves(events)
 
     battle_slug = sanitize_identifier(replay_id)
@@ -82,6 +178,8 @@ def build_graph(payload: dict) -> Graph:
     g.add((battle_iri, RDF.type, PKM.Battle))
     g.add((battle_iri, PKM.operatesUnderRuleset, ruleset_iri))
     g.add((battle_iri, PKM.supportedByArtifact, artifact_iri))
+    g.add((battle_iri, PKM.hasReplayTurnIndex, Literal(1, datatype=XSD.integer)))
+    g.add((battle_iri, PKM.hasReplayStepLabel, Literal("battle-root")))
     g.add((battle_iri, RDFS.comment, Literal("Battle container auto-generated from replay log.")))
 
     g.add((side_p1_iri, RDF.type, PKM.BattleSide))
@@ -122,16 +220,27 @@ def build_graph(payload: dict) -> Graph:
         previous_instant = instant
 
     transition_count = 0
+    active_combatants_by_slot = {
+        slot_key(slot_token): combatant_iri_for_switch(slot_token, species_token, p1_name, p2_name)
+        for slot_token, species_token in discover_pre_turn_switches(payload["log"])
+    }
     for idx, ev in enumerate(events):
         instant = PKM[f"I_{idx}"]
+
+        if ev.kind == "switch":
+            active_combatants_by_slot[slot_key(ev.fields[0])] = combatant_iri_for_switch(
+                ev.fields[0],
+                ev.fields[1],
+                p1_name,
+                p2_name,
+            )
+            continue
 
         if ev.kind == "move":
             actor_token = ev.fields[0]
             move_name = ev.fields[1].strip()
-            player_id, _slot = parse_player_slot(actor_token)
+            actor_iri = active_combatants_by_slot.get(slot_key(actor_token), combatant_iri_for_token(actor_token, p1_name, p2_name))
             actor_name = actor_display_name(actor_token)
-            trainer = p1_name if player_id == "p1" else p2_name
-            actor_iri = PKM[f"Combatant_{sanitize_identifier(trainer)}_{compact_species_name(actor_name)}"]
             move_iri_node = PKM[f"Move{sanitize_identifier(move_name)}"]
             action_iri = PKM[
                 f"Action_T{ev.turn}_{ev.order}_{sanitize_identifier(move_name)}_{sanitize_identifier(actor_name)}"
@@ -159,22 +268,186 @@ def build_graph(payload: dict) -> Graph:
                 g.add((transition, PKM.transitionOccursInBattle, battle_iri))
                 transition_count += 1
 
+        elif ev.kind in {"-damage", "-heal"}:
+            combatant_iri = active_combatants_by_slot.get(
+                slot_key(ev.fields[0]),
+                combatant_iri_for_token(ev.fields[0], p1_name, p2_name),
+            )
+            hp_value = parse_hp_value(ev.fields[1])
+            if hp_value is None:
+                continue
+
+            event_prefix = "Damage" if ev.kind == "-damage" else "Heal"
+            event_type = PKM.DamageEvent if ev.kind == "-damage" else PKM.HealingEvent
+            event_iri = PKM[f"{event_prefix}_T{ev.turn}_{ev.order}_{sanitize_identifier(actor_display_name(ev.fields[0]))}"]
+            hp_assignment = PKM[f"HP_T{ev.turn}_{ev.order}_{sanitize_identifier(actor_display_name(ev.fields[0]))}"]
+
+            g.add((event_iri, RDF.type, event_type))
+            g.add((event_iri, PKM.affectsCombatant, combatant_iri))
+            g.add((event_iri, PKM.occursInInstantaneous, instant))
+            g.add((event_iri, PKM.hasReplayTurnIndex, Literal(ev.turn, datatype=XSD.integer)))
+            g.add((event_iri, PKM.hasReplayEventOrder, Literal(ev.order, datatype=XSD.integer)))
+            g.add((event_iri, PKM.hasReplayStepLabel, Literal(f"{ev.kind[1:]}-t{ev.turn}-e{ev.order}")))
+            g.add((event_iri, PKM.supportedByArtifact, artifact_iri))
+
+            g.add((hp_assignment, RDF.type, PKM.CurrentHPAssignment))
+            g.add((hp_assignment, PKM.aboutCombatant, combatant_iri))
+            g.add((hp_assignment, PKM.hasContext, instant))
+            g.add((hp_assignment, PKM.hasCurrentHPValue, Literal(hp_value, datatype=XSD.integer)))
+            g.add((hp_assignment, PKM.materializedFromEvent, event_iri))
+            g.add((hp_assignment, PKM.supportedByArtifact, artifact_iri))
+            g.add((hp_assignment, PKM.hasReplayTurnIndex, Literal(ev.turn, datatype=XSD.integer)))
+            g.add((hp_assignment, PKM.hasReplayEventOrder, Literal(ev.order, datatype=XSD.integer)))
+            g.add((hp_assignment, PKM.hasReplayStepLabel, Literal(f"hp-{ev.kind[1:]}-t{ev.turn}-e{ev.order}")))
+
+        elif ev.kind in {"-boost", "-unboost"}:
+            combatant_iri = active_combatants_by_slot.get(
+                slot_key(ev.fields[0]),
+                combatant_iri_for_token(ev.fields[0], p1_name, p2_name),
+            )
+            stat_token = ev.fields[1].strip()
+            stage_delta = int(ev.fields[2])
+            stage_value = stage_delta if ev.kind == "-boost" else -stage_delta
+            stat_iri = stat_iri_for_token(stat_token)
+            ensure_named_entity(g, stat_iri, PKM.Stat, STAT_TOKEN_TO_NAME.get(stat_token, stat_token))
+
+            assignment_iri = PKM[
+                f"Stage_T{ev.turn}_{ev.order}_{sanitize_identifier(actor_display_name(ev.fields[0]))}_{sanitize_identifier(stat_token)}"
+            ]
+            g.add((assignment_iri, RDF.type, PKM.StatStageAssignment))
+            g.add((assignment_iri, PKM.aboutCombatant, combatant_iri))
+            g.add((assignment_iri, PKM.aboutStat, stat_iri))
+            g.add((assignment_iri, PKM.hasContext, instant))
+            g.add((assignment_iri, PKM.hasStageValue, Literal(stage_value, datatype=XSD.integer)))
+            g.add((assignment_iri, PKM.supportedByArtifact, artifact_iri))
+            g.add((assignment_iri, PKM.hasReplayTurnIndex, Literal(ev.turn, datatype=XSD.integer)))
+            g.add((assignment_iri, PKM.hasReplayEventOrder, Literal(ev.order, datatype=XSD.integer)))
+            g.add((assignment_iri, PKM.hasReplayStepLabel, Literal(f"stage-{ev.kind[1:]}-t{ev.turn}-e{ev.order}")))
+
+        elif ev.kind == "-weather":
+            weather_name = WEATHER_TOKEN_TO_NAME.get(ev.fields[0].strip(), ev.fields[0].strip())
+            weather_iri = PKM[f"Weather_{sanitize_identifier(weather_name)}"]
+            ensure_named_entity(g, weather_iri, PKM.WeatherCondition, weather_name)
+
+            assignment_iri = PKM[f"Weather_T{ev.turn}_{ev.order}_{sanitize_identifier(weather_name)}"]
+            g.add((assignment_iri, RDF.type, PKM.CurrentWeatherAssignment))
+            g.add((assignment_iri, PKM.aboutField, battle_iri))
+            g.add((assignment_iri, PKM.hasContext, instant))
+            g.add((assignment_iri, PKM.hasWeatherCondition, weather_iri))
+            g.add((assignment_iri, PKM.supportedByArtifact, artifact_iri))
+            g.add((assignment_iri, PKM.hasReplayTurnIndex, Literal(ev.turn, datatype=XSD.integer)))
+            g.add((assignment_iri, PKM.hasReplayEventOrder, Literal(ev.order, datatype=XSD.integer)))
+            g.add((assignment_iri, PKM.hasReplayStepLabel, Literal(f"weather-t{ev.turn}-e{ev.order}")))
+
+        elif ev.kind == "-fieldstart":
+            terrain_name = TERRAIN_TOKEN_TO_NAME.get(ev.fields[0].strip())
+            if terrain_name is None:
+                continue
+            terrain_iri = PKM[f"Terrain_{sanitize_identifier(terrain_name)}"]
+            ensure_named_entity(g, terrain_iri, PKM.TerrainCondition, terrain_name)
+
+            assignment_iri = PKM[f"Terrain_T{ev.turn}_{ev.order}_{sanitize_identifier(terrain_name)}"]
+            g.add((assignment_iri, RDF.type, PKM.CurrentTerrainAssignment))
+            g.add((assignment_iri, PKM.aboutField, battle_iri))
+            g.add((assignment_iri, PKM.hasContext, instant))
+            g.add((assignment_iri, PKM.hasTerrainCondition, terrain_iri))
+            g.add((assignment_iri, PKM.supportedByArtifact, artifact_iri))
+            g.add((assignment_iri, PKM.hasReplayTurnIndex, Literal(ev.turn, datatype=XSD.integer)))
+            g.add((assignment_iri, PKM.hasReplayEventOrder, Literal(ev.order, datatype=XSD.integer)))
+            g.add((assignment_iri, PKM.hasReplayStepLabel, Literal(f"terrain-t{ev.turn}-e{ev.order}")))
+
+        elif ev.kind == "-sidestart":
+            side_iri = side_iri_for_token(ev.fields[0], p1_name, p2_name)
+            condition_name = SIDE_CONDITION_TOKEN_TO_NAME.get(ev.fields[1].strip())
+            if condition_name is None:
+                continue
+            condition_iri = PKM[f"SideCondition_{sanitize_identifier(condition_name)}"]
+            ensure_named_entity(g, condition_iri, PKM.SideCondition, condition_name)
+
+            assignment_iri = PKM[f"SideCondition_T{ev.turn}_{ev.order}_{sanitize_identifier(condition_name)}"]
+            g.add((assignment_iri, RDF.type, PKM.SideConditionAssignment))
+            g.add((assignment_iri, PKM.aboutSide, side_iri))
+            g.add((assignment_iri, PKM.hasContext, instant))
+            g.add((assignment_iri, PKM.hasSideCondition, condition_iri))
+            g.add((assignment_iri, PKM.supportedByArtifact, artifact_iri))
+            g.add((assignment_iri, PKM.hasReplayTurnIndex, Literal(ev.turn, datatype=XSD.integer)))
+            g.add((assignment_iri, PKM.hasReplayEventOrder, Literal(ev.order, datatype=XSD.integer)))
+            g.add((assignment_iri, PKM.hasReplayStepLabel, Literal(f"sidecond-t{ev.turn}-e{ev.order}")))
+
+        elif ev.kind == "-terastallize":
+            combatant_iri = active_combatants_by_slot.get(
+                slot_key(ev.fields[0]),
+                combatant_iri_for_token(ev.fields[0], p1_name, p2_name),
+            )
+            tera_type = ev.fields[1].strip()
+            transformation_name = f"Terastallized {tera_type}"
+            transformation_iri = PKM[f"Transformation_{sanitize_identifier(transformation_name)}"]
+            ensure_named_entity(g, transformation_iri, PKM.TransformationState, transformation_name)
+
+            assignment_iri = PKM[
+                f"Transformation_T{ev.turn}_{ev.order}_{sanitize_identifier(actor_display_name(ev.fields[0]))}"
+            ]
+            g.add((assignment_iri, RDF.type, PKM.CurrentTransformationAssignment))
+            g.add((assignment_iri, PKM.aboutCombatant, combatant_iri))
+            g.add((assignment_iri, PKM.hasTransformationState, transformation_iri))
+            g.add((assignment_iri, PKM.hasContext, instant))
+            g.add((assignment_iri, PKM.supportedByArtifact, artifact_iri))
+            g.add((assignment_iri, PKM.hasReplayTurnIndex, Literal(ev.turn, datatype=XSD.integer)))
+            g.add((assignment_iri, PKM.hasReplayEventOrder, Literal(ev.order, datatype=XSD.integer)))
+            g.add((assignment_iri, PKM.hasReplayStepLabel, Literal(f"tera-t{ev.turn}-e{ev.order}")))
+
+        elif ev.kind == "-singleturn":
+            combatant_iri = active_combatants_by_slot.get(
+                slot_key(ev.fields[0]),
+                combatant_iri_for_token(ev.fields[0], p1_name, p2_name),
+            )
+            volatile_name = VOLATILE_TOKEN_TO_NAME.get(ev.fields[1].strip())
+            if volatile_name is None:
+                continue
+            volatile_iri = PKM[f"VolatileCondition_{sanitize_identifier(volatile_name)}"]
+            ensure_named_entity(g, volatile_iri, PKM.VolatileCondition, volatile_name)
+
+            assignment_iri = PKM[
+                f"Volatile_T{ev.turn}_{ev.order}_{sanitize_identifier(actor_display_name(ev.fields[0]))}_{sanitize_identifier(volatile_name)}"
+            ]
+            g.add((assignment_iri, RDF.type, PKM.VolatileStatusAssignment))
+            g.add((assignment_iri, PKM.aboutCombatant, combatant_iri))
+            g.add((assignment_iri, PKM.hasVolatileCondition, volatile_iri))
+            g.add((assignment_iri, PKM.hasContext, instant))
+            g.add((assignment_iri, PKM.supportedByArtifact, artifact_iri))
+            g.add((assignment_iri, PKM.hasReplayTurnIndex, Literal(ev.turn, datatype=XSD.integer)))
+            g.add((assignment_iri, PKM.hasReplayEventOrder, Literal(ev.order, datatype=XSD.integer)))
+            g.add((assignment_iri, PKM.hasReplayStepLabel, Literal(f"volatile-t{ev.turn}-e{ev.order}")))
+
         elif ev.kind == "faint":
             fainted_token = ev.fields[0]
-            player_id, _slot = parse_player_slot(fainted_token)
-            trainer = p1_name if player_id == "p1" else p2_name
+            fainted_iri = active_combatants_by_slot.get(
+                slot_key(fainted_token),
+                combatant_iri_for_token(fainted_token, p1_name, p2_name),
+            )
             fainted_name = actor_display_name(fainted_token)
-            fainted_iri = PKM[
-                f"Combatant_{sanitize_identifier(trainer)}_{compact_species_name(fainted_name)}"
-            ]
             event_iri = PKM[f"Faint_T{ev.turn}_{ev.order}_{sanitize_identifier(fainted_name)}"]
+            hp_assignment = PKM[f"HP_T{ev.turn}_{ev.order}_{sanitize_identifier(fainted_name)}"]
 
             g.add((event_iri, RDF.type, PKM.FaintEvent))
             g.add((event_iri, PKM.affectsCombatant, fainted_iri))
             g.add((event_iri, PKM.occursInInstantaneous, instant))
             g.add((event_iri, PKM.hasReplayTurnIndex, Literal(ev.turn, datatype=XSD.integer)))
             g.add((event_iri, PKM.hasReplayEventOrder, Literal(ev.order, datatype=XSD.integer)))
+            g.add((event_iri, PKM.hasReplayStepLabel, Literal(f"faint-t{ev.turn}-e{ev.order}")))
             g.add((event_iri, PKM.supportedByArtifact, artifact_iri))
+
+            g.add((hp_assignment, RDF.type, PKM.CurrentHPAssignment))
+            g.add((hp_assignment, PKM.aboutCombatant, fainted_iri))
+            g.add((hp_assignment, PKM.hasContext, instant))
+            g.add((hp_assignment, PKM.hasCurrentHPValue, Literal(0, datatype=XSD.integer)))
+            g.add((hp_assignment, PKM.materializedFromEvent, event_iri))
+            g.add((hp_assignment, PKM.supportedByArtifact, artifact_iri))
+            g.add((hp_assignment, PKM.hasReplayTurnIndex, Literal(ev.turn, datatype=XSD.integer)))
+            g.add((hp_assignment, PKM.hasReplayEventOrder, Literal(ev.order, datatype=XSD.integer)))
+            g.add((hp_assignment, PKM.hasReplayStepLabel, Literal(f"hp-faint-t{ev.turn}-e{ev.order}")))
+
+            active_combatants_by_slot.pop(slot_key(fainted_token), None)
 
     return g
 

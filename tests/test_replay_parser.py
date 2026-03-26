@@ -10,6 +10,7 @@ from scripts.replay.replay_parser import (
     discover_participants,
     parse_log,
     parse_player_slot,
+    parse_side_token,
     sanitize_identifier,
 )
 
@@ -69,6 +70,20 @@ def test_parse_player_slot_invalid(raw: str) -> None:
         parse_player_slot(raw)
 
 
+@pytest.mark.parametrize("raw, expected", [
+    ("p1: Alice", "p1"),
+    ("p2: Bob", "p2"),
+])
+def test_parse_side_token_valid(raw: str, expected: str) -> None:
+    assert parse_side_token(raw) == expected
+
+
+@pytest.mark.parametrize("raw", ["p1a: Garchomp", "p3: Alice", "Alice"])
+def test_parse_side_token_invalid(raw: str) -> None:
+    with pytest.raises(ValueError):
+        parse_side_token(raw)
+
+
 # ---------------------------------------------------------------------------
 # parse_log
 # ---------------------------------------------------------------------------
@@ -115,16 +130,18 @@ def test_parse_log_skips_pre_turn_lines() -> None:
     assert len(events) == 1
 
 
-def test_parse_log_filters_to_switch_move_faint() -> None:
+def test_parse_log_keeps_supported_state_events() -> None:
     log = """|turn|1
 |weather|SunnyDay|[upkeep]
 |move|p1a: Charizard|Flamethrower|p2a: Mewtwo
 |-damage|p2a: Mewtwo|100/200
+|-boost|p1a: Charizard|spa|1
+|-singleturn|p1a: Charizard|Protect
 |faint|p2a: Mewtwo
 """
     events = parse_log(log)
     kinds = [ev.kind for ev in events]
-    assert kinds == ["move", "faint"]
+    assert kinds == ["move", "-damage", "-boost", "-singleturn", "faint"]
 
 
 # ---------------------------------------------------------------------------
