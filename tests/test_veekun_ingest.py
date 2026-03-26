@@ -1,4 +1,5 @@
 """Tests for the local-only Veekun ingestion scaffold."""
+
 from __future__ import annotations
 
 import shutil
@@ -47,4 +48,8 @@ def test_build_ttl_from_csv_serializes_valid_turtle(tmp_path) -> None:
 
     assert len(graph) > 0
     assert any(graph.triples((None, RDF.type, PKM.ExternalEntityReference)))
-    assert (PKM.Ref_Veekun_species_froakie, PKM.refersToEntity, PKM.Species_froakie) in graph
+    assert (
+        PKM.Ref_Veekun_species_froakie,
+        PKM.refersToEntity,
+        PKM.Species_froakie,
+    ) in graph

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Sanity-check Turtle files with rdflib parsing."""
+
 from __future__ import annotations
 
 import argparse

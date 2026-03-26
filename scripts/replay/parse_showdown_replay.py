@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Parse a Pokémon Showdown replay JSON file into a simple turn/event stream."""
+
 from __future__ import annotations
 
 import argparse

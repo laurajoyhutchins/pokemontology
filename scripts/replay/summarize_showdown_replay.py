@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Extract a compact summary from a Showdown replay JSON file."""
+
 from __future__ import annotations
 
 import argparse
@@ -26,11 +27,13 @@ def summarize(payload: dict) -> dict:
             turns_by_num[ev.turn] = {"turn": ev.turn, "moves": [], "faints": []}
         turn_data = turns_by_num[ev.turn]
         if ev.kind == "move":
-            turn_data["moves"].append({
-                "actor": ev.fields[0],
-                "move": ev.fields[1],
-                "target": ev.fields[2] if len(ev.fields) > 2 else None,
-            })
+            turn_data["moves"].append(
+                {
+                    "actor": ev.fields[0],
+                    "move": ev.fields[1],
+                    "target": ev.fields[2] if len(ev.fields) > 2 else None,
+                }
+            )
         elif ev.kind == "faint":
             turn_data["faints"].append(ev.fields[0])
 

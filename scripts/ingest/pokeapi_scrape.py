@@ -9,6 +9,7 @@ This script is intentionally conservative:
 - optional pagination/detail limits
 - resumable runs that skip cached responses by default
 """
+
 from __future__ import annotations
 
 import argparse
@@ -28,7 +29,9 @@ DEFAULT_DELAY_SECONDS = 0.5
 DEFAULT_TIMEOUT_SECONDS = 30.0
 DEFAULT_PAGE_SIZE = 100
 POKEAPI_BASE = "https://pokeapi.co/api/v2"
-USER_AGENT = "pokemontology-scraper/0.1 (+https://laurajoyhutchins.github.io/pokemontology/)"
+USER_AGENT = (
+    "pokemontology-scraper/0.1 (+https://laurajoyhutchins.github.io/pokemontology/)"
+)
 
 ALLOWED_RESOURCES = {
     "ability",
@@ -60,7 +63,9 @@ def detail_cache_path(cache_dir: Path, resource: str, name: str) -> Path:
 
 def write_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
 
 
 def read_json(path: Path) -> dict[str, Any]:
@@ -166,15 +171,54 @@ def scrape_resource(
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
-    parser.add_argument("resource", choices=sorted(ALLOWED_RESOURCES), help="PokeAPI resource to scrape.")
-    parser.add_argument("--cache-dir", type=Path, default=DEFAULT_CACHE_DIR, help="Directory where page/detail JSON responses will be cached.")
-    parser.add_argument("--details", action="store_true", help="Fetch detail documents for each list result in addition to paginated list pages.")
-    parser.add_argument("--page-size", type=int, default=DEFAULT_PAGE_SIZE, help="Page size for list endpoint requests.")
-    parser.add_argument("--max-pages", type=int, default=None, help="Stop after this many list pages.")
-    parser.add_argument("--max-details", type=int, default=None, help="Stop after this many detail documents.")
-    parser.add_argument("--delay-seconds", type=float, default=DEFAULT_DELAY_SECONDS, help="Delay after each network request to avoid hammering PokeAPI.")
-    parser.add_argument("--timeout", type=float, default=DEFAULT_TIMEOUT_SECONDS, help="HTTP timeout in seconds.")
-    parser.add_argument("--force", action="store_true", help="Refetch pages/details even when a cached response already exists.")
+    parser.add_argument(
+        "resource",
+        choices=sorted(ALLOWED_RESOURCES),
+        help="PokeAPI resource to scrape.",
+    )
+    parser.add_argument(
+        "--cache-dir",
+        type=Path,
+        default=DEFAULT_CACHE_DIR,
+        help="Directory where page/detail JSON responses will be cached.",
+    )
+    parser.add_argument(
+        "--details",
+        action="store_true",
+        help="Fetch detail documents for each list result in addition to paginated list pages.",
+    )
+    parser.add_argument(
+        "--page-size",
+        type=int,
+        default=DEFAULT_PAGE_SIZE,
+        help="Page size for list endpoint requests.",
+    )
+    parser.add_argument(
+        "--max-pages", type=int, default=None, help="Stop after this many list pages."
+    )
+    parser.add_argument(
+        "--max-details",
+        type=int,
+        default=None,
+        help="Stop after this many detail documents.",
+    )
+    parser.add_argument(
+        "--delay-seconds",
+        type=float,
+        default=DEFAULT_DELAY_SECONDS,
+        help="Delay after each network request to avoid hammering PokeAPI.",
+    )
+    parser.add_argument(
+        "--timeout",
+        type=float,
+        default=DEFAULT_TIMEOUT_SECONDS,
+        help="HTTP timeout in seconds.",
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Refetch pages/details even when a cached response already exists.",
+    )
     return parser
 
 

@@ -1,4 +1,5 @@
 """SHACL conformance: the example slice must conform to the shapes graph."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -15,7 +16,12 @@ REPO = Path(__file__).parent.parent
 ONTOLOGY = REPO / "build" / "ontology.ttl"
 SHAPES = REPO / "build" / "shapes.ttl"
 SLICE = REPO / "examples" / "slices" / "showdown-finals-game1-slice.ttl"
-REPLAY_JSON = REPO / "examples" / "replays" / "gen9vgc2025regjbo3-2414024536-ey54jc53vyjqy20sq0ww1l5nd3bq5qhpw.json"
+REPLAY_JSON = (
+    REPO
+    / "examples"
+    / "replays"
+    / "gen9vgc2025regjbo3-2414024536-ey54jc53vyjqy20sq0ww1l5nd3bq5qhpw.json"
+)
 
 # Parsed once per session; pyshacl reads but does not mutate these graphs.
 _shapes_graph: Graph | None = None
@@ -44,7 +50,9 @@ def _load(path: Path) -> Graph:
     return g
 
 
-def _validate_data_graph(data_graph: Graph, *, inference: str = "rdfs") -> tuple[bool, str]:
+def _validate_data_graph(
+    data_graph: Graph, *, inference: str = "rdfs"
+) -> tuple[bool, str]:
     conforms, _results_graph, results_text = validate(
         data_graph=data_graph,
         shacl_graph=_get_shapes_graph(),
@@ -80,20 +88,24 @@ def test_synthetic_status_and_target_resolution_graph_conforms_to_shapes() -> No
         "id": "synthetic-status-targeting",
         "format": "[Gen 9] Custom Game",
         "players": ["Alice", "Bob"],
-        "log": "\n".join([
-            "|turn|1",
-            "|switch|p1a: Pikachu|Pikachu, L50|100/100",
-            "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
-            "|move|p1a: Pikachu|Thunder Wave|p2a: Bulbasaur",
-            "|-status|p2a: Bulbasaur|par",
-            "|move|p2a: Bulbasaur|Sleep Powder|p1a: Pikachu",
-            "|-miss|p2a: Bulbasaur|p1a: Pikachu",
-            "|move|p2a: Bulbasaur|Protect|p2a: Bulbasaur",
-            "|-fail|p2a: Bulbasaur",
-        ]),
+        "log": "\n".join(
+            [
+                "|turn|1",
+                "|switch|p1a: Pikachu|Pikachu, L50|100/100",
+                "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
+                "|move|p1a: Pikachu|Thunder Wave|p2a: Bulbasaur",
+                "|-status|p2a: Bulbasaur|par",
+                "|move|p2a: Bulbasaur|Sleep Powder|p1a: Pikachu",
+                "|-miss|p2a: Bulbasaur|p1a: Pikachu",
+                "|move|p2a: Bulbasaur|Protect|p2a: Bulbasaur",
+                "|-fail|p2a: Bulbasaur",
+            ]
+        ),
     }
     conforms, results_text = _validate_data_graph(build_graph(payload))
-    assert conforms, f"Synthetic status/target-resolution graph violates SHACL:\n{results_text}"
+    assert conforms, (
+        f"Synthetic status/target-resolution graph violates SHACL:\n{results_text}"
+    )
 
 
 def test_synthetic_teardown_projection_graph_conforms_to_shapes() -> None:
@@ -101,26 +113,30 @@ def test_synthetic_teardown_projection_graph_conforms_to_shapes() -> None:
         "id": "synthetic-teardown-projection",
         "format": "[Gen 9] Custom Game",
         "players": ["Alice", "Bob"],
-        "log": "\n".join([
-            "|turn|1",
-            "|switch|p1a: Pikachu|Pikachu, L50|100/100",
-            "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
-            "|-weather|SunnyDay",
-            "|-fieldstart|move: Psychic Terrain",
-            "|-sidestart|p1: Alice|move: Tailwind",
-            "|-status|p2a: Bulbasaur|par",
-            "|-singleturn|p1a: Pikachu|Protect",
-            "|turn|2",
-            "|upkeep",
-            "|-curestatus|p2a: Bulbasaur|par",
-            "|-weather|none",
-            "|-fieldend|move: Psychic Terrain",
-            "|-sideend|p1: Alice|move: Tailwind",
-            "|-end|p1a: Pikachu|move: Protect",
-        ]),
+        "log": "\n".join(
+            [
+                "|turn|1",
+                "|switch|p1a: Pikachu|Pikachu, L50|100/100",
+                "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
+                "|-weather|SunnyDay",
+                "|-fieldstart|move: Psychic Terrain",
+                "|-sidestart|p1: Alice|move: Tailwind",
+                "|-status|p2a: Bulbasaur|par",
+                "|-singleturn|p1a: Pikachu|Protect",
+                "|turn|2",
+                "|upkeep",
+                "|-curestatus|p2a: Bulbasaur|par",
+                "|-weather|none",
+                "|-fieldend|move: Psychic Terrain",
+                "|-sideend|p1: Alice|move: Tailwind",
+                "|-end|p1a: Pikachu|move: Protect",
+            ]
+        ),
     }
     conforms, results_text = _validate_data_graph(build_graph(payload))
-    assert conforms, f"Synthetic teardown/projection graph violates SHACL:\n{results_text}"
+    assert conforms, (
+        f"Synthetic teardown/projection graph violates SHACL:\n{results_text}"
+    )
 
 
 def test_synthetic_stage_projection_graph_conforms_to_shapes() -> None:
@@ -128,18 +144,20 @@ def test_synthetic_stage_projection_graph_conforms_to_shapes() -> None:
         "id": "synthetic-stage-projection",
         "format": "[Gen 9] Custom Game",
         "players": ["Alice", "Bob"],
-        "log": "\n".join([
-            "|turn|1",
-            "|switch|p1a: Pikachu|Pikachu, L50|100/100",
-            "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
-            "|move|p1a: Pikachu|Nasty Plot|p1a: Pikachu",
-            "|-boost|p1a: Pikachu|spa|2",
-            "|turn|2",
-            "|upkeep",
-            "|move|p1a: Pikachu|Pain Split|p2a: Bulbasaur",
-            "|-sethp|p1a: Pikachu|70/100|p2a: Bulbasaur|70/100|[from] move: Pain Split",
-            "|-clearboost|p1a: Pikachu",
-        ]),
+        "log": "\n".join(
+            [
+                "|turn|1",
+                "|switch|p1a: Pikachu|Pikachu, L50|100/100",
+                "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
+                "|move|p1a: Pikachu|Nasty Plot|p1a: Pikachu",
+                "|-boost|p1a: Pikachu|spa|2",
+                "|turn|2",
+                "|upkeep",
+                "|move|p1a: Pikachu|Pain Split|p2a: Bulbasaur",
+                "|-sethp|p1a: Pikachu|70/100|p2a: Bulbasaur|70/100|[from] move: Pain Split",
+                "|-clearboost|p1a: Pikachu",
+            ]
+        ),
     }
     conforms, results_text = _validate_data_graph(build_graph(payload))
     assert conforms, f"Synthetic stage projection graph violates SHACL:\n{results_text}"
@@ -150,19 +168,23 @@ def test_synthetic_item_and_ability_observation_graph_conforms_to_shapes() -> No
         "id": "synthetic-item-ability-observation",
         "format": "[Gen 9] Custom Game",
         "players": ["Alice", "Bob"],
-        "log": "\n".join([
-            "|turn|1",
-            "|switch|p1a: Pikachu|Pikachu, L50|100/100",
-            "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
-            "|move|p1a: Pikachu|Knock Off|p2a: Bulbasaur",
-            "|-ability|p2a: Bulbasaur|Overgrow",
-            "|-enditem|p2a: Bulbasaur|Eviolite",
-            "|move|p2a: Bulbasaur|Trick|p1a: Pikachu",
-            "|-item|p1a: Pikachu|Leftovers|[from] move: Trick",
-        ]),
+        "log": "\n".join(
+            [
+                "|turn|1",
+                "|switch|p1a: Pikachu|Pikachu, L50|100/100",
+                "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
+                "|move|p1a: Pikachu|Knock Off|p2a: Bulbasaur",
+                "|-ability|p2a: Bulbasaur|Overgrow",
+                "|-enditem|p2a: Bulbasaur|Eviolite",
+                "|move|p2a: Bulbasaur|Trick|p1a: Pikachu",
+                "|-item|p1a: Pikachu|Leftovers|[from] move: Trick",
+            ]
+        ),
     }
     conforms, results_text = _validate_data_graph(build_graph(payload))
-    assert conforms, f"Synthetic item/ability observation graph violates SHACL:\n{results_text}"
+    assert conforms, (
+        f"Synthetic item/ability observation graph violates SHACL:\n{results_text}"
+    )
 
 
 def test_synthetic_volatile_start_graph_conforms_to_shapes() -> None:
@@ -170,18 +192,20 @@ def test_synthetic_volatile_start_graph_conforms_to_shapes() -> None:
         "id": "synthetic-volatile-start",
         "format": "[Gen 9] Custom Game",
         "players": ["Alice", "Bob"],
-        "log": "\n".join([
-            "|turn|1",
-            "|switch|p1a: Pikachu|Pikachu, L50|100/100",
-            "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
-            "|move|p1a: Pikachu|Confuse Ray|p2a: Bulbasaur",
-            "|-start|p2a: Bulbasaur|confusion",
-            "|move|p2a: Bulbasaur|Destiny Bond|p2a: Bulbasaur",
-            "|-singlemove|p2a: Bulbasaur|move: Destiny Bond",
-            "|turn|2",
-            "|upkeep",
-            "|-end|p2a: Bulbasaur|confusion",
-        ]),
+        "log": "\n".join(
+            [
+                "|turn|1",
+                "|switch|p1a: Pikachu|Pikachu, L50|100/100",
+                "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
+                "|move|p1a: Pikachu|Confuse Ray|p2a: Bulbasaur",
+                "|-start|p2a: Bulbasaur|confusion",
+                "|move|p2a: Bulbasaur|Destiny Bond|p2a: Bulbasaur",
+                "|-singlemove|p2a: Bulbasaur|move: Destiny Bond",
+                "|turn|2",
+                "|upkeep",
+                "|-end|p2a: Bulbasaur|confusion",
+            ]
+        ),
     }
     conforms, results_text = _validate_data_graph(build_graph(payload))
     assert conforms, f"Synthetic volatile -start graph violates SHACL:\n{results_text}"
@@ -192,14 +216,16 @@ def test_synthetic_forme_change_graph_conforms_to_shapes() -> None:
         "id": "synthetic-formechange",
         "format": "[Gen 6] Custom Game",
         "players": ["Alice", "Bob"],
-        "log": "\n".join([
-            "|turn|1",
-            "|switch|p1a: Charizard|Charizard, L50|100/100",
-            "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
-            "|move|p1a: Charizard|Ember|p2a: Bulbasaur",
-            "|-mega|p1a: Charizard|Charizard-Mega-Y|Charizardite Y",
-            "|-formechange|p1a: Charizard|Charizard-Mega-Y, L50|100/100",
-        ]),
+        "log": "\n".join(
+            [
+                "|turn|1",
+                "|switch|p1a: Charizard|Charizard, L50|100/100",
+                "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
+                "|move|p1a: Charizard|Ember|p2a: Bulbasaur",
+                "|-mega|p1a: Charizard|Charizard-Mega-Y|Charizardite Y",
+                "|-formechange|p1a: Charizard|Charizard-Mega-Y, L50|100/100",
+            ]
+        ),
     }
     conforms, results_text = _validate_data_graph(build_graph(payload))
     assert conforms, f"Synthetic forme change graph violates SHACL:\n{results_text}"
@@ -210,21 +236,23 @@ def test_synthetic_boost_operations_graph_conforms_to_shapes() -> None:
         "id": "synthetic-boost-ops",
         "format": "[Gen 9] Custom Game",
         "players": ["Alice", "Bob"],
-        "log": "\n".join([
-            "|turn|1",
-            "|switch|p1a: Pikachu|Pikachu, L50|100/100",
-            "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
-            "|move|p1a: Pikachu|Belly Drum|p1a: Pikachu",
-            "|-setboost|p1a: Pikachu|atk|6",
-            "|move|p2a: Bulbasaur|Topsy-Turvy|p1a: Pikachu",
-            "|-invertboost|p1a: Pikachu",
-            "|turn|2",
-            "|upkeep",
-            "|move|p1a: Pikachu|Guard Swap|p2a: Bulbasaur",
-            "|-swapboost|p1a: Pikachu|p2a: Bulbasaur|def,spd",
-            "|move|p2a: Bulbasaur|Haze|p1a: Pikachu",
-            "|-clearpositiveboost|p1a: Pikachu|p2a: Bulbasaur|[from] move: Haze",
-        ]),
+        "log": "\n".join(
+            [
+                "|turn|1",
+                "|switch|p1a: Pikachu|Pikachu, L50|100/100",
+                "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
+                "|move|p1a: Pikachu|Belly Drum|p1a: Pikachu",
+                "|-setboost|p1a: Pikachu|atk|6",
+                "|move|p2a: Bulbasaur|Topsy-Turvy|p1a: Pikachu",
+                "|-invertboost|p1a: Pikachu",
+                "|turn|2",
+                "|upkeep",
+                "|move|p1a: Pikachu|Guard Swap|p2a: Bulbasaur",
+                "|-swapboost|p1a: Pikachu|p2a: Bulbasaur|def,spd",
+                "|move|p2a: Bulbasaur|Haze|p1a: Pikachu",
+                "|-clearpositiveboost|p1a: Pikachu|p2a: Bulbasaur|[from] move: Haze",
+            ]
+        ),
     }
     conforms, results_text = _validate_data_graph(build_graph(payload))
     assert conforms, f"Synthetic boost-ops graph violates SHACL:\n{results_text}"
@@ -235,15 +263,17 @@ def test_synthetic_battle_outcome_graph_conforms_to_shapes() -> None:
         "id": "synthetic-battle-outcome",
         "format": "[Gen 9] Custom Game",
         "players": ["Alice", "Bob"],
-        "log": "\n".join([
-            "|turn|1",
-            "|switch|p1a: Pikachu|Pikachu, L50|100/100",
-            "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
-            "|move|p1a: Pikachu|Thunderbolt|p2a: Bulbasaur",
-            "|-damage|p2a: Bulbasaur|0 fnt",
-            "|faint|p2a: Bulbasaur",
-            "|win|Alice",
-        ]),
+        "log": "\n".join(
+            [
+                "|turn|1",
+                "|switch|p1a: Pikachu|Pikachu, L50|100/100",
+                "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
+                "|move|p1a: Pikachu|Thunderbolt|p2a: Bulbasaur",
+                "|-damage|p2a: Bulbasaur|0 fnt",
+                "|faint|p2a: Bulbasaur",
+                "|win|Alice",
+            ]
+        ),
     }
     conforms, results_text = _validate_data_graph(build_graph(payload))
     assert conforms, f"Synthetic battle outcome graph violates SHACL:\n{results_text}"
@@ -254,14 +284,16 @@ def test_synthetic_cureteam_graph_conforms_to_shapes() -> None:
         "id": "synthetic-cureteam",
         "format": "[Gen 9] Custom Game",
         "players": ["Alice", "Bob"],
-        "log": "\n".join([
-            "|turn|1",
-            "|switch|p1a: Blissey|Blissey, L50|100/100",
-            "|switch|p2a: Venusaur|Venusaur, L50|100/100",
-            "|-status|p1a: Blissey|brn",
-            "|move|p1a: Blissey|Aromatherapy|p1a: Blissey",
-            "|-cureteam|p1a: Blissey",
-        ]),
+        "log": "\n".join(
+            [
+                "|turn|1",
+                "|switch|p1a: Blissey|Blissey, L50|100/100",
+                "|switch|p2a: Venusaur|Venusaur, L50|100/100",
+                "|-status|p1a: Blissey|brn",
+                "|move|p1a: Blissey|Aromatherapy|p1a: Blissey",
+                "|-cureteam|p1a: Blissey",
+            ]
+        ),
     }
     conforms, results_text = _validate_data_graph(build_graph(payload))
     assert conforms, f"Synthetic cureteam graph violates SHACL:\n{results_text}"
@@ -370,7 +402,9 @@ def test_ev_assignment_allows_total_of_510() -> None:
     assert conforms, f"510-total EV spread should conform, but got:\n{results_text}"
 
 
-def test_typing_assignment_rejects_duplicate_type_slots_per_variant_and_ruleset() -> None:
+def test_typing_assignment_rejects_duplicate_type_slots_per_variant_and_ruleset() -> (
+    None
+):
     conforms, results_text = _validate_data_graph(
         _parse_ttl(
             """
@@ -423,11 +457,13 @@ def test_synthetic_represents_species_conforms() -> None:
         "id": "synthetic-represents-species",
         "format": "[Gen 9] Custom Game",
         "players": ["Alice", "Bob"],
-        "log": "\n".join([
-            "|turn|1",
-            "|switch|p1a: Pikachu|Pikachu, L50|100/100",
-            "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
-        ]),
+        "log": "\n".join(
+            [
+                "|turn|1",
+                "|switch|p1a: Pikachu|Pikachu, L50|100/100",
+                "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
+            ]
+        ),
     }
     conforms, results_text = _validate_data_graph(build_graph(payload))
     assert conforms, f"representsSpecies graph violates SHACL:\n{results_text}"
@@ -438,12 +474,14 @@ def test_synthetic_has_tera_type_conforms() -> None:
         "id": "synthetic-has-tera-type",
         "format": "[Gen 9] Custom Game",
         "players": ["Alice", "Bob"],
-        "log": "\n".join([
-            "|turn|1",
-            "|switch|p1a: Pikachu|Pikachu, L50|100/100",
-            "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
-            "|-terastallize|p1a: Pikachu|Electric",
-        ]),
+        "log": "\n".join(
+            [
+                "|turn|1",
+                "|switch|p1a: Pikachu|Pikachu, L50|100/100",
+                "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
+                "|-terastallize|p1a: Pikachu|Electric",
+            ]
+        ),
     }
     conforms, results_text = _validate_data_graph(build_graph(payload))
     assert conforms, f"hasTeraType graph violates SHACL:\n{results_text}"

@@ -1,4 +1,5 @@
 """Tests for the PokeAPI ingestion pipeline."""
+
 from __future__ import annotations
 
 import json
@@ -25,7 +26,9 @@ def test_fetch_seed_data_expands_related_resources(tmp_path, monkeypatch) -> Non
     for path in FIXTURES.rglob("*.json"):
         resource = path.parent.name
         identifier = path.stem
-        fixture_payloads[(resource, identifier)] = json.loads(path.read_text(encoding="utf-8"))
+        fixture_payloads[(resource, identifier)] = json.loads(
+            path.read_text(encoding="utf-8")
+        )
 
     def fake_fetch(resource: str, identifier: str, timeout: float) -> dict:
         return fixture_payloads[(resource, identifier)]

@@ -1,4 +1,5 @@
 """Session-scoped graph fixtures shared across test modules."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -19,7 +20,10 @@ def ontology_graph() -> Graph:
 @pytest.fixture(scope="session")
 def slice_graph() -> Graph:
     g = Graph()
-    g.parse(REPO / "examples" / "slices" / "showdown-finals-game1-slice.ttl", format="turtle")
+    g.parse(
+        REPO / "examples" / "slices" / "showdown-finals-game1-slice.ttl",
+        format="turtle",
+    )
     return g
 
 

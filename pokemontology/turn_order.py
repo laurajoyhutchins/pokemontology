@@ -1,4 +1,5 @@
 """Infer heads-up action order from a battle-state snapshot."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -114,38 +115,25 @@ class CombatantOrderInput:
 
     @property
     def normalized_item(self) -> str | None:
-        if self.item is None:
-            return None
-        cleaned = self.item.strip().lower()
-        return cleaned or None
+        return _normalize_optional_string(self.item)
 
     @property
     def normalized_ability(self) -> str | None:
-        if self.ability is None:
-            return None
-        cleaned = self.ability.strip().lower()
-        return cleaned or None
+        return _normalize_optional_string(self.ability)
 
     @property
     def normalized_status(self) -> str | None:
-        if self.status is None:
-            return None
-        cleaned = self.status.strip().lower()
-        return cleaned or None
+        return _normalize_optional_string(self.status)
 
     @property
     def normalized_move_type(self) -> str | None:
-        if self.move_type is None:
-            return None
-        cleaned = self.move_type.strip().lower()
-        return MOVE_TYPE_ALIASES.get(cleaned, cleaned or None)
+        return _normalize_optional_string(self.move_type, aliases=MOVE_TYPE_ALIASES)
 
     @property
     def normalized_move_category(self) -> str | None:
-        if self.move_category is None:
-            return None
-        cleaned = self.move_category.strip().lower()
-        return MOVE_CATEGORY_ALIASES.get(cleaned, cleaned or None)
+        return _normalize_optional_string(
+            self.move_category, aliases=MOVE_CATEGORY_ALIASES
+        )
 
     @property
     def normalized_move_tags(self) -> tuple[str, ...]:
@@ -161,7 +149,11 @@ class CombatantOrderInput:
         ability = self.normalized_ability
         if ability == "prankster" and self.normalized_move_category == "status":
             priority += MOVE_PRIORITY_ABILITIES[ability]["status"]
-        if ability == "gale wings" and self.at_full_hp and self.normalized_move_type == "flying":
+        if (
+            ability == "gale wings"
+            and self.at_full_hp
+            and self.normalized_move_type == "flying"
+        ):
             priority += MOVE_PRIORITY_ABILITIES[ability]["flying"]
         if ability == "triage" and "healing" in self.normalized_move_tags:
             priority += MOVE_PRIORITY_ABILITIES[ability]["healing"]
@@ -198,13 +190,25 @@ class CombatantOrderInput:
         return Fraction(self.speed_tier) * self.speed_multiplier(weather, terrain)
 
 
+def _normalize_optional_string(
+    value: str | None, *, aliases: dict[str, str] | None = None
+) -> str | None:
+    if value is None:
+        return None
+    cleaned = value.strip().lower()
+    if not cleaned:
+        return None
+    if aliases is None:
+        return cleaned
+    return aliases.get(cleaned, cleaned)
+
+
 def _normalize_weather(value: object) -> str | None:
     if value is None:
         return None
     if not isinstance(value, str):
         raise ValueError("weather must be a string when present")
-    cleaned = value.strip().lower()
-    return WEATHER_ALIASES.get(cleaned, cleaned or None)
+    return _normalize_optional_string(value, aliases=WEATHER_ALIASES)
 
 
 def _normalize_terrain(value: object) -> str | None:
@@ -212,8 +216,7 @@ def _normalize_terrain(value: object) -> str | None:
         return None
     if not isinstance(value, str):
         raise ValueError("terrain must be a string when present")
-    cleaned = value.strip().lower()
-    return TERRAIN_ALIASES.get(cleaned, cleaned or None)
+    return _normalize_optional_string(value, aliases=TERRAIN_ALIASES)
 
 
 def _normalize_move_type(value: object, index: int) -> str | None:
@@ -221,17 +224,17 @@ def _normalize_move_type(value: object, index: int) -> str | None:
         return None
     if not isinstance(value, str):
         raise ValueError(f"combatant {index} move_type must be a string when present")
-    cleaned = value.strip().lower()
-    return MOVE_TYPE_ALIASES.get(cleaned, cleaned or None)
+    return _normalize_optional_string(value, aliases=MOVE_TYPE_ALIASES)
 
 
 def _normalize_move_category(value: object, index: int) -> str | None:
     if value is None:
         return None
     if not isinstance(value, str):
-        raise ValueError(f"combatant {index} move_category must be a string when present")
-    cleaned = value.strip().lower()
-    return MOVE_CATEGORY_ALIASES.get(cleaned, cleaned or None)
+        raise ValueError(
+            f"combatant {index} move_category must be a string when present"
+        )
+    return _normalize_optional_string(value, aliases=MOVE_CATEGORY_ALIASES)
 
 
 def _normalize_move_tags(value: object, index: int) -> tuple[str, ...]:
@@ -251,7 +254,9 @@ def _normalize_move_tags(value: object, index: int) -> tuple[str, ...]:
 
 def _normalize_mechanics_ttl_paths(value: object) -> tuple[Path, ...]:
     if value is None:
-        discovered: list[Path] = [path for path in DEFAULT_MECHANICS_TTL_PATHS if path.exists()]
+        discovered: list[Path] = [
+            path for path in DEFAULT_MECHANICS_TTL_PATHS if path.exists()
+        ]
         for directory in DEFAULT_MECHANICS_SEARCH_DIRS:
             if not directory.exists():
                 continue
@@ -317,7 +322,11 @@ def _find_move_iri(graph: Graph | None, move_name: str | None):
     for subject in graph.subjects(RDF.type, PKM.Move):
         names = _literal_texts(graph, subject, PKM.hasName)
         local_name = str(subject).rsplit("#", 1)[-1].lower()
-        if str(subject).lower() == target or local_name == target or any(name.lower() == target for name in names):
+        if (
+            str(subject).lower() == target
+            or local_name == target
+            or any(name.lower() == target for name in names)
+        ):
             return subject
     return None
 
@@ -329,7 +338,9 @@ def _move_type_name(graph: Graph, type_iri) -> str | None:
     return str(type_iri).rsplit("#", 1)[-1]
 
 
-def _lookup_move_properties(graph: Graph | None, ruleset: str | None, move_name: str | None) -> dict[str, object]:
+def _lookup_move_properties(
+    graph: Graph | None, ruleset: str | None, move_name: str | None
+) -> dict[str, object]:
     if graph is None or not ruleset or not move_name:
         return {}
     ruleset_iri = _find_ruleset_iri(graph, ruleset)
@@ -353,11 +364,22 @@ def _lookup_move_properties(graph: Graph | None, ruleset: str | None, move_name:
     return {}
 
 
-def _validate_payload(payload: dict) -> tuple[list[CombatantOrderInput], bool, str | None, str | None, str | None, tuple[Path, ...]]:
+def _validate_payload(
+    payload: dict,
+) -> tuple[
+    list[CombatantOrderInput],
+    bool,
+    str | None,
+    str | None,
+    str | None,
+    tuple[Path, ...],
+]:
     ruleset = payload.get("ruleset")
     if ruleset is not None and not isinstance(ruleset, str):
         raise ValueError("ruleset must be a string when present")
-    mechanics_ttl_paths = _normalize_mechanics_ttl_paths(payload.get("mechanics_ttl_paths"))
+    mechanics_ttl_paths = _normalize_mechanics_ttl_paths(
+        payload.get("mechanics_ttl_paths")
+    )
     mechanics_graph = _load_mechanics_graph(mechanics_ttl_paths)
 
     combatants_raw = payload.get("combatants")
@@ -378,12 +400,18 @@ def _validate_payload(payload: dict) -> tuple[list[CombatantOrderInput], bool, s
         if not isinstance(speed_tier, int):
             raise ValueError(f"combatant {index} is missing integer speed_tier")
         if move_name is not None and not isinstance(move_name, str):
-            raise ValueError(f"combatant {index} move_name must be a string when present")
+            raise ValueError(
+                f"combatant {index} move_name must be a string when present"
+            )
         if move_priority is not None and not isinstance(move_priority, int):
-            raise ValueError(f"combatant {index} move_priority must be an integer when present")
+            raise ValueError(
+                f"combatant {index} move_priority must be an integer when present"
+            )
         if speed_stage not in SPEED_STAGE_MULTIPLIERS:
             raise ValueError(f"combatant {index} speed_stage must be between -6 and 6")
-        looked_up_properties = _lookup_move_properties(mechanics_graph, ruleset, move_name)
+        looked_up_properties = _lookup_move_properties(
+            mechanics_graph, ruleset, move_name
+        )
         if move_priority is None:
             move_priority = int(looked_up_properties.get("move_priority", 0))
         item = raw.get("item")
@@ -395,7 +423,9 @@ def _validate_payload(payload: dict) -> tuple[list[CombatantOrderInput], bool, s
         status = raw.get("status")
         if status is not None and not isinstance(status, str):
             raise ValueError(f"combatant {index} status must be a string when present")
-        move_type = _normalize_move_type(raw.get("move_type", looked_up_properties.get("move_type")), index)
+        move_type = _normalize_move_type(
+            raw.get("move_type", looked_up_properties.get("move_type")), index
+        )
         move_category = _normalize_move_category(raw.get("move_category"), index)
         move_tags = _normalize_move_tags(raw.get("move_tags"), index)
         tailwind = raw.get("tailwind", False)
@@ -403,13 +433,19 @@ def _validate_payload(payload: dict) -> tuple[list[CombatantOrderInput], bool, s
             raise ValueError(f"combatant {index} tailwind must be boolean when present")
         unburden_active = raw.get("unburden_active", False)
         if not isinstance(unburden_active, bool):
-            raise ValueError(f"combatant {index} unburden_active must be boolean when present")
+            raise ValueError(
+                f"combatant {index} unburden_active must be boolean when present"
+            )
         slow_start_active = raw.get("slow_start_active", False)
         if not isinstance(slow_start_active, bool):
-            raise ValueError(f"combatant {index} slow_start_active must be boolean when present")
+            raise ValueError(
+                f"combatant {index} slow_start_active must be boolean when present"
+            )
         at_full_hp = raw.get("at_full_hp", False)
         if not isinstance(at_full_hp, bool):
-            raise ValueError(f"combatant {index} at_full_hp must be boolean when present")
+            raise ValueError(
+                f"combatant {index} at_full_hp must be boolean when present"
+            )
         combatants.append(
             CombatantOrderInput(
                 side=side,
@@ -447,27 +483,54 @@ def _validate_payload(payload: dict) -> tuple[list[CombatantOrderInput], bool, s
 
 
 def _forced_last_group(combatant: CombatantOrderInput) -> int:
-    return 1 if combatant.normalized_item in FORCED_LAST_ITEMS or combatant.normalized_ability in FORCED_LAST_ABILITIES else 0
+    return (
+        1
+        if combatant.normalized_item in FORCED_LAST_ITEMS
+        or combatant.normalized_ability in FORCED_LAST_ABILITIES
+        else 0
+    )
 
 
-def _quick_claw_probability(combatant: CombatantOrderInput, activates: bool) -> Fraction:
+def _quick_claw_probability(
+    combatant: CombatantOrderInput, activates: bool
+) -> Fraction:
     has_quick_claw = combatant.normalized_item in QUICK_CLAW_ITEMS
     if not has_quick_claw:
         return Fraction(1, 1) if not activates else Fraction(0, 1)
     return Fraction(1, 5) if activates else Fraction(4, 5)
 
 
-def _speed_sort_key(combatant: CombatantOrderInput, trick_room: bool, weather: str | None, terrain: str | None) -> tuple[int, Fraction]:
+def _speed_sort_key(
+    combatant: CombatantOrderInput,
+    trick_room: bool,
+    weather: str | None,
+    terrain: str | None,
+) -> tuple[int, Fraction]:
     effective_speed = combatant.effective_speed(weather, terrain)
-    return (_forced_last_group(combatant), effective_speed if trick_room else -effective_speed)
+    return (
+        _forced_last_group(combatant),
+        effective_speed if trick_room else -effective_speed,
+    )
 
 
-def _speed_comparison_reason(first: CombatantOrderInput, second: CombatantOrderInput, trick_room: bool, weather: str | None, terrain: str | None) -> str:
+def _speed_comparison_reason(
+    first: CombatantOrderInput,
+    second: CombatantOrderInput,
+    trick_room: bool,
+    weather: str | None,
+    terrain: str | None,
+) -> str:
     if _forced_last_group(first) != _forced_last_group(second):
         return "forced-last ordering"
-    if first.effective_speed(weather, terrain) == second.effective_speed(weather, terrain):
+    if first.effective_speed(weather, terrain) == second.effective_speed(
+        weather, terrain
+    ):
         return "speed tie"
-    return "lower effective speed under Trick Room" if trick_room else "higher effective speed"
+    return (
+        "lower effective speed under Trick Room"
+        if trick_room
+        else "higher effective speed"
+    )
 
 
 def _branch_result(
@@ -494,71 +557,58 @@ def _branch_result(
     return branch
 
 
+def _sorted_membership(
+    values: tuple[str | None, ...], supported: set[str]
+) -> tuple[list[str], list[str]]:
+    present = {value for value in values if value is not None}
+    return (
+        sorted(value for value in present if value in supported),
+        sorted(value for value in present if value not in supported),
+    )
+
+
 def resolve_action_order(payload: dict) -> dict:
-    combatants, trick_room, weather, terrain, ruleset, mechanics_ttl_paths = _validate_payload(payload)
-    supported_items = sorted(
-        {
-            item
-            for item in (combatants[0].normalized_item, combatants[1].normalized_item)
-            if item in ITEM_SPEED_MULTIPLIERS or item in FORCED_LAST_ITEMS or item in QUICK_CLAW_ITEMS
-        }
+    combatants, trick_room, weather, terrain, ruleset, mechanics_ttl_paths = (
+        _validate_payload(payload)
     )
-    ignored_items = sorted(
-        {
-            item
-            for item in (combatants[0].normalized_item, combatants[1].normalized_item)
-            if item is not None
-            and item not in ITEM_SPEED_MULTIPLIERS
-            and item not in FORCED_LAST_ITEMS
-            and item not in QUICK_CLAW_ITEMS
-        }
+    item_values = (combatants[0].normalized_item, combatants[1].normalized_item)
+    supported_items, ignored_items = _sorted_membership(
+        item_values,
+        set(ITEM_SPEED_MULTIPLIERS) | FORCED_LAST_ITEMS | QUICK_CLAW_ITEMS,
     )
-    supported_abilities = sorted(
-        {
-            ability
-            for ability in (combatants[0].normalized_ability, combatants[1].normalized_ability)
-            if ability in WEATHER_SPEED_ABILITIES
-            or ability in TERRAIN_SPEED_ABILITIES
-            or ability in STATUS_SPEED_ABILITIES
-            or ability in CONDITIONAL_SPEED_ABILITIES
-            or ability in ACTIVE_DEBUFF_ABILITIES
-            or ability in FORCED_LAST_ABILITIES
-            or ability in MOVE_PRIORITY_ABILITIES
-        }
+    ability_values = (
+        combatants[0].normalized_ability,
+        combatants[1].normalized_ability,
     )
-    ignored_abilities = sorted(
-        {
-            ability
-            for ability in (combatants[0].normalized_ability, combatants[1].normalized_ability)
-            if ability is not None
-            and ability not in WEATHER_SPEED_ABILITIES
-            and ability not in TERRAIN_SPEED_ABILITIES
-            and ability not in STATUS_SPEED_ABILITIES
-            and ability not in CONDITIONAL_SPEED_ABILITIES
-            and ability not in ACTIVE_DEBUFF_ABILITIES
-            and ability not in FORCED_LAST_ABILITIES
-            and ability not in MOVE_PRIORITY_ABILITIES
-        }
+    supported_ability_values = (
+        set(WEATHER_SPEED_ABILITIES)
+        | set(TERRAIN_SPEED_ABILITIES)
+        | set(STATUS_SPEED_ABILITIES)
+        | set(CONDITIONAL_SPEED_ABILITIES)
+        | set(ACTIVE_DEBUFF_ABILITIES)
+        | FORCED_LAST_ABILITIES
+        | set(MOVE_PRIORITY_ABILITIES)
     )
-    supported_statuses = sorted(
-        {
-            status
-            for status in (combatants[0].normalized_status, combatants[1].normalized_status)
-            if status in STATUS_SPEED_MULTIPLIERS
-        }
+    supported_abilities, ignored_abilities = _sorted_membership(
+        ability_values, supported_ability_values
     )
-    ignored_statuses = sorted(
-        {
-            status
-            for status in (combatants[0].normalized_status, combatants[1].normalized_status)
-            if status is not None and status not in STATUS_SPEED_MULTIPLIERS
-        }
+    status_values = (combatants[0].normalized_status, combatants[1].normalized_status)
+    supported_statuses, ignored_statuses = _sorted_membership(
+        status_values, set(STATUS_SPEED_MULTIPLIERS)
+    )
+    supported_move_priority_abilities, _ = _sorted_membership(
+        ability_values, set(MOVE_PRIORITY_ABILITIES)
     )
 
     branches: list[dict] = []
-    priority_values = {combatants[0].derived_move_priority(), combatants[1].derived_move_priority()}
+    priority_values = {
+        combatants[0].derived_move_priority(),
+        combatants[1].derived_move_priority(),
+    }
     if len(priority_values) > 1:
-        ordered = sorted(combatants, key=lambda combatant: -combatant.derived_move_priority())
+        ordered = sorted(
+            combatants, key=lambda combatant: -combatant.derived_move_priority()
+        )
         first, second = ordered
         branches.append(
             _branch_result(
@@ -572,7 +622,9 @@ def resolve_action_order(payload: dict) -> dict:
     else:
         priority_bracket = combatants[0].derived_move_priority()
         for qc_states in product((False, True), repeat=2):
-            probability = _quick_claw_probability(combatants[0], qc_states[0]) * _quick_claw_probability(combatants[1], qc_states[1])
+            probability = _quick_claw_probability(
+                combatants[0], qc_states[0]
+            ) * _quick_claw_probability(combatants[1], qc_states[1])
             if probability == 0:
                 continue
             if qc_states[0] != qc_states[1]:
@@ -589,16 +641,44 @@ def resolve_action_order(payload: dict) -> dict:
                 )
                 continue
 
-            ordered = sorted(combatants, key=lambda combatant: _speed_sort_key(combatant, trick_room, weather, terrain))
+            ordered = sorted(
+                combatants,
+                key=lambda combatant: _speed_sort_key(
+                    combatant, trick_room, weather, terrain
+                ),
+            )
             first, second = ordered
-            random_tie = (
-                _forced_last_group(first) == _forced_last_group(second)
-                and first.effective_speed(weather, terrain) == second.effective_speed(weather, terrain)
+            random_tie = _forced_last_group(first) == _forced_last_group(
+                second
+            ) and first.effective_speed(weather, terrain) == second.effective_speed(
+                weather, terrain
             )
             if random_tie:
                 split_probability = probability / 2
-                branches.append(_branch_result(first, second, split_probability, _speed_comparison_reason(first, second, trick_room, weather, terrain), priority_bracket, random_tie=True))
-                branches.append(_branch_result(second, first, split_probability, _speed_comparison_reason(second, first, trick_room, weather, terrain), priority_bracket, random_tie=True))
+                branches.append(
+                    _branch_result(
+                        first,
+                        second,
+                        split_probability,
+                        _speed_comparison_reason(
+                            first, second, trick_room, weather, terrain
+                        ),
+                        priority_bracket,
+                        random_tie=True,
+                    )
+                )
+                branches.append(
+                    _branch_result(
+                        second,
+                        first,
+                        split_probability,
+                        _speed_comparison_reason(
+                            second, first, trick_room, weather, terrain
+                        ),
+                        priority_bracket,
+                        random_tie=True,
+                    )
+                )
                 continue
 
             branches.append(
@@ -606,7 +686,9 @@ def resolve_action_order(payload: dict) -> dict:
                     first,
                     second,
                     probability,
-                    _speed_comparison_reason(first, second, trick_room, weather, terrain),
+                    _speed_comparison_reason(
+                        first, second, trick_room, weather, terrain
+                    ),
                     priority_bracket,
                 )
             )
@@ -640,9 +722,23 @@ def resolve_action_order(payload: dict) -> dict:
             "reason": reason,
             **({"random_tie": True} if random_tie else {}),
         }
-        for (first, second, priority_bracket, derived_priority, reason, random_tie), probability in sorted(
+        for (
+            first,
+            second,
+            priority_bracket,
+            derived_priority,
+            reason,
+            random_tie,
+        ), probability in sorted(
             collapsed.items(),
-            key=lambda item: (-item[1], item[0][0], item[0][1], -item[0][2], -item[0][3], item[0][4]),
+            key=lambda item: (
+                -item[1],
+                item[0][0],
+                item[0][1],
+                -item[0][2],
+                -item[0][3],
+                item[0][4],
+            ),
         )
     ]
 
@@ -671,7 +767,9 @@ def resolve_action_order(payload: dict) -> dict:
                 "at_full_hp": combatant.at_full_hp,
                 "effective_speed": {
                     "numerator": combatant.effective_speed(weather, terrain).numerator,
-                    "denominator": combatant.effective_speed(weather, terrain).denominator,
+                    "denominator": combatant.effective_speed(
+                        weather, terrain
+                    ).denominator,
                 },
             }
             for combatant in combatants
@@ -683,14 +781,10 @@ def resolve_action_order(payload: dict) -> dict:
         "ignored_abilities": ignored_abilities,
         "supported_statuses_seen": supported_statuses,
         "ignored_statuses": ignored_statuses,
-        "supported_move_priority_abilities_seen": sorted(
-            {
-                ability
-                for ability in (combatants[0].normalized_ability, combatants[1].normalized_ability)
-                if ability in MOVE_PRIORITY_ABILITIES
-            }
-        ),
-        "mechanics_ttl_paths_used": [str(path) for path in mechanics_ttl_paths if path.exists()],
+        "supported_move_priority_abilities_seen": supported_move_priority_abilities,
+        "mechanics_ttl_paths_used": [
+            str(path) for path in mechanics_ttl_paths if path.exists()
+        ],
         "ruleset": ruleset,
         "assumptions": [
             "Both actions occur in a heads-up turn.",

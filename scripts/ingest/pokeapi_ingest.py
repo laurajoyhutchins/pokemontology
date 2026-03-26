@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Fetch selected PokeAPI resources and transform them into ontology-native TTL."""
+
 from __future__ import annotations
 
 import argparse
@@ -81,7 +82,9 @@ def load_seed_config(path: Path) -> dict[str, list[str]]:
     for resource, identifiers in resources.items():
         if resource not in SUPPORTED_RESOURCES:
             raise SystemExit(f"unsupported resource in seed config: {resource}")
-        if not isinstance(identifiers, list) or not all(isinstance(item, str) for item in identifiers):
+        if not isinstance(identifiers, list) or not all(
+            isinstance(item, str) for item in identifiers
+        ):
             raise SystemExit(f"resource '{resource}' must map to a list of strings")
         normalized[resource] = identifiers
     return normalized
@@ -107,7 +110,9 @@ def fetch_resource(resource: str, identifier: str, timeout: float) -> dict:
 
 def write_payload(path: Path, payload: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
 
 
 def load_payload(path: Path) -> dict:
@@ -153,7 +158,9 @@ def discover_related(resource: str, payload: dict) -> list[tuple[str, str]]:
     return related
 
 
-def fetch_seed_data(seed_config: dict[str, list[str]], raw_dir: Path, timeout: float) -> None:
+def fetch_seed_data(
+    seed_config: dict[str, list[str]], raw_dir: Path, timeout: float
+) -> None:
     queue = deque[tuple[str, str]]()
     for resource, identifiers in seed_config.items():
         for identifier in identifiers:
@@ -173,7 +180,9 @@ def fetch_seed_data(seed_config: dict[str, list[str]], raw_dir: Path, timeout: f
             try:
                 payload = fetch_resource(resource, identifier, timeout)
             except urllib.error.URLError as exc:
-                raise SystemExit(f"failed to fetch {resource}/{identifier}: {exc}") from exc
+                raise SystemExit(
+                    f"failed to fetch {resource}/{identifier}: {exc}"
+                ) from exc
             write_payload(path, payload)
 
         seen.add(key)
@@ -193,13 +202,21 @@ def load_raw_payloads(raw_dir: Path) -> dict[str, list[dict]]:
     return payloads
 
 
-def add_named_resource(g: Graph, iri: URIRef, rdf_class: URIRef, payload: dict, resource: str) -> None:
+def add_named_resource(
+    g: Graph, iri: URIRef, rdf_class: URIRef, payload: dict, resource: str
+) -> None:
     g.add((iri, RDF.type, rdf_class))
     g.add((iri, PKM.hasName, entity_name_literal(payload)))
     if "id" in payload:
         g.add((iri, PKM.hasIdentifier, Literal(f"pokeapi:{resource}:{payload['id']}")))
     else:
-        g.add((iri, PKM.hasIdentifier, Literal(f"pokeapi:{resource}:{payload_name(payload)}")))
+        g.add(
+            (
+                iri,
+                PKM.hasIdentifier,
+                Literal(f"pokeapi:{resource}:{payload_name(payload)}"),
+            )
+        )
     add_external_reference(
         g,
         source_slug="PokeAPI",
@@ -220,11 +237,19 @@ def add_version_group_context(g: Graph, payload: dict) -> URIRef:
     g.add((ruleset_iri, RDF.type, PKM.Ruleset))
     g.add((ruleset_iri, PKM.hasName, entity_name_literal(payload)))
     g.add((ruleset_iri, PKM.hasVersionGroup, version_group_iri))
-    g.add((ruleset_iri, PKM.hasIdentifier, Literal(f"pokeapi:ruleset:{version_group_name}")))
+    g.add(
+        (
+            ruleset_iri,
+            PKM.hasIdentifier,
+            Literal(f"pokeapi:ruleset:{version_group_name}"),
+        )
+    )
     return ruleset_iri
 
 
-def default_variant_name(pokemon_payload: dict, species_payloads: dict[str, dict]) -> str:
+def default_variant_name(
+    pokemon_payload: dict, species_payloads: dict[str, dict]
+) -> str:
     pokemon_name = payload_name(pokemon_payload)
     species_name = pokemon_payload.get("species", {}).get("name")
     species_payload = species_payloads.get(species_name or "")
@@ -237,7 +262,9 @@ def default_variant_name(pokemon_payload: dict, species_payloads: dict[str, dict
 def build_graph_from_raw(raw_dir: Path) -> Graph:
     payloads = load_raw_payloads(raw_dir)
     species_by_name = {payload_name(item): item for item in payloads["pokemon-species"]}
-    version_groups_by_name = {payload_name(item): item for item in payloads["version-group"]}
+    version_groups_by_name = {
+        payload_name(item): item for item in payloads["version-group"]
+    }
 
     g = Graph()
     bind_namespaces(g)
@@ -254,17 +281,33 @@ def build_graph_from_raw(raw_dir: Path) -> Graph:
     # Synthetic default ruleset for current-gen PokeAPI data (referenced throughout)
     default_ruleset_iri = PKM["Ruleset_PokeAPI_Default"]
     g.add((default_ruleset_iri, RDF.type, PKM.Ruleset))
-    g.add((default_ruleset_iri, PKM.hasName, Literal("PokeAPI Default (Current Generation)")))
+    g.add(
+        (
+            default_ruleset_iri,
+            PKM.hasName,
+            Literal("PokeAPI Default (Current Generation)"),
+        )
+    )
     g.add((default_ruleset_iri, PKM.hasIdentifier, Literal("pokeapi:ruleset:current")))
 
     for payload in payloads["type"]:
-        add_named_resource(g, iri_for("Type", payload_name(payload)), PKM.Type, payload, "type")
+        add_named_resource(
+            g, iri_for("Type", payload_name(payload)), PKM.Type, payload, "type"
+        )
 
     for payload in payloads["stat"]:
-        add_named_resource(g, iri_for("Stat", payload_name(payload)), PKM.Stat, payload, "stat")
+        add_named_resource(
+            g, iri_for("Stat", payload_name(payload)), PKM.Stat, payload, "stat"
+        )
 
     for payload in payloads["ability"]:
-        add_named_resource(g, iri_for("Ability", payload_name(payload)), PKM.Ability, payload, "ability")
+        add_named_resource(
+            g,
+            iri_for("Ability", payload_name(payload)),
+            PKM.Ability,
+            payload,
+            "ability",
+        )
 
     for payload in payloads["move"]:
         move_name = payload_name(payload)
@@ -280,19 +323,35 @@ def build_graph_from_raw(raw_dir: Path) -> Graph:
             g.add((mpa_iri, PKM.hasMoveType, type_iri))
             base_power = payload.get("power")
             if base_power is not None:
-                g.add((mpa_iri, PKM.hasBasePower, Literal(base_power, datatype=XSD.integer)))
+                g.add(
+                    (
+                        mpa_iri,
+                        PKM.hasBasePower,
+                        Literal(base_power, datatype=XSD.integer),
+                    )
+                )
             accuracy = payload.get("accuracy")
             if accuracy is not None:
-                g.add((mpa_iri, PKM.hasAccuracy, Literal(accuracy, datatype=XSD.integer)))
+                g.add(
+                    (mpa_iri, PKM.hasAccuracy, Literal(accuracy, datatype=XSD.integer))
+                )
             priority = payload.get("priority")
             if priority is not None:
-                g.add((mpa_iri, PKM.hasPriority, Literal(priority, datatype=XSD.integer)))
+                g.add(
+                    (mpa_iri, PKM.hasPriority, Literal(priority, datatype=XSD.integer))
+                )
             pp = payload.get("pp")
             if pp is not None:
                 g.add((mpa_iri, PKM.hasPP, Literal(pp, datatype=XSD.integer)))
 
     for payload in payloads["pokemon-species"]:
-        add_named_resource(g, iri_for("Species", payload_name(payload)), PKM.Species, payload, "pokemon-species")
+        add_named_resource(
+            g,
+            iri_for("Species", payload_name(payload)),
+            PKM.Species,
+            payload,
+            "pokemon-species",
+        )
 
     for payload in payloads["version-group"]:
         add_version_group_context(g, payload)
@@ -318,7 +377,13 @@ def build_graph_from_raw(raw_dir: Path) -> Graph:
                 g.add((assignment_iri, PKM.attackerType, attacker_iri))
                 g.add((assignment_iri, PKM.defenderType, defender_iri))
                 g.add((assignment_iri, PKM.hasContext, default_ruleset_iri))
-                g.add((assignment_iri, PKM.hasDamageFactor, Literal(factor, datatype=XSD.decimal)))
+                g.add(
+                    (
+                        assignment_iri,
+                        PKM.hasDamageFactor,
+                        Literal(factor, datatype=XSD.decimal),
+                    )
+                )
 
     learn_records_seen: set[tuple[str, str, str]] = set()
     for payload in payloads["pokemon"]:
@@ -331,8 +396,20 @@ def build_graph_from_raw(raw_dir: Path) -> Graph:
 
         g.add((variant_iri, RDF.type, PKM.Variant))
         g.add((variant_iri, PKM.belongsToSpecies, species_iri))
-        g.add((variant_iri, PKM.hasName, Literal(default_variant_name(payload, species_by_name))))
-        g.add((variant_iri, PKM.hasIdentifier, Literal(f"pokeapi:pokemon:{payload['id']}")))
+        g.add(
+            (
+                variant_iri,
+                PKM.hasName,
+                Literal(default_variant_name(payload, species_by_name)),
+            )
+        )
+        g.add(
+            (
+                variant_iri,
+                PKM.hasIdentifier,
+                Literal(f"pokeapi:pokemon:{payload['id']}"),
+            )
+        )
         add_external_reference(
             g,
             source_slug="PokeAPI",
@@ -358,7 +435,13 @@ def build_graph_from_raw(raw_dir: Path) -> Graph:
             g.add((typing_assignment_iri, PKM.aboutVariant, variant_iri))
             g.add((typing_assignment_iri, PKM.aboutType, type_iri))
             g.add((typing_assignment_iri, PKM.hasContext, default_ruleset_iri))
-            g.add((typing_assignment_iri, PKM.hasTypeSlot, Literal(slot_num, datatype=XSD.integer)))
+            g.add(
+                (
+                    typing_assignment_iri,
+                    PKM.hasTypeSlot,
+                    Literal(slot_num, datatype=XSD.integer),
+                )
+            )
 
         for move_entry in payload.get("moves", []):
             move_name = move_entry.get("move", {}).get("name")
@@ -374,11 +457,20 @@ def build_graph_from_raw(raw_dir: Path) -> Graph:
                 if key in learn_records_seen:
                     continue
                 learn_records_seen.add(key)
-                assignment_iri = iri_for("MoveLearnRecord", f"{pokemon_name}_{move_name}_{version_group_name}")
+                assignment_iri = iri_for(
+                    "MoveLearnRecord",
+                    f"{pokemon_name}_{move_name}_{version_group_name}",
+                )
                 g.add((assignment_iri, RDF.type, PKM.MoveLearnRecord))
                 g.add((assignment_iri, PKM.aboutVariant, variant_iri))
                 g.add((assignment_iri, PKM.learnableMove, iri_for("Move", move_name)))
-                g.add((assignment_iri, PKM.hasContext, iri_for("Ruleset", version_group_name)))
+                g.add(
+                    (
+                        assignment_iri,
+                        PKM.hasContext,
+                        iri_for("Ruleset", version_group_name),
+                    )
+                )
                 g.add((assignment_iri, PKM.isLearnableInRuleset, boolean_literal(True)))
 
     return g
@@ -412,22 +504,59 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    fetch_parser = subparsers.add_parser("fetch", help="Fetch and cache selected PokeAPI payloads.")
-    fetch_parser.add_argument("seed", type=Path, help="Path to seed JSON describing which resources to ingest.")
-    fetch_parser.add_argument("--raw-dir", type=Path, default=DEFAULT_RAW_DIR, help="Directory for cached raw JSON.")
-    fetch_parser.add_argument("--timeout", type=float, default=30.0, help="HTTP timeout in seconds.")
+    fetch_parser = subparsers.add_parser(
+        "fetch", help="Fetch and cache selected PokeAPI payloads."
+    )
+    fetch_parser.add_argument(
+        "seed",
+        type=Path,
+        help="Path to seed JSON describing which resources to ingest.",
+    )
+    fetch_parser.add_argument(
+        "--raw-dir",
+        type=Path,
+        default=DEFAULT_RAW_DIR,
+        help="Directory for cached raw JSON.",
+    )
+    fetch_parser.add_argument(
+        "--timeout", type=float, default=30.0, help="HTTP timeout in seconds."
+    )
     fetch_parser.set_defaults(func=cmd_fetch)
 
-    transform_parser = subparsers.add_parser("transform", help="Transform cached raw JSON into Turtle.")
-    transform_parser.add_argument("--raw-dir", type=Path, default=DEFAULT_RAW_DIR, help="Directory containing cached raw JSON.")
-    transform_parser.add_argument("-o", "--output", type=Path, default=DEFAULT_OUTPUT, help="Output TTL path.")
+    transform_parser = subparsers.add_parser(
+        "transform", help="Transform cached raw JSON into Turtle."
+    )
+    transform_parser.add_argument(
+        "--raw-dir",
+        type=Path,
+        default=DEFAULT_RAW_DIR,
+        help="Directory containing cached raw JSON.",
+    )
+    transform_parser.add_argument(
+        "-o", "--output", type=Path, default=DEFAULT_OUTPUT, help="Output TTL path."
+    )
     transform_parser.set_defaults(func=cmd_transform)
 
-    ingest_parser = subparsers.add_parser("ingest", help="Fetch cached JSON and build a Turtle dataset.")
-    ingest_parser.add_argument("seed", type=Path, help="Path to seed JSON describing which resources to ingest.")
-    ingest_parser.add_argument("--raw-dir", type=Path, default=DEFAULT_RAW_DIR, help="Directory for cached raw JSON.")
-    ingest_parser.add_argument("-o", "--output", type=Path, default=DEFAULT_OUTPUT, help="Output TTL path.")
-    ingest_parser.add_argument("--timeout", type=float, default=30.0, help="HTTP timeout in seconds.")
+    ingest_parser = subparsers.add_parser(
+        "ingest", help="Fetch cached JSON and build a Turtle dataset."
+    )
+    ingest_parser.add_argument(
+        "seed",
+        type=Path,
+        help="Path to seed JSON describing which resources to ingest.",
+    )
+    ingest_parser.add_argument(
+        "--raw-dir",
+        type=Path,
+        default=DEFAULT_RAW_DIR,
+        help="Directory for cached raw JSON.",
+    )
+    ingest_parser.add_argument(
+        "-o", "--output", type=Path, default=DEFAULT_OUTPUT, help="Output TTL path."
+    )
+    ingest_parser.add_argument(
+        "--timeout", type=float, default=30.0, help="HTTP timeout in seconds."
+    )
     ingest_parser.set_defaults(func=cmd_ingest)
 
     return parser

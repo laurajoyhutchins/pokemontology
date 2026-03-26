@@ -25,3 +25,6 @@ addopts = "-m 'not slow'"
 markers = [
     "slow: full-graph integration tests excluded from default runs (run with -m slow or -m '')",
 ]
+
+[tool.ruff]
+target-version = "py311"

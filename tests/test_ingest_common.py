@@ -1,4 +1,5 @@
 """Tests for shared ingestion/reference helpers."""
+
 from __future__ import annotations
 
 from rdflib import Graph
@@ -24,7 +25,9 @@ def test_add_external_reference_emits_standard_pattern() -> None:
     graph = Graph()
     bind_namespaces(graph)
     add_dataset_header(graph, "Test dataset", "test.ttl", "test comment")
-    add_dataset_artifact(graph, PKM.DatasetArtifact_PokeAPI, "PokeAPI", "https://pokeapi.co/api/v2/")
+    add_dataset_artifact(
+        graph, PKM.DatasetArtifact_PokeAPI, "PokeAPI", "https://pokeapi.co/api/v2/"
+    )
 
     entity_iri = iri_for("Move", "bubble")
     graph.add((entity_iri, RDF.type, PKM.Move))

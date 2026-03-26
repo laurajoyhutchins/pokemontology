@@ -1,8 +1,10 @@
 """Unified command-line interface for repository workflows."""
+
 from __future__ import annotations
 
 import argparse
 import json
+from collections.abc import Callable
 from pathlib import Path
 from typing import Sequence
 
@@ -11,7 +13,12 @@ from .turn_order import resolve_action_order
 
 from scripts.build import build_ontology, check_ttl_parse
 from scripts.ingest import pokeapi_ingest, veekun_ingest
-from scripts.replay import parse_showdown_replay, replay_dataset, replay_to_ttl_builder, summarize_showdown_replay
+from scripts.replay import (
+    parse_showdown_replay,
+    replay_dataset,
+    replay_to_ttl_builder,
+    summarize_showdown_replay,
+)
 
 
 def _repo_relative(path: Path) -> str:
@@ -19,6 +26,27 @@ def _repo_relative(path: Path) -> str:
         return str(path.relative_to(REPO_ROOT))
     except ValueError:
         return str(path)
+
+
+def _load_json(path: Path) -> object:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _print_json(payload: object, *, pretty: bool = False) -> None:
+    if pretty:
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
+        return
+    print(json.dumps(payload, ensure_ascii=False))
+
+
+def _return_zero(
+    callback: Callable[[argparse.Namespace], object],
+) -> Callable[[argparse.Namespace], int]:
+    def runner(args: argparse.Namespace) -> int:
+        callback(args)
+        return 0
+
+    return runner
 
 
 def cmd_build(_args: argparse.Namespace) -> int:
@@ -37,7 +65,8 @@ def cmd_check_ttl(args: argparse.Namespace) -> int:
 
 
 def cmd_parse_replay(args: argparse.Namespace) -> int:
-    replay = json.loads(args.replay_json.read_text(encoding="utf-8"))
+    replay = _load_json(args.replay_json)
+    assert isinstance(replay, dict)
     turns = parse_showdown_replay.parse_log(replay["log"])
     output = {
         "id": replay.get("id"),
@@ -45,58 +74,88 @@ def cmd_parse_replay(args: argparse.Namespace) -> int:
         "players": replay.get("players", []),
         "turns": turns,
     }
-    if args.pretty:
-        print(json.dumps(output, ensure_ascii=False, indent=2))
-    else:
-        print(json.dumps(output, ensure_ascii=False))
+    _print_json(output, pretty=args.pretty)
     return 0
 
 
 def cmd_summarize_replay(args: argparse.Namespace) -> int:
-    payload = json.loads(args.replay_json.read_text(encoding="utf-8"))
-    print(json.dumps(summarize_showdown_replay.summarize(payload), ensure_ascii=False, indent=2))
+    payload = _load_json(args.replay_json)
+    assert isinstance(payload, dict)
+    _print_json(summarize_showdown_replay.summarize(payload), pretty=True)
     return 0
 
 
 def cmd_build_slice(args: argparse.Namespace) -> int:
-    payload = json.loads(args.replay_json.read_text(encoding="utf-8"))
+    payload = _load_json(args.replay_json)
+    assert isinstance(payload, dict)
     ttl = replay_to_ttl_builder.build_ttl(payload)
-    output_path = args.output or args.replay_json.with_name(f"{args.replay_json.stem}-slice.ttl")
+    output_path = args.output or args.replay_json.with_name(
+        f"{args.replay_json.stem}-slice.ttl"
+    )
     output_path.write_text(ttl, encoding="utf-8")
     print(output_path)
     return 0
 
 
 def cmd_resolve_order(args: argparse.Namespace) -> int:
-    payload = json.loads(args.state_json.read_text(encoding="utf-8"))
+    payload = _load_json(args.state_json)
+    assert isinstance(payload, dict)
     resolved = resolve_action_order(payload)
-    if args.pretty:
-        print(json.dumps(resolved, ensure_ascii=False, indent=2))
-    else:
-        print(json.dumps(resolved, ensure_ascii=False))
+    _print_json(resolved, pretty=args.pretty)
     return 0
 
 
-def add_replay_dataset_subcommands(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
-    replay_parser = subparsers.add_parser("replay", help="Acquire, curate, and transform replay datasets.")
-    replay_subparsers = replay_parser.add_subparsers(dest="replay_command", required=True)
+def add_replay_dataset_subcommands(
+    subparsers: argparse._SubParsersAction[argparse.ArgumentParser],
+) -> None:
+    replay_parser = subparsers.add_parser(
+        "replay", help="Acquire, curate, and transform replay datasets."
+    )
+    replay_subparsers = replay_parser.add_subparsers(
+        dest="replay_command", required=True
+    )
 
-    fetch_index_parser = replay_subparsers.add_parser("fetch-index", help="Fetch and cache replay search pages.")
-    fetch_index_parser.add_argument("--format", dest="formatid", required=True, help="Showdown format identifier.")
+    fetch_index_parser = replay_subparsers.add_parser(
+        "fetch-index", help="Fetch and cache replay search pages."
+    )
+    fetch_index_parser.add_argument(
+        "--format", dest="formatid", required=True, help="Showdown format identifier."
+    )
     fetch_index_parser.add_argument(
         "--index-dir",
         type=Path,
         default=replay_dataset.DEFAULT_INDEX_DIR,
         help="Directory for cached replay search pages.",
     )
-    fetch_index_parser.add_argument("--max-pages", type=int, default=1, help="Maximum number of search pages to fetch.")
-    fetch_index_parser.add_argument("--user", default=None, help="Optional Showdown username filter.")
-    fetch_index_parser.add_argument("--delay-seconds", type=float, default=replay_dataset.DEFAULT_DELAY_SECONDS, help="Delay after each network request.")
-    fetch_index_parser.add_argument("--timeout", type=float, default=replay_dataset.DEFAULT_TIMEOUT_SECONDS, help="HTTP timeout in seconds.")
-    fetch_index_parser.add_argument("--force", action="store_true", help="Refetch index pages even if cached.")
-    fetch_index_parser.set_defaults(func=lambda args: (replay_dataset.cmd_fetch_index(args), 0)[1])
+    fetch_index_parser.add_argument(
+        "--max-pages",
+        type=int,
+        default=1,
+        help="Maximum number of search pages to fetch.",
+    )
+    fetch_index_parser.add_argument(
+        "--user", default=None, help="Optional Showdown username filter."
+    )
+    fetch_index_parser.add_argument(
+        "--delay-seconds",
+        type=float,
+        default=replay_dataset.DEFAULT_DELAY_SECONDS,
+        help="Delay after each network request.",
+    )
+    fetch_index_parser.add_argument(
+        "--timeout",
+        type=float,
+        default=replay_dataset.DEFAULT_TIMEOUT_SECONDS,
+        help="HTTP timeout in seconds.",
+    )
+    fetch_index_parser.add_argument(
+        "--force", action="store_true", help="Refetch index pages even if cached."
+    )
+    fetch_index_parser.set_defaults(func=_return_zero(replay_dataset.cmd_fetch_index))
 
-    curate_parser = replay_subparsers.add_parser("curate", help="Curate replay IDs from cached search pages.")
+    curate_parser = replay_subparsers.add_parser(
+        "curate", help="Curate replay IDs from cached search pages."
+    )
     curate_parser.add_argument(
         "--index-dir",
         type=Path,
@@ -109,13 +168,35 @@ def add_replay_dataset_subcommands(subparsers: argparse._SubParsersAction[argpar
         default=replay_dataset.DEFAULT_CURATED_PATH,
         help="Path to curated replay list JSON.",
     )
-    curate_parser.add_argument("--format", dest="formats", action="append", default=None, help="Required format identifier. Repeatable.")
-    curate_parser.add_argument("--min-rating", type=int, default=None, help="Minimum rating required for inclusion.")
-    curate_parser.add_argument("--min-uploadtime", type=int, default=None, help="Minimum upload timestamp for inclusion.")
-    curate_parser.add_argument("--allow-non-heads-up", action="store_true", help="Allow index entries without exactly two players.")
-    curate_parser.set_defaults(func=lambda args: (replay_dataset.cmd_curate(args), 0)[1])
+    curate_parser.add_argument(
+        "--format",
+        dest="formats",
+        action="append",
+        default=None,
+        help="Required format identifier. Repeatable.",
+    )
+    curate_parser.add_argument(
+        "--min-rating",
+        type=int,
+        default=None,
+        help="Minimum rating required for inclusion.",
+    )
+    curate_parser.add_argument(
+        "--min-uploadtime",
+        type=int,
+        default=None,
+        help="Minimum upload timestamp for inclusion.",
+    )
+    curate_parser.add_argument(
+        "--allow-non-heads-up",
+        action="store_true",
+        help="Allow index entries without exactly two players.",
+    )
+    curate_parser.set_defaults(func=_return_zero(replay_dataset.cmd_curate))
 
-    fetch_parser = replay_subparsers.add_parser("fetch", help="Fetch cached replay JSON payloads for curated replay IDs.")
+    fetch_parser = replay_subparsers.add_parser(
+        "fetch", help="Fetch cached replay JSON payloads for curated replay IDs."
+    )
     fetch_parser.add_argument(
         "--curated",
         type=Path,
@@ -128,12 +209,26 @@ def add_replay_dataset_subcommands(subparsers: argparse._SubParsersAction[argpar
         default=replay_dataset.DEFAULT_RAW_DIR,
         help="Directory for cached replay JSON.",
     )
-    fetch_parser.add_argument("--delay-seconds", type=float, default=replay_dataset.DEFAULT_DELAY_SECONDS, help="Delay after each network request.")
-    fetch_parser.add_argument("--timeout", type=float, default=replay_dataset.DEFAULT_TIMEOUT_SECONDS, help="HTTP timeout in seconds.")
-    fetch_parser.add_argument("--force", action="store_true", help="Refetch replay JSON even if cached.")
-    fetch_parser.set_defaults(func=lambda args: (replay_dataset.cmd_fetch(args), 0)[1])
+    fetch_parser.add_argument(
+        "--delay-seconds",
+        type=float,
+        default=replay_dataset.DEFAULT_DELAY_SECONDS,
+        help="Delay after each network request.",
+    )
+    fetch_parser.add_argument(
+        "--timeout",
+        type=float,
+        default=replay_dataset.DEFAULT_TIMEOUT_SECONDS,
+        help="HTTP timeout in seconds.",
+    )
+    fetch_parser.add_argument(
+        "--force", action="store_true", help="Refetch replay JSON even if cached."
+    )
+    fetch_parser.set_defaults(func=_return_zero(replay_dataset.cmd_fetch))
 
-    transform_parser = replay_subparsers.add_parser("transform", help="Build one replay slice TTL per curated cached replay.")
+    transform_parser = replay_subparsers.add_parser(
+        "transform", help="Build one replay slice TTL per curated cached replay."
+    )
     transform_parser.add_argument(
         "--curated",
         type=Path,
@@ -152,25 +247,41 @@ def add_replay_dataset_subcommands(subparsers: argparse._SubParsersAction[argpar
         default=replay_dataset.DEFAULT_OUTPUT_DIR,
         help="Directory where replay slice TTL files will be written.",
     )
-    transform_parser.set_defaults(func=lambda args: (replay_dataset.cmd_transform(args), 0)[1])
+    transform_parser.set_defaults(func=_return_zero(replay_dataset.cmd_transform))
 
 
-def add_pokeapi_subcommands(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
-    pokeapi_parser = subparsers.add_parser("pokeapi", help="Fetch and transform PokeAPI resources.")
-    pokeapi_subparsers = pokeapi_parser.add_subparsers(dest="pokeapi_command", required=True)
+def add_pokeapi_subcommands(
+    subparsers: argparse._SubParsersAction[argparse.ArgumentParser],
+) -> None:
+    pokeapi_parser = subparsers.add_parser(
+        "pokeapi", help="Fetch and transform PokeAPI resources."
+    )
+    pokeapi_subparsers = pokeapi_parser.add_subparsers(
+        dest="pokeapi_command", required=True
+    )
 
-    fetch_parser = pokeapi_subparsers.add_parser("fetch", help="Fetch and cache selected PokeAPI payloads.")
-    fetch_parser.add_argument("seed", type=Path, help="Path to seed JSON describing which resources to ingest.")
+    fetch_parser = pokeapi_subparsers.add_parser(
+        "fetch", help="Fetch and cache selected PokeAPI payloads."
+    )
+    fetch_parser.add_argument(
+        "seed",
+        type=Path,
+        help="Path to seed JSON describing which resources to ingest.",
+    )
     fetch_parser.add_argument(
         "--raw-dir",
         type=Path,
         default=pokeapi_ingest.DEFAULT_RAW_DIR,
         help="Directory for cached raw JSON.",
     )
-    fetch_parser.add_argument("--timeout", type=float, default=30.0, help="HTTP timeout in seconds.")
-    fetch_parser.set_defaults(func=lambda args: (pokeapi_ingest.cmd_fetch(args), 0)[1])
+    fetch_parser.add_argument(
+        "--timeout", type=float, default=30.0, help="HTTP timeout in seconds."
+    )
+    fetch_parser.set_defaults(func=_return_zero(pokeapi_ingest.cmd_fetch))
 
-    transform_parser = pokeapi_subparsers.add_parser("transform", help="Transform cached raw JSON into Turtle.")
+    transform_parser = pokeapi_subparsers.add_parser(
+        "transform", help="Transform cached raw JSON into Turtle."
+    )
     transform_parser.add_argument(
         "--raw-dir",
         type=Path,
@@ -184,10 +295,16 @@ def add_pokeapi_subcommands(subparsers: argparse._SubParsersAction[argparse.Argu
         default=pokeapi_ingest.DEFAULT_OUTPUT,
         help="Output TTL path.",
     )
-    transform_parser.set_defaults(func=lambda args: (pokeapi_ingest.cmd_transform(args), 0)[1])
+    transform_parser.set_defaults(func=_return_zero(pokeapi_ingest.cmd_transform))
 
-    ingest_parser = pokeapi_subparsers.add_parser("ingest", help="Fetch cached JSON and build a Turtle dataset.")
-    ingest_parser.add_argument("seed", type=Path, help="Path to seed JSON describing which resources to ingest.")
+    ingest_parser = pokeapi_subparsers.add_parser(
+        "ingest", help="Fetch cached JSON and build a Turtle dataset."
+    )
+    ingest_parser.add_argument(
+        "seed",
+        type=Path,
+        help="Path to seed JSON describing which resources to ingest.",
+    )
     ingest_parser.add_argument(
         "--raw-dir",
         type=Path,
@@ -201,15 +318,25 @@ def add_pokeapi_subcommands(subparsers: argparse._SubParsersAction[argparse.Argu
         default=pokeapi_ingest.DEFAULT_OUTPUT,
         help="Output TTL path.",
     )
-    ingest_parser.add_argument("--timeout", type=float, default=30.0, help="HTTP timeout in seconds.")
-    ingest_parser.set_defaults(func=lambda args: (pokeapi_ingest.cmd_ingest(args), 0)[1])
+    ingest_parser.add_argument(
+        "--timeout", type=float, default=30.0, help="HTTP timeout in seconds."
+    )
+    ingest_parser.set_defaults(func=_return_zero(pokeapi_ingest.cmd_ingest))
 
 
-def add_veekun_subcommands(subparsers: argparse._SubParsersAction[argparse.ArgumentParser]) -> None:
-    veekun_parser = subparsers.add_parser("veekun", help="Transform a local normalized Veekun export into Turtle.")
-    veekun_subparsers = veekun_parser.add_subparsers(dest="veekun_command", required=True)
+def add_veekun_subcommands(
+    subparsers: argparse._SubParsersAction[argparse.ArgumentParser],
+) -> None:
+    veekun_parser = subparsers.add_parser(
+        "veekun", help="Transform a local normalized Veekun export into Turtle."
+    )
+    veekun_subparsers = veekun_parser.add_subparsers(
+        dest="veekun_command", required=True
+    )
 
-    transform_parser = veekun_subparsers.add_parser("transform", help="Transform local Veekun CSV export into Turtle.")
+    transform_parser = veekun_subparsers.add_parser(
+        "transform", help="Transform local Veekun CSV export into Turtle."
+    )
     transform_parser.add_argument(
         "--source-dir",
         type=Path,
@@ -223,7 +350,7 @@ def add_veekun_subcommands(subparsers: argparse._SubParsersAction[argparse.Argum
         default=veekun_ingest.DEFAULT_OUTPUT,
         help="Output TTL path.",
     )
-    transform_parser.set_defaults(func=lambda args: (veekun_ingest.cmd_transform(args), 0)[1])
+    transform_parser.set_defaults(func=_return_zero(veekun_ingest.cmd_transform))
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -233,24 +360,42 @@ def build_parser() -> argparse.ArgumentParser:
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    build_parser_cmd = subparsers.add_parser("build", help="Assemble ontology and shapes artifacts.")
+    build_parser_cmd = subparsers.add_parser(
+        "build", help="Assemble ontology and shapes artifacts."
+    )
     build_parser_cmd.set_defaults(func=cmd_build)
 
-    check_parser = subparsers.add_parser("check-ttl", help="Parse Turtle files with rdflib.")
+    check_parser = subparsers.add_parser(
+        "check-ttl", help="Parse Turtle files with rdflib."
+    )
     check_parser.add_argument("paths", nargs="+", type=Path, help="TTL files to parse.")
     check_parser.set_defaults(func=cmd_check_ttl)
 
-    parse_parser = subparsers.add_parser("parse-replay", help="Parse a Showdown replay into a turn/event stream.")
-    parse_parser.add_argument("replay_json", type=Path, help="Path to Showdown replay JSON.")
-    parse_parser.add_argument("--pretty", action="store_true", help="Print parsed turns as indented JSON.")
+    parse_parser = subparsers.add_parser(
+        "parse-replay", help="Parse a Showdown replay into a turn/event stream."
+    )
+    parse_parser.add_argument(
+        "replay_json", type=Path, help="Path to Showdown replay JSON."
+    )
+    parse_parser.add_argument(
+        "--pretty", action="store_true", help="Print parsed turns as indented JSON."
+    )
     parse_parser.set_defaults(func=cmd_parse_replay)
 
-    summarize_parser = subparsers.add_parser("summarize-replay", help="Summarize a Showdown replay JSON.")
-    summarize_parser.add_argument("replay_json", type=Path, help="Path to Showdown replay JSON.")
+    summarize_parser = subparsers.add_parser(
+        "summarize-replay", help="Summarize a Showdown replay JSON."
+    )
+    summarize_parser.add_argument(
+        "replay_json", type=Path, help="Path to Showdown replay JSON."
+    )
     summarize_parser.set_defaults(func=cmd_summarize_replay)
 
-    slice_parser = subparsers.add_parser("build-slice", help="Build a replay-backed Turtle slice.")
-    slice_parser.add_argument("replay_json", type=Path, help="Path to Showdown replay JSON.")
+    slice_parser = subparsers.add_parser(
+        "build-slice", help="Build a replay-backed Turtle slice."
+    )
+    slice_parser.add_argument(
+        "replay_json", type=Path, help="Path to Showdown replay JSON."
+    )
     slice_parser.add_argument(
         "-o",
         "--output",
@@ -264,8 +409,12 @@ def build_parser() -> argparse.ArgumentParser:
         "resolve-order",
         help="Infer heads-up action order from move priority and battle-state snapshot inputs.",
     )
-    resolve_parser.add_argument("state_json", type=Path, help="Path to turn-order input JSON.")
-    resolve_parser.add_argument("--pretty", action="store_true", help="Print inferred order as indented JSON.")
+    resolve_parser.add_argument(
+        "state_json", type=Path, help="Path to turn-order input JSON."
+    )
+    resolve_parser.add_argument(
+        "--pretty", action="store_true", help="Print inferred order as indented JSON."
+    )
     resolve_parser.set_defaults(func=cmd_resolve_order)
 
     add_replay_dataset_subcommands(subparsers)

@@ -7,6 +7,7 @@ This module keeps replay acquisition split into four stages:
 - fetch: cache replay JSON payloads for curated replay IDs
 - transform: build one TTL slice per cached replay JSON
 """
+
 from __future__ import annotations
 
 import argparse
@@ -58,7 +59,9 @@ class TransformStats:
 
 def write_json(path: Path, payload: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
 
 
 def read_json(path: Path) -> Any:
@@ -94,7 +97,9 @@ def fetch_with_cache(
     return payload, True
 
 
-def index_cache_path(index_dir: Path, *, formatid: str, page: int, username: str | None) -> Path:
+def index_cache_path(
+    index_dir: Path, *, formatid: str, page: int, username: str | None
+) -> Path:
     safe_user = username or "all"
     return index_dir / formatid / safe_user / f"page_{page}.json"
 
@@ -138,7 +143,9 @@ def fetch_index(
         if max_pages is not None and stats.pages_seen >= max_pages:
             break
 
-        cache_path = index_cache_path(index_dir, formatid=formatid, page=page, username=username)
+        cache_path = index_cache_path(
+            index_dir, formatid=formatid, page=page, username=username
+        )
         payload, fetched = fetch_with_cache(
             _search_url(formatid=formatid, page=page, username=username),
             cache_path,
@@ -191,11 +198,19 @@ def curate_replay_ids(
 
         if formats and formatid not in formats:
             continue
-        if min_rating is not None and isinstance(rating, (int, float)) and rating < min_rating:
+        if (
+            min_rating is not None
+            and isinstance(rating, (int, float))
+            and rating < min_rating
+        ):
             continue
         if min_rating is not None and rating is None:
             continue
-        if min_uploadtime is not None and isinstance(uploadtime, (int, float)) and uploadtime < min_uploadtime:
+        if (
+            min_uploadtime is not None
+            and isinstance(uploadtime, (int, float))
+            and uploadtime < min_uploadtime
+        ):
             continue
         if require_two_players and len(players) != 2:
             continue
@@ -262,7 +277,9 @@ def fetch_replays(
     return stats
 
 
-def transform_replays(curated_path: Path, raw_dir: Path, output_dir: Path) -> TransformStats:
+def transform_replays(
+    curated_path: Path, raw_dir: Path, output_dir: Path
+) -> TransformStats:
     stats = TransformStats()
     manifest: list[dict[str, str]] = []
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -271,7 +288,9 @@ def transform_replays(curated_path: Path, raw_dir: Path, output_dir: Path) -> Tr
         stats.replay_ids_seen += 1
         payload_path = replay_cache_path(raw_dir, replay_id)
         if not payload_path.exists():
-            raise FileNotFoundError(f"missing cached replay JSON for {replay_id}: {payload_path}")
+            raise FileNotFoundError(
+                f"missing cached replay JSON for {replay_id}: {payload_path}"
+            )
 
         payload = read_json(payload_path)
         ttl = replay_to_ttl_builder.build_ttl(payload)
@@ -295,34 +314,138 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    fetch_index_parser = subparsers.add_parser("fetch-index", help="Fetch and cache Pokémon Showdown replay search pages.")
-    fetch_index_parser.add_argument("--format", dest="formatid", required=True, help="Showdown format identifier, e.g. gen9vgc2025reggbo3.")
-    fetch_index_parser.add_argument("--index-dir", type=Path, default=DEFAULT_INDEX_DIR, help="Directory for cached replay search pages.")
-    fetch_index_parser.add_argument("--max-pages", type=int, default=1, help="Maximum number of search pages to fetch.")
-    fetch_index_parser.add_argument("--user", default=None, help="Optional Showdown username filter.")
-    fetch_index_parser.add_argument("--delay-seconds", type=float, default=DEFAULT_DELAY_SECONDS, help="Delay after each network request.")
-    fetch_index_parser.add_argument("--timeout", type=float, default=DEFAULT_TIMEOUT_SECONDS, help="HTTP timeout in seconds.")
-    fetch_index_parser.add_argument("--force", action="store_true", help="Refetch index pages even if cached.")
+    fetch_index_parser = subparsers.add_parser(
+        "fetch-index", help="Fetch and cache Pokémon Showdown replay search pages."
+    )
+    fetch_index_parser.add_argument(
+        "--format",
+        dest="formatid",
+        required=True,
+        help="Showdown format identifier, e.g. gen9vgc2025reggbo3.",
+    )
+    fetch_index_parser.add_argument(
+        "--index-dir",
+        type=Path,
+        default=DEFAULT_INDEX_DIR,
+        help="Directory for cached replay search pages.",
+    )
+    fetch_index_parser.add_argument(
+        "--max-pages",
+        type=int,
+        default=1,
+        help="Maximum number of search pages to fetch.",
+    )
+    fetch_index_parser.add_argument(
+        "--user", default=None, help="Optional Showdown username filter."
+    )
+    fetch_index_parser.add_argument(
+        "--delay-seconds",
+        type=float,
+        default=DEFAULT_DELAY_SECONDS,
+        help="Delay after each network request.",
+    )
+    fetch_index_parser.add_argument(
+        "--timeout",
+        type=float,
+        default=DEFAULT_TIMEOUT_SECONDS,
+        help="HTTP timeout in seconds.",
+    )
+    fetch_index_parser.add_argument(
+        "--force", action="store_true", help="Refetch index pages even if cached."
+    )
 
-    curate_parser = subparsers.add_parser("curate", help="Curate replay IDs from cached replay search pages.")
-    curate_parser.add_argument("--index-dir", type=Path, default=DEFAULT_INDEX_DIR, help="Directory containing cached replay search pages.")
-    curate_parser.add_argument("--output", type=Path, default=DEFAULT_CURATED_PATH, help="Path to curated replay list JSON.")
-    curate_parser.add_argument("--format", dest="formats", action="append", default=None, help="Required format identifier. Repeatable.")
-    curate_parser.add_argument("--min-rating", type=int, default=None, help="Minimum ladder rating required for inclusion.")
-    curate_parser.add_argument("--min-uploadtime", type=int, default=None, help="Minimum upload timestamp for inclusion.")
-    curate_parser.add_argument("--allow-non-heads-up", action="store_true", help="Allow replay index entries without exactly two players.")
+    curate_parser = subparsers.add_parser(
+        "curate", help="Curate replay IDs from cached replay search pages."
+    )
+    curate_parser.add_argument(
+        "--index-dir",
+        type=Path,
+        default=DEFAULT_INDEX_DIR,
+        help="Directory containing cached replay search pages.",
+    )
+    curate_parser.add_argument(
+        "--output",
+        type=Path,
+        default=DEFAULT_CURATED_PATH,
+        help="Path to curated replay list JSON.",
+    )
+    curate_parser.add_argument(
+        "--format",
+        dest="formats",
+        action="append",
+        default=None,
+        help="Required format identifier. Repeatable.",
+    )
+    curate_parser.add_argument(
+        "--min-rating",
+        type=int,
+        default=None,
+        help="Minimum ladder rating required for inclusion.",
+    )
+    curate_parser.add_argument(
+        "--min-uploadtime",
+        type=int,
+        default=None,
+        help="Minimum upload timestamp for inclusion.",
+    )
+    curate_parser.add_argument(
+        "--allow-non-heads-up",
+        action="store_true",
+        help="Allow replay index entries without exactly two players.",
+    )
 
-    fetch_parser = subparsers.add_parser("fetch", help="Fetch and cache replay JSON payloads for curated replay IDs.")
-    fetch_parser.add_argument("--curated", type=Path, default=DEFAULT_CURATED_PATH, help="Path to curated replay list JSON.")
-    fetch_parser.add_argument("--raw-dir", type=Path, default=DEFAULT_RAW_DIR, help="Directory for cached replay JSON.")
-    fetch_parser.add_argument("--delay-seconds", type=float, default=DEFAULT_DELAY_SECONDS, help="Delay after each network request.")
-    fetch_parser.add_argument("--timeout", type=float, default=DEFAULT_TIMEOUT_SECONDS, help="HTTP timeout in seconds.")
-    fetch_parser.add_argument("--force", action="store_true", help="Refetch replay JSON even if cached.")
+    fetch_parser = subparsers.add_parser(
+        "fetch", help="Fetch and cache replay JSON payloads for curated replay IDs."
+    )
+    fetch_parser.add_argument(
+        "--curated",
+        type=Path,
+        default=DEFAULT_CURATED_PATH,
+        help="Path to curated replay list JSON.",
+    )
+    fetch_parser.add_argument(
+        "--raw-dir",
+        type=Path,
+        default=DEFAULT_RAW_DIR,
+        help="Directory for cached replay JSON.",
+    )
+    fetch_parser.add_argument(
+        "--delay-seconds",
+        type=float,
+        default=DEFAULT_DELAY_SECONDS,
+        help="Delay after each network request.",
+    )
+    fetch_parser.add_argument(
+        "--timeout",
+        type=float,
+        default=DEFAULT_TIMEOUT_SECONDS,
+        help="HTTP timeout in seconds.",
+    )
+    fetch_parser.add_argument(
+        "--force", action="store_true", help="Refetch replay JSON even if cached."
+    )
 
-    transform_parser = subparsers.add_parser("transform", help="Build one replay slice TTL per curated cached replay.")
-    transform_parser.add_argument("--curated", type=Path, default=DEFAULT_CURATED_PATH, help="Path to curated replay list JSON.")
-    transform_parser.add_argument("--raw-dir", type=Path, default=DEFAULT_RAW_DIR, help="Directory containing cached replay JSON.")
-    transform_parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR, help="Directory where replay slice TTL files will be written.")
+    transform_parser = subparsers.add_parser(
+        "transform", help="Build one replay slice TTL per curated cached replay."
+    )
+    transform_parser.add_argument(
+        "--curated",
+        type=Path,
+        default=DEFAULT_CURATED_PATH,
+        help="Path to curated replay list JSON.",
+    )
+    transform_parser.add_argument(
+        "--raw-dir",
+        type=Path,
+        default=DEFAULT_RAW_DIR,
+        help="Directory containing cached replay JSON.",
+    )
+    transform_parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=DEFAULT_OUTPUT_DIR,
+        help="Directory where replay slice TTL files will be written.",
+    )
 
     return parser
 

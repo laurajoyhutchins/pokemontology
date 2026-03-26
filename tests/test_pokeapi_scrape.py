@@ -1,4 +1,5 @@
 """Tests for the cache-first PokeAPI scraper."""
+
 from __future__ import annotations
 
 import json
@@ -6,7 +7,9 @@ import json
 from scripts.ingest import pokeapi_scrape
 
 
-def test_scrape_resource_fetches_pages_and_details_then_reuses_cache(tmp_path, monkeypatch) -> None:
+def test_scrape_resource_fetches_pages_and_details_then_reuses_cache(
+    tmp_path, monkeypatch
+) -> None:
     responses = {
         "https://pokeapi.co/api/v2/move/?limit=2&offset=0": {
             "next": None,
@@ -26,7 +29,9 @@ def test_scrape_resource_fetches_pages_and_details_then_reuses_cache(tmp_path, m
         return responses[url]
 
     monkeypatch.setattr(pokeapi_scrape, "fetch_json_url", fake_fetch)
-    monkeypatch.setattr(pokeapi_scrape.time, "sleep", lambda seconds: sleep_calls.append(seconds))
+    monkeypatch.setattr(
+        pokeapi_scrape.time, "sleep", lambda seconds: sleep_calls.append(seconds)
+    )
 
     stats = pokeapi_scrape.scrape_resource(
         "move",
@@ -77,17 +82,34 @@ def test_force_refetch_bypasses_existing_cache(tmp_path, monkeypatch) -> None:
     detail_path = tmp_path / "type" / "detail" / "water.json"
     page_path.parent.mkdir(parents=True, exist_ok=True)
     detail_path.parent.mkdir(parents=True, exist_ok=True)
-    page_path.write_text(json.dumps({"next": None, "results": [{"name": "water", "url": "https://pokeapi.co/api/v2/type/11/"}]}))
+    page_path.write_text(
+        json.dumps(
+            {
+                "next": None,
+                "results": [
+                    {"name": "water", "url": "https://pokeapi.co/api/v2/type/11/"}
+                ],
+            }
+        )
+    )
     detail_path.write_text(json.dumps({"id": 11, "name": "water"}))
 
     requested_urls: list[str] = []
     monkeypatch.setattr(
         pokeapi_scrape,
         "fetch_json_url",
-        lambda url, timeout: requested_urls.append(url) or (
-            {"next": None, "results": [{"name": "water", "url": "https://pokeapi.co/api/v2/type/11/"}]}
-            if "limit=1&offset=0" in url
-            else {"id": 11, "name": "water"}
+        lambda url, timeout: (
+            requested_urls.append(url)
+            or (
+                {
+                    "next": None,
+                    "results": [
+                        {"name": "water", "url": "https://pokeapi.co/api/v2/type/11/"}
+                    ],
+                }
+                if "limit=1&offset=0" in url
+                else {"id": 11, "name": "water"}
+            )
         ),
     )
     monkeypatch.setattr(pokeapi_scrape.time, "sleep", lambda seconds: None)

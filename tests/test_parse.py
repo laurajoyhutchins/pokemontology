@@ -1,4 +1,5 @@
 """Tests that all canonical TTL files parse without error."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -29,5 +30,10 @@ def test_built_ontology_has_single_version_info() -> None:
     g = Graph()
     g.parse(REPO / "build" / "ontology.ttl", format="turtle")
     ontology = URIRef("https://laurajoyhutchins.github.io/pokemontology/ontology.ttl")
-    values = sorted(str(obj) for obj in g.objects(ontology, URIRef("http://www.w3.org/2002/07/owl#versionInfo")))
+    values = sorted(
+        str(obj)
+        for obj in g.objects(
+            ontology, URIRef("http://www.w3.org/2002/07/owl#versionInfo")
+        )
+    )
     assert values == ["1.1"]

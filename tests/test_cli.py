@@ -1,4 +1,5 @@
 """Tests for the unified pokemontology CLI."""
+
 from __future__ import annotations
 
 import json
@@ -8,7 +9,12 @@ from pokemontology import cli
 
 
 REPO = Path(__file__).parent.parent
-REPLAY_JSON = REPO / "examples" / "replays" / "gen9vgc2025regjbo3-2414024536-ey54jc53vyjqy20sq0ww1l5nd3bq5qhpw.json"
+REPLAY_JSON = (
+    REPO
+    / "examples"
+    / "replays"
+    / "gen9vgc2025regjbo3-2414024536-ey54jc53vyjqy20sq0ww1l5nd3bq5qhpw.json"
+)
 ONTOLOGY = REPO / "build" / "ontology.ttl"
 
 
@@ -31,7 +37,9 @@ def test_check_ttl_command_succeeds(capsys) -> None:
 
 def test_build_slice_command_writes_file(tmp_path, capsys) -> None:
     output_path = tmp_path / "slice.ttl"
-    exit_code = cli.main(["build-slice", str(REPLAY_JSON), "--output", str(output_path)])
+    exit_code = cli.main(
+        ["build-slice", str(REPLAY_JSON), "--output", str(output_path)]
+    )
     assert exit_code == 0
     assert output_path.exists()
 
@@ -45,7 +53,12 @@ def test_resolve_order_command_outputs_json(tmp_path, capsys) -> None:
         json.dumps(
             {
                 "combatants": [
-                    {"side": "p1", "speed_tier": 120, "speed_stage": 1, "item": "Choice Scarf"},
+                    {
+                        "side": "p1",
+                        "speed_tier": 120,
+                        "speed_stage": 1,
+                        "item": "Choice Scarf",
+                    },
                     {"side": "p2", "speed_tier": 150},
                 ]
             }
@@ -67,8 +80,18 @@ def test_replay_curate_command_writes_curated_file(tmp_path, capsys) -> None:
     (index_dir / "page_1.json").write_text(
         json.dumps(
             [
-                {"id": "battle-1", "format": "gen9vgc2025reggbo3", "players": ["Alice", "Bob"], "rating": 1700},
-                {"id": "battle-2", "format": "gen9vgc2025reggbo3", "players": ["Solo"], "rating": 1800},
+                {
+                    "id": "battle-1",
+                    "format": "gen9vgc2025reggbo3",
+                    "players": ["Alice", "Bob"],
+                    "rating": 1700,
+                },
+                {
+                    "id": "battle-2",
+                    "format": "gen9vgc2025reggbo3",
+                    "players": ["Solo"],
+                    "rating": 1800,
+                },
             ]
         ),
         encoding="utf-8",

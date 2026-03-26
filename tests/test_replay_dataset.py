@@ -1,4 +1,5 @@
 """Tests for the replay acquisition and curation pipeline."""
+
 from __future__ import annotations
 
 import json
@@ -11,16 +12,30 @@ from scripts.replay import replay_dataset
 
 
 REPO = Path(__file__).parent.parent
-REPLAY_JSON = REPO / "examples" / "replays" / "gen9vgc2025regjbo3-2414024536-ey54jc53vyjqy20sq0ww1l5nd3bq5qhpw.json"
+REPLAY_JSON = (
+    REPO
+    / "examples"
+    / "replays"
+    / "gen9vgc2025regjbo3-2414024536-ey54jc53vyjqy20sq0ww1l5nd3bq5qhpw.json"
+)
 PKM = Namespace("https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#")
 
 
 def test_fetch_index_caches_search_pages(tmp_path, monkeypatch) -> None:
     responses = {
-        replay_dataset._search_url(formatid="gen9vgc2025reggbo3", page=1, username=None): [
-            {"id": "battle-1", "format": "gen9vgc2025reggbo3", "players": ["a", "b"], "rating": 1600},
+        replay_dataset._search_url(
+            formatid="gen9vgc2025reggbo3", page=1, username=None
+        ): [
+            {
+                "id": "battle-1",
+                "format": "gen9vgc2025reggbo3",
+                "players": ["a", "b"],
+                "rating": 1600,
+            },
         ],
-        replay_dataset._search_url(formatid="gen9vgc2025reggbo3", page=2, username=None): [],
+        replay_dataset._search_url(
+            formatid="gen9vgc2025reggbo3", page=2, username=None
+        ): [],
     }
     requested: list[str] = []
     sleep_calls: list[float] = []
@@ -30,7 +45,9 @@ def test_fetch_index_caches_search_pages(tmp_path, monkeypatch) -> None:
         return responses[url]
 
     monkeypatch.setattr(replay_dataset, "fetch_json_url", fake_fetch)
-    monkeypatch.setattr(replay_dataset.time, "sleep", lambda seconds: sleep_calls.append(seconds))
+    monkeypatch.setattr(
+        replay_dataset.time, "sleep", lambda seconds: sleep_calls.append(seconds)
+    )
 
     stats = replay_dataset.fetch_index(
         formatid="gen9vgc2025reggbo3",
@@ -71,10 +88,30 @@ def test_curate_replay_ids_filters_on_format_rating_and_player_count(tmp_path) -
     (page_dir / "page_1.json").write_text(
         json.dumps(
             [
-                {"id": "keep-me", "format": "gen9vgc2025reggbo3", "players": ["a", "b"], "rating": 1650},
-                {"id": "too-low", "format": "gen9vgc2025reggbo3", "players": ["a", "b"], "rating": 1200},
-                {"id": "wrong-format", "format": "gen9ou", "players": ["a", "b"], "rating": 1900},
-                {"id": "not-heads-up", "format": "gen9vgc2025reggbo3", "players": ["solo"], "rating": 1700},
+                {
+                    "id": "keep-me",
+                    "format": "gen9vgc2025reggbo3",
+                    "players": ["a", "b"],
+                    "rating": 1650,
+                },
+                {
+                    "id": "too-low",
+                    "format": "gen9vgc2025reggbo3",
+                    "players": ["a", "b"],
+                    "rating": 1200,
+                },
+                {
+                    "id": "wrong-format",
+                    "format": "gen9ou",
+                    "players": ["a", "b"],
+                    "rating": 1900,
+                },
+                {
+                    "id": "not-heads-up",
+                    "format": "gen9vgc2025reggbo3",
+                    "players": ["solo"],
+                    "rating": 1700,
+                },
             ]
         ),
         encoding="utf-8",
@@ -91,12 +128,16 @@ def test_curate_replay_ids_filters_on_format_rating_and_player_count(tmp_path) -
     )
 
     assert payload["replay_ids"] == ["keep-me"]
-    assert json.loads(curated_path.read_text(encoding="utf-8"))["replay_ids"] == ["keep-me"]
+    assert json.loads(curated_path.read_text(encoding="utf-8"))["replay_ids"] == [
+        "keep-me"
+    ]
 
 
 def test_fetch_replays_uses_curated_ids_and_caches_json(tmp_path, monkeypatch) -> None:
     curated_path = tmp_path / "curated.json"
-    curated_path.write_text(json.dumps({"replay_ids": ["battle-1", "battle-2"]}), encoding="utf-8")
+    curated_path.write_text(
+        json.dumps({"replay_ids": ["battle-1", "battle-2"]}), encoding="utf-8"
+    )
     requested: list[str] = []
     sleep_calls: list[float] = []
 
@@ -111,7 +152,9 @@ def test_fetch_replays_uses_curated_ids_and_caches_json(tmp_path, monkeypatch) -
         }
 
     monkeypatch.setattr(replay_dataset, "fetch_json_url", fake_fetch)
-    monkeypatch.setattr(replay_dataset.time, "sleep", lambda seconds: sleep_calls.append(seconds))
+    monkeypatch.setattr(
+        replay_dataset.time, "sleep", lambda seconds: sleep_calls.append(seconds)
+    )
 
     stats = replay_dataset.fetch_replays(
         curated_path,
@@ -146,7 +189,9 @@ def test_transform_replays_writes_ttl_and_manifest(tmp_path) -> None:
     assert stats.slices_written == 1
     ttl_path = tmp_path / "ttl" / "battle-1.ttl"
     assert ttl_path.exists()
-    manifest = json.loads((tmp_path / "ttl" / "manifest.json").read_text(encoding="utf-8"))
+    manifest = json.loads(
+        (tmp_path / "ttl" / "manifest.json").read_text(encoding="utf-8")
+    )
     assert manifest["slices"][0]["id"] == "battle-1"
 
     graph = Graph()

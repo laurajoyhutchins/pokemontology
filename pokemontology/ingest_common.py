@@ -1,4 +1,5 @@
 """Shared helpers for source ingestion and external reference emission."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -30,14 +31,18 @@ def bind_namespaces(g: Graph) -> None:
     g.bind("xsd", XSD)
 
 
-def add_dataset_header(g: Graph, dataset_name: str, dataset_path: str, comment: str) -> URIRef:
+def add_dataset_header(
+    g: Graph, dataset_name: str, dataset_path: str, comment: str
+) -> URIRef:
     dataset_iri = URIRef(f"{SITE_BASE}/data/{dataset_path}")
     g.add((dataset_iri, RDFS.label, Literal(dataset_name)))
     g.add((dataset_iri, RDFS.comment, Literal(comment)))
     return dataset_iri
 
 
-def add_dataset_artifact(g: Graph, artifact_iri: URIRef, name: str, source_url: str) -> None:
+def add_dataset_artifact(
+    g: Graph, artifact_iri: URIRef, name: str, source_url: str
+) -> None:
     g.add((artifact_iri, RDF.type, PKM.EvidenceArtifact))
     g.add((artifact_iri, PKM.hasName, Literal(name)))
     g.add((artifact_iri, PKM.hasSourceURL, Literal(source_url, datatype=XSD.anyURI)))

@@ -1,4 +1,5 @@
 """Unit tests for the shared replay_parser module."""
+
 from __future__ import annotations
 
 import pytest
@@ -19,17 +20,21 @@ from scripts.replay.replay_parser import (
 # sanitize_identifier
 # ---------------------------------------------------------------------------
 
-@pytest.mark.parametrize("text, expected", [
-    ("Garchomp", "Garchomp"),
-    ("Iron Hands", "Iron_Hands"),
-    ("Urshifu-Rapid-Strike", "Urshifu_Rapid_Strike"),
-    ("  spaces  ", "spaces"),
-    ("", "Unnamed"),
-    ("123start", "N_123start"),
-    ("Pokémon", "Pok_mon"),
-    ("A__B", "A_B"),
-    ("--leading--", "leading"),
-])
+
+@pytest.mark.parametrize(
+    "text, expected",
+    [
+        ("Garchomp", "Garchomp"),
+        ("Iron Hands", "Iron_Hands"),
+        ("Urshifu-Rapid-Strike", "Urshifu_Rapid_Strike"),
+        ("  spaces  ", "spaces"),
+        ("", "Unnamed"),
+        ("123start", "N_123start"),
+        ("Pokémon", "Pok_mon"),
+        ("A__B", "A_B"),
+        ("--leading--", "leading"),
+    ],
+)
 def test_sanitize_identifier(text: str, expected: str) -> None:
     assert sanitize_identifier(text) == expected
 
@@ -38,14 +43,18 @@ def test_sanitize_identifier(text: str, expected: str) -> None:
 # compact_species_name
 # ---------------------------------------------------------------------------
 
-@pytest.mark.parametrize("raw, expected", [
-    ("p1a: Garchomp, L50, M", "Garchomp"),
-    ("p2b: Iron Hands, L50", "IronHands"),
-    ("Urshifu-Rapid-Strike", "Urshifu_Rapid_Strike"),
-    ("p1a: Indeedee♀, L50", "IndeedeeF"),
-    ("p2a: Gardevoir♂, L50", "GardevoirM"),
-    ("p1b: Calyrex-Ice*", "Calyrex_Ice"),
-])
+
+@pytest.mark.parametrize(
+    "raw, expected",
+    [
+        ("p1a: Garchomp, L50, M", "Garchomp"),
+        ("p2b: Iron Hands, L50", "IronHands"),
+        ("Urshifu-Rapid-Strike", "Urshifu_Rapid_Strike"),
+        ("p1a: Indeedee♀, L50", "IndeedeeF"),
+        ("p2a: Gardevoir♂, L50", "GardevoirM"),
+        ("p1b: Calyrex-Ice*", "Calyrex_Ice"),
+    ],
+)
 def test_compact_species_name(raw: str, expected: str) -> None:
     assert compact_species_name(raw) == expected
 
@@ -54,12 +63,16 @@ def test_compact_species_name(raw: str, expected: str) -> None:
 # parse_player_slot
 # ---------------------------------------------------------------------------
 
-@pytest.mark.parametrize("raw, expected", [
-    ("p1a: Garchomp", ("p1", "a")),
-    ("p2b: Iron Hands", ("p2", "b")),
-    ("p1b: Calyrex-Ice", ("p1", "b")),
-    ("p2a: Urshifu", ("p2", "a")),
-])
+
+@pytest.mark.parametrize(
+    "raw, expected",
+    [
+        ("p1a: Garchomp", ("p1", "a")),
+        ("p2b: Iron Hands", ("p2", "b")),
+        ("p1b: Calyrex-Ice", ("p1", "b")),
+        ("p2a: Urshifu", ("p2", "a")),
+    ],
+)
 def test_parse_player_slot_valid(raw: str, expected: tuple[str, str]) -> None:
     assert parse_player_slot(raw) == expected
 
@@ -70,10 +83,13 @@ def test_parse_player_slot_invalid(raw: str) -> None:
         parse_player_slot(raw)
 
 
-@pytest.mark.parametrize("raw, expected", [
-    ("p1: Alice", "p1"),
-    ("p2: Bob", "p2"),
-])
+@pytest.mark.parametrize(
+    "raw, expected",
+    [
+        ("p1: Alice", "p1"),
+        ("p2: Bob", "p2"),
+    ],
+)
 def test_parse_side_token_valid(raw: str, expected: str) -> None:
     assert parse_side_token(raw) == expected
 
@@ -190,6 +206,7 @@ def test_parse_log_keeps_supported_state_events() -> None:
 # discover_participants
 # ---------------------------------------------------------------------------
 
+
 def test_discover_participants() -> None:
     events = parse_log(FIXTURE_LOG)
     parts = discover_participants(events, "Alice", "Bob")
@@ -206,6 +223,7 @@ def test_discover_participants() -> None:
 # ---------------------------------------------------------------------------
 # discover_moves
 # ---------------------------------------------------------------------------
+
 
 def test_discover_moves() -> None:
     events = parse_log(FIXTURE_LOG)
@@ -232,6 +250,7 @@ def test_discover_moves_deduplicates_same_move() -> None:
 # Collision detection
 # ---------------------------------------------------------------------------
 
+
 def test_collision_detection_moves() -> None:
     """Two move names that sanitize to the same IRI must raise ValueError."""
     # "Air Slash" and "Air-Slash" both → sanitize_identifier → "Air_Slash"
@@ -250,11 +269,19 @@ def test_collision_detection_participants() -> None:
     # "Mr. Mime" and "Mr Mime" both → compact_species_name → "MrMime"
     # (dot removal and space removal commute to same result)
     # For the same trainer, this creates an IRI collision.
-    ev1 = ReplayEvent(turn=1, order=0, kind="switch",
-                      fields=["p1a: Mr. Mime", "Mr. Mime, L50", "120/120"],
-                      raw="")
-    ev2 = ReplayEvent(turn=1, order=1, kind="switch",
-                      fields=["p1b: Mr Mime", "Mr Mime, L50", "120/120"],
-                      raw="")
+    ev1 = ReplayEvent(
+        turn=1,
+        order=0,
+        kind="switch",
+        fields=["p1a: Mr. Mime", "Mr. Mime, L50", "120/120"],
+        raw="",
+    )
+    ev2 = ReplayEvent(
+        turn=1,
+        order=1,
+        kind="switch",
+        fields=["p1b: Mr Mime", "Mr Mime, L50", "120/120"],
+        raw="",
+    )
     with pytest.raises(ValueError, match="IRI collision"):
         discover_participants([ev1, ev2], "Alice", "Bob")

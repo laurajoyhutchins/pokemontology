@@ -1,4 +1,5 @@
 """Integration tests for the rdflib-based replay TTL builder."""
+
 from __future__ import annotations
 
 import json
@@ -12,7 +13,12 @@ from scripts.replay.replay_parser import parse_log
 from scripts.replay.replay_to_ttl_builder import build_graph
 
 REPO = Path(__file__).parent.parent
-REPLAY_JSON = REPO / "examples" / "replays" / "gen9vgc2025regjbo3-2414024536-ey54jc53vyjqy20sq0ww1l5nd3bq5qhpw.json"
+REPLAY_JSON = (
+    REPO
+    / "examples"
+    / "replays"
+    / "gen9vgc2025regjbo3-2414024536-ey54jc53vyjqy20sq0ww1l5nd3bq5qhpw.json"
+)
 ONTOLOGY = REPO / "build" / "ontology.ttl"
 PKM = Namespace("https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#")
 
@@ -35,24 +41,33 @@ def ontology_graph() -> Graph:
 
 
 def test_graph_has_replay_artifact(replay_graph: Graph) -> None:
-    artifacts = list(replay_graph.subjects(predicate=__import__("rdflib").RDF.type, object=PKM.ReplayArtifact))
+    artifacts = list(
+        replay_graph.subjects(
+            predicate=__import__("rdflib").RDF.type, object=PKM.ReplayArtifact
+        )
+    )
     assert len(artifacts) >= 1
 
 
 def test_graph_has_battle(replay_graph: Graph) -> None:
     from rdflib import RDF
+
     battles = list(replay_graph.subjects(predicate=RDF.type, object=PKM.Battle))
     assert len(battles) >= 1
 
 
 def test_graph_has_two_battle_sides(replay_graph: Graph) -> None:
     from rdflib import RDF
+
     sides = list(replay_graph.subjects(predicate=RDF.type, object=PKM.BattleSide))
     assert len(sides) >= 2
 
 
-def test_instantaneous_count_matches_events(replay_payload: dict, replay_graph: Graph) -> None:
+def test_instantaneous_count_matches_events(
+    replay_payload: dict, replay_graph: Graph
+) -> None:
     from rdflib import RDF
+
     events = parse_log(replay_payload["log"])
     instants = list(replay_graph.subjects(predicate=RDF.type, object=PKM.Instantaneous))
     assert len(instants) == len(events)
@@ -60,11 +75,13 @@ def test_instantaneous_count_matches_events(replay_payload: dict, replay_graph: 
 
 def test_faint_event_count(replay_payload: dict, replay_graph: Graph) -> None:
     from rdflib import RDF
+
     expected_faints = sum(
-        1 for line in replay_payload["log"].splitlines()
-        if line.startswith("|faint|")
+        1 for line in replay_payload["log"].splitlines() if line.startswith("|faint|")
     )
-    faint_events = list(replay_graph.subjects(predicate=RDF.type, object=PKM.FaintEvent))
+    faint_events = list(
+        replay_graph.subjects(predicate=RDF.type, object=PKM.FaintEvent)
+    )
     assert len(faint_events) == expected_faints
 
 
@@ -111,22 +128,26 @@ def test_builder_emits_damage_and_healing_events(replay_graph: Graph) -> None:
     assert any(replay_graph.subjects(RDF.type, PKM.StatStageChangeEvent))
 
 
-def test_builder_emits_status_and_target_resolution_for_supported_minor_actions() -> None:
+def test_builder_emits_status_and_target_resolution_for_supported_minor_actions() -> (
+    None
+):
     payload = {
         "id": "synthetic-status-targeting",
         "format": "[Gen 9] Custom Game",
         "players": ["Alice", "Bob"],
-        "log": "\n".join([
-            "|turn|1",
-            "|switch|p1a: Pikachu|Pikachu, L50|100/100",
-            "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
-            "|move|p1a: Pikachu|Thunder Wave|p2a: Bulbasaur",
-            "|-status|p2a: Bulbasaur|par",
-            "|move|p2a: Bulbasaur|Sleep Powder|p1a: Pikachu",
-            "|-miss|p2a: Bulbasaur|p1a: Pikachu",
-            "|move|p2a: Bulbasaur|Protect|p2a: Bulbasaur",
-            "|-fail|p2a: Bulbasaur",
-        ]),
+        "log": "\n".join(
+            [
+                "|turn|1",
+                "|switch|p1a: Pikachu|Pikachu, L50|100/100",
+                "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
+                "|move|p1a: Pikachu|Thunder Wave|p2a: Bulbasaur",
+                "|-status|p2a: Bulbasaur|par",
+                "|move|p2a: Bulbasaur|Sleep Powder|p1a: Pikachu",
+                "|-miss|p2a: Bulbasaur|p1a: Pikachu",
+                "|move|p2a: Bulbasaur|Protect|p2a: Bulbasaur",
+                "|-fail|p2a: Bulbasaur",
+            ]
+        ),
     }
     graph = build_graph(payload)
 
@@ -135,7 +156,8 @@ def test_builder_emits_status_and_target_resolution_for_supported_minor_actions(
     assert any(graph.subjects(RDF.type, PKM.TargetResolutionState))
 
     thunder_wave_action = next(
-        action for action in graph.subjects(RDF.type, PKM.MoveUseAction)
+        action
+        for action in graph.subjects(RDF.type, PKM.MoveUseAction)
         if (action, PKM.usesMove, PKM.MoveThunder_Wave) in graph
     )
     declared_targets = list(graph.objects(thunder_wave_action, PKM.hasDeclaredTarget))
@@ -146,32 +168,45 @@ def test_builder_emits_status_and_target_resolution_for_supported_minor_actions(
         for resolution in graph.subjects(RDF.type, PKM.TargetResolutionState)
         if (resolution, PKM.hasResolutionOutcome, None) in graph
     }
-    assert any((resolution, PKM.hasResolutionOutcome, Literal("failed")) in graph for resolution in failed_resolutions)
+    assert any(
+        (resolution, PKM.hasResolutionOutcome, Literal("failed")) in graph
+        for resolution in failed_resolutions
+    )
 
 
-def test_builder_emits_switch_events_and_aborted_resolution_for_board_mutations() -> None:
+def test_builder_emits_switch_events_and_aborted_resolution_for_board_mutations() -> (
+    None
+):
     payload = {
         "id": "synthetic-board-mutation",
         "format": "[Gen 9] Custom Game",
         "players": ["Alice", "Bob"],
-        "log": "\n".join([
-            "|turn|1",
-            "|switch|p1a: Pikachu|Pikachu, L50|100/100",
-            "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
-            "|move|p1a: Pikachu|Thunderbolt|p2a: Bulbasaur",
-            "|cant|p1a: Pikachu|par",
-            "|drag|p2a: Squirtle|Squirtle, L50|80/100",
-            "|replace|p2a: Zoroark|Zoroark, L50|70/100",
-            "|detailschange|p1a: Pikachu|Pikachu-Partner, L50|90/100",
-        ]),
+        "log": "\n".join(
+            [
+                "|turn|1",
+                "|switch|p1a: Pikachu|Pikachu, L50|100/100",
+                "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
+                "|move|p1a: Pikachu|Thunderbolt|p2a: Bulbasaur",
+                "|cant|p1a: Pikachu|par",
+                "|drag|p2a: Squirtle|Squirtle, L50|80/100",
+                "|replace|p2a: Zoroark|Zoroark, L50|70/100",
+                "|detailschange|p1a: Pikachu|Pikachu-Partner, L50|90/100",
+            ]
+        ),
     }
     graph = build_graph(payload)
 
     switch_events = list(graph.subjects(RDF.type, PKM.SwitchEvent))
     assert len(switch_events) >= 4
     assert any(graph.subjects(RDF.type, PKM.TargetResolutionState))
-    assert any((resolution, PKM.hasResolutionOutcome, Literal("aborted")) in graph for resolution in graph.subjects(RDF.type, PKM.TargetResolutionState))
-    assert any((assignment, RDF.type, PKM.CurrentHPAssignment) in graph for assignment in graph.subjects(RDF.type, PKM.CurrentHPAssignment))
+    assert any(
+        (resolution, PKM.hasResolutionOutcome, Literal("aborted")) in graph
+        for resolution in graph.subjects(RDF.type, PKM.TargetResolutionState)
+    )
+    assert any(
+        (assignment, RDF.type, PKM.CurrentHPAssignment) in graph
+        for assignment in graph.subjects(RDF.type, PKM.CurrentHPAssignment)
+    )
 
 
 def test_builder_expands_spread_targets_and_tracks_mixed_outcomes() -> None:
@@ -179,20 +214,23 @@ def test_builder_expands_spread_targets_and_tracks_mixed_outcomes() -> None:
         "id": "synthetic-spread-resolution",
         "format": "[Gen 9] Custom Game",
         "players": ["Alice", "Bob"],
-        "log": "\n".join([
-            "|turn|1",
-            "|switch|p1a: Charizard|Charizard, L50|100/100",
-            "|switch|p2a: Venusaur|Venusaur, L50|100/100",
-            "|switch|p2b: Blastoise|Blastoise, L50|100/100",
-            "|move|p1a: Charizard|Heat Wave|p2a: Venusaur|[spread] p2a,p2b",
-            "|-damage|p2a: Venusaur|40/100",
-            "|-miss|p1a: Charizard|p2b: Blastoise",
-        ]),
+        "log": "\n".join(
+            [
+                "|turn|1",
+                "|switch|p1a: Charizard|Charizard, L50|100/100",
+                "|switch|p2a: Venusaur|Venusaur, L50|100/100",
+                "|switch|p2b: Blastoise|Blastoise, L50|100/100",
+                "|move|p1a: Charizard|Heat Wave|p2a: Venusaur|[spread] p2a,p2b",
+                "|-damage|p2a: Venusaur|40/100",
+                "|-miss|p1a: Charizard|p2b: Blastoise",
+            ]
+        ),
     }
     graph = build_graph(payload)
 
     heat_wave_action = next(
-        action for action in graph.subjects(RDF.type, PKM.MoveUseAction)
+        action
+        for action in graph.subjects(RDF.type, PKM.MoveUseAction)
         if (action, PKM.usesMove, PKM.MoveHeat_Wave) in graph
     )
     resolved_targets = set(graph.objects(heat_wave_action, PKM.hasResolvedTarget))
@@ -200,8 +238,16 @@ def test_builder_expands_spread_targets_and_tracks_mixed_outcomes() -> None:
     assert PKM.Combatant_Bob_Blastoise in resolved_targets
 
     resolutions = list(graph.subjects(RDF.type, PKM.TargetResolutionState))
-    assert any((resolution, PKM.aboutTarget, PKM.Combatant_Bob_Venusaur) in graph and (resolution, PKM.hasResolutionOutcome, Literal("resolved")) in graph for resolution in resolutions)
-    assert any((resolution, PKM.aboutTarget, PKM.Combatant_Bob_Blastoise) in graph and (resolution, PKM.hasResolutionOutcome, Literal("failed")) in graph for resolution in resolutions)
+    assert any(
+        (resolution, PKM.aboutTarget, PKM.Combatant_Bob_Venusaur) in graph
+        and (resolution, PKM.hasResolutionOutcome, Literal("resolved")) in graph
+        for resolution in resolutions
+    )
+    assert any(
+        (resolution, PKM.aboutTarget, PKM.Combatant_Bob_Blastoise) in graph
+        and (resolution, PKM.hasResolutionOutcome, Literal("failed")) in graph
+        for resolution in resolutions
+    )
 
 
 def test_damage_events_link_back_to_current_action_when_targeted() -> None:
@@ -209,13 +255,15 @@ def test_damage_events_link_back_to_current_action_when_targeted() -> None:
         "id": "synthetic-causality",
         "format": "[Gen 9] Custom Game",
         "players": ["Alice", "Bob"],
-        "log": "\n".join([
-            "|turn|1",
-            "|switch|p1a: Pikachu|Pikachu, L50|100/100",
-            "|switch|p2a: Eevee|Eevee, L50|100/100",
-            "|move|p1a: Pikachu|Thunderbolt|p2a: Eevee",
-            "|-damage|p2a: Eevee|10/100",
-        ]),
+        "log": "\n".join(
+            [
+                "|turn|1",
+                "|switch|p1a: Pikachu|Pikachu, L50|100/100",
+                "|switch|p2a: Eevee|Eevee, L50|100/100",
+                "|move|p1a: Pikachu|Thunderbolt|p2a: Eevee",
+                "|-damage|p2a: Eevee|10/100",
+            ]
+        ),
     }
     graph = build_graph(payload)
 
@@ -224,25 +272,30 @@ def test_damage_events_link_back_to_current_action_when_targeted() -> None:
     assert (causing_action, RDF.type, PKM.MoveUseAction) in graph
 
 
-def test_builder_distinguishes_declared_and_resolved_targets_under_redirection() -> None:
+def test_builder_distinguishes_declared_and_resolved_targets_under_redirection() -> (
+    None
+):
     payload = {
         "id": "synthetic-redirection",
         "format": "[Gen 9] Custom Game",
         "players": ["Alice", "Bob"],
-        "log": "\n".join([
-            "|turn|1",
-            "|switch|p1a: Pikachu|Pikachu, L50|100/100",
-            "|switch|p2a: Gyarados|Gyarados, L50|100/100",
-            "|switch|p2b: Rhydon|Rhydon, L50|100/100",
-            "|move|p1a: Pikachu|Thunderbolt|p2a: Gyarados",
-            "|-activate|p2b: Rhydon|ability: Lightning Rod",
-            "|-damage|p2b: Rhydon|60/100",
-        ]),
+        "log": "\n".join(
+            [
+                "|turn|1",
+                "|switch|p1a: Pikachu|Pikachu, L50|100/100",
+                "|switch|p2a: Gyarados|Gyarados, L50|100/100",
+                "|switch|p2b: Rhydon|Rhydon, L50|100/100",
+                "|move|p1a: Pikachu|Thunderbolt|p2a: Gyarados",
+                "|-activate|p2b: Rhydon|ability: Lightning Rod",
+                "|-damage|p2b: Rhydon|60/100",
+            ]
+        ),
     }
     graph = build_graph(payload)
 
     action = next(
-        action for action in graph.subjects(RDF.type, PKM.MoveUseAction)
+        action
+        for action in graph.subjects(RDF.type, PKM.MoveUseAction)
         if (action, PKM.usesMove, PKM.MoveThunderbolt) in graph
     )
     declared_targets = set(graph.objects(action, PKM.hasDeclaredTarget))
@@ -269,63 +322,104 @@ def test_builder_projects_persistent_state_and_applies_teardown_events() -> None
         "id": "synthetic-teardown-projection",
         "format": "[Gen 9] Custom Game",
         "players": ["Alice", "Bob"],
-        "log": "\n".join([
-            "|turn|1",
-            "|switch|p1a: Pikachu|Pikachu, L50|100/100",
-            "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
-            "|-weather|SunnyDay",
-            "|-fieldstart|move: Psychic Terrain",
-            "|-sidestart|p1: Alice|move: Tailwind",
-            "|-status|p2a: Bulbasaur|par",
-            "|-singleturn|p1a: Pikachu|Protect",
-            "|turn|2",
-            "|upkeep",
-            "|-curestatus|p2a: Bulbasaur|par",
-            "|-weather|none",
-            "|-fieldend|move: Psychic Terrain",
-            "|-sideend|p1: Alice|move: Tailwind",
-            "|-end|p1a: Pikachu|move: Protect",
-        ]),
+        "log": "\n".join(
+            [
+                "|turn|1",
+                "|switch|p1a: Pikachu|Pikachu, L50|100/100",
+                "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
+                "|-weather|SunnyDay",
+                "|-fieldstart|move: Psychic Terrain",
+                "|-sidestart|p1: Alice|move: Tailwind",
+                "|-status|p2a: Bulbasaur|par",
+                "|-singleturn|p1a: Pikachu|Protect",
+                "|turn|2",
+                "|upkeep",
+                "|-curestatus|p2a: Bulbasaur|par",
+                "|-weather|none",
+                "|-fieldend|move: Psychic Terrain",
+                "|-sideend|p1: Alice|move: Tailwind",
+                "|-end|p1a: Pikachu|move: Protect",
+            ]
+        ),
     }
     graph = build_graph(payload)
 
     upkeep_instant = next(
-        instant for instant in graph.subjects(RDF.type, PKM.Instantaneous)
+        instant
+        for instant in graph.subjects(RDF.type, PKM.Instantaneous)
         if (instant, PKM.hasReplayStepLabel, Literal("upkeep-t2-e0")) in graph
     )
     cure_instant = next(
-        instant for instant in graph.subjects(RDF.type, PKM.Instantaneous)
+        instant
+        for instant in graph.subjects(RDF.type, PKM.Instantaneous)
         if (instant, PKM.hasReplayStepLabel, Literal("-curestatus-t2-e1")) in graph
     )
     weather_clear_instant = next(
-        instant for instant in graph.subjects(RDF.type, PKM.Instantaneous)
+        instant
+        for instant in graph.subjects(RDF.type, PKM.Instantaneous)
         if (instant, PKM.hasReplayStepLabel, Literal("-weather-t2-e2")) in graph
     )
     field_end_instant = next(
-        instant for instant in graph.subjects(RDF.type, PKM.Instantaneous)
+        instant
+        for instant in graph.subjects(RDF.type, PKM.Instantaneous)
         if (instant, PKM.hasReplayStepLabel, Literal("-fieldend-t2-e3")) in graph
     )
     side_end_instant = next(
-        instant for instant in graph.subjects(RDF.type, PKM.Instantaneous)
+        instant
+        for instant in graph.subjects(RDF.type, PKM.Instantaneous)
         if (instant, PKM.hasReplayStepLabel, Literal("-sideend-t2-e4")) in graph
     )
     volatile_end_instant = next(
-        instant for instant in graph.subjects(RDF.type, PKM.Instantaneous)
+        instant
+        for instant in graph.subjects(RDF.type, PKM.Instantaneous)
         if (instant, PKM.hasReplayStepLabel, Literal("-end-t2-e5")) in graph
     )
 
-    assert any((assignment, PKM.hasContext, upkeep_instant) in graph for assignment in graph.subjects(RDF.type, PKM.ActiveSlotAssignment))
-    assert any((assignment, PKM.hasContext, upkeep_instant) in graph for assignment in graph.subjects(RDF.type, PKM.CurrentWeatherAssignment))
-    assert any((assignment, PKM.hasContext, upkeep_instant) in graph for assignment in graph.subjects(RDF.type, PKM.CurrentTerrainAssignment))
-    assert any((assignment, PKM.hasContext, upkeep_instant) in graph for assignment in graph.subjects(RDF.type, PKM.SideConditionAssignment))
-    assert any((assignment, PKM.hasContext, upkeep_instant) in graph for assignment in graph.subjects(RDF.type, PKM.CurrentStatusAssignment))
-    assert any((assignment, PKM.hasContext, upkeep_instant) in graph for assignment in graph.subjects(RDF.type, PKM.VolatileStatusAssignment))
+    assert any(
+        (assignment, PKM.hasContext, upkeep_instant) in graph
+        for assignment in graph.subjects(RDF.type, PKM.ActiveSlotAssignment)
+    )
+    assert any(
+        (assignment, PKM.hasContext, upkeep_instant) in graph
+        for assignment in graph.subjects(RDF.type, PKM.CurrentWeatherAssignment)
+    )
+    assert any(
+        (assignment, PKM.hasContext, upkeep_instant) in graph
+        for assignment in graph.subjects(RDF.type, PKM.CurrentTerrainAssignment)
+    )
+    assert any(
+        (assignment, PKM.hasContext, upkeep_instant) in graph
+        for assignment in graph.subjects(RDF.type, PKM.SideConditionAssignment)
+    )
+    assert any(
+        (assignment, PKM.hasContext, upkeep_instant) in graph
+        for assignment in graph.subjects(RDF.type, PKM.CurrentStatusAssignment)
+    )
+    assert any(
+        (assignment, PKM.hasContext, upkeep_instant) in graph
+        for assignment in graph.subjects(RDF.type, PKM.VolatileStatusAssignment)
+    )
 
-    assert not any((assignment, PKM.hasContext, cure_instant) in graph for assignment in graph.subjects(RDF.type, PKM.CurrentStatusAssignment))
-    assert not any((assignment, PKM.hasContext, weather_clear_instant) in graph for assignment in graph.subjects(RDF.type, PKM.CurrentWeatherAssignment))
-    assert not any((assignment, PKM.hasContext, field_end_instant) in graph for assignment in graph.subjects(RDF.type, PKM.CurrentTerrainAssignment))
-    assert not any((assignment, PKM.hasContext, side_end_instant) in graph for assignment in graph.subjects(RDF.type, PKM.SideConditionAssignment))
-    assert not any((assignment, PKM.hasContext, volatile_end_instant) in graph for assignment in graph.subjects(RDF.type, PKM.VolatileStatusAssignment))
+    assert not any(
+        (assignment, PKM.hasContext, cure_instant) in graph
+        for assignment in graph.subjects(RDF.type, PKM.CurrentStatusAssignment)
+    )
+    assert not any(
+        (assignment, PKM.hasContext, weather_clear_instant) in graph
+        for assignment in graph.subjects(RDF.type, PKM.CurrentWeatherAssignment)
+    )
+    assert not any(
+        (assignment, PKM.hasContext, field_end_instant) in graph
+        for assignment in graph.subjects(RDF.type, PKM.CurrentTerrainAssignment)
+    )
+    assert not any(
+        (assignment, PKM.hasContext, side_end_instant) in graph
+        for assignment in graph.subjects(RDF.type, PKM.SideConditionAssignment)
+    )
+    assert not any(
+        (assignment, PKM.hasContext, volatile_end_instant) in graph
+        for assignment in graph.subjects(RDF.type, PKM.VolatileStatusAssignment)
+    )
 
 
 def test_builder_projects_stat_stage_state_and_handles_sethp() -> None:
@@ -333,35 +427,41 @@ def test_builder_projects_stat_stage_state_and_handles_sethp() -> None:
         "id": "synthetic-stage-projection",
         "format": "[Gen 9] Custom Game",
         "players": ["Alice", "Bob"],
-        "log": "\n".join([
-            "|turn|1",
-            "|switch|p1a: Pikachu|Pikachu, L50|100/100",
-            "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
-            "|move|p1a: Pikachu|Nasty Plot|p1a: Pikachu",
-            "|-boost|p1a: Pikachu|spa|2",
-            "|turn|2",
-            "|upkeep",
-            "|move|p1a: Pikachu|Pain Split|p2a: Bulbasaur",
-            "|-sethp|p1a: Pikachu|70/100|p2a: Bulbasaur|70/100|[from] move: Pain Split",
-            "|-clearboost|p1a: Pikachu",
-        ]),
+        "log": "\n".join(
+            [
+                "|turn|1",
+                "|switch|p1a: Pikachu|Pikachu, L50|100/100",
+                "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
+                "|move|p1a: Pikachu|Nasty Plot|p1a: Pikachu",
+                "|-boost|p1a: Pikachu|spa|2",
+                "|turn|2",
+                "|upkeep",
+                "|move|p1a: Pikachu|Pain Split|p2a: Bulbasaur",
+                "|-sethp|p1a: Pikachu|70/100|p2a: Bulbasaur|70/100|[from] move: Pain Split",
+                "|-clearboost|p1a: Pikachu",
+            ]
+        ),
     }
     graph = build_graph(payload)
 
     boost_instant = next(
-        instant for instant in graph.subjects(RDF.type, PKM.Instantaneous)
+        instant
+        for instant in graph.subjects(RDF.type, PKM.Instantaneous)
         if (instant, PKM.hasReplayStepLabel, Literal("-boost-t1-e3")) in graph
     )
     upkeep_instant = next(
-        instant for instant in graph.subjects(RDF.type, PKM.Instantaneous)
+        instant
+        for instant in graph.subjects(RDF.type, PKM.Instantaneous)
         if (instant, PKM.hasReplayStepLabel, Literal("upkeep-t2-e0")) in graph
     )
     sethp_instant = next(
-        instant for instant in graph.subjects(RDF.type, PKM.Instantaneous)
+        instant
+        for instant in graph.subjects(RDF.type, PKM.Instantaneous)
         if (instant, PKM.hasReplayStepLabel, Literal("-sethp-t2-e2")) in graph
     )
     clear_instant = next(
-        instant for instant in graph.subjects(RDF.type, PKM.Instantaneous)
+        instant
+        for instant in graph.subjects(RDF.type, PKM.Instantaneous)
         if (instant, PKM.hasReplayStepLabel, Literal("-clearboost-t2-e3")) in graph
     )
 
@@ -405,15 +505,17 @@ def test_builder_emits_multiple_resolution_nodes_for_multi_hit_moves() -> None:
         "id": "synthetic-multihit",
         "format": "[Gen 9] Custom Game",
         "players": ["Alice", "Bob"],
-        "log": "\n".join([
-            "|turn|1",
-            "|switch|p1a: Urshifu|Urshifu-Rapid-Strike, L50|100/100",
-            "|switch|p2a: Tyranitar|Tyranitar, L50|100/100",
-            "|move|p1a: Urshifu|Surging Strikes|p2a: Tyranitar",
-            "|-damage|p2a: Tyranitar|80/100",
-            "|-damage|p2a: Tyranitar|60/100",
-            "|-damage|p2a: Tyranitar|40/100",
-        ]),
+        "log": "\n".join(
+            [
+                "|turn|1",
+                "|switch|p1a: Urshifu|Urshifu-Rapid-Strike, L50|100/100",
+                "|switch|p2a: Tyranitar|Tyranitar, L50|100/100",
+                "|move|p1a: Urshifu|Surging Strikes|p2a: Tyranitar",
+                "|-damage|p2a: Tyranitar|80/100",
+                "|-damage|p2a: Tyranitar|60/100",
+                "|-damage|p2a: Tyranitar|40/100",
+            ]
+        ),
     }
     graph = build_graph(payload)
 
@@ -431,15 +533,17 @@ def test_upkeep_breaks_action_causality_for_residual_healing() -> None:
         "id": "synthetic-upkeep-residual",
         "format": "[Gen 9] Custom Game",
         "players": ["Alice", "Bob"],
-        "log": "\n".join([
-            "|turn|1",
-            "|switch|p1a: Bulbasaur|Bulbasaur, L50|100/100",
-            "|switch|p2a: Squirtle|Squirtle, L50|100/100",
-            "|move|p1a: Bulbasaur|Tackle|p2a: Squirtle",
-            "|-damage|p2a: Squirtle|90/100",
-            "|upkeep",
-            "|-heal|p1a: Bulbasaur|100/100|[from] Grassy Terrain",
-        ]),
+        "log": "\n".join(
+            [
+                "|turn|1",
+                "|switch|p1a: Bulbasaur|Bulbasaur, L50|100/100",
+                "|switch|p2a: Squirtle|Squirtle, L50|100/100",
+                "|move|p1a: Bulbasaur|Tackle|p2a: Squirtle",
+                "|-damage|p2a: Squirtle|90/100",
+                "|upkeep",
+                "|-heal|p1a: Bulbasaur|100/100|[from] Grassy Terrain",
+            ]
+        ),
     }
     graph = build_graph(payload)
 
@@ -447,13 +551,16 @@ def test_upkeep_breaks_action_causality_for_residual_healing() -> None:
     assert not list(graph.objects(heal_event, PKM.causedByAction))
 
 
-def test_builder_uses_only_declared_pkm_predicates(replay_graph: Graph, ontology_graph: Graph) -> None:
+def test_builder_uses_only_declared_pkm_predicates(
+    replay_graph: Graph, ontology_graph: Graph
+) -> None:
     declared = {
         predicate
         for predicate in ontology_graph.subjects(RDF.type, None)
         if str(predicate).startswith(str(PKM))
         and any(
-            property_type in (
+            property_type
+            in (
                 RDF.Property,
                 OWL.AnnotationProperty,
                 OWL.ObjectProperty,
@@ -463,8 +570,14 @@ def test_builder_uses_only_declared_pkm_predicates(replay_graph: Graph, ontology
         )
     }
 
-    used = {predicate for _, predicate, _ in replay_graph if str(predicate).startswith(str(PKM))}
-    assert used <= declared, f"undeclared pkm: predicates in replay graph: {sorted(str(p) for p in used - declared)}"
+    used = {
+        predicate
+        for _, predicate, _ in replay_graph
+        if str(predicate).startswith(str(PKM))
+    }
+    assert used <= declared, (
+        f"undeclared pkm: predicates in replay graph: {sorted(str(p) for p in used - declared)}"
+    )
 
 
 def test_builder_emits_item_and_ability_assignments_on_observation() -> None:
@@ -472,13 +585,15 @@ def test_builder_emits_item_and_ability_assignments_on_observation() -> None:
         "id": "item-ability-test",
         "format": "[Gen 9] Custom Game",
         "players": ["Alice", "Bob"],
-        "log": "\n".join([
-            "|turn|1",
-            "|switch|p1a: Pikachu|Pikachu, L50|100/100",
-            "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
-            "|-ability|p2a: Bulbasaur|Overgrow",
-            "|-item|p1a: Pikachu|Leftovers|[from] move: Trick",
-        ]),
+        "log": "\n".join(
+            [
+                "|turn|1",
+                "|switch|p1a: Pikachu|Pikachu, L50|100/100",
+                "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
+                "|-ability|p2a: Bulbasaur|Overgrow",
+                "|-item|p1a: Pikachu|Leftovers|[from] move: Trick",
+            ]
+        ),
     }
     graph = build_graph(payload)
 
@@ -499,15 +614,17 @@ def test_builder_clears_item_and_ability_on_end_events() -> None:
         "id": "item-ability-end-test",
         "format": "[Gen 9] Custom Game",
         "players": ["Alice", "Bob"],
-        "log": "\n".join([
-            "|turn|1",
-            "|switch|p1a: Pikachu|Pikachu, L50|100/100",
-            "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
-            "|-ability|p2a: Bulbasaur|Overgrow",
-            "|-item|p1a: Pikachu|Leftovers|[from] move: Trick",
-            "|-endability|p2a: Bulbasaur|Overgrow",
-            "|-enditem|p1a: Pikachu|Leftovers",
-        ]),
+        "log": "\n".join(
+            [
+                "|turn|1",
+                "|switch|p1a: Pikachu|Pikachu, L50|100/100",
+                "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
+                "|-ability|p2a: Bulbasaur|Overgrow",
+                "|-item|p1a: Pikachu|Leftovers|[from] move: Trick",
+                "|-endability|p2a: Bulbasaur|Overgrow",
+                "|-enditem|p1a: Pikachu|Leftovers",
+            ]
+        ),
     }
     graph = build_graph(payload)
 
@@ -515,7 +632,9 @@ def test_builder_clears_item_and_ability_on_end_events() -> None:
     item_assignments = list(graph.subjects(RDF.type, PKM.CurrentItemAssignment))
     ability_assignments = list(graph.subjects(RDF.type, PKM.CurrentAbilityAssignment))
     # Assignments may exist on earlier instants but the last instant should have none
-    last_instant = PKM[f"I_{len(list(graph.subjects(RDF.type, PKM.Instantaneous))) - 1}"]
+    last_instant = PKM[
+        f"I_{len(list(graph.subjects(RDF.type, PKM.Instantaneous))) - 1}"
+    ]
     assert not any(
         graph.value(a, PKM.hasContext) == last_instant for a in item_assignments
     ), "CurrentItemAssignment should not persist after -enditem"
@@ -529,26 +648,30 @@ def test_builder_tracks_volatile_start_and_clears_on_end() -> None:
         "id": "volatile-start-test",
         "format": "[Gen 9] Custom Game",
         "players": ["Alice", "Bob"],
-        "log": "\n".join([
-            "|turn|1",
-            "|switch|p1a: Pikachu|Pikachu, L50|100/100",
-            "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
-            "|move|p1a: Pikachu|Confuse Ray|p2a: Bulbasaur",
-            "|-start|p2a: Bulbasaur|confusion",
-            "|turn|2",
-            "|upkeep",
-            "|-end|p2a: Bulbasaur|confusion",
-        ]),
+        "log": "\n".join(
+            [
+                "|turn|1",
+                "|switch|p1a: Pikachu|Pikachu, L50|100/100",
+                "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
+                "|move|p1a: Pikachu|Confuse Ray|p2a: Bulbasaur",
+                "|-start|p2a: Bulbasaur|confusion",
+                "|turn|2",
+                "|upkeep",
+                "|-end|p2a: Bulbasaur|confusion",
+            ]
+        ),
     }
     graph = build_graph(payload)
 
     # After -start, VolatileStatusAssignment should be present before the -end
     start_instant = next(
-        i for i in graph.subjects(RDF.type, PKM.Instantaneous)
+        i
+        for i in graph.subjects(RDF.type, PKM.Instantaneous)
         if (i, PKM.hasReplayStepLabel, Literal("-start-t1-e3")) in graph
     )
     end_instant = next(
-        i for i in graph.subjects(RDF.type, PKM.Instantaneous)
+        i
+        for i in graph.subjects(RDF.type, PKM.Instantaneous)
         if (i, PKM.hasReplayStepLabel, Literal("-end-t2-e1")) in graph
     )
 
@@ -566,24 +689,28 @@ def test_builder_handles_setboost_and_invertboost() -> None:
         "id": "setboost-invertboost-test",
         "format": "[Gen 9] Custom Game",
         "players": ["Alice", "Bob"],
-        "log": "\n".join([
-            "|turn|1",
-            "|switch|p1a: Pikachu|Pikachu, L50|100/100",
-            "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
-            "|move|p1a: Pikachu|Belly Drum|p1a: Pikachu",
-            "|-setboost|p1a: Pikachu|atk|6",
-            "|move|p2a: Bulbasaur|Topsy-Turvy|p1a: Pikachu",
-            "|-invertboost|p1a: Pikachu",
-        ]),
+        "log": "\n".join(
+            [
+                "|turn|1",
+                "|switch|p1a: Pikachu|Pikachu, L50|100/100",
+                "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
+                "|move|p1a: Pikachu|Belly Drum|p1a: Pikachu",
+                "|-setboost|p1a: Pikachu|atk|6",
+                "|move|p2a: Bulbasaur|Topsy-Turvy|p1a: Pikachu",
+                "|-invertboost|p1a: Pikachu",
+            ]
+        ),
     }
     graph = build_graph(payload)
 
     setboost_instant = next(
-        i for i in graph.subjects(RDF.type, PKM.Instantaneous)
+        i
+        for i in graph.subjects(RDF.type, PKM.Instantaneous)
         if (i, PKM.hasReplayStepLabel, Literal("-setboost-t1-e3")) in graph
     )
     invert_instant = next(
-        i for i in graph.subjects(RDF.type, PKM.Instantaneous)
+        i
+        for i in graph.subjects(RDF.type, PKM.Instantaneous)
         if (i, PKM.hasReplayStepLabel, Literal("-invertboost-t1-e5")) in graph
     )
 
@@ -611,15 +738,17 @@ def test_builder_records_battle_outcome_on_win() -> None:
         "id": "win-test",
         "format": "[Gen 9] Custom Game",
         "players": ["Alice", "Bob"],
-        "log": "\n".join([
-            "|turn|1",
-            "|switch|p1a: Pikachu|Pikachu, L50|100/100",
-            "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
-            "|move|p1a: Pikachu|Thunderbolt|p2a: Bulbasaur",
-            "|-damage|p2a: Bulbasaur|0 fnt",
-            "|faint|p2a: Bulbasaur",
-            "|win|Alice",
-        ]),
+        "log": "\n".join(
+            [
+                "|turn|1",
+                "|switch|p1a: Pikachu|Pikachu, L50|100/100",
+                "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
+                "|move|p1a: Pikachu|Thunderbolt|p2a: Bulbasaur",
+                "|-damage|p2a: Bulbasaur|0 fnt",
+                "|faint|p2a: Bulbasaur",
+                "|win|Alice",
+            ]
+        ),
     }
     graph = build_graph(payload)
 
@@ -634,12 +763,14 @@ def test_builder_records_battle_outcome_on_tie() -> None:
         "id": "tie-test",
         "format": "[Gen 9] Custom Game",
         "players": ["Alice", "Bob"],
-        "log": "\n".join([
-            "|turn|1",
-            "|switch|p1a: Pikachu|Pikachu, L50|100/100",
-            "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
-            "|tie|",
-        ]),
+        "log": "\n".join(
+            [
+                "|turn|1",
+                "|switch|p1a: Pikachu|Pikachu, L50|100/100",
+                "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
+                "|tie|",
+            ]
+        ),
     }
     graph = build_graph(payload)
 
@@ -654,11 +785,13 @@ def test_builder_emits_represents_species() -> None:
         "id": "synthetic-species-link",
         "format": "[Gen 9] Custom Game",
         "players": ["Alice", "Bob"],
-        "log": "\n".join([
-            "|turn|1",
-            "|switch|p1a: Pikachu|Pikachu, L50|100/100",
-            "|switch|p2a: Mr. Mime|Mr. Mime, L50|100/100",
-        ]),
+        "log": "\n".join(
+            [
+                "|turn|1",
+                "|switch|p1a: Pikachu|Pikachu, L50|100/100",
+                "|switch|p2a: Mr. Mime|Mr. Mime, L50|100/100",
+            ]
+        ),
     }
     graph = build_graph(payload)
 
@@ -679,12 +812,14 @@ def test_builder_emits_has_tera_type() -> None:
         "id": "synthetic-tera",
         "format": "[Gen 9] Custom Game",
         "players": ["Alice", "Bob"],
-        "log": "\n".join([
-            "|turn|1",
-            "|switch|p1a: Pikachu|Pikachu, L50|100/100",
-            "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
-            "|-terastallize|p1a: Pikachu|Electric",
-        ]),
+        "log": "\n".join(
+            [
+                "|turn|1",
+                "|switch|p1a: Pikachu|Pikachu, L50|100/100",
+                "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
+                "|-terastallize|p1a: Pikachu|Electric",
+            ]
+        ),
     }
     graph = build_graph(payload)
 
@@ -700,24 +835,28 @@ def test_builder_handles_cureteam() -> None:
         "id": "cureteam-test",
         "format": "[Gen 9] Custom Game",
         "players": ["Alice", "Bob"],
-        "log": "\n".join([
-            "|turn|1",
-            "|switch|p1a: Blissey|Blissey, L50|100/100",
-            "|switch|p2a: Venusaur|Venusaur, L50|100/100",
-            "|-status|p1a: Blissey|brn",
-            "|move|p1a: Blissey|Aromatherapy|p1a: Blissey",
-            "|-cureteam|p1a: Blissey",
-        ]),
+        "log": "\n".join(
+            [
+                "|turn|1",
+                "|switch|p1a: Blissey|Blissey, L50|100/100",
+                "|switch|p2a: Venusaur|Venusaur, L50|100/100",
+                "|-status|p1a: Blissey|brn",
+                "|move|p1a: Blissey|Aromatherapy|p1a: Blissey",
+                "|-cureteam|p1a: Blissey",
+            ]
+        ),
     }
     graph = build_graph(payload)
 
     # Status should be present after -status event
     status_instant = next(
-        i for i in graph.subjects(RDF.type, PKM.Instantaneous)
+        i
+        for i in graph.subjects(RDF.type, PKM.Instantaneous)
         if (i, PKM.hasReplayStepLabel, Literal("-status-t1-e2")) in graph
     )
     cure_instant = next(
-        i for i in graph.subjects(RDF.type, PKM.Instantaneous)
+        i
+        for i in graph.subjects(RDF.type, PKM.Instantaneous)
         if (i, PKM.hasReplayStepLabel, Literal("-cureteam-t1-e4")) in graph
     )
 

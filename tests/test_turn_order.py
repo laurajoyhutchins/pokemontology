@@ -1,4 +1,5 @@
 """Tests for normal-priority action order inference."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -49,7 +50,12 @@ def test_resolve_order_prefers_higher_effective_speed() -> None:
     resolved = resolve_normal_priority_order(
         {
             "combatants": [
-                {"side": "p1", "speed_tier": 120, "speed_stage": 1, "item": "Choice Scarf"},
+                {
+                    "side": "p1",
+                    "speed_tier": 120,
+                    "speed_stage": 1,
+                    "item": "Choice Scarf",
+                },
                 {"side": "p2", "speed_tier": 150, "speed_stage": 0},
             ]
         }
@@ -200,7 +206,12 @@ def test_resolve_order_quick_feet_overrides_paralysis_drop() -> None:
     resolved = resolve_normal_priority_order(
         {
             "combatants": [
-                {"side": "p1", "speed_tier": 70, "ability": "Quick Feet", "status": "par"},
+                {
+                    "side": "p1",
+                    "speed_tier": 70,
+                    "ability": "Quick Feet",
+                    "status": "par",
+                },
                 {"side": "p2", "speed_tier": 100},
             ]
         }
@@ -225,7 +236,7 @@ def test_resolve_order_applies_weather_speed_ability() -> None:
             "combatants": [
                 {"side": "p1", "speed_tier": 80, "ability": "Swift Swim"},
                 {"side": "p2", "speed_tier": 120},
-            ]
+            ],
         }
     )
 
@@ -245,7 +256,12 @@ def test_resolve_order_applies_unburden_when_active() -> None:
     resolved = resolve_normal_priority_order(
         {
             "combatants": [
-                {"side": "p1", "speed_tier": 90, "ability": "Unburden", "unburden_active": True},
+                {
+                    "side": "p1",
+                    "speed_tier": 90,
+                    "ability": "Unburden",
+                    "unburden_active": True,
+                },
                 {"side": "p2", "speed_tier": 150},
             ]
         }
@@ -267,7 +283,12 @@ def test_resolve_order_applies_slow_start_and_stall() -> None:
     resolved = resolve_normal_priority_order(
         {
             "combatants": [
-                {"side": "p1", "speed_tier": 200, "ability": "Slow Start", "slow_start_active": True},
+                {
+                    "side": "p1",
+                    "speed_tier": 200,
+                    "ability": "Slow Start",
+                    "slow_start_active": True,
+                },
                 {"side": "p2", "speed_tier": 20, "ability": "Stall"},
             ]
         }
@@ -313,7 +334,12 @@ def test_resolve_order_ignores_quick_claw_when_priorities_differ() -> None:
         {
             "combatants": [
                 {"side": "p1", "speed_tier": 10, "move_priority": 1},
-                {"side": "p2", "speed_tier": 999, "move_priority": 0, "item": "Quick Claw"},
+                {
+                    "side": "p2",
+                    "speed_tier": 999,
+                    "move_priority": 0,
+                    "item": "Quick Claw",
+                },
             ]
         }
     )
@@ -334,7 +360,12 @@ def test_resolve_order_derives_prankster_priority_from_status_move() -> None:
     resolved = resolve_normal_priority_order(
         {
             "combatants": [
-                {"side": "p1", "speed_tier": 10, "ability": "Prankster", "move_category": "status"},
+                {
+                    "side": "p1",
+                    "speed_tier": 10,
+                    "ability": "Prankster",
+                    "move_category": "status",
+                },
                 {"side": "p2", "speed_tier": 999},
             ]
         }
@@ -358,7 +389,13 @@ def test_resolve_order_derives_gale_wings_only_at_full_hp() -> None:
     resolved = resolve_normal_priority_order(
         {
             "combatants": [
-                {"side": "p1", "speed_tier": 10, "ability": "Gale Wings", "move_type": "Flying", "at_full_hp": True},
+                {
+                    "side": "p1",
+                    "speed_tier": 10,
+                    "ability": "Gale Wings",
+                    "move_type": "Flying",
+                    "at_full_hp": True,
+                },
                 {"side": "p2", "speed_tier": 999},
             ]
         }
@@ -382,7 +419,12 @@ def test_resolve_order_derives_triage_priority_from_healing_tag() -> None:
     resolved = resolve_normal_priority_order(
         {
             "combatants": [
-                {"side": "p1", "speed_tier": 10, "ability": "Triage", "move_tags": ["healing"]},
+                {
+                    "side": "p1",
+                    "speed_tier": 10,
+                    "ability": "Triage",
+                    "move_tags": ["healing"],
+                },
                 {"side": "p2", "speed_tier": 999, "move_priority": 2},
             ]
         }
@@ -411,7 +453,12 @@ def test_resolve_order_looks_up_move_priority_from_local_ttl(tmp_path: Path) -> 
             "ruleset": "test:ruleset",
             "mechanics_ttl_paths": [str(mechanics_path)],
             "combatants": [
-                {"side": "p1", "speed_tier": 1, "move_name": "Protect", "move_priority": None},
+                {
+                    "side": "p1",
+                    "speed_tier": 1,
+                    "move_name": "Protect",
+                    "move_priority": None,
+                },
                 {"side": "p2", "speed_tier": 999},
             ],
         }
@@ -468,7 +515,9 @@ def test_resolve_order_looks_up_move_type_for_gale_wings(tmp_path: Path) -> None
     ]
 
 
-def test_resolve_order_auto_discovers_local_mechanics_ttl(tmp_path: Path, monkeypatch) -> None:
+def test_resolve_order_auto_discovers_local_mechanics_ttl(
+    tmp_path: Path, monkeypatch
+) -> None:
     build_dir = tmp_path / "build"
     build_dir.mkdir()
     write_mechanics_ttl(build_dir / "veekun.ttl")
@@ -478,7 +527,12 @@ def test_resolve_order_auto_discovers_local_mechanics_ttl(tmp_path: Path, monkey
         {
             "ruleset": "test:ruleset",
             "combatants": [
-                {"side": "p1", "speed_tier": 1, "move_name": "Protect", "move_priority": None},
+                {
+                    "side": "p1",
+                    "speed_tier": 1,
+                    "move_name": "Protect",
+                    "move_priority": None,
+                },
                 {"side": "p2", "speed_tier": 999},
             ],
         }

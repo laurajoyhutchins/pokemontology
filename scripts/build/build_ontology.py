@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Assemble the consumer ontology file from modular Turtle source fragments."""
+
 from __future__ import annotations
 
 import json

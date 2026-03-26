@@ -9,6 +9,7 @@ Note: parse_showdown_replay.py has a different parse_log with different
 semantics (all event types, returns list[dict]) and is intentionally not
 merged here.
 """
+
 from __future__ import annotations
 
 import re
@@ -165,7 +166,11 @@ def parse_log(log: str) -> list[ReplayEvent]:
         if turn == 0:
             continue
         if tag in SUPPORTED_EVENT_TAGS:
-            events.append(ReplayEvent(turn=turn, order=order, kind=tag, fields=parts[2:], raw=raw_line))
+            events.append(
+                ReplayEvent(
+                    turn=turn, order=order, kind=tag, fields=parts[2:], raw=raw_line
+                )
+            )
             order += 1
 
     return events
@@ -179,7 +184,9 @@ def parse_replay_payload(payload: dict) -> tuple[str, str, str, str, str]:
     if not source_url:
         password = payload.get("password")
         if password:
-            source_url = f"https://replay.pokemonshowdown.com/{replay_id}-{password}.json"
+            source_url = (
+                f"https://replay.pokemonshowdown.com/{replay_id}-{password}.json"
+            )
         else:
             source_url = f"https://replay.pokemonshowdown.com/{replay_id}.json"
     players = payload.get("players") or ["p1", "p2"]
