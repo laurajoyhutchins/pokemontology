@@ -11,15 +11,15 @@
   <header class="site-header">
     <div class="site-shell">
       <div class="topbar fade-up">
-        <a class="brand" href="./">
-          <span class="brand-mark">PL</span>
+        <a class="brand" href="./index.html">
+          <span class="brand-mark">PK</span>
           <span class="brand-copy">
-            <strong>Professor Laurel</strong>
-            <span>field lab for Pokemontology</span>
+            <strong>Pokemontology</strong>
+            <span>Semantic Knowledge Engine</span>
           </span>
         </a>
         <nav class="nav-links" aria-label="Primary">
-          <a href="./index.html" class="nav-active" aria-current="page">Ask</a>
+          <a href="./index.html" class="nav-active" aria-current="page">Query</a>
           <a href="./dev.html">Dev Console</a>
           <a href="https://github.com/laurajoyhutchins/pokemontology">Repo</a>
         </nav>
@@ -39,14 +39,14 @@
     <section class="laurel-hero" id="query">
       <div class="site-shell laurel-grid">
         <div class="laurel-intro fade-up">
-          <p class="eyebrow">Field Station Laurel / Landing Console</p>
-          <h1 class="laurel-title">Ask Professor Laurel.</h1>
+          <p class="eyebrow">Pokemontology / Interface</p>
+          <h1 class="laurel-title">Query the Engine.</h1>
           <p class="laurel-lead">
-            Natural-language access to Pokemontology with client-side grounding, local-browser
-            translation, query inspection, and live SPARQL execution against the published graph.
+            Natural-language interface to Pokémon battle mechanics with client-side RAG grounding, 
+            local-browser translation, and live SPARQL execution.
           </p>
           <div class="hero-actions">
-            <button class="button button-primary" id="focus-question-btn" type="button">Focus Research Field</button>
+            <button class="button button-primary" id="focus-question-btn" type="button">Focus Query Field</button>
             <button class="button button-secondary" id="sample-question-btn" type="button">Load Sample</button>
             <button class="button button-secondary" id="toggle-advanced-btn" type="button" aria-expanded="false" data-power-only>Technical View</button>
           </div>
@@ -68,15 +68,15 @@
 
         <aside class="laurel-sidecar fade-up delay-1" data-power-only>
           <div class="sidecar-card">
-            <p class="panel-kicker">Mission Brief</p>
-            <h2>Professor Laurel keeps the risky parts visible.</h2>
+            <p class="panel-kicker">Technical Brief</p>
+            <h2>Transparent Translation.</h2>
             <p>
-              Translation stays local to the browser when possible. Retrieved schema notes,
-              generated SPARQL, and validation results stay inspectable before execution.
+              Inference is browser-local. Schema grounding, generated SPARQL, 
+              and validation results remain inspectable before execution.
             </p>
           </div>
           <div class="sidecar-card">
-            <p class="panel-kicker">Source Cartridge</p>
+            <p class="panel-kicker">Static Sources</p>
             <div class="qe-source-group">
               <label class="source-toggle">
                 <input type="checkbox" id="src-ontology" checked>
@@ -100,15 +100,15 @@
     <section class="laurel-console section-tight">
       <div class="site-shell">
         <div class="lab-question fade-up delay-1">
-          <label class="toolbar-label" for="nl-question">Question</label>
+          <label class="toolbar-label" for="nl-question">Query</label>
           <textarea
             id="nl-question"
             class="laurel-textarea"
             spellcheck="false"
             autocorrect="off"
             autocapitalize="sentences"
-            aria-label="Ask Professor Laurel a natural-language question"
-            placeholder="Which of my moves are effective against Charizard?"
+            aria-label="Natural-language query input"
+            placeholder="Which moves are effective against Charizard?"
           ></textarea>
           <div class="laurel-runbar">
             <div class="qe-runbar-left">
@@ -144,7 +144,7 @@
             <div class="qe-results-body" id="qe-results" aria-live="polite">
               <div class="qe-placeholder">
                 <span class="qe-placeholder-icon">▶</span>
-                <p>Professor Laurel will summarize the translated query results here.</p>
+                <p>Query results will be summarized here.</p>
               </div>
             </div>
           </section>

@@ -120,7 +120,7 @@ export function renderGrounding(matches) {
 export function renderFindingsSummary(text) {
   setResultsContent(
     `<div class="laurel-answer">
-      <p class="laurel-answer-kicker">Professor Laurel</p>
+      <p class="laurel-answer-kicker">Inference Engine</p>
       <p>${escapeHtml(text)}</p>
     </div>`,
   );
@@ -138,11 +138,11 @@ export function summarizeQueryResult(question, result) {
     return `${result.value ? "Yes," : "No,"} regarding: "${question}"`.trim();
   }
   if (result.type === "quads") {
-    return `Laurel assembled ${result.quads.length} triples for the query: "${question}"`;
+    return `Assembled ${result.quads.length} triples for the query: "${question}"`;
   }
   const { vars, bindings } = result;
   if (!bindings.length) {
-    return `Laurel found no matching results for: "${question}"`;
+    return `No matching results for: "${question}"`;
   }
   const previewLimit = summaryPolicy.list_preview_limit || DEFAULT_SUMMARY_POLICY.list_preview_limit;
   if (vars.length === 1) {
@@ -151,10 +151,10 @@ export function summarizeQueryResult(question, result) {
       .filter(Boolean)
       .map(shortenUri);
     if (values.length === 1) {
-      return `Laurel found 1 result for "${question}": ${values[0]}.`;
+      return `Found 1 result for "${question}": ${values[0]}.`;
     }
     const preview = values.slice(0, previewLimit).join(", ");
-    return `Laurel found ${values.length} results for "${question}": ${preview}${values.length > previewLimit ? ", …" : ""}.`;
+    return `Found ${values.length} results for "${question}": ${preview}${values.length > previewLimit ? ", …" : ""}.`;
   }
   if (bindings.length === 1) {
     const fields = vars
@@ -163,9 +163,9 @@ export function summarizeQueryResult(question, result) {
         return `${variable}=${term ? shortenUri(term.value) : "—"}`;
       })
       .join(", ");
-    return `Laurel found 1 matching row for "${question}": ${fields}.`;
+    return `Found 1 matching row for "${question}": ${fields}.`;
   }
-  return `Laurel found ${bindings.length} matching rows for: "${question}"`;
+  return `Found ${bindings.length} matching rows for: "${question}"`;
 }
 
 export function renderQueryResults(result, question = "") {

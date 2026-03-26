@@ -370,7 +370,7 @@ async function runLaurelPipeline(state) {
     }
     setStatus("[data-status-model]", generation.backend);
     setResultsContent(
-      '<div class="laurel-answer"><p class="laurel-answer-kicker">Professor Laurel</p><p>Translation complete. Running the generated SPARQL now.</p></div>',
+      '<div class="laurel-answer"><p class="laurel-answer-kicker">Inference Engine</p><p>Translation complete. Executing generated SPARQL.</p></div>',
     );
     renderGeneratedQuery(generation.sparql);
     if (editor) editor.value = generation.sparql;
