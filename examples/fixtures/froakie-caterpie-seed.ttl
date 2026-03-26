@@ -1,4 +1,5 @@
 @prefix pkm:  <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
 
 # =============================================================================
 # EXAMPLE INDIVIDUALS: Gen 6 XY — Froakie vs Caterpie slice
@@ -50,6 +51,20 @@ pkm:AbilityShieldDust a pkm:Ability ; pkm:hasName "ShieldDust" .
 pkm:NatureTimid   a pkm:Nature ; pkm:hasName "Timid" .
 
 pkm:TrainerPlayer a pkm:Trainer ; pkm:hasName "Player" .
+
+# --- External references layer ---
+
+pkm:Ref_FroakieSpecies_PokemonKG
+    a pkm:ExternalEntityReference ;
+    pkm:refersToEntity pkm:FroakieSpecies ;
+    pkm:describedByArtifact pkm:DatasetArtifact_PokemonKG ;
+    pkm:hasExternalIRI "https://pokemonkg.org/resource/Species:Froakie"^^xsd:anyURI .
+
+pkm:Ref_BubbleMove_PokemonKG
+    a pkm:ExternalEntityReference ;
+    pkm:refersToEntity pkm:MoveBubble ;
+    pkm:describedByArtifact pkm:DatasetArtifact_PokemonKG ;
+    pkm:hasExternalIRI "https://pokemonkg.org/resource/Move:Bubble"^^xsd:anyURI .
 
 # --- Ruleset layer ---
 

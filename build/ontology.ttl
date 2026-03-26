@@ -1926,6 +1926,24 @@ pkm:ReplayArtifact
     rdfs:subClassOf pkm:EvidenceArtifact ;
     rdfs:comment "A machine-readable replay source, such as a Pokémon Showdown replay JSON or log." .
 
+pkm:ExternalEntityReference
+    a owl:Class ;
+    rdfs:label "ExternalEntityReference" ;
+    rdfs:subClassOf pkm:MetadataEntity ;
+    rdfs:comment "A reference node linking one pokemontology entity to an external dataset resource without asserting owl:sameAs-style identity semantics." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:refersToEntity ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Entity
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:describedByArtifact ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:EvidenceArtifact
+    ] .
+
 pkm:KnowledgeStatus
     a owl:Class ;
     rdfs:label "KnowledgeStatus" ;
@@ -1943,6 +1961,22 @@ pkm:supportedByArtifact
     rdfs:label "supportedByArtifact" ;
     rdfs:range pkm:EvidenceArtifact ;
     rdfs:comment "Links a modeled node to an evidence artifact supporting it." .
+
+pkm:refersToEntity
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "refersToEntity" ;
+    rdfs:domain pkm:ExternalEntityReference ;
+    rdfs:range pkm:Entity ;
+    rdfs:comment "Identifies the local ontology entity that an external reference node is about." .
+
+pkm:describedByArtifact
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "describedByArtifact" ;
+    rdfs:domain pkm:ExternalEntityReference ;
+    rdfs:range pkm:EvidenceArtifact ;
+    rdfs:comment "Identifies the external dataset or source artifact from which an external reference node is taken." .
 
 pkm:hasKnowledgeStatus
     a owl:ObjectProperty ;
@@ -1964,6 +1998,14 @@ pkm:hasSourceURL
     rdfs:label "hasSourceURL" ;
     rdfs:domain pkm:EvidenceArtifact ;
     rdfs:range xsd:anyURI .
+
+pkm:hasExternalIRI
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "hasExternalIRI" ;
+    rdfs:domain pkm:ExternalEntityReference ;
+    rdfs:range xsd:anyURI ;
+    rdfs:comment "The external resource IRI being referenced." .
 
 pkm:hasReplayTurnIndex
     a owl:DatatypeProperty ;
@@ -2013,8 +2055,14 @@ pkm:KnowledgeStatus_InferredPartialBranchSet
     pkm:hasName "InferredPartialBranchSet" ;
     rdfs:comment "The model includes only some branches, typically because the replay does not reveal all hidden state needed for exhaustive expansion." .
 
+pkm:DatasetArtifact_PokemonKG
+    a pkm:EvidenceArtifact ;
+    pkm:hasName "PokemonKG" ;
+    pkm:hasSourceURL "https://pokemonkg.org/"^^xsd:anyURI ;
+    rdfs:comment "External PokemonKG dataset/site referenced for cross-dataset links. The ontology page publishes CC BY 4.0 licensing, but dataset redistribution terms should be verified separately before republishing source data." .
+
 [ a owl:AllDisjointClasses ;
-  owl:members ( pkm:EvidenceArtifact pkm:KnowledgeStatus )
+  owl:members ( pkm:EvidenceArtifact pkm:ExternalEntityReference pkm:KnowledgeStatus )
 ] .
 
 # =============================================================================
