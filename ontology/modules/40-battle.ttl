@@ -35,7 +35,7 @@ pkm:BattleParticipant
 pkm:BattleCombatant
     a owl:Class ;
     rdfs:label "BattleCombatant" ;
-    owl:equivalentClass pkm:BattleParticipant ;
+    rdfs:subClassOf pkm:BattleParticipant ;
     owl:deprecated "true"^^xsd:boolean ;
     rdfs:comment "Deprecated compatibility alias for BattleParticipant. It remains only for legacy interoperability and should not be used in new data or shapes." .
 

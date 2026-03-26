@@ -184,8 +184,6 @@ pkm:Instantaneous
     pkm:Species pkm:Variant pkm:Move pkm:Ability
     pkm:Item pkm:Type pkm:Stat pkm:Nature pkm:Trainer
     pkm:StatusCondition pkm:TransformationState
-    pkm:VolatileCondition pkm:WeatherCondition
-    pkm:TerrainCondition pkm:SideCondition
   )
 ] .
 
@@ -602,6 +600,7 @@ pkm:hasSlot
     a owl:DatatypeProperty ;
     a owl:FunctionalProperty ;
     rdfs:label "hasSlot" ;
+    rdfs:domain pkm:OwnedMoveSlot ;
     rdfs:range xsd:integer .
 
 pkm:hasValue
@@ -1043,7 +1042,7 @@ pkm:BattleParticipant
 pkm:BattleCombatant
     a owl:Class ;
     rdfs:label "BattleCombatant" ;
-    owl:equivalentClass pkm:BattleParticipant ;
+    rdfs:subClassOf pkm:BattleParticipant ;
     owl:deprecated "true"^^xsd:boolean ;
     rdfs:comment "Deprecated compatibility alias for BattleParticipant. It remains only for legacy interoperability and should not be used in new data or shapes." .
 
@@ -2155,6 +2154,16 @@ pkm:Terrain_PsychicTerrain
 pkm:SideCondition_Tailwind
     a pkm:SideCondition ;
     pkm:hasName "Tailwind" .
+
+[ a owl:AllDisjointClasses ;
+  owl:members (
+    pkm:Species pkm:Variant pkm:Move pkm:Ability
+    pkm:Item pkm:Type pkm:Stat pkm:Nature pkm:Trainer
+    pkm:StatusCondition pkm:TransformationState
+    pkm:VolatileCondition pkm:WeatherCondition
+    pkm:TerrainCondition pkm:SideCondition
+  )
+] .
 
 [ a owl:AllDisjointClasses ;
   owl:members ( pkm:VolatileCondition pkm:WeatherCondition pkm:TerrainCondition pkm:SideCondition )

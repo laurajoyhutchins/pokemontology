@@ -255,6 +255,7 @@ pkm:hasSlot
     a owl:DatatypeProperty ;
     a owl:FunctionalProperty ;
     rdfs:label "hasSlot" ;
+    rdfs:domain pkm:OwnedMoveSlot ;
     rdfs:range xsd:integer .
 
 pkm:hasValue

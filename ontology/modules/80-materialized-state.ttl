@@ -137,5 +137,15 @@ pkm:SideCondition_Tailwind
     pkm:hasName "Tailwind" .
 
 [ a owl:AllDisjointClasses ;
+  owl:members (
+    pkm:Species pkm:Variant pkm:Move pkm:Ability
+    pkm:Item pkm:Type pkm:Stat pkm:Nature pkm:Trainer
+    pkm:StatusCondition pkm:TransformationState
+    pkm:VolatileCondition pkm:WeatherCondition
+    pkm:TerrainCondition pkm:SideCondition
+  )
+] .
+
+[ a owl:AllDisjointClasses ;
   owl:members ( pkm:VolatileCondition pkm:WeatherCondition pkm:TerrainCondition pkm:SideCondition )
 ] .
