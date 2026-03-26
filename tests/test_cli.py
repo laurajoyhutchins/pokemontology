@@ -119,6 +119,34 @@ def test_resolve_order_command_outputs_json(tmp_path, capsys) -> None:
     assert output["priority_bracket"] == 0
 
 
+def test_resolve_order_command_skips_mechanics_graph_when_not_needed(
+    tmp_path, capsys, monkeypatch: object
+) -> None:
+    state_path = tmp_path / "order-state.json"
+    state_path.write_text(
+        json.dumps(
+            {
+                "combatants": [
+                    {"side": "p1", "speed_tier": 120},
+                    {"side": "p2", "speed_tier": 150},
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    def fail_normalize(_value):
+        raise AssertionError("mechanics TTL discovery should not run for basic speed ordering")
+
+    monkeypatch.setattr("pokemontology.turn_order._normalize_mechanics_ttl_paths", fail_normalize)
+
+    exit_code = cli.main(["resolve-order", str(state_path), "--pretty"])
+
+    assert exit_code == 0
+    output = json.loads(capsys.readouterr().out)
+    assert output["branches"][0]["first"] == "p2"
+
+
 def test_resolve_order_command_requires_top_level_object(tmp_path, capsys) -> None:
     state_path = tmp_path / "order-state.json"
     state_path.write_text('["bad"]', encoding="utf-8")

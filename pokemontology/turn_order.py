@@ -614,14 +614,23 @@ def _validate_payload(
     ruleset = payload.get("ruleset")
     if ruleset is not None and not isinstance(ruleset, str):
         raise ValueError("ruleset must be a string when present")
-    mechanics_ttl_paths = _normalize_mechanics_ttl_paths(
-        payload.get("mechanics_ttl_paths")
-    )
-    mechanics_data = _load_mechanics_data(mechanics_ttl_paths)
 
     combatants_raw = payload.get("combatants")
     if not isinstance(combatants_raw, list) or len(combatants_raw) != 2:
         raise ValueError("resolve-order expects exactly two combatants")
+
+    needs_mechanics = payload.get("mechanics_ttl_paths") is not None or ruleset is not None
+    if not needs_mechanics:
+        needs_mechanics = any(
+            isinstance(raw, dict) and isinstance(raw.get("move_name"), str)
+            for raw in combatants_raw
+        )
+    mechanics_ttl_paths = (
+        _normalize_mechanics_ttl_paths(payload.get("mechanics_ttl_paths"))
+        if needs_mechanics
+        else ()
+    )
+    mechanics_data = _load_mechanics_data(mechanics_ttl_paths)
 
     combatants: list[CombatantOrderInput] = []
     for index, raw in enumerate(combatants_raw, start=1):
