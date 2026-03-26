@@ -1,47 +1,35 @@
 # Pokemontology
 
-Pokemontology is an RDF/OWL + SHACL project for representing Pokemon battle mechanics as explicit, replay-backed state transitions.
+Pokemontology is an RDF/OWL + SHACL project for representing Pokémon battle mechanics as explicit, replay-backed state transitions.
 
 It combines:
 - a published ontology namespace
 - published SHACL validation shapes
-- replay parsing and slice generation tools
-- provenance-aware ingestion pipelines for external Pokemon data sources
+- replay parsing and TTL slice generation
+- provenance-aware ingestion pipelines for external Pokémon data sources
+- a live in-browser SPARQL query engine on the public site
 
 ## Public artifacts
 
-- GitHub Pages site: `https://laurajoyhutchins.github.io/pokemontology/`
-- Ontology: `https://laurajoyhutchins.github.io/pokemontology/ontology.ttl`
-- SHACL shapes: `https://laurajoyhutchins.github.io/pokemontology/shapes.ttl`
+| Resource | URL |
+|----------|-----|
+| Site + query engine | `https://laurajoyhutchins.github.io/pokemontology/` |
+| Ontology | `https://laurajoyhutchins.github.io/pokemontology/ontology.ttl` |
+| SHACL shapes | `https://laurajoyhutchins.github.io/pokemontology/shapes.ttl` |
 
-The public site is the canonical namespace for the built ontology and shapes.
+The public site is the canonical namespace for the built ontology and shapes. It includes an in-browser SPARQL query engine — load the page, pick a source, and run queries against the live ontology without any local setup.
 
 ## What this models
 
-Pokemontology is aimed at the mechanics layer of Pokemon, not just a static encyclopedia.
+Pokemontology targets the mechanics layer of Pokémon, not just a static encyclopedia.
 
 Core modeling areas:
-- ruleset-scoped mechanics such as move learnability and contextual assignments
-- save-state entities such as owned Pokemon, slots, IVs, EVs, and inventory data
+- ruleset-scoped mechanics: move learnability, type effectiveness, base typing, move properties
+- save-state entities: owned Pokémon, slots, IVs, EVs, inventory
 - battle participants, actions, events, and state transitions
 - instantaneous and materialized battle state
+- Tera type overrides and transformation states
 - provenance and evidence for externally sourced or replay-derived assertions
-
-This makes it suitable for:
-- replay-backed battle analysis
-- ontology-native validation with SHACL
-- structured ingestion from sources like PokeAPI and Veekun
-- building a machine-readable mechanics knowledge base with explicit context
-
-## Project status
-
-The repo already includes:
-- a modular source ontology under `ontology/modules/`
-- built consumer artifacts under `build/`
-- published Pages artifacts under `docs/`
-- replay tooling for parsing public Pokemon Showdown replays into TTL slices
-- ingestion pipelines for PokeAPI and Veekun-shaped exports
-- test coverage for ontology parsing, SHACL conformance, replay conversion, and ingestion contracts
 
 ## Quick start
 
@@ -63,15 +51,9 @@ Run the test suite:
 python3 -m pytest
 ```
 
-See the CLI:
-
-```bash
-python3 -m pokemontology --help
-```
-
 ## Common workflows
 
-### Build a replay-backed slice
+### Build a replay-backed TTL slice
 
 Parse a replay:
 
@@ -96,50 +78,32 @@ python3 -m pokemontology build-slice \
   -o examples/slices/generated-slice.ttl
 ```
 
-Validate ontology, shapes, and example data together:
+Validate ontology, shapes, and data together:
 
 ```bash
 python3 -m pokemontology check-ttl \
   build/ontology.ttl \
   build/shapes.ttl \
-  examples/fixtures/froakie-caterpie-seed.ttl \
   examples/slices/showdown-finals-game1-slice.ttl
 ```
 
 ### Acquire and transform replay corpora
 
-Fetch replay search/index pages:
-
 ```bash
+# Fetch search/index pages
 python3 -m pokemontology replay fetch-index \
-  --format gen9vgc2025reggbo3 \
-  --max-pages 3
-```
+  --format gen9vgc2025reggbo3 --max-pages 3
 
-Curate a competitive subset:
-
-```bash
+# Curate a competitive subset
 python3 -m pokemontology replay curate \
-  --format gen9vgc2025reggbo3 \
-  --min-rating 1600
-```
+  --format gen9vgc2025reggbo3 --min-rating 1600
 
-Fetch replay payloads:
-
-```bash
+# Fetch replay payloads, then transform to TTL
 python3 -m pokemontology replay fetch
-```
-
-Transform cached replays into TTL:
-
-```bash
-python3 -m pokemontology replay transform \
-  --output-dir build/replays
+python3 -m pokemontology replay transform --output-dir build/replays
 ```
 
 ### Ingest PokeAPI data
-
-Fetch and transform the cleanly mappable subset:
 
 ```bash
 python3 -m pokemontology pokeapi ingest \
@@ -148,21 +112,7 @@ python3 -m pokemontology pokeapi ingest \
   --output build/pokeapi.ttl
 ```
 
-Validate the result:
-
-```bash
-python3 -m pokemontology check-ttl build/pokeapi.ttl
-```
-
-Fair-use raw scraping is also available:
-
-```bash
-python3 scripts/ingest/pokeapi_scrape.py move \
-  --details \
-  --max-pages 1 \
-  --max-details 25 \
-  --delay-seconds 0.5
-```
+This emits type effectiveness, base typing, move properties (type, base power, accuracy, PP, priority), learnsets, and canonical entity definitions — all anchored to a synthetic `pkm:Ruleset_PokeAPI_Default` context node for current-gen data.
 
 ### Transform Veekun exports
 
@@ -172,74 +122,77 @@ python3 -m pokemontology veekun transform \
   --output build/veekun.ttl
 ```
 
-## External data policy
+## Querying
 
-External-source integrations in this repo follow a consistent contract:
+SPARQL query files live in `queries/`. Load `build/ontology.ttl` (or `build/pokeapi.ttl`) into any SPARQL 1.1 endpoint and run them, or use the live query engine on the public site.
 
-1. Acquire or cache source data without ontology assumptions
-2. Normalize it into a stable source-local format
-3. Transform only the subset that maps cleanly into pokemontology
+Notable query:
 
-All ingesters are expected to:
-- emit one `pkm:EvidenceArtifact` per upstream source
-- emit `pkm:ExternalEntityReference` nodes for local-to-upstream links
-- use `pkm:refersToEntity`, `pkm:describedByArtifact`, and `pkm:hasExternalIRI`
-- avoid `owl:sameAs` by default
-- emit contextual facts only when the source provides real context
-
-Shared helper code for this lives in `pokemontology/ingest_common.py`.
+**`queries/super_effective_moves.sparql`** — given a replay slice and PokeAPI data loaded together, returns which of your moves are super-effective against each revealed opponent, accounting for Tera type overrides. Requires `build/ontology.ttl` + `build/pokeapi.ttl` + a replay TTL slice as sources.
 
 ## Data source coverage
 
 ### PokeAPI
 
-PokeAPI is used for the subset that maps cleanly to canonical entities and version-group-scoped learnset facts.
+Mapping scope:
 
-Current mapping scope:
-- `pokemon-species` -> `pkm:Species`
-- `pokemon` -> `pkm:Variant`
-- `move` -> `pkm:Move`
-- `ability` -> `pkm:Ability`
-- `type` -> `pkm:Type`
-- `stat` -> `pkm:Stat`
-- `version-group` -> `pkm:VersionGroup` plus linked `pkm:Ruleset`
-- move learnsets -> `pkm:MoveLearnRecord`
+| PokeAPI resource | Ontology output |
+|-----------------|-----------------|
+| `pokemon-species` | `pkm:Species` |
+| `pokemon` | `pkm:Variant` + `pkm:TypingAssignment` |
+| `type` | `pkm:Type` + `pkm:TypeEffectivenessAssignment` |
+| `move` | `pkm:Move` + `pkm:MovePropertyAssignment` (type, base power, accuracy, PP, priority) |
+| `ability` | `pkm:Ability` |
+| `stat` | `pkm:Stat` |
+| `version-group` | `pkm:VersionGroup` + linked `pkm:Ruleset` |
+| *(learnsets)* | `pkm:MoveLearnRecord` |
 
-The transform intentionally does not emit contextual mechanics facts that PokeAPI exposes only as a current snapshot.
+Type effectiveness entries for neutral (×1.0) matchups are omitted — only super-effective (×2.0), not-very-effective (×0.5), and immune (×0.0) pairs are emitted, which is sufficient for the SPARQL queries.
 
 ### Veekun
 
-The Veekun pipeline is local-only and aimed at ontology areas where Veekun is stronger than PokeAPI, especially version-group-scoped mechanics.
+The Veekun pipeline is local-only and targets version-group-scoped mechanics not cleanly available from PokeAPI. Outputs include `pkm:TypingAssignment`, `pkm:AbilityAssignment`, `pkm:StatAssignment`, `pkm:MovePropertyAssignment`, `pkm:MoveLearnRecord`, and `pkm:TypeEffectivenessAssignment`.
 
-Targeted outputs include:
-- `pkm:TypingAssignment`
-- `pkm:AbilityAssignment`
-- `pkm:StatAssignment`
-- `pkm:MovePropertyAssignment`
-- `pkm:MoveLearnRecord`
-- `pkm:TypeEffectivenessAssignment`
+## External data policy
+
+External-source integrations follow a consistent contract:
+
+1. Acquire or cache source data without ontology assumptions
+2. Normalize to a stable source-local format
+3. Transform only the subset that maps cleanly into pokemontology
+
+All ingesters:
+- emit one `pkm:EvidenceArtifact` per upstream source
+- emit `pkm:ExternalEntityReference` nodes for local-to-upstream links
+- use `pkm:refersToEntity`, `pkm:describedByArtifact`, `pkm:hasExternalIRI`
+- avoid `owl:sameAs` by default
+- emit contextual facts only when the source provides real context
+
+Shared helper code lives in `pokemontology/ingest_common.py`.
 
 ## Repository layout
 
-```text
+```
 pokemontology/
-├── ontology/modules/      modular ontology source
+├── ontology/modules/      modular ontology source (OWL/Turtle)
 ├── shapes/modules/        SHACL source
 ├── build/                 generated consumer artifacts
-├── docs/                  GitHub Pages site and published TTL files
-├── examples/              fixtures, replay JSON, and example slices
+├── docs/                  GitHub Pages site, published TTL, and query engine
+├── examples/              fixtures, replay JSON, example slices
+├── queries/               SPARQL query files
 ├── scripts/build/         build and validation scripts
-├── scripts/ingest/        external data acquisition and transform scripts
-├── scripts/replay/        replay parsing and replay-dataset tooling
+├── scripts/ingest/        external data acquisition and transform
+├── scripts/replay/        replay parsing and dataset tooling
 └── tests/                 regression coverage
 ```
 
 ## Notes
 
-- The built ontology is generated from the modular sources under `ontology/modules/`.
-- The published Pages site is refreshed by `python3 -m pokemontology build`.
-- Replay-backed slices are still partial reconstructions, not dense full-state captures of every battle fact.
+- The built ontology is assembled from `ontology/modules/` by `python3 -m pokemontology build`.
+- Replay-backed TTL slices are partial reconstructions from the observable replay log — they do not capture hidden information or dense full-state snapshots.
+- Each `BattleParticipant` in a replay slice carries a `pkm:representsSpecies` link so it can be joined against PokeAPI-derived type data in SPARQL queries.
+- Terastallized `TransformationState` individuals carry a `pkm:hasTeraType` link used by the super-effective move query.
 
 ## License
 
-This repository is licensed under the MIT License. See `LICENSE`.
+MIT License. See `LICENSE`.
