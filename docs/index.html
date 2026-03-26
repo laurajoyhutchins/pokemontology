@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Pokemontology</title>
-  <meta name="description" content="Public landing page for the Pokemontology namespace, validation shapes, replay tooling, and ingestion pipelines.">
+  <meta name="description" content="Pokemontology is an OWL and SHACL project for Pokemon battle mechanics, replay parsing, and provenance-aware data pipelines.">
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
@@ -26,6 +26,9 @@
           <a href="./repo-structure.md">Repo Structure</a>
           <a href="./roadmap.md">Roadmap</a>
         </nav>
+        <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false" aria-label="Toggle dark mode">
+          <span data-theme-label>Dark</span>
+        </button>
       </div>
     </div>
   </header>
@@ -34,12 +37,12 @@
     <section class="hero">
       <div class="site-shell hero-grid">
         <div class="hero-copy fade-up">
-          <p class="eyebrow">Public Namespace + Data Tooling</p>
-          <h1>Replay-backed mechanics, published as a real public ontology.</h1>
+          <p class="eyebrow">Ontology, Shapes, and Tools</p>
+          <h1>A battle mechanics ontology built from actual replay data.</h1>
           <p>
-            Pokemontology models Pokemon battles as explicit state transitions with OWL semantics,
-            SHACL validation, replay-derived event structure, and provenance-aware ingestion from
-            external sources.
+            Pokemontology treats a battle as a sequence of explicit states, actions, and events.
+            The project publishes an OWL ontology, a SHACL validation layer, replay tooling, and
+            data pipelines for external sources.
           </p>
           <div class="hero-actions">
             <a class="button button-primary" href="./ontology.ttl">Open ontology.ttl</a>
@@ -70,7 +73,7 @@
           <p class="panel-kicker">Namespace</p>
           <div class="artifact-stack" data-artifacts></div>
           <p class="lede">
-            Pages base URL:
+            Base URL:
             <code data-pages-base-url>https://laurajoyhutchins.github.io/pokemontology/</code>
           </p>
           <p class="lede" data-site-error hidden></p>
@@ -82,34 +85,33 @@
       <div class="site-shell section-grid">
         <div class="panel fade-up">
           <div class="section-head">
-            <h2>What is published here</h2>
+            <h2>What lives here</h2>
           </div>
           <p>
-            The GitHub Pages site is not just documentation. It is the canonical public namespace for
-            the built ontology and the SHACL constraints used to validate replay slices, save-state
-            data, and source ingests.
+            This Pages site is the published face of the project. It hosts the canonical ontology,
+            the validation shapes, and the links you need to inspect or build against the graph.
           </p>
           <div class="highlights">
             <div class="highlight">
-              <strong>Stable namespace</strong>
-              <p>Both ontology and shapes resolve under the same public Pages base, so IRIs and downloadable artifacts stay aligned.</p>
+              <strong>One public namespace</strong>
+              <p>Ontology IRIs and downloadable artifacts resolve from the same base, so the published graph stays coherent.</p>
             </div>
             <div class="highlight">
-              <strong>Build-driven publication</strong>
-              <p>The published TTL files are generated from modular sources in the repository, then copied into this site during the build.</p>
+              <strong>Built from source</strong>
+              <p>The `.ttl` files here are generated from the modular sources in the repository, not maintained by hand.</p>
             </div>
             <div class="highlight">
-              <strong>Operational validation</strong>
-              <p>SHACL constraints are part of the published contract, not an internal afterthought.</p>
+              <strong>Validation is part of the contract</strong>
+              <p>The SHACL layer is published alongside the ontology because the project cares about usable, checkable data.</p>
             </div>
           </div>
         </div>
         <div class="callout fade-up delay-1">
-          <h2>Quick Start</h2>
-          <p>Rebuild the ontology and refresh the Pages artifacts locally with:</p>
+          <h2>Quick start</h2>
+          <p>Rebuild the ontology and refresh the Pages artifacts with:</p>
           <pre><code>python3 -m pokemontology build</code></pre>
           <p>
-            That updates <code>build/ontology.ttl</code>, <code>build/shapes.ttl</code>, and the
+            This updates <code>build/ontology.ttl</code>, <code>build/shapes.ttl</code>, and the
             published copies under <code>docs/</code>.
           </p>
         </div>
@@ -120,7 +122,7 @@
       <div class="site-shell">
         <div class="section-head">
           <h2>Ontology Modules</h2>
-          <p class="lede">The public bundle is assembled from the authoring modules below.</p>
+          <p class="lede">The published bundle is assembled from these source modules.</p>
         </div>
         <div class="module-list" data-modules></div>
       </div>
@@ -129,8 +131,8 @@
     <section class="section" id="examples">
       <div class="site-shell">
         <div class="section-head">
-          <h2>Examples Gallery</h2>
-          <p class="lede">Representative source and output files that anchor the ontology in concrete data.</p>
+          <h2>Examples</h2>
+          <p class="lede">A few concrete files from the repo: replay input, test fixtures, and generated slices.</p>
         </div>
         <div class="example-list" data-examples></div>
       </div>
@@ -140,7 +142,7 @@
       <div class="site-shell">
         <div class="section-head">
           <h2>Data Pipelines</h2>
-          <p class="lede">External data is staged through explicit acquisition, normalization, and ontology transforms.</p>
+          <p class="lede">Source data comes in through staged acquisition, normalization, and ontology transforms.</p>
         </div>
         <div class="pipeline-list" data-pipelines></div>
       </div>
@@ -150,7 +152,7 @@
   <footer class="footer">
     <div class="site-shell footer-shell">
       <div>
-        Pokemontology is published from the same repository that defines the ontology, shapes, replay tooling, and ingest pipelines.
+        The same repository defines the ontology, the shapes, the replay tooling, and the ingest pipelines.
       </div>
       <div>
         <a href="https://github.com/laurajoyhutchins/pokemontology">GitHub</a>

@@ -1,9 +1,44 @@
+const THEME_STORAGE_KEY = "pokemontology-theme";
+
 async function loadSiteData() {
   const response = await fetch("./site-data.json", { cache: "no-store" });
   if (!response.ok) {
     throw new Error(`Failed to load site-data.json: ${response.status}`);
   }
   return response.json();
+}
+
+function applyTheme(theme) {
+  const root = document.documentElement;
+  const toggle = document.querySelector("[data-theme-toggle]");
+  const label = document.querySelector("[data-theme-label]");
+  root.dataset.theme = theme;
+  if (toggle) {
+    const pressed = theme === "dark";
+    toggle.setAttribute("aria-pressed", String(pressed));
+  }
+  if (label) {
+    label.textContent = theme === "dark" ? "Light" : "Dark";
+  }
+}
+
+function resolvedInitialTheme() {
+  const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
+  if (stored === "light" || stored === "dark") {
+    return stored;
+  }
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
+function setupThemeToggle() {
+  applyTheme(resolvedInitialTheme());
+  const toggle = document.querySelector("[data-theme-toggle]");
+  if (!toggle) return;
+  toggle.addEventListener("click", () => {
+    const nextTheme = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+    window.localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+    applyTheme(nextTheme);
+  });
 }
 
 function renderArtifacts(artifacts) {
@@ -98,6 +133,7 @@ function renderError(error) {
 }
 
 async function main() {
+  setupThemeToggle();
   try {
     const data = await loadSiteData();
     renderArtifacts(data.artifacts);
