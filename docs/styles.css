@@ -1,5 +1,7 @@
 :root {
   color-scheme: light;
+  --font-ui: "Lucida Console", "Courier New", "IBM Plex Mono", monospace;
+  --font-body: "Lucida Console", "Courier New", "IBM Plex Mono", monospace;
   --bg: #e8deb0;
   --bg-top: #f3e9bf;
   --paper: rgba(235, 228, 181, 0.92);
@@ -68,7 +70,7 @@ html {
 body {
   margin: 0;
   color: var(--ink);
-  font-family: "Trebuchet MS", "Verdana", sans-serif;
+  font-family: var(--font-body);
   background:
     radial-gradient(circle at top left, var(--glow-teal), transparent 28rem),
     radial-gradient(circle at 85% 15%, var(--glow-gold), transparent 24rem),
@@ -102,7 +104,7 @@ a:hover {
 
 code,
 pre {
-  font-family: "Courier New", "IBM Plex Mono", monospace;
+  font-family: var(--font-ui);
 }
 
 .site-shell {
@@ -134,7 +136,8 @@ pre {
   border: 2px solid var(--line);
   background: var(--control-bg);
   color: var(--ink);
-  font: inherit;
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
   font-weight: 700;
   cursor: pointer;
   text-transform: uppercase;
@@ -171,6 +174,7 @@ pre {
 .brand-copy strong {
   display: block;
   font-size: 1rem;
+  font-family: var(--font-ui);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -193,6 +197,7 @@ pre {
   text-decoration: none;
   color: var(--ink);
   font-size: 0.84rem;
+  font-family: var(--font-ui);
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -234,7 +239,7 @@ pre {
 
 .hero h1 {
   margin: 0;
-  font-family: "Trebuchet MS", "Verdana", sans-serif;
+  font-family: var(--font-ui);
   font-size: clamp(2.6rem, 7vw, 4.8rem);
   line-height: 0.95;
   letter-spacing: -0.03em;
@@ -264,6 +269,8 @@ pre {
   padding: 0.7rem 1.15rem;
   border-radius: 999px;
   text-decoration: none;
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
   font-weight: 700;
   border: 2px solid var(--line);
   text-transform: uppercase;
@@ -318,6 +325,7 @@ pre {
 
 .panel-kicker {
   font-size: 0.82rem;
+  font-family: var(--font-ui);
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--rust);
@@ -347,6 +355,7 @@ pre {
 .callout h2 {
   margin: 0 0 0.55rem;
   font-size: 1.02rem;
+  font-family: var(--font-ui);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -383,16 +392,18 @@ pre {
   background:
     repeating-linear-gradient(
       -45deg,
-      rgba(194, 142, 49, 0.22),
-      rgba(194, 142, 49, 0.22) 12px,
-      rgba(154, 74, 45, 0.14) 12px,
-      rgba(154, 74, 45, 0.14) 24px
+      rgba(194, 142, 49, 0.08),
+      rgba(194, 142, 49, 0.08) 10px,
+      rgba(154, 74, 45, 0.04) 10px,
+      rgba(154, 74, 45, 0.04) 20px
     ),
-    var(--panel);
+    linear-gradient(180deg, rgba(247, 241, 201, 0.98), rgba(235, 228, 181, 0.98));
   color: var(--ink);
   box-shadow: var(--shadow);
+  font-family: var(--font-ui);
   font-size: 1rem;
   line-height: 1.55;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
 .warning-banner strong {
@@ -414,7 +425,7 @@ pre {
   margin: 0;
   font-size: clamp(1.7rem, 4vw, 2.3rem);
   line-height: 1;
-  font-family: "Trebuchet MS", "Verdana", sans-serif;
+  font-family: var(--font-ui);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -494,6 +505,19 @@ pre {
 :root[data-theme="dark"] .brand-mark {
   color: #0d180d;
   background: linear-gradient(180deg, #c9e56d, #7a9a3f);
+}
+
+:root[data-theme="dark"] .warning-banner {
+  background:
+    repeating-linear-gradient(
+      -45deg,
+      rgba(243, 166, 95, 0.08),
+      rgba(243, 166, 95, 0.08) 10px,
+      rgba(155, 176, 106, 0.04) 10px,
+      rgba(155, 176, 106, 0.04) 20px
+    ),
+    linear-gradient(180deg, rgba(46, 67, 39, 0.98), rgba(27, 44, 29, 0.98));
+  text-shadow: none;
 }
 
 :root[data-theme="dark"] .example-kind {
