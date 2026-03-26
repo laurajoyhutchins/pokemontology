@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from fractions import Fraction
 from itertools import product
 from pathlib import Path
 from types import MappingProxyType
+from typing import Callable
 
 from rdflib import Graph, Literal, Namespace
 from rdflib.namespace import RDF
@@ -105,6 +106,33 @@ class MechanicsData:
 
 
 @dataclass(frozen=True)
+class OrderContext:
+    weather: str | None
+    terrain: str | None
+
+
+@dataclass(frozen=True)
+class SpeedModifierRule:
+    apply: Callable[[CombatantOrderInput, OrderContext], Fraction]
+    item_names: frozenset[str] = field(default_factory=frozenset)
+    ability_names: frozenset[str] = field(default_factory=frozenset)
+    status_names: frozenset[str] = field(default_factory=frozenset)
+
+
+@dataclass(frozen=True)
+class PriorityBonusRule:
+    apply: Callable[[CombatantOrderInput], int]
+    ability_names: frozenset[str] = field(default_factory=frozenset)
+
+
+@dataclass(frozen=True)
+class ForcedLastRule:
+    apply: Callable[[CombatantOrderInput], bool]
+    item_names: frozenset[str] = field(default_factory=frozenset)
+    ability_names: frozenset[str] = field(default_factory=frozenset)
+
+
+@dataclass(frozen=True)
 class CombatantOrderInput:
     side: str
     speed_tier: int
@@ -155,48 +183,195 @@ class CombatantOrderInput:
 
     def derived_move_priority(self) -> int:
         priority = self.move_priority
-        ability = self.normalized_ability
-        if ability == "prankster" and self.normalized_move_category == "status":
-            priority += MOVE_PRIORITY_ABILITIES[ability]["status"]
-        if (
-            ability == "gale wings"
-            and self.at_full_hp
-            and self.normalized_move_type == "flying"
-        ):
-            priority += MOVE_PRIORITY_ABILITIES[ability]["flying"]
-        if ability == "triage" and "healing" in self.normalized_move_tags:
-            priority += MOVE_PRIORITY_ABILITIES[ability]["healing"]
+        for rule in PRIORITY_BONUS_RULES:
+            priority += rule.apply(self)
         return priority
 
     def speed_multiplier(self, weather: str | None, terrain: str | None) -> Fraction:
+        context = OrderContext(weather=weather, terrain=terrain)
         multiplier = SPEED_STAGE_MULTIPLIERS[self.speed_stage]
-        ability = self.normalized_ability
-        status = self.normalized_status
-        if ability == "quick feet" and status is not None:
-            multiplier *= STATUS_SPEED_ABILITIES[ability]
-        elif status in STATUS_SPEED_MULTIPLIERS:
-            multiplier *= STATUS_SPEED_MULTIPLIERS[status]
-        if self.tailwind:
-            multiplier *= 2
-        item = self.normalized_item
-        if item in ITEM_SPEED_MULTIPLIERS:
-            multiplier *= ITEM_SPEED_MULTIPLIERS[item]
-        if ability in WEATHER_SPEED_ABILITIES:
-            expected_weather, weather_multiplier = WEATHER_SPEED_ABILITIES[ability]
-            if weather == expected_weather:
-                multiplier *= weather_multiplier
-        if ability in TERRAIN_SPEED_ABILITIES:
-            expected_terrain, terrain_multiplier = TERRAIN_SPEED_ABILITIES[ability]
-            if terrain == expected_terrain:
-                multiplier *= terrain_multiplier
-        if ability in CONDITIONAL_SPEED_ABILITIES and self.unburden_active:
-            multiplier *= CONDITIONAL_SPEED_ABILITIES[ability]
-        if ability in ACTIVE_DEBUFF_ABILITIES and self.slow_start_active:
-            multiplier *= ACTIVE_DEBUFF_ABILITIES[ability]
+        for rule in SPEED_MODIFIER_RULES:
+            multiplier *= rule.apply(self, context)
         return multiplier
 
     def effective_speed(self, weather: str | None, terrain: str | None) -> Fraction:
         return Fraction(self.speed_tier) * self.speed_multiplier(weather, terrain)
+
+
+def _status_speed_rule(
+    combatant: CombatantOrderInput, _context: OrderContext
+) -> Fraction:
+    ability = combatant.normalized_ability
+    status = combatant.normalized_status
+    if ability == "quick feet" and status is not None:
+        return STATUS_SPEED_ABILITIES[ability]
+    if status in STATUS_SPEED_MULTIPLIERS:
+        return STATUS_SPEED_MULTIPLIERS[status]
+    return Fraction(1, 1)
+
+
+def _tailwind_speed_rule(
+    combatant: CombatantOrderInput, _context: OrderContext
+) -> Fraction:
+    return Fraction(2, 1) if combatant.tailwind else Fraction(1, 1)
+
+
+def _item_speed_rule(
+    combatant: CombatantOrderInput, _context: OrderContext
+) -> Fraction:
+    return ITEM_SPEED_MULTIPLIERS.get(combatant.normalized_item, Fraction(1, 1))
+
+
+def _weather_speed_ability_rule(
+    combatant: CombatantOrderInput, context: OrderContext
+) -> Fraction:
+    ability = combatant.normalized_ability
+    if ability not in WEATHER_SPEED_ABILITIES:
+        return Fraction(1, 1)
+    expected_weather, multiplier = WEATHER_SPEED_ABILITIES[ability]
+    return multiplier if context.weather == expected_weather else Fraction(1, 1)
+
+
+def _terrain_speed_ability_rule(
+    combatant: CombatantOrderInput, context: OrderContext
+) -> Fraction:
+    ability = combatant.normalized_ability
+    if ability not in TERRAIN_SPEED_ABILITIES:
+        return Fraction(1, 1)
+    expected_terrain, multiplier = TERRAIN_SPEED_ABILITIES[ability]
+    return multiplier if context.terrain == expected_terrain else Fraction(1, 1)
+
+
+def _conditional_speed_ability_rule(
+    combatant: CombatantOrderInput, _context: OrderContext
+) -> Fraction:
+    ability = combatant.normalized_ability
+    if ability in CONDITIONAL_SPEED_ABILITIES and combatant.unburden_active:
+        return CONDITIONAL_SPEED_ABILITIES[ability]
+    return Fraction(1, 1)
+
+
+def _active_debuff_ability_rule(
+    combatant: CombatantOrderInput, _context: OrderContext
+) -> Fraction:
+    ability = combatant.normalized_ability
+    if ability in ACTIVE_DEBUFF_ABILITIES and combatant.slow_start_active:
+        return ACTIVE_DEBUFF_ABILITIES[ability]
+    return Fraction(1, 1)
+
+
+def _prankster_priority_rule(combatant: CombatantOrderInput) -> int:
+    if (
+        combatant.normalized_ability == "prankster"
+        and combatant.normalized_move_category == "status"
+    ):
+        return MOVE_PRIORITY_ABILITIES["prankster"]["status"]
+    return 0
+
+
+def _gale_wings_priority_rule(combatant: CombatantOrderInput) -> int:
+    if (
+        combatant.normalized_ability == "gale wings"
+        and combatant.at_full_hp
+        and combatant.normalized_move_type == "flying"
+    ):
+        return MOVE_PRIORITY_ABILITIES["gale wings"]["flying"]
+    return 0
+
+
+def _triage_priority_rule(combatant: CombatantOrderInput) -> int:
+    if (
+        combatant.normalized_ability == "triage"
+        and "healing" in combatant.normalized_move_tags
+    ):
+        return MOVE_PRIORITY_ABILITIES["triage"]["healing"]
+    return 0
+
+
+def _forced_last_item_rule(combatant: CombatantOrderInput) -> bool:
+    return combatant.normalized_item in FORCED_LAST_ITEMS
+
+
+def _forced_last_ability_rule(combatant: CombatantOrderInput) -> bool:
+    return combatant.normalized_ability in FORCED_LAST_ABILITIES
+
+
+SPEED_MODIFIER_RULES = (
+    SpeedModifierRule(
+        apply=_status_speed_rule,
+        ability_names=frozenset(STATUS_SPEED_ABILITIES),
+        status_names=frozenset(STATUS_SPEED_MULTIPLIERS),
+    ),
+    SpeedModifierRule(apply=_tailwind_speed_rule),
+    SpeedModifierRule(
+        apply=_item_speed_rule,
+        item_names=frozenset(ITEM_SPEED_MULTIPLIERS),
+    ),
+    SpeedModifierRule(
+        apply=_weather_speed_ability_rule,
+        ability_names=frozenset(WEATHER_SPEED_ABILITIES),
+    ),
+    SpeedModifierRule(
+        apply=_terrain_speed_ability_rule,
+        ability_names=frozenset(TERRAIN_SPEED_ABILITIES),
+    ),
+    SpeedModifierRule(
+        apply=_conditional_speed_ability_rule,
+        ability_names=frozenset(CONDITIONAL_SPEED_ABILITIES),
+    ),
+    SpeedModifierRule(
+        apply=_active_debuff_ability_rule,
+        ability_names=frozenset(ACTIVE_DEBUFF_ABILITIES),
+    ),
+)
+
+PRIORITY_BONUS_RULES = (
+    PriorityBonusRule(
+        apply=_prankster_priority_rule,
+        ability_names=frozenset({"prankster"}),
+    ),
+    PriorityBonusRule(
+        apply=_gale_wings_priority_rule,
+        ability_names=frozenset({"gale wings"}),
+    ),
+    PriorityBonusRule(
+        apply=_triage_priority_rule,
+        ability_names=frozenset({"triage"}),
+    ),
+)
+
+FORCED_LAST_RULES = (
+    ForcedLastRule(
+        apply=_forced_last_item_rule,
+        item_names=frozenset(FORCED_LAST_ITEMS),
+    ),
+    ForcedLastRule(
+        apply=_forced_last_ability_rule,
+        ability_names=frozenset(FORCED_LAST_ABILITIES),
+    ),
+)
+
+SUPPORTED_ITEM_VALUES = frozenset(
+    QUICK_CLAW_ITEMS
+    | {
+        item
+        for rule in SPEED_MODIFIER_RULES + FORCED_LAST_RULES
+        for item in getattr(rule, "item_names", frozenset())
+    }
+)
+SUPPORTED_ABILITY_VALUES = frozenset(
+    {
+        ability
+        for rule in SPEED_MODIFIER_RULES + PRIORITY_BONUS_RULES + FORCED_LAST_RULES
+        for ability in getattr(rule, "ability_names", frozenset())
+    }
+)
+SUPPORTED_STATUS_VALUES = frozenset(
+    {status for rule in SPEED_MODIFIER_RULES for status in rule.status_names}
+)
+SUPPORTED_MOVE_PRIORITY_ABILITIES = frozenset(
+    {ability for rule in PRIORITY_BONUS_RULES for ability in rule.ability_names}
+)
 
 
 def _normalize_optional_string(
@@ -545,12 +720,7 @@ def _validate_payload(
 
 
 def _forced_last_group(combatant: CombatantOrderInput) -> int:
-    return (
-        1
-        if combatant.normalized_item in FORCED_LAST_ITEMS
-        or combatant.normalized_ability in FORCED_LAST_ABILITIES
-        else 0
-    )
+    return 1 if any(rule.apply(combatant) for rule in FORCED_LAST_RULES) else 0
 
 
 def _quick_claw_probability(
@@ -636,30 +806,21 @@ def resolve_action_order(payload: dict) -> dict:
     item_values = (combatants[0].normalized_item, combatants[1].normalized_item)
     supported_items, ignored_items = _sorted_membership(
         item_values,
-        set(ITEM_SPEED_MULTIPLIERS) | FORCED_LAST_ITEMS | QUICK_CLAW_ITEMS,
+        set(SUPPORTED_ITEM_VALUES),
     )
     ability_values = (
         combatants[0].normalized_ability,
         combatants[1].normalized_ability,
     )
-    supported_ability_values = (
-        set(WEATHER_SPEED_ABILITIES)
-        | set(TERRAIN_SPEED_ABILITIES)
-        | set(STATUS_SPEED_ABILITIES)
-        | set(CONDITIONAL_SPEED_ABILITIES)
-        | set(ACTIVE_DEBUFF_ABILITIES)
-        | FORCED_LAST_ABILITIES
-        | set(MOVE_PRIORITY_ABILITIES)
-    )
     supported_abilities, ignored_abilities = _sorted_membership(
-        ability_values, supported_ability_values
+        ability_values, set(SUPPORTED_ABILITY_VALUES)
     )
     status_values = (combatants[0].normalized_status, combatants[1].normalized_status)
     supported_statuses, ignored_statuses = _sorted_membership(
-        status_values, set(STATUS_SPEED_MULTIPLIERS)
+        status_values, set(SUPPORTED_STATUS_VALUES)
     )
     supported_move_priority_abilities, _ = _sorted_membership(
-        ability_values, set(MOVE_PRIORITY_ABILITIES)
+        ability_values, set(SUPPORTED_MOVE_PRIORITY_ABILITIES)
     )
 
     branches: list[dict] = []
