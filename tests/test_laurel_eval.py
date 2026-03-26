@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
-import json
-
 from pokemontology import cli
 from pokemontology.laurel_eval import EvalConfig, evaluate_suite
+from tests._laurel_support import (
+    write_charizard_fire_source,
+    write_dense_schema_index,
+    write_eval_suite,
+)
 
 
 def test_evaluate_suite_marks_mechanics_as_partial_when_query_is_generated(
@@ -61,50 +64,19 @@ def test_evaluate_suite_pipeline_mode_scores_answer(
 ) -> None:
     suite_path = tmp_path / "suite.json"
     source_path = tmp_path / "source.ttl"
-    suite_path.write_text(
-        json.dumps(
-            {
-                "tiers": [
-                    {
-                        "tier": "custom",
-                        "items": [
-                            {
-                                "id": "custom-fire",
-                                "category": "custom",
-                                "question": "Is Charizard a Fire type?",
-                                "expected_answer": "Yes. Charizard is Fire type.",
-                                "answer_type": "boolean",
-                                "sources": [{"url": "https://example.test"}],
-                            }
-                        ],
-                    }
-                ],
-                "adversarial": [],
-            }
-        ),
-        encoding="utf-8",
+    write_eval_suite(
+        suite_path,
+        tier="custom",
+        item={
+            "id": "custom-fire",
+            "category": "custom",
+            "question": "Is Charizard a Fire type?",
+            "expected_answer": "Yes. Charizard is Fire type.",
+            "answer_type": "boolean",
+            "sources": [{"url": "https://example.test"}],
+        },
     )
-    source_path.write_text(
-        """
-@prefix pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#> .
-@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-
-pkm:Species_charizard a pkm:Species ;
-    rdfs:label "Charizard" .
-
-pkm:Variant_charizard a pkm:Variant ;
-    pkm:belongsToSpecies pkm:Species_charizard .
-
-pkm:Type_fire a pkm:Type ;
-    rdfs:label "Fire" .
-
-pkm:TypingAssignment_charizard_fire a pkm:TypingAssignment ;
-    pkm:aboutVariant pkm:Variant_charizard ;
-    pkm:aboutType pkm:Type_fire .
-""".strip()
-        + "\n",
-        encoding="utf-8",
-    )
+    write_charizard_fire_source(source_path)
     monkeypatch.setattr(
         "pokemontology.laurel_eval.generate_sparql",
         lambda *args, **kwargs: """PREFIX pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#>
@@ -148,22 +120,16 @@ def test_evaluate_laurel_cli_pipeline_requires_sources(capsys) -> None:
 
 def test_evaluate_suite_uses_schema_index_matches(monkeypatch: object, tmp_path) -> None:
     schema_index = tmp_path / "schema-index.json"
-    schema_index.write_text(
-        json.dumps(
-            {
-                "vocabulary": ["charizard", "fire", "type"],
-                "vectors": [[1, 1, 1]],
-                "items": [
-                    {
-                        "label": "Charizard typing",
-                        "kind": "pattern",
-                        "summary": "Resolve a species typing fact.",
-                        "snippet": "Is Charizard a Fire type?",
-                    }
-                ],
-            }
-        ),
-        encoding="utf-8",
+    write_dense_schema_index(
+        schema_index,
+        vocabulary=["charizard", "fire", "type"],
+        vector=[1, 1, 1],
+        item={
+            "label": "Charizard typing",
+            "kind": "pattern",
+            "summary": "Resolve a species typing fact.",
+            "snippet": "Is Charizard a Fire type?",
+        },
     )
 
     captured_matches: list[dict[str, object]] | None = None

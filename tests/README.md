@@ -8,3 +8,5 @@ Suggested initial tests:
 - faint events imply post-state HP = 0 where modeled
 - materialized stat stage uniqueness per participant/stat/instant
 - PokeAPI ingestion expands linked resources and serializes valid TTL from cached payloads
+
+Laurel-specific fixture builders used by the CLI and evaluation harness tests live in `tests/_laurel_support.py`.
