@@ -133,6 +133,7 @@ def test_parse_log_skips_pre_turn_lines() -> None:
 def test_parse_log_keeps_supported_state_events() -> None:
     log = """|turn|1
 |weather|SunnyDay|[upkeep]
+|upkeep
 |drag|p2a: Mewtwo|Mewtwo, L50|100/100
 |move|p1a: Charizard|Flamethrower|p2a: Mewtwo
 |-damage|p2a: Mewtwo|100/200
@@ -151,6 +152,7 @@ def test_parse_log_keeps_supported_state_events() -> None:
     events = parse_log(log)
     kinds = [ev.kind for ev in events]
     assert kinds == [
+        "upkeep",
         "drag",
         "move",
         "-damage",

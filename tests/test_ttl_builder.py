@@ -262,6 +262,53 @@ def test_builder_distinguishes_declared_and_resolved_targets_under_redirection()
     )
 
 
+def test_builder_emits_multiple_resolution_nodes_for_multi_hit_moves() -> None:
+    payload = {
+        "id": "synthetic-multihit",
+        "format": "[Gen 9] Custom Game",
+        "players": ["Alice", "Bob"],
+        "log": "\n".join([
+            "|turn|1",
+            "|switch|p1a: Urshifu|Urshifu-Rapid-Strike, L50|100/100",
+            "|switch|p2a: Tyranitar|Tyranitar, L50|100/100",
+            "|move|p1a: Urshifu|Surging Strikes|p2a: Tyranitar",
+            "|-damage|p2a: Tyranitar|80/100",
+            "|-damage|p2a: Tyranitar|60/100",
+            "|-damage|p2a: Tyranitar|40/100",
+        ]),
+    }
+    graph = build_graph(payload)
+
+    resolutions = [
+        resolution
+        for resolution in graph.subjects(RDF.type, PKM.TargetResolutionState)
+        if (resolution, PKM.aboutTarget, PKM.Combatant_Bob_Tyranitar) in graph
+        and (resolution, PKM.hasResolutionOutcome, Literal("resolved")) in graph
+    ]
+    assert len(resolutions) == 3
+
+
+def test_upkeep_breaks_action_causality_for_residual_healing() -> None:
+    payload = {
+        "id": "synthetic-upkeep-residual",
+        "format": "[Gen 9] Custom Game",
+        "players": ["Alice", "Bob"],
+        "log": "\n".join([
+            "|turn|1",
+            "|switch|p1a: Bulbasaur|Bulbasaur, L50|100/100",
+            "|switch|p2a: Squirtle|Squirtle, L50|100/100",
+            "|move|p1a: Bulbasaur|Tackle|p2a: Squirtle",
+            "|-damage|p2a: Squirtle|90/100",
+            "|upkeep",
+            "|-heal|p1a: Bulbasaur|100/100|[from] Grassy Terrain",
+        ]),
+    }
+    graph = build_graph(payload)
+
+    heal_event = next(graph.subjects(RDF.type, PKM.HealingEvent))
+    assert not list(graph.objects(heal_event, PKM.causedByAction))
+
+
 def test_builder_uses_only_declared_pkm_predicates(replay_graph: Graph, ontology_graph: Graph) -> None:
     declared = {
         predicate

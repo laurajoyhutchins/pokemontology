@@ -24,6 +24,7 @@ SUPPORTED_EVENT_TAGS = {
     "replace",
     "detailschange",
     "move",
+    "upkeep",
     "faint",
     "-damage",
     "-heal",

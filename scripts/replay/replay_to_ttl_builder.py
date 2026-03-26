@@ -83,6 +83,7 @@ class ActionExecutionContext:
     failed_targets: set[URIRef] = field(default_factory=set)
     aborted_targets: set[URIRef] = field(default_factory=set)
     redirected_from_targets: set[URIRef] = field(default_factory=set)
+    hit_counts_by_target: dict[URIRef, int] = field(default_factory=dict)
 
 
 def combatant_iri_for_token(token: str, p1_name: str, p2_name: str) -> URIRef:
@@ -169,10 +170,10 @@ def target_iris_for_tokens(
     return targets
 
 
-def resolution_iri_for(action_iri: URIRef, target_iri: URIRef, outcome: str) -> URIRef:
+def resolution_iri_for(action_iri: URIRef, target_iri: URIRef, outcome: str, occurrence: int) -> URIRef:
     action_name = str(action_iri).rsplit("#", 1)[-1]
     target_name = str(target_iri).rsplit("#", 1)[-1]
-    return PKM[f"Resolution_{action_name}_{target_name}_{sanitize_identifier(outcome)}"]
+    return PKM[f"Resolution_{action_name}_{target_name}_{sanitize_identifier(outcome)}_N{occurrence}"]
 
 
 def emit_target_resolution(
@@ -184,8 +185,9 @@ def emit_target_resolution(
     artifact_iri: URIRef,
     turn: int,
     order: int,
+    occurrence: int = 1,
 ) -> URIRef:
-    resolution_iri = resolution_iri_for(action_iri, target_iri, outcome)
+    resolution_iri = resolution_iri_for(action_iri, target_iri, outcome, occurrence)
     g.set((resolution_iri, RDF.type, PKM.TargetResolutionState))
     g.set((resolution_iri, PKM.aboutAction, action_iri))
     g.set((resolution_iri, PKM.aboutTarget, target_iri))
@@ -226,6 +228,15 @@ def finalize_action_context(
             continue
         emit_target_resolution(g, context.action_iri, target_iri, instant, "resolved", artifact_iri, turn, order)
         context.resolved_targets.add(target_iri)
+
+
+def should_attribute_minor_event_to_action(current_action: ActionExecutionContext | None, fields: list[str]) -> bool:
+    if current_action is None:
+        return False
+    source_annotation = annotation_value(fields, "from")
+    if source_annotation is None:
+        return True
+    return source_annotation.startswith("item: Life Orb") or source_annotation == "Recoil"
 
 
 def parse_hp_value(hp_status: str) -> int | None:
@@ -360,6 +371,11 @@ def build_graph(payload: dict) -> Graph:
     for idx, ev in enumerate(events):
         instant = PKM[f"I_{idx}"]
 
+        if ev.kind == "upkeep":
+            finalize_action_context(g, current_action, instant, artifact_iri, ev.turn, ev.order)
+            current_action = None
+            continue
+
         if ev.kind in {"switch", "drag", "replace"}:
             finalize_action_context(g, current_action, instant, artifact_iri, ev.turn, ev.order)
             current_action = None
@@ -489,11 +505,12 @@ def build_graph(payload: dict) -> Graph:
             g.add((event_iri, PKM.hasReplayEventOrder, Literal(ev.order, datatype=XSD.integer)))
             g.add((event_iri, PKM.hasReplayStepLabel, Literal(f"{ev.kind[1:]}-t{ev.turn}-e{ev.order}")))
             g.add((event_iri, PKM.supportedByArtifact, artifact_iri))
-            if current_action is not None:
+            if should_attribute_minor_event_to_action(current_action, ev.fields[2:]):
                 mark_redirection(current_action, combatant_iri)
                 g.add((event_iri, PKM.causedByAction, current_action.action_iri))
-            if current_action is not None:
+            if should_attribute_minor_event_to_action(current_action, ev.fields[2:]):
                 if combatant_iri != current_action.actor_iri:
+                    current_action.hit_counts_by_target[combatant_iri] = current_action.hit_counts_by_target.get(combatant_iri, 0) + 1
                     emit_target_resolution(
                         g,
                         current_action.action_iri,
@@ -503,6 +520,7 @@ def build_graph(payload: dict) -> Graph:
                         artifact_iri,
                         ev.turn,
                         ev.order,
+                        current_action.hit_counts_by_target[combatant_iri],
                     )
                     current_action.resolved_targets.add(combatant_iri)
 
@@ -558,8 +576,10 @@ def build_graph(payload: dict) -> Graph:
                     artifact_iri,
                     ev.turn,
                     ev.order,
+                    1 if current_action is None else current_action.hit_counts_by_target.get(combatant_iri, 0) + 1,
                 )
                 if current_action is not None and causing_action == current_action.action_iri:
+                    current_action.hit_counts_by_target[combatant_iri] = current_action.hit_counts_by_target.get(combatant_iri, 0) + 1
                     current_action.resolved_targets.add(combatant_iri)
 
             g.add((assignment_iri, RDF.type, PKM.CurrentStatusAssignment))
@@ -741,18 +761,6 @@ def build_graph(payload: dict) -> Graph:
             if combatant_iri is None or current_action is None:
                 continue
             mark_redirection(current_action, combatant_iri)
-            if combatant_iri != current_action.actor_iri:
-                emit_target_resolution(
-                    g,
-                    current_action.action_iri,
-                    combatant_iri,
-                    instant,
-                    "resolved",
-                    artifact_iri,
-                    ev.turn,
-                    ev.order,
-                )
-                current_action.resolved_targets.add(combatant_iri)
 
         elif ev.kind == "faint":
             fainted_token = ev.fields[0]
@@ -771,11 +779,12 @@ def build_graph(payload: dict) -> Graph:
             g.add((event_iri, PKM.hasReplayEventOrder, Literal(ev.order, datatype=XSD.integer)))
             g.add((event_iri, PKM.hasReplayStepLabel, Literal(f"faint-t{ev.turn}-e{ev.order}")))
             g.add((event_iri, PKM.supportedByArtifact, artifact_iri))
-            if current_action is not None:
+            if should_attribute_minor_event_to_action(current_action, ev.fields[1:]):
                 mark_redirection(current_action, fainted_iri)
-            if current_action is not None:
+            if should_attribute_minor_event_to_action(current_action, ev.fields[1:]):
                 g.add((event_iri, PKM.causedByAction, current_action.action_iri))
                 if fainted_iri != current_action.actor_iri:
+                    current_action.hit_counts_by_target[fainted_iri] = current_action.hit_counts_by_target.get(fainted_iri, 0) + 1
                     emit_target_resolution(
                         g,
                         current_action.action_iri,
@@ -785,6 +794,7 @@ def build_graph(payload: dict) -> Graph:
                         artifact_iri,
                         ev.turn,
                         ev.order,
+                        current_action.hit_counts_by_target[fainted_iri],
                     )
                     current_action.resolved_targets.add(fainted_iri)
 
