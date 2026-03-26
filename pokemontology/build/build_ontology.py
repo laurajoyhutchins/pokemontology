@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import math
 
 from rdflib import Graph, Namespace, URIRef
 from rdflib.namespace import OWL, RDF, RDFS
@@ -12,8 +13,10 @@ from pokemontology._script_loader import repo_path
 from pokemontology.chat import (
     ALLOWED_READ_ONLY_QUERY_TYPES,
     FORBIDDEN_SPARQL_KEYWORDS,
+    PROMPT_MATCH_LIMIT,
     RETRIEVAL_MINIMUM_SCORES,
 )
+from pokemontology.laurel import SUMMARY_PREVIEW_LIMIT
 
 REPO = repo_path()
 MODULES_DIR = repo_path("ontology", "modules")
@@ -153,6 +156,13 @@ def _schema_pack(
         {"alias": "sh:", "iri": "http://www.w3.org/ns/shacl#"},
     ]
     items = _ontology_grounding_items(ontology_text)
+    known_terms = sorted(
+        {
+            _local_name(str(item["iri"]))
+            for item in items
+            if isinstance(item.get("iri"), str) and str(item["iri"]).startswith(str(PKM))
+        }
+    )
     items.extend(
         [
         {
@@ -204,19 +214,20 @@ ASK {
         },
     ]
     items.extend(examples)
-    vocabulary = sorted(
-        {token for item in items for token in _tokenize(f"{item['label']} {item['summary']} {item['snippet']}")}
-    )
-    vectors = []
-    for item in items:
-        counts = {token: 0 for token in vocabulary}
+    sparse_index: dict[str, list[list[int | float]]] = {}
+    item_norms: list[float] = []
+    for index, item in enumerate(items):
+        counts: dict[str, int] = {}
         for token in _tokenize(f"{item['label']} {item['summary']} {item['snippet']}"):
-            counts[token] += 1
-        vectors.append([counts[token] for token in vocabulary])
+            counts[token] = counts.get(token, 0) + 1
+        for token, count in counts.items():
+            sparse_index.setdefault(token, []).append([index, count])
+        item_norms.append(math.sqrt(sum(count * count for count in counts.values())))
     return {
         "prefixes": prefixes,
         "retrieval": {
             "top_k": 4,
+            "prompt_match_limit": PROMPT_MATCH_LIMIT,
             "minimum_scores": [
                 {
                     "max_tokens": max_tokens,
@@ -228,11 +239,21 @@ ASK {
         "validation": {
             "allowed_query_types": list(ALLOWED_READ_ONLY_QUERY_TYPES),
             "forbidden_keywords": list(FORBIDDEN_SPARQL_KEYWORDS),
+            "known_terms": known_terms,
+        },
+        "response": {
+            "list_preview_limit": SUMMARY_PREVIEW_LIMIT,
+        },
+        "inference": {
+            "webllm_model": "Llama-3.2-1B-Instruct-q4f32_1-MLC",
+            "webllm_library_url": "https://esm.run/@mlc-ai/web-llm",
+            "temperature": 0.0,
+            "max_tokens": 320,
         },
         "items": items,
         "examples": examples,
-        "vocabulary": vocabulary,
-        "vectors": vectors,
+        "sparse_index": sparse_index,
+        "item_norms": item_norms,
     }
 
 

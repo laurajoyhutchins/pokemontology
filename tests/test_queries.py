@@ -284,3 +284,25 @@ def test_validate_sparql_text_rejects_malformed_read_only_query() -> None:
         assert "failed formal parsing" in str(exc)
     else:
         raise AssertionError("expected malformed read-only SPARQL to be rejected")
+
+
+def test_validate_sparql_text_rejects_select_star() -> None:
+    try:
+        validate_sparql_text(
+            "PREFIX pkm: <https://example.test#>\nSELECT * WHERE { ?s ?p ?o } LIMIT 5"
+        )
+    except ValueError as exc:
+        assert "SELECT * is too broad" in str(exc)
+    else:
+        raise AssertionError("expected SELECT * SPARQL to be rejected")
+
+
+def test_validate_sparql_text_requires_bounded_select() -> None:
+    try:
+        validate_sparql_text(
+            "PREFIX pkm: <https://example.test#>\nSELECT ?s WHERE { ?s ?p ?o }"
+        )
+    except ValueError as exc:
+        assert "must include LIMIT or ORDER BY" in str(exc)
+    else:
+        raise AssertionError("expected unbounded SELECT SPARQL to be rejected")

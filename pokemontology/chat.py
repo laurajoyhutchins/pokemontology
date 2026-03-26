@@ -6,6 +6,7 @@ import json
 import math
 import re
 from pathlib import Path
+from typing import Any
 from urllib import error, request
 
 from pyparsing import ParseException
@@ -32,6 +33,10 @@ RETRIEVAL_MINIMUM_SCORES = (
     (5, 0.24),
     (None, 0.16),
 )
+PROMPT_MATCH_LIMIT = 3
+PROMPT_SUMMARY_LIMIT = 180
+PROMPT_SNIPPET_LIMIT = 220
+GENERATION_CACHE_SIZE = 64
 
 _FENCED_BLOCK_RE = re.compile(r"```(?:sparql)?\s*(.*?)```", re.IGNORECASE | re.DOTALL)
 _PREFIX_LINE_RE = re.compile(r"^(?:PREFIX|BASE)\b.*$", re.IGNORECASE | re.MULTILINE)
@@ -43,6 +48,11 @@ _FORBIDDEN_KEYWORD_RE = re.compile(
 _ALLOWED_QUERY_RE = re.compile(
     r"^(" + "|".join(ALLOWED_READ_ONLY_QUERY_TYPES) + r")\b", re.IGNORECASE
 )
+_LIMIT_RE = re.compile(r"\bLIMIT\s+\d+\b", re.IGNORECASE)
+_ORDER_BY_RE = re.compile(r"\bORDER\s+BY\b", re.IGNORECASE)
+_WHERE_VAR_RE = re.compile(r"\bWHERE\s*\{([^}]*)\}", re.IGNORECASE | re.DOTALL)
+_PROJECTED_VAR_RE = re.compile(r"\?([A-Za-z_][\w-]*)")
+_GENERATION_CACHE: dict[tuple[str, str, str, str], str] = {}
 
 
 def tokenize(text: str) -> list[str]:
@@ -55,11 +65,15 @@ def tokenize(text: str) -> list[str]:
     ]
 
 
-def vectorize(text: str, vocabulary: list[str]) -> list[int]:
-    tokens = tokenize(text)
+def token_counts(text: str) -> dict[str, int]:
     counts: dict[str, int] = {}
-    for token in tokens:
+    for token in tokenize(text):
         counts[token] = counts.get(token, 0) + 1
+    return counts
+
+
+def vectorize(text: str, vocabulary: list[str]) -> list[int]:
+    counts = token_counts(text)
     return [counts.get(token, 0) for token in vocabulary]
 
 
@@ -85,12 +99,20 @@ def get_minimum_score(question: str) -> float:
 
 
 def retrieve_matches(
-    question: str, schema_pack: dict[str, any], top_k: int = 4
-) -> list[dict[str, any]]:
+    question: str, schema_pack: dict[str, Any], top_k: int = 4
+) -> list[dict[str, Any]]:
+    items = schema_pack.get("items", [])
+    if not items:
+        return []
+
+    sparse_index = schema_pack.get("sparse_index")
+    item_norms = schema_pack.get("item_norms")
+    if isinstance(sparse_index, dict) and isinstance(item_norms, list):
+        return _retrieve_sparse_matches(question, items, sparse_index, item_norms, top_k=top_k)
+
     vocabulary = schema_pack.get("vocabulary", [])
     vectors = schema_pack.get("vectors", [])
-    items = schema_pack.get("items", [])
-    if not vocabulary or not vectors or not items:
+    if not vocabulary or not vectors:
         return []
 
     query_vector = vectorize(question, vocabulary)
@@ -106,15 +128,86 @@ def retrieve_matches(
     return scored_items[:top_k]
 
 
-def build_prompt(question: str, matches: list[dict[str, any]] | None = None) -> str:
+def _retrieve_sparse_matches(
+    question: str,
+    items: list[dict[str, Any]],
+    sparse_index: dict[str, list[list[int | float]]],
+    item_norms: list[float],
+    *,
+    top_k: int,
+) -> list[dict[str, Any]]:
+    query_counts = token_counts(question)
+    if not query_counts:
+        return []
+    query_norm = math.sqrt(sum(count * count for count in query_counts.values()))
+    if not query_norm:
+        return []
+
+    scores: dict[int, float] = {}
+    for token, query_weight in query_counts.items():
+        for item_index, item_weight in sparse_index.get(token, []):
+            scores[item_index] = scores.get(item_index, 0.0) + (query_weight * float(item_weight))
+
+    min_score = get_minimum_score(question)
+    ranked: list[dict[str, Any]] = []
+    for item_index, dot in scores.items():
+        item_norm = item_norms[item_index] if item_index < len(item_norms) else 0.0
+        if not item_norm:
+            continue
+        score = dot / (query_norm * item_norm)
+        if score >= min_score:
+            ranked.append({**items[item_index], "score": score})
+
+    ranked.sort(key=lambda item: item["score"], reverse=True)
+    return ranked[:top_k]
+
+
+def _trim_prompt_text(text: str, limit: int) -> str:
+    compact = " ".join(str(text).split())
+    if len(compact) <= limit:
+        return compact
+    return compact[: limit - 1].rstrip() + "…"
+
+
+def _score_prompt_match(match: dict[str, Any]) -> tuple[int, float]:
+    kind = str(match.get("kind", "term"))
+    kind_rank = {
+        "example": 0,
+        "pattern": 1,
+        "class": 2,
+        "property": 3,
+        "individual": 4,
+        "term": 5,
+    }.get(kind, 6)
+    return (kind_rank, -float(match.get("score", 0.0)))
+
+
+def compact_prompt_matches(matches: list[dict[str, Any]] | None = None) -> list[dict[str, Any]]:
+    if not matches:
+        return []
+    chosen: list[dict[str, Any]] = []
+    seen_keys: set[tuple[str, str]] = set()
+    for match in sorted(matches, key=_score_prompt_match):
+        key = (str(match.get("label", "")), str(match.get("iri", "")))
+        if key in seen_keys:
+            continue
+        chosen.append(match)
+        seen_keys.add(key)
+        if len(chosen) >= PROMPT_MATCH_LIMIT:
+            break
+    return chosen
+
+
+def build_prompt(question: str, matches: list[dict[str, Any]] | None = None) -> str:
     grounding = ""
-    if matches:
+    prompt_matches = compact_prompt_matches(matches)
+    if prompt_matches:
         grounding_blocks = []
-        for match in matches:
+        for match in prompt_matches:
             label = match.get("label", "Unknown")
             kind = match.get("kind", "term")
-            summary = match.get("summary", "")
-            snippet = match.get("snippet", "")
+            summary = _trim_prompt_text(match.get("summary", ""), PROMPT_SUMMARY_LIMIT)
+            snippet = _trim_prompt_text(match.get("snippet", ""), PROMPT_SNIPPET_LIMIT)
             block = f"[{kind.upper()}] {label}\nSummary: {summary}\nExample/Pattern: {snippet}"
             grounding_blocks.append(block)
         grounding = "\nRELEVANT SCHEMA CONTEXT:\n" + "\n---\n".join(grounding_blocks) + "\n"
@@ -163,17 +256,77 @@ def validate_sparql_text(text: str) -> str:
         raise ValueError(f"generated SPARQL failed formal parsing: {exc}") from exc
     if not parsed or (not _PREFIX_DECL_RE.match(cleaned) and not _ALLOWED_QUERY_RE.match(cleaned.lstrip())):
         raise ValueError("generated SPARQL did not parse into a supported read-only query form")
+    lint_messages = lint_sparql_text(cleaned)
+    if lint_messages:
+        raise ValueError(f"generated SPARQL failed semantic lint: {'; '.join(lint_messages)}")
     return cleaned
+
+
+def lint_sparql_text(text: str) -> list[str]:
+    cleaned = clean_sparql_output(text)
+    stripped = _PREFIX_LINE_RE.sub("", cleaned).lstrip()
+    query_type_match = _ALLOWED_QUERY_RE.match(stripped)
+    query_type = query_type_match.group(1).upper() if query_type_match else ""
+
+    messages: list[str] = []
+    if re.search(r"\bSELECT\s+\*", stripped, re.IGNORECASE):
+        messages.append("SELECT * is too broad for generated Laurel queries")
+    if query_type == "SELECT" and not _LIMIT_RE.search(cleaned) and not _ORDER_BY_RE.search(cleaned):
+        messages.append("SELECT queries must include LIMIT or ORDER BY for bounded execution")
+
+    body_match = _WHERE_VAR_RE.search(cleaned)
+    body = body_match.group(1) if body_match else cleaned
+    body_vars = set(_PROJECTED_VAR_RE.findall(body))
+    if query_type == "SELECT":
+        select_clause = stripped.split("WHERE", 1)[0]
+        projected = set(_PROJECTED_VAR_RE.findall(select_clause))
+        unbound = sorted(var for var in projected if var not in body_vars)
+        if unbound:
+            messages.append("projected variables are not bound in WHERE: " + ", ".join(f"?{var}" for var in unbound))
+    return messages
+
+
+def _generation_cache_key(
+    question: str,
+    matches: list[dict[str, Any]] | None,
+    model: str,
+    endpoint: str,
+) -> tuple[str, str, str, str]:
+    prompt_matches = compact_prompt_matches(matches)
+    match_fingerprint = json.dumps(
+        [
+            {
+                "label": match.get("label"),
+                "kind": match.get("kind"),
+                "summary": match.get("summary"),
+                "snippet": match.get("snippet"),
+            }
+            for match in prompt_matches
+        ],
+        sort_keys=True,
+    )
+    return (question.strip(), model, endpoint, match_fingerprint)
+
+
+def _remember_generated_query(key: tuple[str, str, str, str], query_text: str) -> None:
+    _GENERATION_CACHE[key] = query_text
+    if len(_GENERATION_CACHE) > GENERATION_CACHE_SIZE:
+        oldest_key = next(iter(_GENERATION_CACHE))
+        del _GENERATION_CACHE[oldest_key]
 
 
 def generate_sparql(
     question: str,
     *,
-    matches: list[dict[str, any]] | None = None,
+    matches: list[dict[str, Any]] | None = None,
     model: str = DEFAULT_OLLAMA_MODEL,
     endpoint: str = DEFAULT_OLLAMA_ENDPOINT,
     timeout: float = 240.0,
 ) -> str:
+    cache_key = _generation_cache_key(question, matches, model, endpoint)
+    cached = _GENERATION_CACHE.get(cache_key)
+    if cached is not None:
+        return cached
     payload = {
         "model": model,
         "prompt": build_prompt(question, matches=matches),
@@ -197,4 +350,6 @@ def generate_sparql(
         raise RuntimeError("Ollama returned invalid JSON") from exc
     if not isinstance(parsed, dict) or not isinstance(parsed.get("response"), str):
         raise RuntimeError("Ollama response did not include a text payload")
-    return validate_sparql_text(parsed["response"])
+    query_text = validate_sparql_text(parsed["response"])
+    _remember_generated_query(cache_key, query_text)
+    return query_text

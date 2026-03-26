@@ -40,6 +40,8 @@ DEFAULT_SCHEMA_INDEX = REPO_ROOT / "build" / "schema-index.json"
 
 
 _TURTLE_SOURCE_CACHE: dict[tuple[tuple[str, int, int], ...], Graph] = {}
+_JSON_OBJECT_CACHE: dict[tuple[str, int, int], dict[str, object]] = {}
+_RAG_MATCH_CACHE: dict[tuple[str, str, int, int], list[dict[str, object]]] = {}
 
 
 def _repo_relative(path: Path) -> str:
@@ -63,9 +65,18 @@ def _load_json(path: Path) -> object:
 
 
 def _load_json_object(path: Path, *, label: str) -> dict[str, object]:
+    cache_key = (
+        str(path.resolve()),
+        path.stat().st_mtime_ns,
+        path.stat().st_size,
+    )
+    cached = _JSON_OBJECT_CACHE.get(cache_key)
+    if cached is not None:
+        return cached
     payload = _load_json(path)
     if not isinstance(payload, dict):
         raise CliUsageError(f"{label} must contain a top-level JSON object")
+    _JSON_OBJECT_CACHE[cache_key] = payload
     return payload
 
 
@@ -246,8 +257,19 @@ def _get_rag_matches(args: argparse.Namespace) -> list[dict[str, object]] | None
     if not args.schema_index.exists():
         return None
     try:
+        cache_key = (
+            str(args.schema_index.resolve()),
+            args.question.strip(),
+            args.schema_index.stat().st_mtime_ns,
+            args.schema_index.stat().st_size,
+        )
+        cached = _RAG_MATCH_CACHE.get(cache_key)
+        if cached is not None:
+            return cached
         schema_pack = _load_json_object(args.schema_index, label="schema index")
-        return retrieve_matches(args.question, schema_pack)
+        matches = retrieve_matches(args.question, schema_pack)
+        _RAG_MATCH_CACHE[cache_key] = matches
+        return matches
     except Exception:
         return None
 

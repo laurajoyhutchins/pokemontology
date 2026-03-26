@@ -13,7 +13,7 @@ def test_evaluate_suite_marks_mechanics_as_partial_when_query_is_generated(
 ) -> None:
     monkeypatch.setattr(
         "pokemontology.laurel_eval.generate_sparql",
-        lambda *args, **kwargs: "SELECT * WHERE { ?s ?p ?o } LIMIT 1",
+        lambda *args, **kwargs: "SELECT ?s WHERE { ?s ?p ?o } ORDER BY ?s LIMIT 1",
     )
 
     payload = evaluate_suite(EvalConfig(limit=1, include_adversarial=False))
@@ -45,7 +45,7 @@ def test_evaluate_suite_marks_adversarial_rejection_as_pass(monkeypatch: object)
 def test_evaluate_laurel_cli_outputs_json(monkeypatch: object, capsys) -> None:
     monkeypatch.setattr(
         "pokemontology.laurel_eval.generate_sparql",
-        lambda *args, **kwargs: "SELECT * WHERE { ?s ?p ?o } LIMIT 1",
+        lambda *args, **kwargs: "SELECT ?s WHERE { ?s ?p ?o } ORDER BY ?s LIMIT 1",
     )
 
     exit_code = cli.main(["evaluate-laurel", "--limit", "1", "--no-include-adversarial"])
@@ -171,7 +171,7 @@ def test_evaluate_suite_uses_schema_index_matches(monkeypatch: object, tmp_path)
     def fake_generate_sparql(*args, **kwargs):
         nonlocal captured_matches
         captured_matches = kwargs.get("matches")
-        return "SELECT * WHERE { ?s ?p ?o } LIMIT 1"
+        return "SELECT ?s WHERE { ?s ?p ?o } ORDER BY ?s LIMIT 1"
 
     monkeypatch.setattr("pokemontology.laurel_eval.generate_sparql", fake_generate_sparql)
 

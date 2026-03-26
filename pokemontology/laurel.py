@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+SUMMARY_PREVIEW_LIMIT = 5
+
 
 def summarize_results(question: str, payload: dict[str, object]) -> str:
     question = question.strip()
@@ -28,8 +30,8 @@ def summarize_results(question: str, payload: dict[str, object]) -> str:
         values = [row.get(variable) for row in rows if isinstance(row, dict) and row.get(variable)]
         if not values:
             return f"Laurel found {len(rows)} matching rows."
-        preview = ", ".join(str(value) for value in values[:5])
-        if len(values) > 5:
+        preview = ", ".join(str(value) for value in values[:SUMMARY_PREVIEW_LIMIT])
+        if len(values) > SUMMARY_PREVIEW_LIMIT:
             preview += ", …"
         if len(values) == 1:
             return f"Laurel found 1 result: {preview}."

@@ -10,5 +10,9 @@ export function createState() {
     modelStatus: "Checking…",
     groundingStatus: "Pending",
     validatorStatus: "Standby",
+    retrievalCache: new Map(),
+    generationCache: new Map(),
+    validationCache: new Map(),
+    executionCache: new Map(),
   };
 }

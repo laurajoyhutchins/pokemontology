@@ -34,6 +34,11 @@ def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
         "CONSTRUCT",
     ]
     assert "SERVICE" in schema_index["validation"]["forbidden_keywords"]
+    assert "Species" in schema_index["validation"]["known_terms"]
+    assert schema_index["response"]["list_preview_limit"] == 5
+    assert schema_index["inference"]["webllm_model"]
     assert any(item["label"] == "Species" for item in schema_index["items"])
     assert any(item["label"] == "TypingAssignment pattern" for item in schema_index["items"])
     assert any(example["id"] == "super-effective-moves" for example in schema_index["examples"])
+    assert "species" in schema_index["sparse_index"]
+    assert schema_index["item_norms"]

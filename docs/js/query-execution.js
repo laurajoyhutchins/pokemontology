@@ -8,6 +8,9 @@ const PREFIX_MAP = [
   ["http://www.w3.org/2001/XMLSchema#", "xsd:"],
   ["http://www.w3.org/ns/shacl#", "sh:"],
 ];
+const DEFAULT_SUMMARY_POLICY = {
+  list_preview_limit: 5,
+};
 
 export const COMUNICA_BROWSER_URLS = [
   "https://rdf.js.org/comunica-browser/versions/v4/engines/query-sparql/comunica-browser.js",
@@ -15,6 +18,7 @@ export const COMUNICA_BROWSER_URLS = [
 ];
 
 let lastSelectResult = null;
+let summaryPolicy = DEFAULT_SUMMARY_POLICY;
 
 function escapeHtml(str) {
   return String(str)
@@ -116,6 +120,13 @@ export function renderFindingsSummary(text) {
   );
 }
 
+export function configureQueryPresentation(schemaPack) {
+  summaryPolicy = {
+    ...DEFAULT_SUMMARY_POLICY,
+    ...(schemaPack?.response || {}),
+  };
+}
+
 export function summarizeQueryResult(question, result) {
   if (result.type === "boolean") {
     return `${result.value ? "Yes." : "No."} ${question}`.trim();
@@ -131,12 +142,13 @@ export function summarizeQueryResult(question, result) {
     const values = bindings
       .map((binding) => binding.get(vars[0])?.value)
       .filter(Boolean);
+    const previewLimit = summaryPolicy.list_preview_limit || DEFAULT_SUMMARY_POLICY.list_preview_limit;
     if (values.length === 1) {
       return `Laurel found 1 result: ${values[0]}.`;
     }
     if (values.length > 1) {
-      const preview = values.slice(0, 5).join(", ");
-      return `Laurel found ${values.length} results: ${preview}${values.length > 5 ? ", …" : ""}.`;
+      const preview = values.slice(0, previewLimit).join(", ");
+      return `Laurel found ${values.length} results: ${preview}${values.length > previewLimit ? ", …" : ""}.`;
     }
   }
   if (bindings.length === 1) {

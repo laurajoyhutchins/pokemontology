@@ -49,6 +49,8 @@ def test_query_engine_uses_generated_query_examples_and_schema_pack() -> None:
     assert site_data["schema_pack"]["path"] == "schema-index.json"
     assert schema_index["examples"]
     assert schema_index["prefixes"][0]["alias"] == "pkm:"
+    assert schema_index["inference"]["webllm_library_url"]
+    assert schema_index["response"]["list_preview_limit"] == 5
     assert (
         site_data["query_examples"][0]["source_path"]
         == "queries/super_effective_moves.sparql"
@@ -70,9 +72,12 @@ def test_docs_workers_are_present() -> None:
     retrieval_text = (REPO / "docs" / "workers" / "retrieval-worker.js").read_text(
         encoding="utf-8"
     )
+    llm_text = (REPO / "docs" / "workers" / "llm-worker.js").read_text(encoding="utf-8")
     assert "minimumScore" in retrieval_text
-    assert "minimum_scores" in retrieval_text
-    assert "retrievalConfig.top_k" in retrieval_text
+    assert "sparse_index" in retrieval_text
+    assert "WebGPU local inference" in llm_text
+    assert "webllm_library_url" in llm_text
+    assert "deterministic fallback synthesizer" in llm_text
 
 
 def test_query_validator_enforces_ast_or_safe_fallback() -> None:
@@ -81,4 +86,6 @@ def test_query_validator_enforces_ast_or_safe_fallback() -> None:
     assert "https://esm.sh/sparqljs@3.7.3" in text
     assert "forbidden_keywords" in text
     assert "allowed_query_types" in text
+    assert "known_terms" in text
+    assert "SELECT *" in text
     assert "Fell back to structural validation" in text

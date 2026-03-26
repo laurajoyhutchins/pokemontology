@@ -1,6 +1,7 @@
 import { createState } from "./state.js";
 import {
   buildSources,
+  configureQueryPresentation,
   executeQuery,
   exportLastResultsToCsv,
   loadComunicaEngine,
@@ -32,6 +33,7 @@ export async function createLaurelApp() {
   try {
     state.siteData = await loadSiteData();
     state.schemaPack = await loadSchemaPack();
+    configureQueryPresentation(state.schemaPack);
     renderArtifacts(state.siteData.artifacts || []);
     renderModules(state.siteData.modules || [], state.siteData.site?.repository_url || "");
     renderPipelines(state.siteData.pipelines || []);
@@ -61,6 +63,21 @@ function setStatus(selector, value) {
 function setInlineStatus(message) {
   const target = document.getElementById("laurel-status");
   if (target) target.textContent = message;
+}
+
+function stableStringify(value) {
+  return JSON.stringify(value, Object.keys(value).sort());
+}
+
+function matchesKey(matches) {
+  return JSON.stringify(
+    (matches || []).map((match) => ({
+      label: match.label,
+      kind: match.kind,
+      iri: match.iri,
+      score: Number(match.score || 0).toFixed(4),
+    })),
+  );
 }
 
 function applyTheme(theme) {
@@ -207,7 +224,7 @@ function bindInteractiveActions(state) {
   });
 
   runButton?.addEventListener("click", async () => {
-    await executeEditorQuery();
+    await executeEditorQuery(state);
   });
 }
 
@@ -230,12 +247,16 @@ async function initQueryEngine() {
   }
 }
 
-async function askWorker(worker, payload) {
+async function askWorker(worker, payload, { onProgress } = {}) {
   return new Promise((resolve, reject) => {
     const timeout = window.setTimeout(() => {
       reject(new Error("Worker response timed out."));
     }, 10000);
     worker.onmessage = (event) => {
+      if (event.data?.type === "progress") {
+        onProgress?.(event.data);
+        return;
+      }
       window.clearTimeout(timeout);
       resolve(event.data);
     };
@@ -251,25 +272,50 @@ async function runLaurelPipeline(state) {
   const question = document.getElementById("nl-question")?.value.trim() || "";
   const editor = document.getElementById("sparql-editor");
   if (!question) return;
+  const sources = buildSources();
+  const schemaVersion = stableStringify({
+    inference: state.schemaPack?.inference || {},
+    retrieval: state.schemaPack?.retrieval || {},
+    validation: state.schemaPack?.validation || {},
+  });
 
   setInlineStatus("Grounding question…");
   setStatus("[data-status-grounding]", "Searching");
-  const retrieval = await askWorker(state.retrievalWorker, {
-    question,
-    schemaPack: state.schemaPack,
-    topK: 4,
-  });
+  const retrievalKey = `${question}::${schemaVersion}`;
+  let retrieval = state.retrievalCache.get(retrievalKey);
+  if (!retrieval) {
+    retrieval = await askWorker(state.retrievalWorker, {
+      question,
+      schemaPack: state.schemaPack,
+      topK: 4,
+    });
+    state.retrievalCache.set(retrievalKey, retrieval);
+  }
   state.lastGrounding = retrieval.matches || [];
   renderGrounding(state.lastGrounding);
   setStatus("[data-status-grounding]", `${state.lastGrounding.length} notes`);
 
   setInlineStatus("Generating local translation…");
-  const generation = await askWorker(state.llmWorker, {
-    question,
-    matches: state.lastGrounding,
-    schemaPack: state.schemaPack,
-    webgpuAvailable: supportsWebGpu(),
-  });
+  const generationKey = `${question}::${matchesKey(state.lastGrounding)}::${schemaVersion}`;
+  let generation = state.generationCache.get(generationKey);
+  if (!generation) {
+    generation = await askWorker(
+      state.llmWorker,
+      {
+        question,
+        matches: state.lastGrounding,
+        schemaPack: state.schemaPack,
+        webgpuAvailable: supportsWebGpu(),
+      },
+      {
+        onProgress: (progress) => {
+          if (progress.message) setInlineStatus(progress.message);
+          if (progress.backend) setStatus("[data-status-model]", progress.backend);
+        },
+      },
+    );
+    state.generationCache.set(generationKey, generation);
+  }
   setStatus("[data-status-model]", generation.backend);
   setResultsContent(
     '<div class="laurel-answer"><p class="laurel-answer-kicker">Professor Laurel</p><p>Translation complete. Running the generated SPARQL now.</p></div>',
@@ -278,10 +324,15 @@ async function runLaurelPipeline(state) {
   if (editor) editor.value = generation.sparql;
 
   setInlineStatus("Validating query AST…");
-  const validation = await askWorker(state.queryWorker, {
-    sparql: generation.sparql,
-    schemaPack: state.schemaPack,
-  });
+  const validationKey = `${generation.sparql}::${schemaVersion}`;
+  let validation = state.validationCache.get(validationKey);
+  if (!validation) {
+    validation = await askWorker(state.queryWorker, {
+      sparql: generation.sparql,
+      schemaPack: state.schemaPack,
+    });
+    state.validationCache.set(validationKey, validation);
+  }
   renderValidation(validation);
   setStatus("[data-status-validator]", validation.ok ? "Validated" : "Needs repair");
   if (!validation.ok) {
@@ -290,14 +341,13 @@ async function runLaurelPipeline(state) {
   }
 
   setInlineStatus("Running SPARQL…");
-  await executeEditorQuery();
+  await executeEditorQuery(state, sources);
 }
 
-async function executeEditorQuery() {
+async function executeEditorQuery(state, sources = buildSources()) {
   const editor = document.getElementById("sparql-editor");
   const status = document.getElementById("qe-status");
   const question = document.getElementById("nl-question")?.value.trim() || "";
-  const sources = buildSources();
   if (!editor) return;
   if (!editor.value.trim()) return;
   if (!sources.length) {
@@ -308,7 +358,12 @@ async function executeEditorQuery() {
   setResultsContent('<div class="qe-loading"><span class="qe-spinner"></span> Querying…</div>');
   const started = performance.now();
   try {
-    const result = await executeQuery(editor.value, sources);
+    const executionKey = `${editor.value}::${JSON.stringify(sources)}`;
+    let result = state.executionCache.get(executionKey);
+    if (!result) {
+      result = await executeQuery(editor.value, sources);
+      state.executionCache.set(executionKey, result);
+    }
     renderQueryResults(result, question);
     if (status) status.textContent = `${Math.round(performance.now() - started)}ms`;
     setInlineStatus("Field query complete.");
