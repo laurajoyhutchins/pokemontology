@@ -53,6 +53,27 @@ def test_generated_replay_graph_conforms_to_shapes() -> None:
     assert conforms, f"Generated replay graph violates SHACL:\n{results_text}"
 
 
+def test_synthetic_status_and_target_resolution_graph_conforms_to_shapes() -> None:
+    payload = {
+        "id": "synthetic-status-targeting",
+        "format": "[Gen 9] Custom Game",
+        "players": ["Alice", "Bob"],
+        "log": "\n".join([
+            "|turn|1",
+            "|switch|p1a: Pikachu|Pikachu, L50|100/100",
+            "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
+            "|move|p1a: Pikachu|Thunder Wave|p2a: Bulbasaur",
+            "|-status|p2a: Bulbasaur|par",
+            "|move|p2a: Bulbasaur|Sleep Powder|p1a: Pikachu",
+            "|-miss|p2a: Bulbasaur|p1a: Pikachu",
+            "|move|p2a: Bulbasaur|Protect|p2a: Bulbasaur",
+            "|-fail|p2a: Bulbasaur",
+        ]),
+    }
+    conforms, results_text = _validate_data_graph(build_graph(payload))
+    assert conforms, f"Synthetic status/target-resolution graph violates SHACL:\n{results_text}"
+
+
 def test_iv_assignment_rejects_values_above_31() -> None:
     conforms, results_text = _validate_data_graph(
         _parse_ttl(

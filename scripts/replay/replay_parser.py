@@ -20,17 +20,25 @@ from typing import Iterable
 PKM_PREFIX = "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#"
 SUPPORTED_EVENT_TAGS = {
     "switch",
+    "drag",
+    "replace",
+    "detailschange",
     "move",
     "faint",
     "-damage",
     "-heal",
+    "-status",
+    "-curestatus",
     "-boost",
     "-unboost",
+    "-fail",
+    "-miss",
     "-weather",
     "-fieldstart",
     "-sidestart",
     "-terastallize",
     "-singleturn",
+    "cant",
 }
 
 

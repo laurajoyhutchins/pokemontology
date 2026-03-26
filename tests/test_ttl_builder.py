@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 
 import pytest
-from rdflib import Graph, Namespace
+from rdflib import Graph, Literal, Namespace
 from rdflib.namespace import OWL, RDF
 
 from scripts.replay.replay_parser import parse_log
@@ -107,6 +107,69 @@ def test_builder_materializes_replay_observed_assignments(replay_graph: Graph) -
 def test_builder_emits_damage_and_healing_events(replay_graph: Graph) -> None:
     assert any(replay_graph.subjects(RDF.type, PKM.DamageEvent))
     assert any(replay_graph.subjects(RDF.type, PKM.HealingEvent))
+
+
+def test_builder_emits_status_and_target_resolution_for_supported_minor_actions() -> None:
+    payload = {
+        "id": "synthetic-status-targeting",
+        "format": "[Gen 9] Custom Game",
+        "players": ["Alice", "Bob"],
+        "log": "\n".join([
+            "|turn|1",
+            "|switch|p1a: Pikachu|Pikachu, L50|100/100",
+            "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
+            "|move|p1a: Pikachu|Thunder Wave|p2a: Bulbasaur",
+            "|-status|p2a: Bulbasaur|par",
+            "|move|p2a: Bulbasaur|Sleep Powder|p1a: Pikachu",
+            "|-miss|p2a: Bulbasaur|p1a: Pikachu",
+            "|move|p2a: Bulbasaur|Protect|p2a: Bulbasaur",
+            "|-fail|p2a: Bulbasaur",
+        ]),
+    }
+    graph = build_graph(payload)
+
+    assert any(graph.subjects(RDF.type, PKM.StatusInflictionEvent))
+    assert any(graph.subjects(RDF.type, PKM.CurrentStatusAssignment))
+    assert any(graph.subjects(RDF.type, PKM.TargetResolutionState))
+
+    thunder_wave_action = next(
+        action for action in graph.subjects(RDF.type, PKM.MoveUseAction)
+        if (action, PKM.usesMove, PKM.MoveThunder_Wave) in graph
+    )
+    declared_targets = list(graph.objects(thunder_wave_action, PKM.hasDeclaredTarget))
+    assert declared_targets
+
+    failed_resolutions = {
+        resolution
+        for resolution in graph.subjects(RDF.type, PKM.TargetResolutionState)
+        if (resolution, PKM.hasResolutionOutcome, None) in graph
+    }
+    assert any((resolution, PKM.hasResolutionOutcome, Literal("failed")) in graph for resolution in failed_resolutions)
+
+
+def test_builder_emits_switch_events_and_aborted_resolution_for_board_mutations() -> None:
+    payload = {
+        "id": "synthetic-board-mutation",
+        "format": "[Gen 9] Custom Game",
+        "players": ["Alice", "Bob"],
+        "log": "\n".join([
+            "|turn|1",
+            "|switch|p1a: Pikachu|Pikachu, L50|100/100",
+            "|switch|p2a: Bulbasaur|Bulbasaur, L50|100/100",
+            "|move|p1a: Pikachu|Thunderbolt|p2a: Bulbasaur",
+            "|cant|p1a: Pikachu|par",
+            "|drag|p2a: Squirtle|Squirtle, L50|80/100",
+            "|replace|p2a: Zoroark|Zoroark, L50|70/100",
+            "|detailschange|p1a: Pikachu|Pikachu-Partner, L50|90/100",
+        ]),
+    }
+    graph = build_graph(payload)
+
+    switch_events = list(graph.subjects(RDF.type, PKM.SwitchEvent))
+    assert len(switch_events) >= 4
+    assert any(graph.subjects(RDF.type, PKM.TargetResolutionState))
+    assert any((resolution, PKM.hasResolutionOutcome, Literal("aborted")) in graph for resolution in graph.subjects(RDF.type, PKM.TargetResolutionState))
+    assert any((assignment, RDF.type, PKM.CurrentHPAssignment) in graph for assignment in graph.subjects(RDF.type, PKM.CurrentHPAssignment))
 
 
 def test_builder_uses_only_declared_pkm_predicates(replay_graph: Graph, ontology_graph: Graph) -> None:
