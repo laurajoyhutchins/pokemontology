@@ -8,6 +8,8 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Sequence
 
+from rdflib import Graph
+
 from ._script_loader import REPO_ROOT
 from .turn_order import resolve_action_order
 
@@ -50,6 +52,39 @@ def _load_json_object(path: Path, *, label: str) -> dict[str, object]:
     if not isinstance(payload, dict):
         raise CliUsageError(f"{label} must contain a top-level JSON object")
     return payload
+
+
+def _read_text(path: Path, *, label: str) -> str:
+    try:
+        return path.read_text(encoding="utf-8")
+    except OSError as exc:
+        raise CliUsageError(
+            f"failed to read {label} {_repo_relative(path)}: {exc}"
+        ) from exc
+
+
+def _load_turtle_sources(paths: Sequence[Path]) -> Graph:
+    graph = Graph()
+    for path in paths:
+        try:
+            graph.parse(path, format="turtle")
+        except Exception as exc:
+            raise CliUsageError(
+                f"failed to parse Turtle source {_repo_relative(path)}: {exc}"
+            ) from exc
+    return graph
+
+
+def _query_results_to_json(result) -> dict[str, object]:
+    variables = [str(variable) for variable in result.vars]
+    rows: list[dict[str, str | None]] = []
+    for row in result:
+        row_json: dict[str, str | None] = {}
+        for variable in variables:
+            value = row.get(variable)
+            row_json[variable] = None if value is None else str(value)
+        rows.append(row_json)
+    return {"variables": variables, "rows": rows}
 
 
 def _print_json(payload: object, *, pretty: bool = False) -> None:
@@ -121,6 +156,19 @@ def cmd_resolve_order(args: argparse.Namespace) -> int:
     payload = _load_json_object(args.state_json, label="turn-order state JSON")
     resolved = resolve_action_order(payload)
     _print_json(resolved, pretty=args.pretty)
+    return 0
+
+
+def cmd_query(args: argparse.Namespace) -> int:
+    query_text = _read_text(args.query, label="query file")
+    graph = _load_turtle_sources(args.sources)
+    try:
+        result = graph.query(query_text)
+    except Exception as exc:
+        raise CliUsageError(
+            f"failed to execute SPARQL query {_repo_relative(args.query)}: {exc}"
+        ) from exc
+    _print_json(_query_results_to_json(result), pretty=args.pretty)
     return 0
 
 
@@ -389,6 +437,21 @@ def build_parser() -> argparse.ArgumentParser:
     )
     check_parser.add_argument("paths", nargs="+", type=Path, help="TTL files to parse.")
     check_parser.set_defaults(func=cmd_check_ttl)
+
+    query_parser = subparsers.add_parser(
+        "query", help="Run a SPARQL query against one or more Turtle sources."
+    )
+    query_parser.add_argument("query", type=Path, help="Path to a SPARQL query file.")
+    query_parser.add_argument(
+        "sources",
+        nargs="+",
+        type=Path,
+        help="One or more Turtle files to load into the query graph.",
+    )
+    query_parser.add_argument(
+        "--pretty", action="store_true", help="Print query results as indented JSON."
+    )
+    query_parser.set_defaults(func=cmd_query)
 
     parse_parser = subparsers.add_parser(
         "parse-replay", help="Parse a Showdown replay into a turn/event stream."
