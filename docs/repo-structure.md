@@ -13,7 +13,6 @@ This project is easiest to maintain if it keeps three layers separate:
 
 ## Current directories
 
-- `build/` — consumer-facing built ontology artifact
 - `build/` — consumer-facing built ontology and shapes artifacts
 - `docs/` — GitHub Pages site plus published `ontology.ttl` / `shapes.ttl`
 - `ontology/modules/` — modular ontology source fragments
@@ -21,7 +20,10 @@ This project is easiest to maintain if it keeps three layers separate:
 - `examples/fixtures/` — seed/example RDF fixtures kept out of the ontology schema
 - `examples/replays/` — source replay payloads
 - `examples/slices/` — replay-derived RDF examples
-- `scripts/` — utility scripts
+- `scripts/build/` — build and syntax-check implementations
+- `scripts/ingest/` — external-data acquisition and transform implementations
+- `scripts/replay/` — replay parsing, summary, and slice-building implementations
+- `scripts/*.py` — compatibility wrappers for direct script execution
 - `docs/` — project notes
 - `tests/` — validation/regression test area
 

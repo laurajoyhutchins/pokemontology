@@ -8,13 +8,9 @@ from typing import Sequence
 
 from ._script_loader import REPO_ROOT
 
-import build_ontology
-import check_ttl_parse
-import parse_showdown_replay
-import pokeapi_ingest
-import replay_to_ttl_builder
-import summarize_showdown_replay
-import veekun_ingest
+from scripts.build import build_ontology, check_ttl_parse
+from scripts.ingest import pokeapi_ingest, veekun_ingest
+from scripts.replay import parse_showdown_replay, replay_to_ttl_builder, summarize_showdown_replay
 
 
 def _repo_relative(path: Path) -> str:

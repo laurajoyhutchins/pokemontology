@@ -28,12 +28,19 @@ pokemontology/
 │   └── slices/
 │       └── showdown-finals-game1-slice.ttl
 ├── scripts/
-│   ├── build_ontology.py
-│   ├── check_ttl_parse.py
-│   ├── parse_showdown_replay.py
-│   ├── pokeapi_ingest.py
-│   ├── replay_to_ttl_builder.py
-│   └── summarize_showdown_replay.py
+│   ├── build/
+│   │   ├── build_ontology.py
+│   │   └── check_ttl_parse.py
+│   ├── ingest/
+│   │   ├── pokeapi_ingest.py
+│   │   ├── pokeapi_scrape.py
+│   │   └── veekun_ingest.py
+│   ├── replay/
+│   │   ├── parse_showdown_replay.py
+│   │   ├── replay_parser.py
+│   │   ├── replay_to_ttl_builder.py
+│   │   └── summarize_showdown_replay.py
+│   └── *.py compatibility wrappers
 ├── docs/
 │   ├── index.html
 │   ├── ontology.ttl
@@ -60,12 +67,12 @@ pokemontology/
 - Replay JSON used as source corpus
 - Replay-backed TTL slice
 - Sample PokeAPI seed config and an ingestion pipeline for caching raw API data and building TTL
-- Utility scripts for replay parsing, summary, slice building, and TTL syntax checking
+- Script implementations organized by `build`, `ingest`, and `replay`, with top-level compatibility wrappers for direct script execution
 
 ## Suggested workflow
 
 1. Put a Showdown replay JSON under `examples/replays/`.
-2. Generate a minimal event-layer slice with `scripts/replay_to_ttl_builder.py`.
+2. Generate a minimal event-layer slice with `python3 -m pokemontology build-slice ...`.
 3. Enrich the slice with materialized state assignments where needed.
 4. Validate ontology + shapes + slice together.
 5. Add regression tests for each modeling extension.
@@ -131,7 +138,7 @@ python3 -m pokemontology check-ttl build/pokeapi.ttl
 ```
 
 ```bash
-python3 scripts/pokeapi_scrape.py move \
+python3 scripts/ingest/pokeapi_scrape.py move \
       --details \
       --max-pages 1 \
       --max-details 25 \
@@ -183,7 +190,7 @@ The shared helper implementation for this contract lives in `pokemontology/inges
 
 ## PokeAPI scraping
 
-The repo also includes a dedicated scraper at `scripts/pokeapi_scrape.py` for pulling raw PokeAPI data while following the project’s published fair-use guidance:
+The repo also includes a dedicated scraper at `scripts/ingest/pokeapi_scrape.py` for pulling raw PokeAPI data while following the project’s published fair-use guidance:
 - cache every response to disk
 - send an explicit `User-Agent`
 - pace requests with a configurable delay
@@ -197,7 +204,7 @@ The scraper is for raw collection only. Use the ingestion pipeline afterward to 
 
 ## Veekun ingestion scaffold
 
-The repo also includes a local-only Veekun transform at `scripts/veekun_ingest.py`.
+The repo also includes a local-only Veekun transform at `scripts/ingest/veekun_ingest.py`.
 
 This scaffold expects a normalized CSV export directory, not a live download. It is designed for the ontology areas where Veekun is stronger than PokeAPI:
 - `pkm:VersionGroup` / `pkm:Ruleset`

@@ -19,7 +19,8 @@ This repository models Pokemon battle mechanics as RDF/OWL and SHACL, with suppo
 - `shapes/modules/shapes.ttl`: canonical SHACL shapes source
 - `build/`: generated consumer artifacts
 - `docs/`: published copies of generated artifacts
-- `scripts/`: legacy script implementations used by the CLI
+- `scripts/build/`, `scripts/ingest/`, `scripts/replay/`: grouped script implementations used by the CLI
+- `scripts/*.py`: compatibility wrappers for direct script execution
 - `pokemontology/`: installable CLI package
 - `tests/`: regression and validation tests
 
@@ -47,7 +48,7 @@ This repository models Pokemon battle mechanics as RDF/OWL and SHACL, with suppo
 ## Replay Tooling
 
 - `parse-replay` preserves a broad event stream from replay JSON.
-- `summarize-replay` and `build-slice` rely on `scripts/replay_parser.py`, which intentionally exposes a narrower typed event model.
+- `summarize-replay` and `build-slice` rely on `scripts/replay/replay_parser.py`, which intentionally exposes a narrower typed event model.
 - Do not silently merge those parser semantics without checking existing tests and command behavior.
 
 ## PokeAPI Tooling

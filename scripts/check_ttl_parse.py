@@ -1,35 +1,23 @@
 #!/usr/bin/env python3
-"""Sanity-check Turtle files with rdflib parsing."""
+"""Compatibility wrapper for the reorganized TTL parse checker."""
 from __future__ import annotations
 
-import argparse
+import importlib
+import sys
 from pathlib import Path
 
-from rdflib import Graph
 
+REPO = Path(__file__).resolve().parent.parent
+repo_str = str(REPO)
+if repo_str not in sys.path:
+    sys.path.insert(0, repo_str)
 
-def check_file(path: Path) -> tuple[bool, str]:
-    graph = Graph()
-    try:
-        graph.parse(path, format="turtle")
-        return True, f"{path.name}: ok ({len(graph)} triples)"
-    except Exception as exc:
-        return False, f"{path.name}: parse failed: {exc}"
+_IMPL = importlib.import_module("scripts.build.check_ttl_parse")
+check_file = _IMPL.check_file
+main = _IMPL.main
 
-
-def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("paths", nargs="+", type=Path, help="TTL files to parse")
-    args = parser.parse_args()
-
-    failures = 0
-    for path in args.paths:
-        ok, message = check_file(path)
-        print(message)
-        if not ok:
-            failures += 1
-
-    raise SystemExit(1 if failures else 0)
+if __name__ != "__main__":
+    sys.modules[__name__] = _IMPL
 
 
 if __name__ == "__main__":
