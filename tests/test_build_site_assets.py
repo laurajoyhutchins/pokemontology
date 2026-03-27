@@ -12,15 +12,22 @@ def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(build_ontology, "PAGES_ONTOLOGY", tmp_path / "ontology.ttl")
     monkeypatch.setattr(build_ontology, "PAGES_SHAPES", tmp_path / "shapes.ttl")
     monkeypatch.setattr(build_ontology, "PAGES_POKEAPI", tmp_path / "pokeapi.ttl")
+    monkeypatch.setattr(build_ontology, "PAGES_MECHANICS", tmp_path / "mechanics.ttl")
     monkeypatch.setattr(build_ontology, "PAGES_SITE_DATA", tmp_path / "site-data.json")
     monkeypatch.setattr(build_ontology, "PAGES_SCHEMA_INDEX", tmp_path / "schema-index.json")
     monkeypatch.setattr(build_ontology, "BUILD_DIR", tmp_path / "build")
     monkeypatch.setattr(build_ontology, "OUTPUT", tmp_path / "build" / "ontology.ttl")
     monkeypatch.setattr(build_ontology, "BUILD_SHAPES", tmp_path / "build" / "shapes.ttl")
     monkeypatch.setattr(build_ontology, "BUILD_POKEAPI", tmp_path / "build" / "pokeapi.ttl")
+    monkeypatch.setattr(build_ontology, "BUILD_VEEKUN", tmp_path / "build" / "veekun.ttl")
+    monkeypatch.setattr(build_ontology, "BUILD_MECHANICS", tmp_path / "build" / "mechanics.ttl")
 
     (tmp_path / "build").mkdir()
     (tmp_path / "build" / "pokeapi.ttl").write_text(
+        "@prefix pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#> .\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "build" / "veekun.ttl").write_text(
         "@prefix pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#> .\n",
         encoding="utf-8",
     )
@@ -30,8 +37,8 @@ def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
 
     site_data = json.loads((tmp_path / "site-data.json").read_text(encoding="utf-8"))
     schema_index = json.loads((tmp_path / "schema-index.json").read_text(encoding="utf-8"))
-    assert (tmp_path / "pokeapi.ttl").exists()
-    assert any(artifact["path"] == "pokeapi.ttl" for artifact in site_data["artifacts"])
+    assert (tmp_path / "mechanics.ttl").exists()
+    assert any(artifact["path"] == "mechanics.ttl" for artifact in site_data["artifacts"])
     assert schema_index["prefixes"]
     assert schema_index["retrieval"]["top_k"] == 4
     assert schema_index["retrieval"]["minimum_scores"][0] == {

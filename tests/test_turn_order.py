@@ -520,7 +520,7 @@ def test_resolve_order_auto_discovers_local_mechanics_ttl(
 ) -> None:
     build_dir = tmp_path / "build"
     build_dir.mkdir()
-    write_mechanics_ttl(build_dir / "veekun.ttl")
+    write_mechanics_ttl(build_dir / "mechanics.ttl")
     monkeypatch.chdir(tmp_path)
 
     resolved = resolve_normal_priority_order(
@@ -539,5 +539,5 @@ def test_resolve_order_auto_discovers_local_mechanics_ttl(
     )
 
     assert resolved["priority_bracket"] == 4
-    assert resolved["mechanics_ttl_paths_used"] == ["build/veekun.ttl"]
+    assert resolved["mechanics_ttl_paths_used"] == ["build/mechanics.ttl"]
     assert resolved["combatants"][0]["move_priority"] == 4

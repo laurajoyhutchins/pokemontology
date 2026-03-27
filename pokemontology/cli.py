@@ -41,6 +41,10 @@ class CliUsageError(ValueError):
 
 DEFAULT_SCHEMA_INDEX = REPO_ROOT / "build" / "schema-index.json"
 DEFAULT_DOCS_DIR = REPO_ROOT / "docs"
+DEFAULT_QUERY_SOURCES = (
+    REPO_ROOT / "build" / "ontology.ttl",
+    REPO_ROOT / "build" / "mechanics.ttl",
+)
 
 
 _TURTLE_SOURCE_CACHE: dict[tuple[tuple[str, int, int], ...], Graph] = {}
@@ -238,6 +242,12 @@ def _run_query_text(
     return _query_results_to_json(result)
 
 
+def _resolved_query_sources(sources: Sequence[Path]) -> tuple[Path, ...]:
+    if sources:
+        return tuple(sources)
+    return DEFAULT_QUERY_SOURCES
+
+
 def _execute_query_text(
     query_text: str,
     *,
@@ -256,7 +266,7 @@ def cmd_query(args: argparse.Namespace) -> int:
     query_text = _read_text(args.query, label="query file")
     return _execute_query_text(
         query_text,
-        sources=args.sources,
+        sources=_resolved_query_sources(args.sources),
         pretty=args.pretty,
         query_label=_repo_relative(args.query),
     )
@@ -313,7 +323,7 @@ def cmd_laurel(args: argparse.Namespace) -> int:
         print(query_text)
     payload = _run_query_text(
         query_text,
-        sources=args.sources,
+        sources=_resolved_query_sources(args.sources),
         query_label="<generated>",
     )
     if args.json:
@@ -732,9 +742,9 @@ def build_parser() -> argparse.ArgumentParser:
     query_parser.add_argument("query", type=Path, help="Path to a SPARQL query file.")
     query_parser.add_argument(
         "sources",
-        nargs="+",
+        nargs="*",
         type=Path,
-        help="One or more Turtle files to load into the query graph.",
+        help="Optional Turtle files to load into the query graph. Defaults to build/ontology.ttl and build/mechanics.ttl.",
     )
     query_parser.add_argument(
         "--pretty", action="store_true", help="Print query results as indented JSON."
@@ -777,9 +787,9 @@ def build_parser() -> argparse.ArgumentParser:
     laurel_parser.add_argument("question", help="Natural-language question to translate.")
     laurel_parser.add_argument(
         "sources",
-        nargs="+",
+        nargs="*",
         type=Path,
-        help="One or more Turtle files to load into the query graph.",
+        help="Optional Turtle files to load into the query graph. Defaults to build/ontology.ttl and build/mechanics.ttl.",
     )
     laurel_parser.add_argument(
         "--schema-index",

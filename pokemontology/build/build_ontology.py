@@ -83,7 +83,7 @@ def _query_examples() -> list[dict[str, object]]:
                 "source_path": str(path.relative_to(REPO)),
                 "summary": first_comment or f"Bundled query from {path.name}.",
                 "query": query_text,
-                "command": f"python3 -m pokemontology query {path.relative_to(REPO)} build/ontology.ttl <data.ttl>",
+                "command": f"python3 -m pokemontology query {path.relative_to(REPO)} build/ontology.ttl build/mechanics.ttl <data.ttl>",
             }
         )
     return examples

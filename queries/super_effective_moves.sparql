@@ -1,5 +1,5 @@
 # Super-effective move query
-# Requires: build/ontology.ttl + build/pokeapi.ttl + a replay slice TTL
+# Requires: build/ontology.ttl + build/mechanics.ttl + a replay slice TTL
 # Returns: move name, move type, opponent, effective defender type, multiplier
 #
 # For terastallized opponents, uses the Tera type as the sole defending type.

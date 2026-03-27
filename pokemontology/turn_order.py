@@ -87,6 +87,7 @@ MOVE_PRIORITY_ABILITIES = {
 }
 PKM = Namespace("https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#")
 DEFAULT_MECHANICS_TTL_PATHS = (
+    Path("build/mechanics.ttl"),
     Path("build/veekun.ttl"),
     Path("build/pokeapi.ttl"),
 )
