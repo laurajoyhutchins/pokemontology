@@ -18,7 +18,7 @@ from tests.support.laurel import write_super_effective_fixture
 
 PYTHON = REPO / ".venv" / "bin" / "python"
 SCHEMA_INDEX = REPO / "docs" / "schema-index.json"
-SUPER_EFFECTIVE_QUERY = REPO / "queries" / "super_effective_moves.sparql"
+SUPER_EFFECTIVE_QUERY = REPO / "queries" / "bundled" / "super_effective_moves.sparql"
 
 
 def _sitecustomize_dir(tmp_path: Path) -> Path:

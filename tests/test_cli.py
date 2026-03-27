@@ -104,13 +104,13 @@ def test_query_command_defaults_to_build_sources(capsys, monkeypatch: object) ->
 
     monkeypatch.setattr(cli, "_execute_query_text", fake_execute)
 
-    query_path = REPO / "queries" / "super_effective_moves.sparql"
+    query_path = REPO / "queries" / "bundled" / "super_effective_moves.sparql"
     exit_code = cli.main(["query", str(query_path)])
 
     assert exit_code == 0
     assert captured["sources"] == cli.DEFAULT_QUERY_SOURCES
     assert captured["pretty"] is False
-    assert captured["query_label"] == "queries/super_effective_moves.sparql"
+    assert captured["query_label"] == "queries/bundled/super_effective_moves.sparql"
 
 
 def test_query_command_preserves_explicit_sources(monkeypatch: object) -> None:
@@ -122,7 +122,7 @@ def test_query_command_preserves_explicit_sources(monkeypatch: object) -> None:
 
     monkeypatch.setattr(cli, "_execute_query_text", fake_execute)
 
-    query_path = REPO / "queries" / "super_effective_moves.sparql"
+    query_path = REPO / "queries" / "bundled" / "super_effective_moves.sparql"
     exit_code = cli.main(
         [
             "query",

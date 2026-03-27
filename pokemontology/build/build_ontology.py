@@ -45,7 +45,7 @@ PAGES_SITE_DATA = PAGES_DIR / "site-data.json"
 PAGES_SCHEMA_INDEX = PAGES_DIR / "schema-index.json"
 
 SHAPES_SOURCE = repo_path("shapes", "modules", "shapes.ttl")
-QUERIES_DIR = repo_path("queries")
+BUNDLED_QUERIES_DIR = repo_path("queries", "bundled")
 PKM = Namespace("https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#")
 TTL_PREFIX_HEADER = """@prefix pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
@@ -117,6 +117,7 @@ def _query_examples() -> list[dict[str, object]]:
     examples: list[dict[str, object]] = []
     for path in _query_example_paths():
         query_text = path.read_text(encoding="utf-8").strip()
+        source_path = _query_source_path(path)
         first_comment = next(
             (
                 line.removeprefix("#").strip()
@@ -129,10 +130,10 @@ def _query_examples() -> list[dict[str, object]]:
             {
                 "group": "Bundled Queries",
                 "label": path.stem.replace("_", " "),
-                "source_path": str(path.relative_to(REPO)),
+                "source_path": source_path,
                 "summary": first_comment or f"Bundled query from {path.name}.",
                 "query": query_text,
-                "command": f"python3 -m pokemontology query {path.relative_to(REPO)} build/ontology.ttl build/mechanics.ttl <data.ttl>",
+                "command": f"python3 -m pokemontology query {source_path} build/ontology.ttl build/mechanics.ttl <data.ttl>",
             }
         )
     return examples
@@ -140,18 +141,27 @@ def _query_examples() -> list[dict[str, object]]:
 
 def _query_example_paths() -> list[Path]:
     result = subprocess.run(
-        ["git", "-C", str(REPO), "ls-files", "queries/*.sparql"],
+        ["git", "-C", str(REPO), "ls-files", "queries/bundled/*.sparql"],
         capture_output=True,
         text=True,
         check=False,
     )
     if result.returncode == 0 and result.stdout.strip():
         return [repo_path(line) for line in sorted(result.stdout.splitlines())]
-    return sorted(QUERIES_DIR.glob("*.sparql"))
+    return sorted(BUNDLED_QUERIES_DIR.glob("*.sparql"))
+
+
+def _query_source_path(path: Path) -> str:
+    try:
+        return str(path.relative_to(REPO))
+    except ValueError:
+        if path.parent.name == "bundled" and path.parent.parent.name == "queries":
+            return f"queries/bundled/{path.name}"
+        return path.name
 
 
 def _preferred_schema_example_query(query_examples: list[dict[str, object]]) -> str:
-    preferred_source = "queries/super_effective_moves.sparql"
+    preferred_source = "queries/bundled/super_effective_moves.sparql"
     for example in query_examples:
         if example.get("source_path") == preferred_source:
             query = example.get("query", "")

@@ -8,7 +8,7 @@ from pokemontology.build import build_ontology
 
 
 def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
-    queries_dir = tmp_path / "queries"
+    queries_dir = tmp_path / "queries" / "bundled"
     monkeypatch.setattr(build_ontology, "PAGES_DIR", tmp_path)
     monkeypatch.setattr(build_ontology, "PAGES_ONTOLOGY", tmp_path / "ontology.ttl")
     monkeypatch.setattr(build_ontology, "PAGES_SHAPES", tmp_path / "shapes.ttl")
@@ -26,10 +26,10 @@ def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(build_ontology, "BUILD_POKEAPI", tmp_path / "build" / "pokeapi.ttl")
     monkeypatch.setattr(build_ontology, "BUILD_VEEKUN", tmp_path / "build" / "veekun.ttl")
     monkeypatch.setattr(build_ontology, "BUILD_MECHANICS", tmp_path / "build" / "mechanics.ttl")
-    monkeypatch.setattr(build_ontology, "QUERIES_DIR", queries_dir)
+    monkeypatch.setattr(build_ontology, "BUNDLED_QUERIES_DIR", queries_dir)
 
     (tmp_path / "build").mkdir()
-    queries_dir.mkdir()
+    queries_dir.mkdir(parents=True)
     (tmp_path / "build" / "pokeapi.ttl").write_text(
         "@prefix pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#> .\n",
         encoding="utf-8",
@@ -41,7 +41,8 @@ def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
     (queries_dir / "super_effective_moves.sparql").write_text(
         "# Super-effective move query\n"
         "# Requires: build/ontology.ttl + build/mechanics.ttl + a replay slice TTL\n"
-        "ASK { ?s ?p ?o }\n",
+        "PREFIX pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#>\n"
+        "ASK { ?assignment pkm:hasContext pkm:Ruleset_PokeAPI_Default . }\n",
         encoding="utf-8",
     )
 
@@ -53,7 +54,7 @@ def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
     bundled_query = next(
         example
         for example in site_data["query_examples"]
-        if example["source_path"] == "queries/super_effective_moves.sparql"
+        if example["source_path"] == "queries/bundled/super_effective_moves.sparql"
     )
     schema_example = next(
         example

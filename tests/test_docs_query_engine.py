@@ -63,7 +63,7 @@ def test_query_engine_uses_generated_query_examples_and_schema_pack() -> None:
     assert schema_index["response"]["list_preview_limit"] == 5
     assert (
         site_data["query_examples"][0]["source_path"]
-        == "queries/super_effective_moves.sparql"
+        == "queries/bundled/super_effective_moves.sparql"
     )
 
 

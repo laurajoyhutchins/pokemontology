@@ -22,7 +22,7 @@ from tests.support import REPO
 from tests.support.laurel import write_dense_schema_index, write_super_effective_fixture
 
 
-SUPER_EFFECTIVE_QUERY = REPO / "queries" / "super_effective_moves.sparql"
+SUPER_EFFECTIVE_QUERY = REPO / "queries" / "bundled" / "super_effective_moves.sparql"
 PKM_PREFIX_TERM_RE = re.compile(r"\bpkm:([A-Za-z_][\w-]*)\b")
 
 

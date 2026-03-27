@@ -10,6 +10,8 @@ build/*
 !build/shapes.ttl
 dev-artifacts/*
 !dev-artifacts/README.md
+queries/scratch/*
+!queries/scratch/README.md
 data/pokeapi/raw/
 data/veekun/
 data/replays/

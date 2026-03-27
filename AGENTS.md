@@ -22,6 +22,8 @@ This repository models Pokemon battle mechanics as RDF/OWL and SHACL, with suppo
 - `pokemontology/`: Unified Python package for all logic.
 - `build/`: Generated consumer artifacts (e.g., `ontology.ttl`, `schema-index.json`).
 - `docs/`: Published site data and workers for the web frontend.
+- `queries/bundled/`: Tracked SPARQL queries consumed by docs, tests, and examples.
+- `queries/scratch/`: Local scratch queries and fixtures; do not wire build/docs/tests to this directory.
 - `tests/`: Regression, validation, and evaluation suites.
 - `data/`: Cached raw API payloads and transformed TTL.
 

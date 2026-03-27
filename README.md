@@ -127,11 +127,11 @@ Add `--include-learnsets` if you want move learn records as well. That produces 
 
 ## Querying
 
-SPARQL query files live in `queries/`. Load `build/ontology.ttl` (or `build/pokeapi.ttl`) into any SPARQL 1.1 endpoint and run them, or use the live query engine on the public site.
+Codebase-consumed SPARQL queries live in `queries/bundled/`. Put local experiments in `queries/scratch/`. Load `build/ontology.ttl` plus `build/mechanics.ttl` into any SPARQL 1.1 endpoint and run the bundled queries, or use the live query engine on the public site.
 
 Notable query:
 
-**`queries/super_effective_moves.sparql`** — given a replay slice and PokeAPI data loaded together, returns which of your moves are super-effective against each revealed opponent, accounting for Tera type overrides. Requires `build/ontology.ttl` + `build/pokeapi.ttl` + a replay TTL slice as sources.
+**`queries/bundled/super_effective_moves.sparql`** — given a replay slice and mechanics data loaded together, returns which of your moves are super-effective against each revealed opponent, accounting for Tera type overrides. Requires `build/ontology.ttl` + `build/mechanics.ttl` + a replay TTL slice as sources.
 
 ## Data source coverage
 
@@ -182,7 +182,8 @@ pokemontology/
 ├── build/                 generated consumer artifacts
 ├── docs/                  GitHub Pages site, published TTL, and query engine
 ├── examples/              fixtures, replay JSON, example slices
-├── queries/               SPARQL query files
+├── queries/bundled/       tracked SPARQL queries used by docs, tests, and examples
+├── queries/scratch/       local scratch queries and TTL fixtures not consumed by the build
 ├── scripts/build/         build and validation scripts
 ├── scripts/ingest/        external data acquisition and transform
 ├── scripts/replay/        replay parsing and dataset tooling
