@@ -20,9 +20,11 @@ def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(build_ontology, "PAGES_MECHANICS_LEGACY", tmp_path / "mechanics-learnsets-legacy.ttl")
     monkeypatch.setattr(build_ontology, "PAGES_SITE_DATA", tmp_path / "site-data.json")
     monkeypatch.setattr(build_ontology, "PAGES_SCHEMA_INDEX", tmp_path / "schema-index.json")
+    monkeypatch.setattr(build_ontology, "PAGES_SPARQL_REFERENCE", tmp_path / "sparql-reference.md")
     monkeypatch.setattr(build_ontology, "BUILD_DIR", tmp_path / "build")
     monkeypatch.setattr(build_ontology, "OUTPUT", tmp_path / "build" / "ontology.ttl")
     monkeypatch.setattr(build_ontology, "BUILD_SHAPES", tmp_path / "build" / "shapes.ttl")
+    monkeypatch.setattr(build_ontology, "BUILD_SPARQL_REFERENCE", tmp_path / "build" / "sparql-reference.md")
     monkeypatch.setattr(build_ontology, "BUILD_POKEAPI", tmp_path / "build" / "pokeapi.ttl")
     monkeypatch.setattr(build_ontology, "BUILD_VEEKUN", tmp_path / "build" / "veekun.ttl")
     monkeypatch.setattr(build_ontology, "BUILD_MECHANICS", tmp_path / "build" / "mechanics.ttl")
@@ -51,6 +53,7 @@ def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
 
     site_data = json.loads((tmp_path / "site-data.json").read_text(encoding="utf-8"))
     schema_index = json.loads((tmp_path / "schema-index.json").read_text(encoding="utf-8"))
+    sparql_reference = (tmp_path / "sparql-reference.md").read_text(encoding="utf-8")
     bundled_query = next(
         example
         for example in site_data["query_examples"]
@@ -102,3 +105,8 @@ def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
     assert "build/pokeapi.ttl" not in schema_example["query"]
     assert "species" in schema_index["sparse_index"]
     assert schema_index["item_norms"]
+    assert "# Pokemontology SPARQL Reference" in sparql_reference
+    assert "## Prefixes" in sparql_reference
+    assert "`pkm:`" in sparql_reference
+    assert "### TypingAssignment pattern" in sparql_reference
+    assert "queries/bundled/super_effective_moves.sparql" in sparql_reference

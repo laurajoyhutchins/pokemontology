@@ -43,6 +43,8 @@ PAGES_MECHANICS_MODERN = PAGES_DIR / "mechanics-learnsets-modern.ttl"
 PAGES_MECHANICS_LEGACY = PAGES_DIR / "mechanics-learnsets-legacy.ttl"
 PAGES_SITE_DATA = PAGES_DIR / "site-data.json"
 PAGES_SCHEMA_INDEX = PAGES_DIR / "schema-index.json"
+PAGES_SPARQL_REFERENCE = PAGES_DIR / "sparql-reference.md"
+BUILD_SPARQL_REFERENCE = BUILD_DIR / "sparql-reference.md"
 
 SHAPES_SOURCE = repo_path("shapes", "modules", "shapes.ttl")
 BUNDLED_QUERIES_DIR = repo_path("queries", "bundled")
@@ -395,6 +397,117 @@ ASK {
     }
 
 
+def _render_sparql_reference(
+    schema_pack: dict[str, object], site_data: dict[str, object]
+) -> str:
+    prefixes = schema_pack.get("prefixes", [])
+    items = schema_pack.get("items", [])
+    examples = schema_pack.get("examples", [])
+    query_examples = site_data.get("query_examples", [])
+
+    pattern_items = [
+        item
+        for item in items
+        if item.get("kind") == "pattern"
+        and isinstance(item.get("label"), str)
+        and isinstance(item.get("snippet"), str)
+    ]
+    primary_examples = [
+        example
+        for example in examples
+        if isinstance(example.get("label"), str) and isinstance(example.get("query"), str)
+    ]
+
+    lines = [
+        "# Pokemontology SPARQL Reference",
+        "",
+        "Generated from the ontology schema pack and bundled query metadata.",
+        "Rebuild with `python3 -m pokemontology build`.",
+        "",
+        "## Prefixes",
+        "",
+        "| Prefix | IRI |",
+        "| --- | --- |",
+    ]
+    for prefix in prefixes:
+        alias = prefix.get("alias", "")
+        iri = prefix.get("iri", "")
+        lines.append(f"| `{alias}` | `{iri}` |")
+
+    lines.extend(
+        [
+            "",
+            "## Common Patterns",
+            "",
+            "These are the recurring graph shapes the codebase expects queries to use.",
+            "",
+        ]
+    )
+    for item in pattern_items:
+        lines.extend(
+            [
+                f"### {item['label']}",
+                "",
+                item.get("summary", ""),
+                "",
+                "```sparql",
+                item["snippet"],
+                "```",
+                "",
+            ]
+        )
+
+    lines.extend(
+        [
+            "## Canonical Query Examples",
+            "",
+            "These examples are bundled into the schema pack and frontend query picker.",
+            "",
+        ]
+    )
+    for example in primary_examples:
+        lines.extend(
+            [
+                f"### {example['label']}",
+                "",
+                example.get("summary", ""),
+                "",
+                "```sparql",
+                example["query"].strip(),
+                "```",
+                "",
+            ]
+        )
+
+    lines.extend(
+        [
+            "## Bundled Query Files",
+            "",
+            "| Query | Summary | Command |",
+            "| --- | --- | --- |",
+        ]
+    )
+    for example in query_examples:
+        source_path = example.get("source_path", "")
+        summary = example.get("summary", "")
+        command = example.get("command", "")
+        lines.append(f"| `{source_path}` | {summary} | `{command}` |")
+
+    known_terms = schema_pack.get("validation", {}).get("known_terms", [])
+    lines.extend(
+        [
+            "",
+            "## Frequently Used Terms",
+            "",
+            "Selected ontology terms that appear in the bundled patterns and validator grounding:",
+            "",
+            ", ".join(f"`pkm:{term}`" for term in known_terms[:40]),
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
 def _merge_mechanics_data() -> None:
     # Use direct file concatenation for performance on large TTL files (~180MB)
     sources = [BUILD_POKEAPI, BUILD_VEEKUN]
@@ -579,12 +692,16 @@ def write_artifacts(
     if PAGES_MECHANICS.exists():
         PAGES_MECHANICS.unlink()
 
+    schema_pack = _schema_pack(ontology_text, site_data["query_examples"])
+    sparql_reference = _render_sparql_reference(schema_pack, site_data)
+
     PAGES_SITE_DATA.write_text(json.dumps(site_data, indent=2) + "\n", encoding="utf-8")
     PAGES_SCHEMA_INDEX.write_text(
-        json.dumps(_schema_pack(ontology_text, site_data["query_examples"]), indent=2)
-        + "\n",
+        json.dumps(schema_pack, indent=2) + "\n",
         encoding="utf-8",
     )
+    BUILD_SPARQL_REFERENCE.write_text(sparql_reference + "\n", encoding="utf-8")
+    PAGES_SPARQL_REFERENCE.write_text(sparql_reference + "\n", encoding="utf-8")
 
 
 def main() -> None:
@@ -598,6 +715,8 @@ def main() -> None:
         print(f"wrote {path.relative_to(REPO)}")
     print(f"wrote {PAGES_SITE_DATA.relative_to(REPO)}")
     print(f"wrote {PAGES_SCHEMA_INDEX.relative_to(REPO)}")
+    print(f"wrote {BUILD_SPARQL_REFERENCE.relative_to(REPO)}")
+    print(f"wrote {PAGES_SPARQL_REFERENCE.relative_to(REPO)}")
 
 
 if __name__ == "__main__":

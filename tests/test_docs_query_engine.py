@@ -13,6 +13,7 @@ SITE_DATA = REPO / "docs" / "site-data.json"
 INDEX_HTML = REPO / "docs" / "index.html"
 POKEDEX_HTML = REPO / "docs" / "pokedex.html"
 SCHEMA_INDEX = REPO / "docs" / "schema-index.json"
+SPARQL_REFERENCE = REPO / "docs" / "sparql-reference.md"
 PKM_PREFIX_TERM_RE = re.compile(r"\bpkm:([A-Za-z_][\w-]*)\b")
 
 
@@ -65,6 +66,20 @@ def test_query_engine_uses_generated_query_examples_and_schema_pack() -> None:
         site_data["query_examples"][0]["source_path"]
         == "queries/bundled/super_effective_moves.sparql"
     )
+
+
+def test_generated_sparql_reference_stays_in_sync_with_schema_pack() -> None:
+    text = SPARQL_REFERENCE.read_text(encoding="utf-8")
+    schema_index = json.loads(SCHEMA_INDEX.read_text(encoding="utf-8"))
+
+    assert "# Pokemontology SPARQL Reference" in text
+    assert "Generated from the ontology schema pack and bundled query metadata." in text
+    assert "## Prefixes" in text
+    assert "`pkm:`" in text
+    assert "### TypingAssignment pattern" in text
+    assert "### Type effectiveness pattern" in text
+    assert "queries/bundled/super_effective_moves.sparql" in text
+    assert schema_index["examples"][0]["label"] in text
 
 
 def test_professor_laurel_landing_page_is_primary_entry() -> None:
