@@ -14,6 +14,8 @@ export function createState() {
     generationCache: new Map(),
     validationCache: new Map(),
     executionCache: new Map(),
+    queryWarmupPromise: null,
+    warmedSourcesKey: "",
     currentQuestion: "",
     activeRunId: 0,
   };

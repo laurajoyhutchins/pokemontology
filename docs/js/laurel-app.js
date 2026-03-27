@@ -61,7 +61,7 @@ export async function createLaurelApp() {
     hydrateDefaultValues(state);
     if (document.getElementById("nl-question")) {
       initWorkers(state);
-      await initQueryRuntime(state);
+      initQueryRuntime(state);
       setStatus("[data-status-model]", supportsWebGpu() ? "WebGPU ready" : "CPU fallback");
       bindInteractiveActions(state);
     }
@@ -349,29 +349,64 @@ function initWorkers(state) {
   state.queryWorker = new Worker("./workers/query-worker.js", { type: "module" });
 }
 
-async function initQueryRuntime(state) {
+function sourcesKey(sources) {
+  return JSON.stringify([...sources].sort());
+}
+
+function ensureQueryGraphReady(state, sources, { background = false } = {}) {
+  const key = sourcesKey(sources);
+  if (!sources.length || state.warmedSourcesKey === key) {
+    return Promise.resolve();
+  }
+  if (state.queryWarmupPromise?.key === key) {
+    return state.queryWarmupPromise.promise;
+  }
+
+  const promise = askWorker(
+    state.queryWorker,
+    { action: "warmup", sources },
+    {
+      timeoutMs: 120000,
+      onProgress: (progress) => {
+        if (progress.message) setInlineStatus(progress.message);
+      },
+    },
+  )
+    .then(() => {
+      state.warmedSourcesKey = key;
+    })
+    .finally(() => {
+      if (state.queryWarmupPromise?.key === key) {
+        state.queryWarmupPromise = null;
+      }
+    });
+
+  state.queryWarmupPromise = { key, promise };
+  if (background) {
+    promise.catch((error) => {
+      const runLabel = document.getElementById("run-btn-label");
+      if (runLabel) runLabel.textContent = "Run SPARQL";
+      setInlineStatus(`Background graph warmup failed: ${error.message}`);
+    });
+  }
+  return promise;
+}
+
+function initQueryRuntime(state) {
   const runButton = document.getElementById("run-btn");
   const runLabel = document.getElementById("run-btn-label");
-  try {
-    const sources = buildSources();
-    if (sources.length) {
-      await askWorker(
-        state.queryWorker,
-        { action: "warmup", sources },
-        {
-          timeoutMs: 120000,
-          onProgress: (progress) => {
-            if (progress.message) setInlineStatus(progress.message);
-          },
-        },
-      );
-    }
-    if (runButton) runButton.disabled = false;
-    if (runLabel) runLabel.textContent = "Run SPARQL";
+  if (runButton) runButton.disabled = false;
+  if (runLabel) runLabel.textContent = "Run SPARQL";
+  const sources = buildSources();
+  if (sources.length) {
+    setInlineStatus("Preparing local query graph in the background…");
+    ensureQueryGraphReady(state, sources, { background: true }).then(() => {
+      if (state.warmedSourcesKey === sourcesKey(sources)) {
+        setInlineStatus("Ready for a new query.");
+      }
+    });
+  } else {
     setInlineStatus("Ready for a new query.");
-  } catch (error) {
-    if (runLabel) runLabel.textContent = "Engine failed";
-    setResultsContent(`<div class="qe-error">${error.message}</div>`);
   }
 }
 
@@ -555,6 +590,7 @@ async function executeEditorQuery(state, sources = buildSources(), runId = state
   setResultsContent('<div class="qe-loading"><span class="qe-spinner"></span> Querying…</div>');
   const started = performance.now();
   try {
+    await ensureQueryGraphReady(state, sources);
     const executionKey = `${editor.value}::${JSON.stringify(sources)}`;
     let result = state.executionCache.get(executionKey);
     if (!result) {
