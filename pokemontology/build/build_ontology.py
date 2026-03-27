@@ -329,8 +329,8 @@ def assemble_artifacts() -> tuple[str, str, dict[str, object]]:
             },
             {
                 "name": "Veekun ingestion",
-                "summary": "Transform a local normalized export into version-group-scoped mechanics assignments with explicit provenance.",
-                "command": "python3 -m pokemontology veekun transform --source-dir tests/fixtures/veekun_export --output build/veekun.ttl",
+                "summary": "Fetch the upstream Veekun CSV snapshot, normalize it, and emit version-group-scoped mechanics assignments with explicit provenance.",
+                "command": "python3 -m pokemontology veekun ingest --raw-dir data/veekun/raw --source-dir data/veekun/export --output build/veekun.ttl",
             },
         ],
         "examples": [

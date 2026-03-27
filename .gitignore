@@ -11,6 +11,7 @@ build/*
 dev-artifacts/*
 !dev-artifacts/README.md
 data/pokeapi/raw/
+data/veekun/
 data/replays/
 *.zip
 .DS_Store

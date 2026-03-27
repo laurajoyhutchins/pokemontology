@@ -114,13 +114,16 @@ python3 -m pokemontology pokeapi ingest \
 
 This emits type effectiveness, base typing, move properties (type, base power, accuracy, PP, priority), learnsets, and canonical entity definitions — all anchored to a synthetic `pkm:Ruleset_PokeAPI_Default` context node for current-gen data.
 
-### Transform Veekun exports
+### Ingest Veekun data
 
 ```bash
-python3 -m pokemontology veekun transform \
-  --source-dir tests/fixtures/veekun_export \
+python3 -m pokemontology veekun ingest \
+  --raw-dir data/veekun/raw \
+  --source-dir data/veekun/export \
   --output build/veekun.ttl
 ```
+
+Add `--include-learnsets` if you want move learn records as well. That produces a much larger dataset.
 
 ## Querying
 
@@ -151,7 +154,7 @@ Type effectiveness entries for neutral (×1.0) matchups are omitted — only sup
 
 ### Veekun
 
-The Veekun pipeline is local-only and targets version-group-scoped mechanics not cleanly available from PokeAPI. Outputs include `pkm:TypingAssignment`, `pkm:AbilityAssignment`, `pkm:StatAssignment`, `pkm:MovePropertyAssignment`, `pkm:MoveLearnRecord`, and `pkm:TypeEffectivenessAssignment`.
+The Veekun pipeline fetches the upstream `veekun/pokedex` CSV snapshot, normalizes the tables used by pokemontology, then emits version-group-scoped mechanics facts. Outputs include `pkm:TypingAssignment`, `pkm:AbilityAssignment`, `pkm:StatAssignment`, `pkm:MovePropertyAssignment`, optional `pkm:MoveLearnRecord`, and `pkm:TypeEffectivenessAssignment`.
 
 ## External data policy
 
