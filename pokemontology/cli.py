@@ -661,15 +661,25 @@ def _get_rag_matches(args: argparse.Namespace) -> list[dict[str, object]] | None
         return None
 
 
+def _resolve_ontology_arg(args: argparse.Namespace) -> Path:
+    if args.ontology is not None:
+        return args.ontology
+    return _resolve_existing_path(
+        DEFAULT_ONTOLOGY_SOURCE,
+        DEFAULT_DOCS_ONTOLOGY_SOURCE,
+        label="ontology source",
+    )
+
+
 def cmd_list_classes(args: argparse.Namespace) -> int:
-    graph = _load_ontology_graph(args.ontology)
+    graph = _load_ontology_graph(_resolve_ontology_arg(args))
     for term in _sorted_pkm_terms(graph, (OWL.Class,)):
         print(_curie_for_iri(term))
     return 0
 
 
 def cmd_list_properties(args: argparse.Namespace) -> int:
-    graph = _load_ontology_graph(args.ontology)
+    graph = _load_ontology_graph(_resolve_ontology_arg(args))
     for term in _sorted_pkm_terms(
         graph, (OWL.ObjectProperty, OWL.DatatypeProperty, RDF.Property)
     ):
@@ -678,11 +688,12 @@ def cmd_list_properties(args: argparse.Namespace) -> int:
 
 
 def cmd_describe_term(args: argparse.Namespace) -> int:
-    graph = _load_ontology_graph(args.ontology)
+    ontology = _resolve_ontology_arg(args)
+    graph = _load_ontology_graph(ontology)
     term = _normalize_pkm_term(args.term)
     if (term, None, None) not in graph and (None, None, term) not in graph:
         raise CliUsageError(
-            f"term {_curie_for_iri(term)} was not found in {_repo_relative(args.ontology)}"
+            f"term {_curie_for_iri(term)} was not found in {_repo_relative(ontology)}"
         )
     print(_curie_for_iri(term))
     print(f"Kind: {_term_kind(graph, term)}")
@@ -1193,11 +1204,7 @@ def build_parser() -> argparse.ArgumentParser:
     list_classes_parser.add_argument(
         "--ontology",
         type=Path,
-        default=_resolve_existing_path(
-            DEFAULT_ONTOLOGY_SOURCE,
-            DEFAULT_DOCS_ONTOLOGY_SOURCE,
-            label="ontology source",
-        ),
+        default=None,
         help="Ontology Turtle file to inspect. Defaults to build/ontology.ttl, falling back to docs/ontology.ttl.",
     )
     list_classes_parser.set_defaults(func=cmd_list_classes)
@@ -1208,11 +1215,7 @@ def build_parser() -> argparse.ArgumentParser:
     list_properties_parser.add_argument(
         "--ontology",
         type=Path,
-        default=_resolve_existing_path(
-            DEFAULT_ONTOLOGY_SOURCE,
-            DEFAULT_DOCS_ONTOLOGY_SOURCE,
-            label="ontology source",
-        ),
+        default=None,
         help="Ontology Turtle file to inspect. Defaults to build/ontology.ttl, falling back to docs/ontology.ttl.",
     )
     list_properties_parser.set_defaults(func=cmd_list_properties)
@@ -1224,11 +1227,7 @@ def build_parser() -> argparse.ArgumentParser:
     describe_parser.add_argument(
         "--ontology",
         type=Path,
-        default=_resolve_existing_path(
-            DEFAULT_ONTOLOGY_SOURCE,
-            DEFAULT_DOCS_ONTOLOGY_SOURCE,
-            label="ontology source",
-        ),
+        default=None,
         help="Ontology Turtle file to inspect. Defaults to build/ontology.ttl, falling back to docs/ontology.ttl.",
     )
     describe_parser.set_defaults(func=cmd_describe_term)
