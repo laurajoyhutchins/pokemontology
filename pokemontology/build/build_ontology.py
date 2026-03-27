@@ -25,13 +25,18 @@ MODULES_DIR = repo_path("ontology", "modules")
 BUILD_DIR = repo_path("build")
 OUTPUT = BUILD_DIR / "ontology.ttl"
 BUILD_SHAPES = BUILD_DIR / "shapes.ttl"
+BUILD_POKEAPI = BUILD_DIR / "pokeapi.ttl"
+BUILD_VEEKUN = BUILD_DIR / "veekun-with-learnsets.ttl"
+BUILD_MECHANICS = BUILD_DIR / "mechanics.ttl"
+
 PAGES_DIR = repo_path("docs")
 PAGES_ONTOLOGY = PAGES_DIR / "ontology.ttl"
 PAGES_SHAPES = PAGES_DIR / "shapes.ttl"
-BUILD_POKEAPI = BUILD_DIR / "pokeapi.ttl"
 PAGES_POKEAPI = PAGES_DIR / "pokeapi.ttl"
+PAGES_MECHANICS = PAGES_DIR / "mechanics.ttl"
 PAGES_SITE_DATA = PAGES_DIR / "site-data.json"
 PAGES_SCHEMA_INDEX = PAGES_DIR / "schema-index.json"
+
 SHAPES_SOURCE = repo_path("shapes", "modules", "shapes.ttl")
 QUERIES_DIR = repo_path("queries")
 PKM = Namespace("https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#")
@@ -212,8 +217,7 @@ def _schema_pack(
             "query": """PREFIX pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#>
 
 ASK {
-  ?species a pkm:Species ;
-           pkm:hasName "Charizard" .
+  ?species pkm:hasName "Charizard" .
   ?variant a pkm:Variant ;
            pkm:belongsToSpecies ?species .
   ?assignment a pkm:TypingAssignment ;
@@ -271,8 +275,28 @@ ASK {
     }
 
 
+def _merge_mechanics_data() -> None:
+    # Use direct file concatenation for performance on large TTL files (~180MB)
+    sources = [BUILD_POKEAPI, BUILD_VEEKUN]
+    with BUILD_MECHANICS.open("w", encoding="utf-8") as outfile:
+        # Write prefix header once
+        outfile.write("@prefix pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#> .\n")
+        outfile.write("@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n")
+        outfile.write("@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .\n\n")
+
+        for src in sources:
+            if src.exists():
+                with src.open("r", encoding="utf-8") as infile:
+                    for line in infile:
+                        # Skip prefix lines to avoid duplication
+                        if not line.startswith("@prefix"):
+                            outfile.write(line)
+                outfile.write("\n")
+
+
 def assemble_artifacts() -> tuple[str, str, dict[str, object]]:
     _validate_sources()
+    _merge_mechanics_data()
     chunks = []
     for name in MODULE_ORDER:
         path = MODULES_DIR / name
@@ -303,10 +327,10 @@ def assemble_artifacts() -> tuple[str, str, dict[str, object]]:
                 "description": "Validation shapes used for replay slices, save-state data, and ingestion outputs.",
             },
             {
-                "label": "PokeAPI Mechanics Data",
-                "path": "pokeapi.ttl",
-                "iri": "https://laurajoyhutchins.github.io/pokemontology/pokeapi.ttl#",
-                "description": "Published ontology-native mechanics dataset transformed from the repository's cached PokeAPI ingest output.",
+                "label": "Unified Mechanics Data",
+                "path": "mechanics.ttl",
+                "iri": "https://laurajoyhutchins.github.io/pokemontology/mechanics.ttl#",
+                "description": "Published ontology-native mechanics dataset merging PokeAPI and Veekun ingestion outputs.",
             },
         ],
         "modules": [
@@ -378,8 +402,10 @@ def write_artifacts(
     BUILD_SHAPES.write_text(shapes_text, encoding="utf-8")
     PAGES_ONTOLOGY.write_text(ontology_text, encoding="utf-8")
     PAGES_SHAPES.write_text(shapes_text, encoding="utf-8")
-    if BUILD_POKEAPI.exists():
-        shutil.copyfile(BUILD_POKEAPI, PAGES_POKEAPI)
+
+    if BUILD_MECHANICS.exists():
+        shutil.copyfile(BUILD_MECHANICS, PAGES_MECHANICS)
+
     PAGES_SITE_DATA.write_text(json.dumps(site_data, indent=2) + "\n", encoding="utf-8")
     PAGES_SCHEMA_INDEX.write_text(
         json.dumps(_schema_pack(ontology_text, site_data["query_examples"]), indent=2)
@@ -395,8 +421,8 @@ def main() -> None:
     print(f"wrote {BUILD_SHAPES.relative_to(REPO)}")
     print(f"wrote {PAGES_ONTOLOGY.relative_to(REPO)}")
     print(f"wrote {PAGES_SHAPES.relative_to(REPO)}")
-    if BUILD_POKEAPI.exists():
-        print(f"wrote {PAGES_POKEAPI.relative_to(REPO)}")
+    if BUILD_MECHANICS.exists():
+        print(f"wrote {PAGES_MECHANICS.relative_to(REPO)}")
     print(f"wrote {PAGES_SITE_DATA.relative_to(REPO)}")
     print(f"wrote {PAGES_SCHEMA_INDEX.relative_to(REPO)}")
 

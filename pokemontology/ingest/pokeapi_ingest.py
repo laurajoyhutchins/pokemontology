@@ -41,6 +41,7 @@ SUPPORTED_RESOURCES = (
     "type",
     "stat",
     "version-group",
+    "item",
 )
 
 
@@ -318,6 +319,15 @@ def build_graph_from_raw(raw_dir: Path) -> Graph:
             "ability",
         )
 
+    for payload in payloads["item"]:
+        item_name = payload_name(payload)
+        item_iri = iri_for("Item", item_name)
+        add_named_resource(g, item_iri, PKM.Item, payload, "item")
+        ipa_iri = iri_for("ItemPropertyAssignment", f"{item_name}_current")
+        g.add((ipa_iri, RDF.type, PKM.ItemPropertyAssignment))
+        g.add((ipa_iri, PKM.aboutItem, item_iri))
+        g.add((ipa_iri, PKM.hasContext, default_ruleset_iri))
+
     for payload in payloads["move"]:
         move_name = payload_name(payload)
         add_named_resource(g, iri_for("Move", move_name), PKM.Move, payload, "move")
@@ -449,6 +459,46 @@ def build_graph_from_raw(raw_dir: Path) -> Graph:
                     typing_assignment_iri,
                     PKM.hasTypeSlot,
                     Literal(slot_num, datatype=XSD.integer),
+                )
+            )
+
+        # AbilityAssignment from pokemon.abilities
+        for ability_slot in payload.get("abilities", []):
+            ability_name = ability_slot.get("ability", {}).get("name")
+            if not ability_name:
+                continue
+            ability_iri = iri_for("Ability", ability_name)
+            is_hidden = ability_slot.get("is_hidden", False)
+            assignment_iri = iri_for(
+                "AbilityAssignment",
+                f"{pokemon_name}_{ability_name}_current",
+            )
+            g.add((assignment_iri, RDF.type, PKM.AbilityAssignment))
+            g.add((assignment_iri, PKM.aboutVariant, variant_iri))
+            g.add((assignment_iri, PKM.aboutAbility, ability_iri))
+            g.add((assignment_iri, PKM.hasContext, default_ruleset_iri))
+            g.add((assignment_iri, PKM.isHiddenAbility, boolean_literal(is_hidden)))
+
+        # StatAssignment from pokemon.stats
+        for stat_slot in payload.get("stats", []):
+            stat_name = stat_slot.get("stat", {}).get("name")
+            base_stat = stat_slot.get("base_stat")
+            if not stat_name or base_stat is None:
+                continue
+            stat_iri = iri_for("Stat", stat_name)
+            assignment_iri = iri_for(
+                "StatAssignment",
+                f"{pokemon_name}_{stat_name}_current",
+            )
+            g.add((assignment_iri, RDF.type, PKM.StatAssignment))
+            g.add((assignment_iri, PKM.aboutVariant, variant_iri))
+            g.add((assignment_iri, PKM.aboutStat, stat_iri))
+            g.add((assignment_iri, PKM.hasContext, default_ruleset_iri))
+            g.add(
+                (
+                    assignment_iri,
+                    PKM.hasValue,
+                    Literal(base_stat, datatype=XSD.integer),
                 )
             )
 

@@ -1,7 +1,26 @@
 {
   "resources": {
     "pokemon": [
-      "froakie"
+      "froakie",
+      "charizard",
+      "pikachu",
+      "flutter-mane",
+      "koraidon",
+      "miraidon",
+      "incineroar",
+      "amoonguss",
+      "urshifu-rapid-strike",
+      "calyrex-shadow",
+      "pelipper",
+      "archaludon"
+    ],
+    "item": [
+      "life-orb",
+      "choice-specs",
+      "focus-sash",
+      "leftovers",
+      "assault-vest",
+      "rocky-helmet"
     ]
   }
 }

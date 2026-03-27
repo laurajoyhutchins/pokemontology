@@ -1922,7 +1922,7 @@
       "question": "Is Charizard a Fire type?",
       "summary": "ASK pattern for a species whose variant has a typing assignment matching Fire.",
       "snippet": "Match Species, then Variant, then TypingAssignment aboutVariant/aboutType.",
-      "query": "PREFIX pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#>\n\nASK {\n  ?species a pkm:Species ;\n           pkm:hasName \"Charizard\" .\n  ?variant a pkm:Variant ;\n           pkm:belongsToSpecies ?species .\n  ?assignment a pkm:TypingAssignment ;\n              pkm:aboutVariant ?variant ;\n              pkm:aboutType ?type .\n  ?type pkm:hasName \"Fire\" .\n}"
+      "query": "PREFIX pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#>\n\nASK {\n  ?species pkm:hasName \"Charizard\" .\n  ?variant a pkm:Variant ;\n           pkm:belongsToSpecies ?species .\n  ?assignment a pkm:TypingAssignment ;\n              pkm:aboutVariant ?variant ;\n              pkm:aboutType ?type .\n  ?type pkm:hasName \"Fire\" .\n}"
     }
   ],
   "examples": [
@@ -1942,7 +1942,7 @@
       "question": "Is Charizard a Fire type?",
       "summary": "ASK pattern for a species whose variant has a typing assignment matching Fire.",
       "snippet": "Match Species, then Variant, then TypingAssignment aboutVariant/aboutType.",
-      "query": "PREFIX pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#>\n\nASK {\n  ?species a pkm:Species ;\n           pkm:hasName \"Charizard\" .\n  ?variant a pkm:Variant ;\n           pkm:belongsToSpecies ?species .\n  ?assignment a pkm:TypingAssignment ;\n              pkm:aboutVariant ?variant ;\n              pkm:aboutType ?type .\n  ?type pkm:hasName \"Fire\" .\n}"
+      "query": "PREFIX pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#>\n\nASK {\n  ?species pkm:hasName \"Charizard\" .\n  ?variant a pkm:Variant ;\n           pkm:belongsToSpecies ?species .\n  ?assignment a pkm:TypingAssignment ;\n              pkm:aboutVariant ?variant ;\n              pkm:aboutType ?type .\n  ?type pkm:hasName \"Fire\" .\n}"
     }
   ],
   "sparse_index": {
