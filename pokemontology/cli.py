@@ -10,7 +10,8 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Sequence
 
-from rdflib import Graph
+from rdflib import Graph, URIRef
+from rdflib.namespace import OWL, RDF, RDFS
 
 from ._script_loader import REPO_ROOT
 from .chat import (
@@ -40,9 +41,12 @@ class CliUsageError(ValueError):
 
 
 DEFAULT_SCHEMA_INDEX = REPO_ROOT / "build" / "schema-index.json"
+DEFAULT_DOCS_SCHEMA_INDEX = REPO_ROOT / "docs" / "schema-index.json"
 DEFAULT_DOCS_DIR = REPO_ROOT / "docs"
+DEFAULT_ONTOLOGY_SOURCE = REPO_ROOT / "build" / "ontology.ttl"
+DEFAULT_DOCS_ONTOLOGY_SOURCE = REPO_ROOT / "docs" / "ontology.ttl"
 DEFAULT_QUERY_SOURCES = (
-    REPO_ROOT / "build" / "ontology.ttl",
+    DEFAULT_ONTOLOGY_SOURCE,
     REPO_ROOT / "build" / "mechanics.ttl",
 )
 
@@ -50,6 +54,14 @@ DEFAULT_QUERY_SOURCES = (
 _TURTLE_SOURCE_CACHE: dict[tuple[tuple[str, int, int], ...], Graph] = {}
 _JSON_OBJECT_CACHE: dict[tuple[str, int, int], dict[str, object]] = {}
 _RAG_MATCH_CACHE: dict[tuple[str, str, int, int], list[dict[str, object]]] = {}
+
+PKM_NAMESPACE = "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#"
+CURIE_PREFIXES = (
+    ("pkm:", PKM_NAMESPACE),
+    ("rdf:", str(RDF)),
+    ("rdfs:", str(RDFS)),
+    ("owl:", str(OWL)),
+)
 
 
 def _repo_relative(path: Path) -> str:
@@ -116,6 +128,131 @@ def _load_turtle_sources(paths: Sequence[Path]) -> Graph:
             ) from exc
     _TURTLE_SOURCE_CACHE[cache_key] = graph
     return graph
+
+
+def _resolve_existing_path(
+    primary: Path,
+    fallback: Path | None = None,
+    *,
+    label: str,
+) -> Path:
+    if primary.exists():
+        return primary
+    if fallback is not None and fallback.exists():
+        return fallback
+    if fallback is None:
+        raise CliUsageError(f"missing {label} {_repo_relative(primary)}")
+    raise CliUsageError(
+        f"missing {label} {_repo_relative(primary)} and fallback {_repo_relative(fallback)}"
+    )
+
+
+def _curie_for_iri(iri: URIRef | str) -> str:
+    iri_text = str(iri)
+    for prefix, namespace in CURIE_PREFIXES:
+        if iri_text.startswith(namespace):
+            return f"{prefix}{iri_text.removeprefix(namespace)}"
+    return iri_text
+
+
+def _normalize_pkm_term(value: str) -> URIRef:
+    term = value.strip()
+    if not term:
+        raise CliUsageError("term must not be empty")
+    if term.startswith("pkm:"):
+        local_name = term.removeprefix("pkm:")
+        if not local_name:
+            raise CliUsageError("pkm term must include a local name")
+        return URIRef(f"{PKM_NAMESPACE}{local_name}")
+    if term.startswith(PKM_NAMESPACE):
+        return URIRef(term)
+    if "://" in term:
+        raise CliUsageError(
+            "term must be a pkm:* CURIE, a full pokemontology IRI, or a bare local term name"
+        )
+    return URIRef(f"{PKM_NAMESPACE}{term}")
+
+
+def _load_ontology_graph(path: Path) -> Graph:
+    return _load_turtle_sources((path,))
+
+
+def _sorted_pkm_terms(graph: Graph, rdf_types: tuple[URIRef, ...]) -> list[URIRef]:
+    return sorted(
+        {
+            subject
+            for rdf_type in rdf_types
+            for subject in graph.subjects(RDF.type, rdf_type)
+            if isinstance(subject, URIRef) and str(subject).startswith(PKM_NAMESPACE)
+        },
+        key=lambda value: str(value),
+    )
+
+
+def _term_kind(graph: Graph, term: URIRef) -> str:
+    if (term, RDF.type, OWL.Class) in graph:
+        return "class"
+    if (
+        (term, RDF.type, OWL.ObjectProperty) in graph
+        or (term, RDF.type, OWL.DatatypeProperty) in graph
+        or (term, RDF.type, RDF.Property) in graph
+    ):
+        return "property"
+    if (term, RDF.type, OWL.NamedIndividual) in graph:
+        return "individual"
+    return "term"
+
+
+def _format_usage_triple(subject: URIRef, predicate: URIRef, obj: URIRef) -> str:
+    return f"{_curie_for_iri(subject)} {_curie_for_iri(predicate)} {_curie_for_iri(obj)} ."
+
+
+def _describe_usage_examples(graph: Graph, term: URIRef, *, limit: int = 5) -> list[str]:
+    examples: list[str] = []
+    seen: set[str] = set()
+
+    def add_incoming(predicate_order: tuple[URIRef, ...] | None = None) -> bool:
+        matches = sorted(
+            [
+                (subject, predicate)
+                for subject, predicate in graph.subject_predicates(term)
+                if isinstance(subject, URIRef)
+                and (
+                    predicate_order is None
+                    or predicate in predicate_order
+                )
+            ],
+            key=lambda value: (
+                predicate_order.index(value[1]) if predicate_order else 0,
+                str(value[0]),
+                str(value[1]),
+            ),
+        )
+        for subject, predicate in matches:
+            rendered = _format_usage_triple(subject, predicate, term)
+            if rendered not in seen:
+                seen.add(rendered)
+                examples.append(rendered)
+            if len(examples) >= limit:
+                return True
+        return False
+
+    if add_incoming((RDFS.subClassOf, RDFS.domain, RDFS.range, RDFS.subPropertyOf)):
+        return examples
+
+    for predicate, obj in graph.predicate_objects(term):
+        if predicate in {RDFS.label, RDFS.comment}:
+            continue
+        if isinstance(obj, URIRef):
+            rendered = _format_usage_triple(term, predicate, obj)
+            if rendered not in seen:
+                seen.add(rendered)
+                examples.append(rendered)
+        if len(examples) >= limit:
+            return examples
+
+    add_incoming()
+    return examples
 
 
 def _query_results_to_json(result) -> dict[str, object]:
@@ -273,24 +410,66 @@ def cmd_query(args: argparse.Namespace) -> int:
 
 
 def _get_rag_matches(args: argparse.Namespace) -> list[dict[str, object]] | None:
-    if not args.schema_index.exists():
-        return None
     try:
+        schema_index_path = _resolve_existing_path(
+            args.schema_index,
+            DEFAULT_DOCS_SCHEMA_INDEX,
+            label="schema index",
+        )
         cache_key = (
-            str(args.schema_index.resolve()),
+            str(schema_index_path.resolve()),
             args.question.strip(),
-            args.schema_index.stat().st_mtime_ns,
-            args.schema_index.stat().st_size,
+            schema_index_path.stat().st_mtime_ns,
+            schema_index_path.stat().st_size,
         )
         cached = _RAG_MATCH_CACHE.get(cache_key)
         if cached is not None:
             return cached
-        schema_pack = _load_json_object(args.schema_index, label="schema index")
+        schema_pack = _load_json_object(schema_index_path, label="schema index")
         matches = retrieve_matches(args.question, schema_pack)
         _RAG_MATCH_CACHE[cache_key] = matches
         return matches
     except Exception:
         return None
+
+
+def cmd_list_classes(args: argparse.Namespace) -> int:
+    graph = _load_ontology_graph(args.ontology)
+    for term in _sorted_pkm_terms(graph, (OWL.Class,)):
+        print(_curie_for_iri(term))
+    return 0
+
+
+def cmd_list_properties(args: argparse.Namespace) -> int:
+    graph = _load_ontology_graph(args.ontology)
+    for term in _sorted_pkm_terms(
+        graph, (OWL.ObjectProperty, OWL.DatatypeProperty, RDF.Property)
+    ):
+        print(_curie_for_iri(term))
+    return 0
+
+
+def cmd_describe_term(args: argparse.Namespace) -> int:
+    graph = _load_ontology_graph(args.ontology)
+    term = _normalize_pkm_term(args.term)
+    if (term, None, None) not in graph and (None, None, term) not in graph:
+        raise CliUsageError(
+            f"term {_curie_for_iri(term)} was not found in {_repo_relative(args.ontology)}"
+        )
+    print(_curie_for_iri(term))
+    print(f"Kind: {_term_kind(graph, term)}")
+    label = graph.value(term, RDFS.label)
+    if label is not None:
+        print(f"Label: {label}")
+    comment = graph.value(term, RDFS.comment)
+    if comment is not None:
+        print(f"Comment: {comment}")
+    examples = _describe_usage_examples(graph, term)
+    if examples:
+        print("Usage examples:")
+        for example in examples:
+            print(f"- {example}")
+    return 0
 
 
 def cmd_ask(args: argparse.Namespace) -> int:
@@ -750,6 +929,52 @@ def build_parser() -> argparse.ArgumentParser:
         "--pretty", action="store_true", help="Print query results as indented JSON."
     )
     query_parser.set_defaults(func=cmd_query)
+
+    list_classes_parser = subparsers.add_parser(
+        "list-classes", help="List ontology classes in the pkm namespace."
+    )
+    list_classes_parser.add_argument(
+        "--ontology",
+        type=Path,
+        default=_resolve_existing_path(
+            DEFAULT_ONTOLOGY_SOURCE,
+            DEFAULT_DOCS_ONTOLOGY_SOURCE,
+            label="ontology source",
+        ),
+        help="Ontology Turtle file to inspect. Defaults to build/ontology.ttl, falling back to docs/ontology.ttl.",
+    )
+    list_classes_parser.set_defaults(func=cmd_list_classes)
+
+    list_properties_parser = subparsers.add_parser(
+        "list-properties", help="List ontology properties in the pkm namespace."
+    )
+    list_properties_parser.add_argument(
+        "--ontology",
+        type=Path,
+        default=_resolve_existing_path(
+            DEFAULT_ONTOLOGY_SOURCE,
+            DEFAULT_DOCS_ONTOLOGY_SOURCE,
+            label="ontology source",
+        ),
+        help="Ontology Turtle file to inspect. Defaults to build/ontology.ttl, falling back to docs/ontology.ttl.",
+    )
+    list_properties_parser.set_defaults(func=cmd_list_properties)
+
+    describe_parser = subparsers.add_parser(
+        "describe", help="Describe one ontology term and show example usage."
+    )
+    describe_parser.add_argument("term", help="Term to inspect, such as pkm:ContextualFact.")
+    describe_parser.add_argument(
+        "--ontology",
+        type=Path,
+        default=_resolve_existing_path(
+            DEFAULT_ONTOLOGY_SOURCE,
+            DEFAULT_DOCS_ONTOLOGY_SOURCE,
+            label="ontology source",
+        ),
+        help="Ontology Turtle file to inspect. Defaults to build/ontology.ttl, falling back to docs/ontology.ttl.",
+    )
+    describe_parser.set_defaults(func=cmd_describe_term)
 
     ask_parser = subparsers.add_parser(
         "ask",

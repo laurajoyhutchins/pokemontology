@@ -139,6 +139,36 @@ def test_query_command_preserves_explicit_sources(monkeypatch: object) -> None:
     )
 
 
+def test_list_classes_outputs_known_terms(capsys) -> None:
+    exit_code = cli.main(["list-classes"])
+    assert exit_code == 0
+
+    output = capsys.readouterr().out.splitlines()
+    assert "pkm:Species" in output
+    assert "pkm:Ruleset" in output
+
+
+def test_list_properties_outputs_known_terms(capsys) -> None:
+    exit_code = cli.main(["list-properties"])
+    assert exit_code == 0
+
+    output = capsys.readouterr().out.splitlines()
+    assert "pkm:aboutVariant" in output
+    assert "pkm:hasDamageFactor" in output
+
+
+def test_describe_outputs_comment_and_usage_examples(capsys) -> None:
+    exit_code = cli.main(["describe", "ContextualFact"])
+    assert exit_code == 0
+
+    output = capsys.readouterr().out
+    assert "pkm:ContextualFact" in output
+    assert "Kind: class" in output
+    assert "A reified fact that is true within exactly one context." in output
+    assert "Usage examples:" in output
+    assert "rdfs:subClassOf pkm:ContextualFact ." in output
+
+
 def test_laurel_command_defaults_to_build_sources(monkeypatch: object, capsys) -> None:
     captured: dict[str, object] = {}
 
