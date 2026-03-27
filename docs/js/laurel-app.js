@@ -1,6 +1,11 @@
 import { createState } from "./state.js";
+import { createWorkerRpc, readStorage, setupThemeToggle, writeStorage } from "./browser-runtime.js";
 import {
-  buildSources,
+  buildSelectedSources,
+  renderQueryArtifactLinks,
+  renderQuerySourceControls,
+} from "./docs-sources.js";
+import {
   configureQueryPresentation,
   exportLastResultsToCsv,
   renderGeneratedQuery,
@@ -21,25 +26,8 @@ import {
   renderStats,
 } from "./site-render.js";
 
-const THEME_STORAGE_KEY = "pokemontology-theme";
 const POWER_MODE_STORAGE_KEY = "pokemontology-power-mode";
-let nextWorkerRequestId = 0;
-
-function readStorage(key) {
-  try {
-    return window.localStorage.getItem(key);
-  } catch {
-    return null;
-  }
-}
-
-function writeStorage(key, value) {
-  try {
-    window.localStorage.setItem(key, value);
-  } catch {
-    // Storage can be unavailable for local-file browsing or privacy-restricted contexts.
-  }
-}
+const askWorker = createWorkerRpc("req");
 
 export async function createLaurelApp() {
   const state = createState();
@@ -52,6 +40,8 @@ export async function createLaurelApp() {
     state.siteData = await loadSiteData();
     state.schemaPack = await loadSchemaPack();
     configureQueryPresentation(state.schemaPack);
+    renderQuerySourceControls(state.siteData);
+    renderQueryArtifactLinks(state.siteData);
     renderArtifacts(state.siteData.artifacts || []);
     renderModules(state.siteData.modules || [], state.siteData.site?.repository_url || "");
     renderPipelines(state.siteData.pipelines || []);
@@ -129,16 +119,6 @@ function matchesKey(matches) {
   );
 }
 
-function applyTheme(theme) {
-  const root = document.documentElement;
-  const toggle = document.querySelector("[data-theme-toggle]");
-  const label = document.querySelector("[data-theme-label]");
-  root.dataset.theme = theme;
-  if (toggle) toggle.setAttribute("aria-pressed", String(theme === "dark"));
-  if (toggle) toggle.setAttribute("aria-label", `Current theme: ${theme}`);
-  if (label) label.textContent = theme === "dark" ? "Dark" : "Light";
-}
-
 function applyPowerMode(mode) {
   const body = document.body;
   const toggle = document.querySelector("[data-power-toggle]");
@@ -148,25 +128,8 @@ function applyPowerMode(mode) {
   if (label) label.textContent = `Technical: ${mode === "on" ? "On" : "Off"}`;
 }
 
-function resolvedInitialTheme() {
-  const stored = readStorage(THEME_STORAGE_KEY);
-  if (stored === "light" || stored === "dark") return stored;
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-}
-
 function resolvedInitialPowerMode() {
   return readStorage(POWER_MODE_STORAGE_KEY) === "on" ? "on" : "off";
-}
-
-function setupThemeToggle() {
-  applyTheme(resolvedInitialTheme());
-  const toggle = document.querySelector("[data-theme-toggle]");
-  if (!toggle) return;
-  toggle.addEventListener("click", () => {
-    const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
-    writeStorage(THEME_STORAGE_KEY, next);
-    applyTheme(next);
-  });
 }
 
 function setupPowerToggle() {
@@ -397,7 +360,7 @@ function initQueryRuntime(state) {
   const runLabel = document.getElementById("run-btn-label");
   if (runButton) runButton.disabled = false;
   if (runLabel) runLabel.textContent = "Run SPARQL";
-  const sources = buildSources();
+  const sources = buildSelectedSources(state.siteData);
   if (sources.length) {
     setInlineStatus("Preparing local query graph in the background…");
     ensureQueryGraphReady(state, sources, { background: true }).then(() => {
@@ -408,57 +371,6 @@ function initQueryRuntime(state) {
   } else {
     setInlineStatus("Ready for a new query.");
   }
-}
-
-async function askWorker(worker, payload, { onProgress, timeoutMs = 10000 } = {}) {
-  if (!worker.__pendingRequests) {
-    worker.__pendingRequests = new Map();
-    worker.onmessage = (event) => {
-      const requestId = event.data?.requestId;
-      if (!requestId) return;
-      const pending = worker.__pendingRequests.get(requestId);
-      if (!pending) return;
-      if (event.data?.type === "progress") {
-        pending.onProgress?.(event.data);
-        return;
-      }
-      if (event.data?.error) {
-        window.clearTimeout(pending.timeout);
-        worker.__pendingRequests.delete(requestId);
-        pending.reject(new Error(event.data.error));
-        return;
-      }
-      window.clearTimeout(pending.timeout);
-      worker.__pendingRequests.delete(requestId);
-      pending.resolve(event.data);
-    };
-    worker.onerror = (event) => {
-      const error = event.error || new Error("Worker failed.");
-      worker.__pendingRequests.forEach((pending) => {
-        window.clearTimeout(pending.timeout);
-        pending.reject(error);
-      });
-      worker.__pendingRequests.clear();
-    };
-  }
-
-  const requestId = `req-${++nextWorkerRequestId}`;
-  return new Promise((resolve, reject) => {
-    const timeout = window.setTimeout(() => {
-      worker.__pendingRequests.delete(requestId);
-      reject(new Error("Worker response timed out."));
-    }, timeoutMs);
-    worker.__pendingRequests.set(requestId, {
-      resolve,
-      reject,
-      onProgress,
-      timeout,
-    });
-    worker.postMessage({
-      ...payload,
-      requestId,
-    });
-  });
 }
 
 async function runLaurelPipeline(state) {
@@ -472,7 +384,7 @@ async function runLaurelPipeline(state) {
     if (!question) return;
     state.currentQuestion = question;
     resetLaurelPanels();
-    const sources = buildSources();
+    const sources = buildSelectedSources(state.siteData);
     const schemaVersion = stableStringify({
       inference: state.schemaPack?.inference || {},
       retrieval: state.schemaPack?.retrieval || {},

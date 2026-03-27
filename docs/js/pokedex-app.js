@@ -1,7 +1,9 @@
+import { createWorkerRpc, setupThemeToggle } from "./browser-runtime.js";
+import { getCanonicalMechanicsArtifact, mechanicsSourceCandidates } from "./docs-sources.js";
 import { loadSiteData } from "./site-render.js";
 
 const PKM_PREFIX = "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#";
-const THEME_STORAGE_KEY = "pokemontology-theme";
+const askWorker = createWorkerRpc("pokedex");
 
 const CATALOG_QUERY = `
 PREFIX pkm: <${PKM_PREFIX}>
@@ -106,59 +108,6 @@ WHERE {
   ?stat pkm:hasName ?statName .
 }
 `;
-
-let nextWorkerRequestId = 0;
-
-function readStorage(key) {
-  try {
-    return window.localStorage.getItem(key);
-  } catch {
-    return null;
-  }
-}
-
-function writeStorage(key, value) {
-  try {
-    window.localStorage.setItem(key, value);
-  } catch {
-    // Storage can be unavailable in privacy-restricted contexts.
-  }
-}
-
-function resolvedInitialTheme() {
-  const stored = readStorage(THEME_STORAGE_KEY);
-  if (stored === "light" || stored === "dark") return stored;
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-}
-
-function applyTheme(theme) {
-  const root = document.documentElement;
-  const toggle = document.querySelector("[data-theme-toggle]");
-  const label = document.querySelector("[data-theme-label]");
-  root.dataset.theme = theme;
-  if (toggle) toggle.setAttribute("aria-pressed", String(theme === "dark"));
-  if (toggle) toggle.setAttribute("aria-label", `Current theme: ${theme}`);
-  if (label) label.textContent = theme === "dark" ? "Dark" : "Light";
-}
-
-function setupThemeToggle() {
-  applyTheme(resolvedInitialTheme());
-  const toggle = document.querySelector("[data-theme-toggle]");
-  if (!toggle) return;
-  toggle.addEventListener("click", () => {
-    const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
-    writeStorage(THEME_STORAGE_KEY, next);
-    applyTheme(next);
-  });
-}
-
-function sourceCandidates() {
-  const ontology = new URL("../ontology.ttl", import.meta.url).href;
-  return [
-    [ontology, new URL("../mechanics.ttl", import.meta.url).href],
-    [ontology, new URL("../pokeapi.ttl", import.meta.url).href],
-  ];
-}
 
 function termValue(binding, key) {
   return binding?.[key]?.value || "";
@@ -377,57 +326,6 @@ function renderError(message) {
   if (detail) detail.innerHTML = html;
 }
 
-async function askWorker(worker, payload, { onProgress, timeoutMs = 20000 } = {}) {
-  if (!worker.__pendingRequests) {
-    worker.__pendingRequests = new Map();
-    worker.onmessage = (event) => {
-      const requestId = event.data?.requestId;
-      if (!requestId) return;
-      const pending = worker.__pendingRequests.get(requestId);
-      if (!pending) return;
-      if (event.data?.type === "progress") {
-        pending.onProgress?.(event.data);
-        return;
-      }
-      if (event.data?.error) {
-        window.clearTimeout(pending.timeout);
-        worker.__pendingRequests.delete(requestId);
-        pending.reject(new Error(event.data.error));
-        return;
-      }
-      window.clearTimeout(pending.timeout);
-      worker.__pendingRequests.delete(requestId);
-      pending.resolve(event.data);
-    };
-    worker.onerror = (event) => {
-      const error = event.error || new Error("Worker failed.");
-      worker.__pendingRequests.forEach((pending) => {
-        window.clearTimeout(pending.timeout);
-        pending.reject(error);
-      });
-      worker.__pendingRequests.clear();
-    };
-  }
-
-  const requestId = `pokedex-${++nextWorkerRequestId}`;
-  return new Promise((resolve, reject) => {
-    const timeout = window.setTimeout(() => {
-      worker.__pendingRequests.delete(requestId);
-      reject(new Error("Worker response timed out."));
-    }, timeoutMs);
-    worker.__pendingRequests.set(requestId, {
-      resolve,
-      reject,
-      onProgress,
-      timeout,
-    });
-    worker.postMessage({
-      ...payload,
-      requestId,
-    });
-  });
-}
-
 function buildVariantQuery(template, variantIri) {
   return template.replace("__VARIANT__", `<${variantIri}>`);
 }
@@ -442,7 +340,7 @@ async function fetchCatalog(worker, appState) {
 
   let response = null;
   let lastError = null;
-  for (const candidateSources of sourceCandidates()) {
+  for (const candidateSources of mechanicsSourceCandidates(appState.siteData)) {
     try {
       await askWorker(
         worker,
@@ -561,14 +459,18 @@ export async function createPokedexApp() {
     catalog: [],
     search: "",
     selectedSlug: "",
+    siteData: null,
     sources: [],
     worker: new Worker("./workers/query-worker.js", { type: "module" }),
   };
 
   try {
     const siteData = await loadSiteData();
+    appState.siteData = siteData;
     const repoLink = document.querySelector("[data-repository-url]");
     if (repoLink) repoLink.href = siteData.site?.repository_url || repoLink.href;
+    const mechanicsNotice = document.querySelector("[data-pokedex-mechanics-artifact]");
+    if (mechanicsNotice) mechanicsNotice.textContent = getCanonicalMechanicsArtifact(siteData).path;
 
     bindCatalogInteractions(appState);
     await fetchCatalog(appState.worker, appState);

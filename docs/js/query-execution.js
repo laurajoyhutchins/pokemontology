@@ -1,3 +1,5 @@
+import { buildSelectedSources } from "./docs-sources.js";
+
 const PKM_NS = "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#";
 
 const PREFIX_MAP = [
@@ -343,21 +345,8 @@ function detectQueryType(sparql) {
   return "bindings";
 }
 
-export function buildSources() {
-  const sources = [];
-  if (document.getElementById("src-ontology")?.checked) {
-    sources.push(new URL("./ontology.ttl", window.location.href).href);
-  }
-  if (document.getElementById("src-mechanics")?.checked) {
-    sources.push(new URL("./mechanics.ttl", window.location.href).href);
-  }
-  if (document.getElementById("src-pokeapi-demo")?.checked) {
-    sources.push(new URL("./pokeapi-demo.ttl", window.location.href).href);
-  }
-  if (document.getElementById("src-shapes")?.checked) {
-    sources.push(new URL("./shapes.ttl", window.location.href).href);
-  }
-  return sources;
+export function buildSources(siteData) {
+  return buildSelectedSources(siteData);
 }
 
 async function iteratorToArray(stream) {

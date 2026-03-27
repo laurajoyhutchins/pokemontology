@@ -21,8 +21,13 @@ def test_query_engine_uses_comunica_fallback_urls() -> None:
     query_module = (REPO / "docs" / "js" / "query-execution.js").read_text(
         encoding="utf-8"
     )
+    source_module = (REPO / "docs" / "js" / "docs-sources.js").read_text(
+        encoding="utf-8"
+    )
     assert 'import { createLaurelApp } from "./js/laurel-app.js";' in text
     assert "COMUNICA_BROWSER_URLS" in query_module
+    assert "buildSelectedSources" in query_module
+    assert "getCanonicalMechanicsArtifact" in source_module
     assert (
         "rdf.js.org/comunica-browser/versions/v4/engines/query-sparql/comunica-browser.js"
         in query_module
@@ -77,15 +82,20 @@ def test_professor_laurel_landing_page_is_primary_entry() -> None:
 def test_pokedex_page_uses_worker_backed_graph_browser() -> None:
     html = POKEDEX_HTML.read_text(encoding="utf-8")
     script = (REPO / "docs" / "js" / "pokedex-app.js").read_text(encoding="utf-8")
+    runtime = (REPO / "docs" / "js" / "browser-runtime.js").read_text(
+        encoding="utf-8"
+    )
 
     assert "Ontology Pokedex" in html
     assert 'id="pokedex-search"' in html
+    assert "data-pokedex-mechanics-artifact" in html
     assert 'src="./pokedex.js"' in html
     assert 'new Worker("./workers/query-worker.js", { type: "module" })' in script
+    assert 'createWorkerRpc("pokedex")' in script
+    assert "mechanicsSourceCandidates" in script
+    assert "setupThemeToggle" in runtime
     assert "pkm:TypingAssignment" in script
     assert "pkm:MoveLearnRecord" in script
-    assert 'new URL("../mechanics.ttl", import.meta.url).href' in script
-    assert 'new URL("../ontology.ttl", import.meta.url).href' in script
     assert "STRENDS(LCASE(STR(?variantName)), \"-default\")" in script
 
 
@@ -112,12 +122,15 @@ def test_docs_workers_are_present() -> None:
 def test_query_engine_defaults_to_canonical_mechanics_dataset() -> None:
     text = (REPO / "docs" / "js" / "query-execution.js").read_text(encoding="utf-8")
     index_text = INDEX_HTML.read_text(encoding="utf-8")
-    assert 'id="src-mechanics" checked' in index_text
-    assert 'id="src-pokeapi-demo"' in index_text
-    assert "mechanics.ttl" in index_text
-    assert "pokeapi-demo.ttl (debug)" in index_text
-    assert 'new URL("./mechanics.ttl", window.location.href).href' in text
-    assert 'new URL("./pokeapi-demo.ttl", window.location.href).href' in text
+    sources_text = (REPO / "docs" / "js" / "docs-sources.js").read_text(
+        encoding="utf-8"
+    )
+    assert "data-query-sources" in index_text
+    assert "data-query-artifacts" in index_text
+    assert "buildSelectedSources" in text
+    assert '"src-mechanics"' in sources_text
+    assert '"pokeapi-demo.ttl (debug)"' in sources_text
+    assert "preferred_paths" in sources_text
 
 
 def test_query_validator_enforces_ast_or_safe_fallback() -> None:
@@ -165,6 +178,9 @@ def test_laurel_app_retries_with_safe_fallback_on_validation_failure() -> None:
 
 def test_laurel_app_worker_transport_supports_overlapping_requests() -> None:
     app_text = (REPO / "docs" / "js" / "laurel-app.js").read_text(encoding="utf-8")
+    runtime_text = (REPO / "docs" / "js" / "browser-runtime.js").read_text(
+        encoding="utf-8"
+    )
     retrieval_text = (REPO / "docs" / "workers" / "retrieval-worker.js").read_text(
         encoding="utf-8"
     )
@@ -175,8 +191,9 @@ def test_laurel_app_worker_transport_supports_overlapping_requests() -> None:
         encoding="utf-8"
     )
 
-    assert "worker.__pendingRequests = new Map()" in app_text
-    assert "worker.__pendingRequests.set(requestId" in app_text
+    assert 'createWorkerRpc("req")' in app_text
+    assert "worker.__pendingRequests = new Map()" in runtime_text
+    assert "worker.__pendingRequests.set(requestId" in runtime_text
     assert "requestId: `req-${++nextWorkerRequestId}`" not in app_text
     assert "requestId," in retrieval_text
     assert "self.postMessage({ requestId, matches })" in retrieval_text
