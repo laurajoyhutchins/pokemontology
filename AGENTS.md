@@ -32,6 +32,7 @@ This repository models Pokemon battle mechanics as RDF/OWL and SHACL, with suppo
 - Treat `build/ontology.ttl`, `build/shapes.ttl`, `docs/ontology.ttl`, and `docs/shapes.ttl` as generated files.
 - Treat `build/mechanics.ttl` as the canonical local mechanics bundle.
 - Treat `docs/mechanics-base.ttl`, `docs/mechanics-learnsets-current.ttl`, `docs/mechanics-learnsets-modern.ttl`, `docs/mechanics-learnsets-legacy.ttl`, `docs/site-data.json`, and `docs/schema-index.json` as generated publishable web artifacts.
+- Treat `build/sparql-reference.md` and `docs/sparql-reference.md` as generated reference artifacts derived from the schema pack and bundled queries.
 - Rebuild these with:
   ```bash
   .venv/bin/python -m pokemontology build
