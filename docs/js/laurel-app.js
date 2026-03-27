@@ -207,10 +207,6 @@ function bindStaticActions(state) {
     button.setAttribute("aria-expanded", String(details.open));
   });
 
-  document.getElementById("focus-question-btn")?.addEventListener("click", () => {
-    document.getElementById("nl-question")?.focus();
-  });
-
   document.getElementById("export-csv-btn")?.addEventListener("click", () => {
     exportLastResultsToCsv();
   });
