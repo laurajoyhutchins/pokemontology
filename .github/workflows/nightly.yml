@@ -1,0 +1,40 @@
+name: Nightly Audit
+
+on:
+  schedule:
+    - cron: "25 9 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  full-regressions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - name: Install project dependencies
+        run: python -m pip install .
+      - name: Run full pytest suite
+        run: python -m pytest -m ''
+
+  laurel-evaluation:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    if: ${{ secrets.OLLAMA_BASE_URL != '' }}
+    env:
+      OLLAMA_HOST: ${{ secrets.OLLAMA_BASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - name: Install project dependencies
+        run: python -m pip install .
+      - name: Run Laurel evaluation
+        run: python -m pokemontology evaluate-laurel
