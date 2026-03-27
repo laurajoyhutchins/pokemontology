@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 from pokemontology import cli
 from tests.support import REPO, write_json
@@ -155,6 +156,84 @@ def test_resolve_order_command_requires_top_level_object(tmp_path, capsys) -> No
 
     error = capsys.readouterr().err
     assert "turn-order state JSON must contain a top-level JSON object" in error
+
+
+def test_serve_docs_command_uses_localhost_and_docs_dir(capsys, monkeypatch: object) -> None:
+    captured: dict[str, object] = {}
+
+    class FakeServer:
+        def __init__(self, address, handler_factory) -> None:
+            captured["address"] = address
+            captured["handler_factory"] = handler_factory
+            self.server_address = address
+            self.served = False
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb) -> None:
+            return None
+
+        def serve_forever(self) -> None:
+            self.served = True
+            captured["served"] = True
+
+    monkeypatch.setattr(cli, "ThreadingHTTPServer", FakeServer)
+
+    exit_code = cli.main(["serve-docs"])
+
+    assert exit_code == 0
+    assert captured["address"] == ("localhost", 8000)
+    assert captured["served"] is True
+
+    handler = captured["handler_factory"]
+    assert getattr(handler, "keywords", {})["directory"] == str(REPO / "docs")
+
+    output = capsys.readouterr().out.strip()
+    assert output == "Serving docs at http://localhost:8000/"
+
+
+def test_serve_docs_command_accepts_custom_bindings(
+    tmp_path: Path, monkeypatch: object
+) -> None:
+    captured: dict[str, object] = {}
+
+    class FakeServer:
+        def __init__(self, address, handler_factory) -> None:
+            captured["address"] = address
+            captured["handler_factory"] = handler_factory
+            self.server_address = address
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb) -> None:
+            return None
+
+        def serve_forever(self) -> None:
+            return None
+
+    docs_dir = tmp_path / "site"
+    docs_dir.mkdir()
+
+    monkeypatch.setattr(cli, "ThreadingHTTPServer", FakeServer)
+
+    exit_code = cli.main(
+        [
+            "serve-docs",
+            "--host",
+            "127.0.0.1",
+            "--port",
+            "8080",
+            "--docs-dir",
+            str(docs_dir),
+        ]
+    )
+
+    assert exit_code == 0
+    assert captured["address"] == ("127.0.0.1", 8080)
+    handler = captured["handler_factory"]
+    assert getattr(handler, "keywords", {})["directory"] == str(docs_dir)
 
 
 def test_replay_curate_command_writes_curated_file(tmp_path, capsys) -> None:

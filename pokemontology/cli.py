@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import argparse
 import json
+from functools import partial
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from collections.abc import Callable
 from pathlib import Path
 from typing import Sequence
@@ -38,6 +40,7 @@ class CliUsageError(ValueError):
 
 
 DEFAULT_SCHEMA_INDEX = REPO_ROOT / "build" / "schema-index.json"
+DEFAULT_DOCS_DIR = REPO_ROOT / "docs"
 
 
 _TURTLE_SOURCE_CACHE: dict[tuple[tuple[str, int, int], ...], Graph] = {}
@@ -188,6 +191,17 @@ def cmd_resolve_order(args: argparse.Namespace) -> int:
     payload = _load_json_object(args.state_json, label="turn-order state JSON")
     resolved = resolve_action_order(payload)
     _print_json(resolved, pretty=args.pretty)
+    return 0
+
+
+def cmd_serve_docs(args: argparse.Namespace) -> int:
+    handler = partial(SimpleHTTPRequestHandler, directory=str(args.docs_dir))
+    with ThreadingHTTPServer((args.host, args.port), handler) as server:
+        bound_host, bound_port = server.server_address
+        print(
+            f"Serving {_repo_relative(args.docs_dir)} at http://{bound_host}:{bound_port}/"
+        )
+        server.serve_forever()
     return 0
 
 
@@ -573,11 +587,59 @@ def add_veekun_subcommands(
     subparsers: argparse._SubParsersAction[argparse.ArgumentParser],
 ) -> None:
     veekun_parser = subparsers.add_parser(
-        "veekun", help="Transform a local normalized Veekun export into Turtle."
+        "veekun", help="Fetch, normalize, and transform Veekun data into Turtle."
     )
     veekun_subparsers = veekun_parser.add_subparsers(
         dest="veekun_command", required=True
     )
+
+    fetch_parser = veekun_subparsers.add_parser(
+        "fetch", help="Fetch the upstream Veekun CSV snapshot."
+    )
+    fetch_parser.add_argument(
+        "--archive-url",
+        default=veekun_ingest.DEFAULT_ARCHIVE_URL,
+        help="Tar.gz archive URL for veekun/pokedex.",
+    )
+    fetch_parser.add_argument(
+        "--raw-dir",
+        type=Path,
+        default=veekun_ingest.DEFAULT_RAW_DIR,
+        help="Directory to store required upstream Veekun CSV files.",
+    )
+    fetch_parser.add_argument(
+        "--timeout", type=float, default=60.0, help="HTTP timeout in seconds."
+    )
+    fetch_parser.set_defaults(func=_return_zero(veekun_ingest.cmd_fetch))
+
+    normalize_parser = veekun_subparsers.add_parser(
+        "normalize",
+        help="Normalize upstream Veekun CSVs into the repository's transform format.",
+    )
+    normalize_parser.add_argument(
+        "--raw-dir",
+        type=Path,
+        default=veekun_ingest.DEFAULT_RAW_DIR,
+        help="Directory containing upstream Veekun CSV files.",
+    )
+    normalize_parser.add_argument(
+        "--source-dir",
+        type=Path,
+        default=veekun_ingest.DEFAULT_SOURCE_DIR,
+        help="Directory for normalized Veekun CSV export files.",
+    )
+    normalize_parser.add_argument(
+        "--include-learnsets",
+        action="store_true",
+        help="Emit normalized move learn records. This can produce a very large dataset.",
+    )
+    normalize_parser.add_argument(
+        "--version-group",
+        action="append",
+        default=[],
+        help="Limit normalization to one or more Veekun version-group identifiers.",
+    )
+    normalize_parser.set_defaults(func=_return_zero(veekun_ingest.cmd_normalize))
 
     transform_parser = veekun_subparsers.add_parser(
         "transform", help="Transform local Veekun CSV export into Turtle."
@@ -596,6 +658,54 @@ def add_veekun_subcommands(
         help="Output TTL path.",
     )
     transform_parser.set_defaults(func=_return_zero(veekun_ingest.cmd_transform))
+
+    ingest_parser = veekun_subparsers.add_parser(
+        "ingest", help="Fetch, normalize, and transform Veekun data into Turtle."
+    )
+    ingest_parser.add_argument(
+        "--archive-url",
+        default=veekun_ingest.DEFAULT_ARCHIVE_URL,
+        help="Tar.gz archive URL for veekun/pokedex.",
+    )
+    ingest_parser.add_argument(
+        "--raw-dir",
+        type=Path,
+        default=veekun_ingest.DEFAULT_RAW_DIR,
+        help="Directory to store required upstream Veekun CSV files.",
+    )
+    ingest_parser.add_argument(
+        "--source-dir",
+        type=Path,
+        default=veekun_ingest.DEFAULT_SOURCE_DIR,
+        help="Directory for normalized Veekun CSV export files.",
+    )
+    ingest_parser.add_argument(
+        "-o",
+        "--output",
+        type=Path,
+        default=veekun_ingest.DEFAULT_OUTPUT,
+        help="Output TTL path.",
+    )
+    ingest_parser.add_argument(
+        "--timeout", type=float, default=60.0, help="HTTP timeout in seconds."
+    )
+    ingest_parser.add_argument(
+        "--include-learnsets",
+        action="store_true",
+        help="Emit move learn records. This can produce a very large dataset.",
+    )
+    ingest_parser.add_argument(
+        "--version-group",
+        action="append",
+        default=[],
+        help="Limit normalization to one or more Veekun version-group identifiers.",
+    )
+    ingest_parser.add_argument(
+        "--skip-fetch",
+        action="store_true",
+        help="Reuse an existing raw Veekun CSV snapshot instead of downloading it again.",
+    )
+    ingest_parser.set_defaults(func=_return_zero(veekun_ingest.cmd_ingest))
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -835,6 +945,29 @@ def build_parser() -> argparse.ArgumentParser:
         "--pretty", action="store_true", help="Print inferred order as indented JSON."
     )
     resolve_parser.set_defaults(func=cmd_resolve_order)
+
+    serve_parser = subparsers.add_parser(
+        "serve-docs",
+        help="Serve docs/index.html locally for frontend testing.",
+    )
+    serve_parser.add_argument(
+        "--host",
+        default="localhost",
+        help="Interface to bind. Defaults to localhost.",
+    )
+    serve_parser.add_argument(
+        "--port",
+        type=int,
+        default=8000,
+        help="Port to bind. Defaults to 8000.",
+    )
+    serve_parser.add_argument(
+        "--docs-dir",
+        type=Path,
+        default=DEFAULT_DOCS_DIR,
+        help="Directory to serve. Defaults to the repository docs/ folder.",
+    )
+    serve_parser.set_defaults(func=cmd_serve_docs)
 
     add_replay_dataset_subcommands(subparsers)
     add_pokeapi_subcommands(subparsers)
