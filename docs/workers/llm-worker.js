@@ -1,11 +1,12 @@
 let enginePromise = null;
 
 self.onmessage = async (event) => {
-  const { question, matches = [], schemaPack, webgpuAvailable } = event.data;
+  const { question, matches = [], schemaPack, webgpuAvailable, requestId } = event.data;
   const inferenceConfig = schemaPack?.inference || {};
 
   if (webgpuAvailable) {
     self.postMessage({
+      requestId,
       type: "progress",
       backend: "WebGPU local inference",
       message: "Loading browser-local model…",
@@ -13,12 +14,14 @@ self.onmessage = async (event) => {
     try {
       const engine = await getWebLlmEngine(inferenceConfig);
       self.postMessage({
+        requestId,
         type: "progress",
         backend: "WebGPU local inference",
         message: "Running browser-local translation…",
       });
       const sparql = await generateWithWebLlm(engine, question || "", matches, schemaPack);
       self.postMessage({
+        requestId,
         backend: "WebGPU local inference",
         sparql,
         fallbackSparql: buildFallbackQuery(question || "", matches, schemaPack).sparql,
@@ -27,6 +30,7 @@ self.onmessage = async (event) => {
       return;
     } catch (error) {
       self.postMessage({
+        requestId,
         type: "progress",
         backend: "Inference fallback",
         message: `Local model unavailable, falling back to deterministic translator: ${error.message}`,
@@ -36,6 +40,7 @@ self.onmessage = async (event) => {
 
   const answer = buildFallbackQuery(question || "", matches, schemaPack);
   self.postMessage({
+    requestId,
     backend: webgpuAvailable ? "deterministic fallback synthesizer" : "CPU fallback synthesizer",
     sparql: answer.sparql,
     fallbackSparql: answer.sparql,
@@ -61,6 +66,7 @@ async function loadWebLlmEngine(inferenceConfig) {
     initProgressCallback(report) {
       const text = report?.text || report?.progress || "Loading browser-local model…";
       self.postMessage({
+        requestId,
         type: "progress",
         backend: "WebGPU local inference",
         message: String(text),

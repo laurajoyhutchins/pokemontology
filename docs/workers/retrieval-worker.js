@@ -1,5 +1,5 @@
 self.onmessage = (event) => {
-  const { question, schemaPack, topK = 4 } = event.data;
+  const { question, schemaPack, topK = 4, requestId } = event.data;
   const items = schemaPack?.items || [];
   const retrievalConfig = schemaPack?.retrieval || {};
   const minScore = minimumScore(question || "", retrievalConfig.minimum_scores || []);
@@ -37,7 +37,7 @@ self.onmessage = (event) => {
     .sort((a, b) => b.score - a.score)
     .slice(0, effectiveTopK);
 
-  self.postMessage({ matches });
+  self.postMessage({ requestId, matches });
 };
 
 function tokenize(text) {

@@ -418,16 +418,17 @@ def test_web_page_controller_prefers_actual_pokeapi_source(tmp_path: Path) -> No
               try {{
                 let message;
                 if (this.url.includes("retrieval-worker")) {{
-                  message = {{ matches: [] }};
+                  message = {{ requestId: payload.requestId, matches: [] }};
                 }} else if (this.url.includes("llm-worker")) {{
                   message = {{
+                    requestId: payload.requestId,
                     backend: "CPU fallback synthesizer",
                     sparql: "PREFIX pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#>\\nSELECT ?species WHERE {{ ?species a pkm:Species }} LIMIT 1",
                     fallbackSparql: "PREFIX pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#>\\nSELECT ?species WHERE {{ ?species a pkm:Species }} LIMIT 1",
                     summary: "synthetic test response",
                   }};
                 }} else {{
-                  message = {{ ok: true, messages: [], normalized: payload.sparql }};
+                  message = {{ requestId: payload.requestId, ok: true, messages: [], normalized: payload.sparql }};
                 }}
                 this.onmessage?.({{ data: message }});
               }} catch (error) {{
@@ -703,6 +704,7 @@ def test_web_page_controller_end_to_end(tmp_path: Path) -> None:
                 let message;
                 if (this.url.includes("retrieval-worker")) {{
                   message = {{
+                    requestId: payload.requestId,
                     matches: [{{
                       kind: "example",
                       label: "super effective moves",
@@ -712,6 +714,7 @@ def test_web_page_controller_end_to_end(tmp_path: Path) -> None:
                   }};
                 }} else if (this.url.includes("llm-worker")) {{
                   message = {{
+                    requestId: payload.requestId,
                     backend: "CPU fallback synthesizer",
                     sparql: queryText,
                     fallbackSparql: queryText,
@@ -719,6 +722,7 @@ def test_web_page_controller_end_to_end(tmp_path: Path) -> None:
                   }};
                 }} else {{
                   message = {{
+                    requestId: payload.requestId,
                     ok: true,
                     messages: ["validated in test harness"],
                     normalized: queryText,
@@ -823,3 +827,348 @@ def test_web_page_controller_end_to_end(tmp_path: Path) -> None:
     assert "validated in test harness" in payload["validationHtml"]
     assert payload["validationBadge"] == "Validated"
     assert payload["statusText"] == "Field query complete."
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node is required for web integration")
+def test_web_page_controller_ignores_stale_prior_query_updates(tmp_path: Path) -> None:
+    site_data_text = (REPO / "docs" / "site-data.json").read_text(encoding="utf-8")
+    schema_index_text = SCHEMA_INDEX.read_text(encoding="utf-8")
+    script = textwrap.dedent(
+        f"""
+        import path from "node:path";
+        import {{ pathToFileURL }} from "node:url";
+
+        const repo = {json.dumps(str(REPO))};
+        const siteData = {site_data_text};
+        const schemaPack = {schema_index_text};
+
+        class FakeClassList {{
+          constructor() {{
+            this.names = new Set();
+          }}
+          toggle(name, force) {{
+            if (force === undefined) {{
+              if (this.names.has(name)) this.names.delete(name);
+              else this.names.add(name);
+              return this.names.has(name);
+            }}
+            if (force) this.names.add(name);
+            else this.names.delete(name);
+            return force;
+          }}
+        }}
+
+        class FakeElement {{
+          constructor(id = "", tag = "div") {{
+            this.id = id;
+            this.tagName = tag.toUpperCase();
+            this.listeners = {{}};
+            this.children = [];
+            this.attributes = new Map();
+            this.dataset = {{}};
+            this.classList = new FakeClassList();
+            this.hidden = false;
+            this.checked = false;
+            this.disabled = false;
+            this.open = false;
+            this.value = "";
+            this.innerHTML = "";
+            this.textContent = "";
+            this.href = "";
+            this.selectionStart = 0;
+            this.selectionEnd = 0;
+          }}
+          addEventListener(type, listener) {{
+            (this.listeners[type] ||= []).push(listener);
+          }}
+          async dispatch(type, event = {{}}) {{
+            for (const listener of this.listeners[type] || []) {{
+              await listener({{
+                preventDefault() {{}},
+                stopPropagation() {{}},
+                target: this,
+                currentTarget: this,
+                ...event,
+              }});
+            }}
+          }}
+          async click() {{
+            await this.dispatch("click");
+          }}
+          setAttribute(name, value) {{
+            this.attributes.set(name, String(value));
+            if (name === "hidden") this.hidden = true;
+            if (name.startsWith("data-")) {{
+              this.dataset[name.slice(5).replace(/-([a-z])/g, (_, c) => c.toUpperCase())] = String(value);
+            }}
+          }}
+          removeAttribute(name) {{
+            this.attributes.delete(name);
+            if (name === "hidden") this.hidden = false;
+          }}
+          appendChild(child) {{
+            this.children.push(child);
+            return child;
+          }}
+          removeChild(child) {{
+            this.children = this.children.filter((entry) => entry !== child);
+          }}
+          focus() {{}}
+        }}
+
+        const byId = new Map();
+        const bySelector = new Map();
+        const selectorLists = new Map([
+          ["main section[id]", []],
+          [".nav-links a[href^='#']", []],
+        ]);
+
+        function registerId(id, tag = "div") {{
+          const element = new FakeElement(id, tag);
+          byId.set(id, element);
+          return element;
+        }}
+        function registerSelector(selector, element) {{
+          bySelector.set(selector, element);
+          return element;
+        }}
+
+        const documentElement = new FakeElement("", "html");
+        documentElement.dataset = {{}};
+        const body = new FakeElement("", "body");
+        body.dataset = {{}};
+        const head = new FakeElement("", "head");
+
+        const question = registerId("nl-question", "textarea");
+        const laurelRunBtn = registerId("laurel-run-btn", "button");
+        const sparqlEditor = registerId("sparql-editor", "textarea");
+        const generatedPreview = registerId("generated-query-preview", "code");
+        const validationList = registerId("validation-list");
+        const validationBadge = registerId("validation-badge");
+        registerId("grounding-notes");
+        const qeResults = registerId("qe-results");
+        const laurelStatus = registerId("laurel-status");
+        const runBtn = registerId("run-btn", "button");
+        registerId("run-btn-label");
+        registerId("example-select", "select");
+        const srcOntology = registerId("src-ontology", "input");
+        srcOntology.checked = true;
+        const srcPokeapi = registerId("src-pokeapi", "input");
+        srcPokeapi.checked = true;
+        const srcPokeapiDemo = registerId("src-pokeapi-demo", "input");
+        srcPokeapiDemo.checked = false;
+        const srcShapes = registerId("src-shapes", "input");
+        srcShapes.checked = false;
+        registerId("export-csv-btn", "button");
+        registerId("clear-results-btn", "button");
+        registerId("copy-sparql-btn", "button");
+        registerId("sample-question-btn", "button");
+        registerId("toggle-advanced-btn", "button");
+        registerId("advanced-console", "details");
+        registerId("focus-question-btn", "button");
+        registerId("copy-query-btn", "button");
+        registerId("clear-query-btn", "button");
+        registerId("qe-status");
+
+        registerSelector("[data-status-model]", new FakeElement("", "span"));
+        registerSelector("[data-status-grounding]", new FakeElement("", "span"));
+        registerSelector("[data-status-validator]", new FakeElement("", "span"));
+        registerSelector("[data-grounding-count]", new FakeElement("", "span"));
+        registerSelector("[data-theme-toggle]", new FakeElement("", "button"));
+        registerSelector("[data-theme-label]", new FakeElement("", "span"));
+        registerSelector("[data-power-toggle]", new FakeElement("", "button"));
+        registerSelector("[data-power-label]", new FakeElement("", "span"));
+        registerSelector("[data-repository-url]", new FakeElement("", "a"));
+        registerSelector("[data-pages-base-url]", new FakeElement("", "span"));
+        const siteError = registerSelector("[data-site-error]", new FakeElement("", "div"));
+        siteError.hidden = true;
+
+        const document = {{
+          body,
+          head,
+          documentElement,
+          getElementById(id) {{
+            return byId.get(id) || null;
+          }},
+          querySelector(selector) {{
+            return bySelector.get(selector) || null;
+          }},
+          querySelectorAll(selector) {{
+            return selectorLists.get(selector) || [];
+          }},
+          createElement(tag) {{
+            return new FakeElement("", tag);
+          }},
+        }};
+
+        class FakeBinding {{
+          constructor(values) {{
+            this.values = values;
+          }}
+          get(name) {{
+            const value = this.values[name];
+            return value === undefined ? undefined : {{ termType: "Literal", value }};
+          }}
+          [Symbol.iterator]() {{
+            return Object.entries(this.values)
+              .map(([name, value]) => [{{ termType: "Variable", value: name }}, {{ termType: "Literal", value }}])[Symbol.iterator]();
+          }}
+        }}
+
+        class FakeWorker {{
+          static llmQueue = [];
+
+          constructor(url) {{
+            this.url = url;
+            this.onmessage = null;
+            this.onerror = null;
+          }}
+
+          postMessage(payload) {{
+            if (this.url.includes("retrieval-worker")) {{
+              queueMicrotask(() => {{
+                this.onmessage?.({{ data: {{ requestId: payload.requestId, matches: [] }} }});
+              }});
+              return;
+            }}
+            if (this.url.includes("query-worker")) {{
+              queueMicrotask(() => {{
+                this.onmessage?.({{
+                  data: {{
+                    requestId: payload.requestId,
+                    ok: true,
+                    messages: ["validated in test harness"],
+                    normalized: payload.sparql,
+                  }},
+                }});
+              }});
+              return;
+            }}
+            FakeWorker.llmQueue.push({{ worker: this, payload }});
+          }}
+
+          static respond(questionText, sparql) {{
+            const index = FakeWorker.llmQueue.findIndex((entry) => entry.payload.question === questionText);
+            if (index < 0) throw new Error(`missing queued LLM request for ${{questionText}}`);
+            const [entry] = FakeWorker.llmQueue.splice(index, 1);
+            entry.worker.onmessage?.({{
+              data: {{
+                requestId: entry.payload.requestId,
+                backend: "CPU fallback synthesizer",
+                sparql,
+                fallbackSparql: sparql,
+                summary: `response for ${{questionText}}`,
+              }},
+            }});
+          }}
+        }}
+
+        globalThis.document = document;
+        globalThis.window = globalThis;
+        Object.defineProperty(globalThis, "navigator", {{
+          configurable: true,
+          value: {{
+            gpu: null,
+            clipboard: {{ writeText: async () => {{}} }},
+          }},
+        }});
+        Object.defineProperty(globalThis, "location", {{
+          configurable: true,
+          value: {{ href: "https://example.test/pokemontology/docs/index.html" }},
+        }});
+        Object.defineProperty(globalThis, "localStorage", {{
+          configurable: true,
+          value: {{
+            getItem() {{ return null; }},
+            setItem() {{}},
+          }},
+        }});
+        globalThis.matchMedia = () => ({{ matches: false }});
+        globalThis.IntersectionObserver = class {{
+          observe() {{}}
+          disconnect() {{}}
+        }};
+        globalThis.Worker = FakeWorker;
+        globalThis.fetch = async (url) => {{
+          const target = String(url);
+          if (target.endsWith("site-data.json")) return {{ ok: true, json: async () => siteData }};
+          if (target.endsWith("schema-index.json")) return {{ ok: true, json: async () => schemaPack }};
+          throw new Error(`unexpected fetch: ${{target}}`);
+        }};
+        globalThis.performance = {{ now: () => 123 }};
+        globalThis.URL = URL;
+        globalThis.URL.createObjectURL = () => "blob:test";
+        globalThis.URL.revokeObjectURL = () => {{}};
+        globalThis._qe_engine = {{
+          async queryBindings(sparql) {{
+            const species = sparql.includes("Pikachu") ? "Pikachu" : "Bulbasaur";
+            return {{
+              async *[Symbol.asyncIterator]() {{
+                yield new FakeBinding({{ species }});
+              }},
+            }};
+          }},
+        }};
+
+        const module = await import(pathToFileURL(path.join(repo, "docs", "js", "laurel-app.js")).href + "?stale-query-e2e");
+        await module.createLaurelApp();
+
+        question.value = "First question";
+        await question.dispatch("input");
+        const firstRun = laurelRunBtn.click();
+        await new Promise((resolve) => setTimeout(resolve, 0));
+
+        question.value = "Second question";
+        await question.dispatch("input");
+        const secondRun = laurelRunBtn.click();
+        await new Promise((resolve) => setTimeout(resolve, 0));
+
+        FakeWorker.respond(
+          "Second question",
+          "PREFIX pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#>\\nSELECT ?species WHERE {{ VALUES ?species {{ \\"Pikachu\\" }} }} LIMIT 1",
+        );
+        await secondRun;
+
+        FakeWorker.respond(
+          "First question",
+          "PREFIX pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#>\\nSELECT ?species WHERE {{ VALUES ?species {{ \\"Bulbasaur\\" }} }} LIMIT 1",
+        );
+        await firstRun;
+
+        console.log(JSON.stringify({{
+          generatedQuery: generatedPreview.textContent,
+          findingsHtml: qeResults.innerHTML,
+          statusText: laurelStatus.textContent,
+          validationHtml: validationList.innerHTML,
+          validationBadge: validationBadge.textContent,
+          runDisabled: runBtn.disabled,
+          pendingRequests: FakeWorker.llmQueue.length,
+          questionValue: question.value,
+          editorValue: sparqlEditor.value,
+        }}));
+        """
+    )
+
+    script_path = tmp_path / "web-page-stale-query-e2e.mjs"
+    script_path.write_text(script, encoding="utf-8")
+
+    completed = subprocess.run(
+        ["node", str(script_path)],
+        cwd=REPO,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    payload = json.loads(completed.stdout)
+    assert "Pikachu" in payload["generatedQuery"]
+    assert "Bulbasaur" not in payload["generatedQuery"]
+    assert "Pikachu" in payload["findingsHtml"]
+    assert "Bulbasaur" not in payload["findingsHtml"]
+    assert payload["statusText"] == "Field query complete."
+    assert "validated in test harness" in payload["validationHtml"]
+    assert payload["validationBadge"] == "Validated"
+    assert payload["runDisabled"] is False
+    assert payload["pendingRequests"] == 0
+    assert payload["questionValue"] == "Second question"
+    assert "Pikachu" in payload["editorValue"]

@@ -25,6 +25,7 @@ import {
 
 const THEME_STORAGE_KEY = "pokemontology-theme";
 const POWER_MODE_STORAGE_KEY = "pokemontology-power-mode";
+let nextWorkerRequestId = 0;
 
 function readStorage(key) {
   try {
@@ -84,6 +85,35 @@ function setStatus(selector, value) {
 function setInlineStatus(message) {
   const target = document.getElementById("laurel-status");
   if (target) target.textContent = message;
+}
+
+function resetLaurelPanels({ preserveQuestion = true } = {}) {
+  const queryStatus = document.getElementById("qe-status");
+  renderGrounding([]);
+  renderGeneratedQuery("");
+  renderValidation(null);
+  setResultsContent(`
+    <div class="qe-placeholder">
+      <span class="qe-placeholder-icon">▶</span>
+      <p>Professor Laurel will summarize the translated query results here.</p>
+    </div>
+  `);
+  toggleResultActions(false);
+  if (queryStatus) queryStatus.textContent = "";
+  setInlineStatus(preserveQuestion ? "Ready for a new query." : "");
+  setStatus("[data-status-grounding]", "Pending");
+  setStatus("[data-status-validator]", "Standby");
+}
+
+function invalidateLaurelRun(state, { preserveQuestion = true } = {}) {
+  const runBtn = document.getElementById("laurel-run-btn");
+  state.activeRunId += 1;
+  state.lastGrounding = [];
+  state.currentQuestion = preserveQuestion
+    ? document.getElementById("nl-question")?.value.trim() || ""
+    : "";
+  if (runBtn) runBtn.disabled = false;
+  resetLaurelPanels({ preserveQuestion });
 }
 
 function stableStringify(value) {
@@ -194,7 +224,10 @@ function populateExampleSelect(examples) {
 function hydrateDefaultValues(state) {
   const question = document.getElementById("nl-question");
   const editor = document.getElementById("sparql-editor");
-  if (question) question.value = defaultQuestion(state.schemaPack);
+  const seededQuestion = defaultQuestion(state.schemaPack);
+  state.defaultQuestionText = seededQuestion;
+  state.defaultQuestionPending = true;
+  if (question) question.value = seededQuestion;
   if (editor) editor.value = formatPrefixBlock(state.schemaPack);
 }
 
@@ -231,7 +264,9 @@ function bindStaticActions(state) {
   document.getElementById("sample-question-btn")?.addEventListener("click", () => {
     const question = document.getElementById("nl-question");
     if (!question) return;
-    question.value = defaultQuestion(state.schemaPack);
+    question.value = state.defaultQuestionText || defaultQuestion(state.schemaPack);
+    state.defaultQuestionPending = true;
+    invalidateLaurelRun(state);
     question.focus();
   });
 }
@@ -244,6 +279,25 @@ function bindInteractiveActions(state) {
 
   document.getElementById("laurel-run-btn")?.addEventListener("click", async () => {
     await runLaurelPipeline(state);
+  });
+
+  question?.addEventListener("beforeinput", (event) => {
+    if (!state.defaultQuestionPending) return;
+    if (question.value !== state.defaultQuestionText) {
+      state.defaultQuestionPending = false;
+      return;
+    }
+    if (!event.inputType || event.inputType.startsWith("history")) return;
+    question.value = "";
+    question.selectionStart = 0;
+    question.selectionEnd = 0;
+    state.defaultQuestionPending = false;
+  });
+
+  question?.addEventListener("input", () => {
+    const nextQuestion = question.value.trim();
+    if (nextQuestion === state.currentQuestion) return;
+    invalidateLaurelRun(state);
   });
 
   question?.addEventListener("keydown", async (event) => {
@@ -311,33 +365,61 @@ async function initQueryEngine() {
 }
 
 async function askWorker(worker, payload, { onProgress } = {}) {
-  return new Promise((resolve, reject) => {
-    const timeout = window.setTimeout(() => {
-      reject(new Error("Worker response timed out."));
-    }, 10000);
+  if (!worker.__pendingRequests) {
+    worker.__pendingRequests = new Map();
     worker.onmessage = (event) => {
+      const requestId = event.data?.requestId;
+      if (!requestId) return;
+      const pending = worker.__pendingRequests.get(requestId);
+      if (!pending) return;
       if (event.data?.type === "progress") {
-        onProgress?.(event.data);
+        pending.onProgress?.(event.data);
         return;
       }
-      window.clearTimeout(timeout);
-      resolve(event.data);
+      window.clearTimeout(pending.timeout);
+      worker.__pendingRequests.delete(requestId);
+      pending.resolve(event.data);
     };
     worker.onerror = (event) => {
-      window.clearTimeout(timeout);
-      reject(event.error || new Error("Worker failed."));
+      const error = event.error || new Error("Worker failed.");
+      worker.__pendingRequests.forEach((pending) => {
+        window.clearTimeout(pending.timeout);
+        pending.reject(error);
+      });
+      worker.__pendingRequests.clear();
     };
-    worker.postMessage(payload);
+  }
+
+  const requestId = `req-${++nextWorkerRequestId}`;
+  return new Promise((resolve, reject) => {
+    const timeout = window.setTimeout(() => {
+      worker.__pendingRequests.delete(requestId);
+      reject(new Error("Worker response timed out."));
+    }, 10000);
+    worker.__pendingRequests.set(requestId, {
+      resolve,
+      reject,
+      onProgress,
+      timeout,
+    });
+    worker.postMessage({
+      ...payload,
+      requestId,
+    });
   });
 }
 
 async function runLaurelPipeline(state) {
   const runBtn = document.getElementById("laurel-run-btn");
   if (runBtn) runBtn.disabled = true;
+  const runId = state.activeRunId + 1;
+  state.activeRunId = runId;
   try {
     const question = document.getElementById("nl-question")?.value.trim() || "";
     const editor = document.getElementById("sparql-editor");
     if (!question) return;
+    state.currentQuestion = question;
+    resetLaurelPanels();
     const sources = buildSources();
     const schemaVersion = stableStringify({
       inference: state.schemaPack?.inference || {},
@@ -357,6 +439,7 @@ async function runLaurelPipeline(state) {
       });
       state.retrievalCache.set(retrievalKey, retrieval);
     }
+    if (state.activeRunId !== runId) return;
     state.lastGrounding = retrieval.matches || [];
     renderGrounding(state.lastGrounding);
     setStatus("[data-status-grounding]", `${state.lastGrounding.length} notes`);
@@ -382,6 +465,7 @@ async function runLaurelPipeline(state) {
       );
       state.generationCache.set(generationKey, generation);
     }
+    if (state.activeRunId !== runId) return;
     setStatus("[data-status-model]", generation.backend);
     setResultsContent(
       '<div class="laurel-answer"><p class="laurel-answer-kicker">Inference Engine</p><p>Translation complete. Executing generated SPARQL.</p></div>',
@@ -412,6 +496,7 @@ async function runLaurelPipeline(state) {
         });
         state.validationCache.set(fallbackValidationKey, fallbackValidation);
       }
+      if (state.activeRunId !== runId) return;
       if (fallbackValidation.ok) {
         validation = {
           ...fallbackValidation,
@@ -422,6 +507,7 @@ async function runLaurelPipeline(state) {
         };
       }
     }
+    if (state.activeRunId !== runId) return;
     renderValidation(validation);
     setStatus("[data-status-validator]", validation.ok ? "Validated" : "Needs repair");
     if (!validation.ok) {
@@ -430,13 +516,13 @@ async function runLaurelPipeline(state) {
     }
 
     setInlineStatus("Running SPARQL…");
-    await executeEditorQuery(state, sources);
+    await executeEditorQuery(state, sources, runId);
   } finally {
-    if (runBtn) runBtn.disabled = false;
+    if (runBtn && state.activeRunId === runId) runBtn.disabled = false;
   }
 }
 
-async function executeEditorQuery(state, sources = buildSources()) {
+async function executeEditorQuery(state, sources = buildSources(), runId = state.activeRunId) {
   const editor = document.getElementById("sparql-editor");
   const status = document.getElementById("qe-status");
   const question = document.getElementById("nl-question")?.value.trim() || "";
@@ -456,10 +542,12 @@ async function executeEditorQuery(state, sources = buildSources()) {
       result = await executeQuery(editor.value, sources);
       state.executionCache.set(executionKey, result);
     }
+    if (state.activeRunId !== runId) return;
     renderQueryResults(result, question);
     if (status) status.textContent = `${Math.round(performance.now() - started)}ms`;
     setInlineStatus("Field query complete.");
   } catch (error) {
+    if (state.activeRunId !== runId) return;
     setResultsContent(`<div class="qe-error"><strong>Error:</strong> ${error.message}</div>`);
     if (status) status.textContent = "";
     setInlineStatus("Execution failed.");

@@ -14,5 +14,7 @@ export function createState() {
     generationCache: new Map(),
     validationCache: new Map(),
     executionCache: new Map(),
+    currentQuestion: "",
+    activeRunId: 0,
   };
 }

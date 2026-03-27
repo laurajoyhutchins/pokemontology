@@ -140,3 +140,24 @@ def test_laurel_app_retries_with_safe_fallback_on_validation_failure() -> None:
     assert "Primary translation failed validation. Trying Laurel fallback" in app_text
     assert "generation.fallbackSparql" in app_text
     assert "Primary browser-local translation failed validation; Laurel fell back to a bundled safe query." in app_text
+
+
+def test_laurel_app_worker_transport_supports_overlapping_requests() -> None:
+    app_text = (REPO / "docs" / "js" / "laurel-app.js").read_text(encoding="utf-8")
+    retrieval_text = (REPO / "docs" / "workers" / "retrieval-worker.js").read_text(
+        encoding="utf-8"
+    )
+    llm_text = (REPO / "docs" / "workers" / "llm-worker.js").read_text(
+        encoding="utf-8"
+    )
+    query_text = (REPO / "docs" / "workers" / "query-worker.js").read_text(
+        encoding="utf-8"
+    )
+
+    assert "worker.__pendingRequests = new Map()" in app_text
+    assert "worker.__pendingRequests.set(requestId" in app_text
+    assert "requestId: `req-${++nextWorkerRequestId}`" not in app_text
+    assert "requestId," in retrieval_text
+    assert "self.postMessage({ requestId, matches })" in retrieval_text
+    assert "requestId," in llm_text
+    assert "self.postMessage({ requestId, ...validation })" in query_text
