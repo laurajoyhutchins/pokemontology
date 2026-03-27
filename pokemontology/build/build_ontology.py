@@ -25,8 +25,8 @@ MODULES_DIR = repo_path("ontology", "modules")
 BUILD_DIR = repo_path("build")
 OUTPUT = BUILD_DIR / "ontology.ttl"
 BUILD_SHAPES = BUILD_DIR / "shapes.ttl"
-BUILD_POKEAPI = BUILD_DIR / "pokeapi.ttl"
-BUILD_VEEKUN = BUILD_DIR / "veekun-with-learnsets.ttl"
+BUILD_POKEAPI = repo_path("data", "ingested", "pokeapi.ttl")
+BUILD_VEEKUN = repo_path("data", "ingested", "veekun-with-learnsets.ttl")
 BUILD_MECHANICS = BUILD_DIR / "mechanics.ttl"
 
 PAGES_DIR = repo_path("docs")

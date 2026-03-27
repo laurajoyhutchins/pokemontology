@@ -13,6 +13,7 @@ dev-artifacts/*
 data/pokeapi/raw/
 data/veekun/
 data/replays/
+data/ingested/
 *.zip
 .DS_Store
 *.egg-info/

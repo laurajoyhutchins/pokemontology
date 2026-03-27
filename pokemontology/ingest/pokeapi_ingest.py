@@ -30,7 +30,7 @@ from pokemontology.ingest_common import (
 
 REPO = REPO_ROOT
 DEFAULT_RAW_DIR = REPO / "data" / "pokeapi" / "raw"
-DEFAULT_OUTPUT = REPO / "build" / "pokeapi.ttl"
+DEFAULT_OUTPUT = REPO / "data" / "ingested" / "pokeapi.ttl"
 POKEAPI_BASE = "https://pokeapi.co/api/v2"
 
 SUPPORTED_RESOURCES = (

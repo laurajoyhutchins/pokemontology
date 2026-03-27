@@ -31,7 +31,7 @@ REPO = REPO_ROOT
 DEFAULT_ARCHIVE_URL = "https://github.com/veekun/pokedex/archive/refs/heads/master.tar.gz"
 DEFAULT_RAW_DIR = REPO / "data" / "veekun" / "raw"
 DEFAULT_SOURCE_DIR = REPO / "data" / "veekun" / "export"
-DEFAULT_OUTPUT = REPO / "build" / "veekun.ttl"
+DEFAULT_OUTPUT = REPO / "data" / "ingested" / "veekun.ttl"
 ENGLISH_LANGUAGE_ID = "9"
 VEEKUN_URN_BASE = "urn:veekun"
 
