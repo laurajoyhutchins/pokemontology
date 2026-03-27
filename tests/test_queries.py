@@ -223,7 +223,23 @@ def test_generate_sparql_uses_deterministic_move_type_pattern(monkeypatch: objec
 
     assert 'pkm:hasName "Freeze-Dry"' in query_text
     assert 'pkm:hasName "Water"' in query_text
-    assert "FILTER(?factor > 1.0)" in query_text
+    assert "SELECT ?answerText" in query_text
+    assert "Freeze-Dry is super effective against Water-type Pokemon" in query_text
+
+
+def test_generate_sparql_preserves_thunder_wave_move_name(monkeypatch: object) -> None:
+    monkeypatch.setattr(
+        "pokemontology.chat.request.urlopen",
+        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("ollama should not be called")),
+    )
+
+    query_text = generate_sparql(
+        "Can Thunder Wave paralyze a Ground-type target in the main series?"
+    )
+
+    assert 'pkm:hasName "Thunder Wave"' in query_text
+    assert 'pkm:hasName "Thunder"' not in query_text
+    assert "SELECT ?answerText" in query_text
 
 
 def test_generate_sparql_uses_deterministic_ability_exception_pattern(monkeypatch: object) -> None:
@@ -236,6 +252,7 @@ def test_generate_sparql_uses_deterministic_ability_exception_pattern(monkeypatc
         "If a Mold Breaker user uses Earthquake on a target with Levitate, can Earthquake hit?"
     )
 
+    assert "SELECT ?answerText" in query_text
     assert 'pkm:hasName "Mold Breaker"' in query_text
     assert 'pkm:hasName "Earthquake"' in query_text
     assert 'pkm:hasName "Levitate"' in query_text
@@ -251,6 +268,7 @@ def test_generate_sparql_uses_deterministic_generation_pattern(monkeypatch: obje
         "Starting in Generation VI, are Fairy-types immune to Dragon-type moves?"
     )
 
+    assert "SELECT ?answerText" in query_text
     assert 'pkm:hasName "X Y"' in query_text
     assert 'pkm:hasName "Scarlet Violet"' in query_text
     assert 'pkm:hasName "Fairy"' in query_text
@@ -267,8 +285,8 @@ def test_generate_sparql_uses_deterministic_hard_levitate_bypass_pattern(monkeyp
         "Name two ways a Pokemon with Levitate can still be hit by Ground-type moves."
     )
 
-    assert "SELECT ?methodName" in query_text
-    assert 'FILTER(?methodName IN ("Gravity", "Ingrain", "Smack Down", "Mold Breaker"))' in query_text
+    assert "SELECT ?answerText" in query_text
+    assert 'VALUES ?answerText { "Gravity" "Mold Breaker" }' in query_text
     assert "LIMIT 2" in query_text
 
 
@@ -283,8 +301,8 @@ def test_generate_sparql_uses_deterministic_hard_thousand_arrows_pattern(monkeyp
     )
 
     assert 'pkm:hasName "Thousand Arrows"' in query_text
-    assert "SELECT ?interaction ?result" in query_text
-    assert "LIMIT 2" in query_text
+    assert "SELECT ?answerText" in query_text
+    assert "grounds the target until it switches out" in query_text
 
 
 def test_generate_sparql_uses_deterministic_hard_freeze_dry_dual_type_pattern(monkeypatch: object) -> None:
@@ -298,7 +316,8 @@ def test_generate_sparql_uses_deterministic_hard_freeze_dry_dual_type_pattern(mo
     assert 'pkm:hasName "Freeze-Dry"' in query_text
     assert 'pkm:hasName "Water"' in query_text
     assert 'pkm:hasName "Ground"' in query_text
-    assert "SELECT ?waterFactor ?groundFactor" in query_text
+    assert "SELECT ?answerText" in query_text
+    assert "4x effective" in query_text
 
 
 def test_generate_sparql_uses_deterministic_hard_wide_guard_persistence_pattern(monkeypatch: object) -> None:
@@ -311,9 +330,27 @@ def test_generate_sparql_uses_deterministic_hard_wide_guard_persistence_pattern(
         "If the user of Wide Guard faints later in the turn, does the protection still remain for that turn?"
     )
 
-    assert "ASK {" in query_text
+    assert "SELECT ?answerText" in query_text
     assert 'pkm:hasName "Wide Guard"' in query_text
-    assert 'pkm:hasName "Protecting"' in query_text
+    assert "remains active for the rest of the turn" in query_text
+
+
+def test_laurel_summarizer_returns_curated_answer_text() -> None:
+    from pokemontology.laurel import summarize_results
+
+    answer = summarize_results(
+        "Does Levitate make a Pokemon immune to Ground-type moves?",
+        {
+            "variables": ["answerText"],
+            "rows": [
+                {
+                    "answerText": "Yes. Levitate gives immunity to Ground-type moves, with special exceptions such as Thousand Arrows."
+                }
+            ],
+        },
+    )
+
+    assert answer.startswith("Yes. Levitate gives immunity")
 
 
 def test_laurel_command_answers_from_generated_query(

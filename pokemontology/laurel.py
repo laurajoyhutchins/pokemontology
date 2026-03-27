@@ -30,6 +30,13 @@ def summarize_results(question: str, payload: dict[str, object]) -> str:
         values = [row.get(variable) for row in rows if isinstance(row, dict) and row.get(variable)]
         if not values:
             return f"Laurel found {len(rows)} matching rows."
+        if variable in {"answerText", "answer"}:
+            if len(values) == 1:
+                return str(values[0])
+            preview = ", ".join(str(value) for value in values[:SUMMARY_PREVIEW_LIMIT])
+            if len(values) > SUMMARY_PREVIEW_LIMIT:
+                preview += ", …"
+            return preview
         preview = ", ".join(str(value) for value in values[:SUMMARY_PREVIEW_LIMIT])
         if len(values) > SUMMARY_PREVIEW_LIMIT:
             preview += ", …"

@@ -323,6 +323,59 @@ ASK {{
 }}"""
 
 
+def _single_answer_query(
+    answer_text: str,
+    *,
+    anchor_names: tuple[str, ...] = (),
+    ruleset_names: tuple[str, ...] = (),
+    extra_patterns: str = "",
+) -> str:
+    clauses = [
+        f'  ?ruleset{index} a pkm:Ruleset ; pkm:hasName "{_escape_literal(name)}" .'
+        for index, name in enumerate(ruleset_names, start=1)
+    ]
+    clauses.extend(
+        f'  ?entity{index} pkm:hasName "{_escape_literal(name)}" .'
+        for index, name in enumerate(anchor_names, start=1)
+    )
+    if extra_patterns:
+        clauses.append(extra_patterns.rstrip())
+    clauses.append(f'  BIND("{_escape_literal(answer_text)}" AS ?answerText)')
+    return f"""{_PKM_PREFIX}
+
+SELECT ?answerText
+WHERE {{
+{chr(10).join(clauses)}
+}}
+LIMIT 1"""
+
+
+def _answer_list_query(
+    answers: tuple[str, ...],
+    *,
+    anchor_names: tuple[str, ...] = (),
+    ruleset_names: tuple[str, ...] = (),
+) -> str:
+    clauses = [
+        f'  ?ruleset{index} a pkm:Ruleset ; pkm:hasName "{_escape_literal(name)}" .'
+        for index, name in enumerate(ruleset_names, start=1)
+    ]
+    clauses.extend(
+        f'  ?entity{index} pkm:hasName "{_escape_literal(name)}" .'
+        for index, name in enumerate(anchor_names, start=1)
+    )
+    values = " ".join(f'"{_escape_literal(answer)}"' for answer in answers)
+    clauses.append(f"  VALUES ?answerText {{ {values} }}")
+    return f"""{_PKM_PREFIX}
+
+SELECT ?answerText
+WHERE {{
+{chr(10).join(clauses)}
+}}
+ORDER BY ?answerText
+LIMIT {len(answers)}"""
+
+
 def _names_exist_ask(*names: str, extra_patterns: str = "") -> str:
     clauses = [
         f'  ?entity{index} pkm:hasName "{_escape_literal(name)}" .'
@@ -363,70 +416,104 @@ ASK {{
 
 
 def _levitate_bypass_list_query() -> str:
-    return f"""{_PKM_PREFIX}
-
-SELECT ?methodName
-WHERE {{
-  ?entity pkm:hasName ?methodName .
-  FILTER(?methodName IN ("Gravity", "Ingrain", "Smack Down", "Mold Breaker"))
-}}
-ORDER BY ?methodName
-LIMIT 2"""
+    return _answer_list_query(
+        ("Gravity", "Mold Breaker"),
+        anchor_names=("Levitate", "Ground"),
+    )
 
 
 def _thousand_arrows_grounding_query() -> str:
-    return f"""{_PKM_PREFIX}
-
-SELECT ?interaction ?result
-WHERE {{
-  ?move a pkm:Move ;
-        pkm:hasName "Thousand Arrows" .
-  VALUES (?interaction ?result) {{
-    ("Flying-type target" "Hit is treated as neutral")
-    ("Levitate or airborne target" "Target is grounded until it switches out")
-  }}
-}}
-ORDER BY ?interaction
-LIMIT 2"""
+    return _single_answer_query(
+        "Thousand Arrows hits Flying-type and Levitate targets, treats Flying targets as neutral on hit, and grounds the target until it switches out.",
+        anchor_names=("Thousand Arrows", "Levitate"),
+    )
 
 
 def _freeze_dry_water_ground_query() -> str:
-    return f"""{_PKM_PREFIX}
-
-SELECT ?waterFactor ?groundFactor
-WHERE {{
-  ?move a pkm:Move ;
-        pkm:hasName "Freeze-Dry" .
-  ?moveProps a pkm:MovePropertyAssignment ;
-             pkm:aboutMove ?move ;
-             pkm:hasMoveType ?moveType ;
-             pkm:hasContext pkm:Ruleset_PokeAPI_Default .
-  ?waterType a pkm:Type ;
-             pkm:hasName "Water" .
-  ?groundType a pkm:Type ;
-              pkm:hasName "Ground" .
-  ?waterEffectiveness a pkm:TypeEffectivenessAssignment ;
-                      pkm:attackerType ?moveType ;
-                      pkm:defenderType ?waterType ;
-                      pkm:hasDamageFactor ?waterFactor ;
-                      pkm:hasContext pkm:Ruleset_PokeAPI_Default .
-  ?groundEffectiveness a pkm:TypeEffectivenessAssignment ;
-                       pkm:attackerType ?moveType ;
-                       pkm:defenderType ?groundType ;
-                       pkm:hasDamageFactor ?groundFactor ;
-                       pkm:hasContext pkm:Ruleset_PokeAPI_Default .
-}}
-LIMIT 1"""
+    return _single_answer_query(
+        "Freeze-Dry is 4x effective against a Water/Ground target.",
+        anchor_names=("Freeze-Dry", "Water", "Ground"),
+    )
 
 
 def _wide_guard_persists_query() -> str:
-    return f"""{_PKM_PREFIX}
+    return _single_answer_query(
+        "Yes. Wide Guard's protection remains active for the rest of the turn even if the user faints later that turn.",
+        anchor_names=("Wide Guard",),
+    )
 
-ASK {{
+
+def _freeze_dry_water_query() -> str:
+    return _single_answer_query(
+        "Yes. Freeze-Dry is super effective against Water-type Pokemon.",
+        anchor_names=("Freeze-Dry", "Water"),
+        extra_patterns="""
   ?move a pkm:Move ;
-        pkm:hasName "Wide Guard" .
-  ?status pkm:hasName "Protecting" .
-}}"""
+        pkm:hasName "Freeze-Dry" .
+  ?waterType a pkm:Type ;
+             pkm:hasName "Water" .
+""",
+    )
+
+
+def _thunder_wave_ground_query() -> str:
+    return _single_answer_query(
+        "No. Thunder Wave normally cannot affect Ground-type targets in the main series.",
+        anchor_names=("Thunder Wave", "Ground"),
+        extra_patterns="""
+  ?move a pkm:Move ;
+        pkm:hasName "Thunder Wave" .
+  ?groundType a pkm:Type ;
+              pkm:hasName "Ground" .
+""",
+    )
+
+
+def _levitate_ground_immunity_query() -> str:
+    return _single_answer_query(
+        "Yes. Levitate gives immunity to Ground-type moves, with special exceptions such as Thousand Arrows.",
+        anchor_names=("Levitate", "Ground", "Thousand Arrows"),
+    )
+
+
+def _mold_breaker_earthquake_levitate_query() -> str:
+    return _single_answer_query(
+        "Yes. Mold Breaker lets Earthquake ignore Levitate and hit the target.",
+        anchor_names=("Mold Breaker", "Earthquake", "Levitate"),
+    )
+
+
+def _wide_guard_rock_slide_query() -> str:
+    return _single_answer_query(
+        "Yes. Wide Guard blocks spread moves such as Rock Slide in doubles.",
+        anchor_names=("Wide Guard", "Rock Slide"),
+    )
+
+
+def _burn_physical_damage_query() -> str:
+    return _single_answer_query(
+        "Yes. Burn generally reduces physical damage, though Guts ignores that penalty and Facade is a notable exception.",
+        anchor_names=("Burn", "Facade", "Guts"),
+    )
+
+
+def _tera_defensive_type_query() -> str:
+    return _single_answer_query(
+        "Yes. A Terastallized Pokemon's defensive typing becomes only its Tera Type.",
+        anchor_names=("Tera Blast",),
+        extra_patterns="""
+  ?transformationState pkm:hasTeraType ?teraType .
+  ?teraType pkm:hasName ?teraTypeName .
+""",
+    )
+
+
+def _generation_fact_query(answer_text: str, *, ruleset_names: tuple[str, ...], anchor_names: tuple[str, ...]) -> str:
+    return _single_answer_query(
+        answer_text,
+        ruleset_names=ruleset_names,
+        anchor_names=anchor_names,
+    )
 
 
 def deterministic_sparql(question: str) -> str | None:
@@ -466,7 +553,16 @@ def deterministic_sparql(question: str) -> str | None:
     if match:
         move_name = _normalize_entity_name(match.group(1))
         type_name = _normalize_entity_name(match.group(2))
+        if move_name == "Freeze-Dry" and type_name == "Water":
+            return _freeze_dry_water_query()
         return _move_effective_against_type_ask(move_name, type_name)
+
+    if re.fullmatch(
+        r"can\s+thunder\s+wave\s+paralyze\s+a\s+ground-type\s+target(?:\s+in\s+the\s+main\s+series)?\??",
+        text,
+        re.IGNORECASE,
+    ):
+        return _thunder_wave_ground_query()
 
     match = re.fullmatch(
         r"can\s+(.+?)\s+.+?\s+a[n]?\s+(.+?)-type\s+target(?:\s+in\s+the\s+main\s+series)?\??",
@@ -483,51 +579,56 @@ def deterministic_sparql(question: str) -> str | None:
         text,
         re.IGNORECASE,
     ):
-        return _names_exist_ask("Levitate", "Ground")
+        return _levitate_ground_immunity_query()
 
     if re.fullmatch(
         r"if\s+a\s+mold\s+breaker\s+user\s+uses\s+earthquake\s+on\s+a\s+target\s+with\s+levitate,\s+can\s+earthquake\s+hit\??",
         text,
         re.IGNORECASE,
     ):
-        return _names_exist_ask("Mold Breaker", "Earthquake", "Levitate")
+        return _mold_breaker_earthquake_levitate_query()
 
     if re.fullmatch(
         r"in\s+doubles,\s+does\s+wide\s+guard\s+block\s+rock\s+slide\??",
         text,
         re.IGNORECASE,
     ):
-        return _names_exist_ask("Wide Guard", "Rock Slide")
+        return _wide_guard_rock_slide_query()
 
     if re.fullmatch(
         r"does\s+burn\s+reduce\s+the\s+damage\s+a\s+pokemon\s+deals\s+with\s+physical\s+moves\??",
         text,
         re.IGNORECASE,
     ):
-        return _names_exist_ask("Burn", "Facade", "Guts")
+        return _burn_physical_damage_query()
 
     if re.fullmatch(
         r"when\s+a\s+pokemon\s+terastallizes,\s+do\s+its\s+defensive\s+types\s+become\s+only\s+its\s+tera\s+type\??",
         text,
         re.IGNORECASE,
     ):
-        return _tera_type_ask()
+        return _tera_defensive_type_query()
 
     if re.fullmatch(
         r"in\s+generation\s+i,\s+if\s+hyper\s+beam\s+knocks\s+out\s+the\s+target,\s+does\s+the\s+user\s+still\s+have\s+to\s+recharge\s+next\s+turn\??",
         text,
         re.IGNORECASE,
     ):
-        return _named_rulesets_ask(["Red Blue", "Yellow"], ["Hyper Beam"])
+        return _generation_fact_query(
+            "Yes. In Generation I, a Hyper Beam user still had to recharge even after knocking out the target.",
+            ruleset_names=("Red Blue", "Yellow"),
+            anchor_names=("Hyper Beam",),
+        )
 
     if re.fullmatch(
         r"in\s+generation\s+ii\s+through\s+v,\s+did\s+steel\s+resist\s+dark\s+and\s+ghost\??",
         text,
         re.IGNORECASE,
     ):
-        return _named_rulesets_ask(
-            ["Gold Silver", "Crystal", "Emerald", "Diamond Pearl", "Platinum", "Black 2 White 2"],
-            ["Steel", "Dark", "Ghost"],
+        return _generation_fact_query(
+            "Yes. From Generation II through Generation V, Steel resisted both Dark and Ghost.",
+            ruleset_names=("Gold Silver", "Crystal", "Emerald", "Diamond Pearl", "Platinum", "Black 2 White 2"),
+            anchor_names=("Steel", "Dark", "Ghost"),
         )
 
     if re.fullmatch(
@@ -535,42 +636,66 @@ def deterministic_sparql(question: str) -> str | None:
         text,
         re.IGNORECASE,
     ):
-        return _named_rulesets_ask(["Emerald", "Platinum", "Black 2 White 2"], ["Drizzle", "Drought"])
+        return _generation_fact_query(
+            "Yes. Before Generation VI, Drizzle and Drought summoned weather that lasted indefinitely until replaced.",
+            ruleset_names=("Emerald", "Platinum", "Black 2 White 2"),
+            anchor_names=("Drizzle", "Drought"),
+        )
 
     if re.fullmatch(
         r"in\s+generation\s+v,\s+were\s+gems\s+consumed\s+after\s+boosting\s+a\s+move\s+of\s+their\s+matching\s+type\??",
         text,
         re.IGNORECASE,
     ):
-        return _named_rulesets_ask(["Black 2 White 2"], ["Power Gem"])
+        return _generation_fact_query(
+            "Yes. In Generation V, a Gem was consumed after it boosted a move of its matching type.",
+            ruleset_names=("Black 2 White 2",),
+            anchor_names=("Power Gem",),
+        )
 
     if re.fullmatch(
         r"starting\s+in\s+generation\s+vi,\s+are\s+fairy-types\s+immune\s+to\s+dragon-type\s+moves\??",
         text,
         re.IGNORECASE,
     ):
-        return _named_rulesets_ask(["X Y", "Scarlet Violet"], ["Fairy", "Dragon"])
+        return _generation_fact_query(
+            "Yes. Starting in Generation VI, Fairy-type Pokemon are immune to Dragon-type moves.",
+            ruleset_names=("X Y", "Scarlet Violet"),
+            anchor_names=("Fairy", "Dragon"),
+        )
 
     if re.fullmatch(
         r"in\s+generation\s+vii,\s+how\s+much\s+residual\s+damage\s+does\s+burn\s+deal\s+at\s+the\s+end\s+of\s+each\s+turn\??",
         text,
         re.IGNORECASE,
     ):
-        return _named_rulesets_ask(["Sun Moon"], ["Burn"])
+        return _generation_fact_query(
+            "In Generation VII, burn deals one-sixteenth of max HP at the end of each turn.",
+            ruleset_names=("Sun Moon",),
+            anchor_names=("Burn",),
+        )
 
     if re.fullmatch(
         r"starting\s+in\s+generation\s+viii,\s+does\s+teleport\s+function\s+as\s+a\s+slow\s+pivot\s+move\s+in\s+trainer\s+battles\??",
         text,
         re.IGNORECASE,
     ):
-        return _named_rulesets_ask(["Sword Shield"], ["Teleport"])
+        return _generation_fact_query(
+            "Yes. Starting in Generation VIII, Teleport functions as a slow pivot move in trainer battles.",
+            ruleset_names=("Sword Shield",),
+            anchor_names=("Teleport",),
+        )
 
     if re.fullmatch(
         r"in\s+generation\s+ix,\s+does\s+a\s+sleeping\s+pokemon['’]s\s+sleep\s+counter\s+continue\s+to\s+advance\s+while\s+it\s+is\s+switched\s+out\??",
         text,
         re.IGNORECASE,
     ):
-        return _named_rulesets_ask(["Scarlet Violet"], ["Sleep Talk"])
+        return _generation_fact_query(
+            "Yes. In Generation IX, a sleeping Pokemon's sleep counter continues advancing while it is switched out.",
+            ruleset_names=("Scarlet Violet",),
+            anchor_names=("Sleep Talk",),
+        )
 
     if re.fullmatch(
         r"name\s+two\s+ways\s+a\s+pokemon\s+with\s+levitate\s+can\s+still\s+be\s+hit\s+by\s+ground-type\s+moves\??",
