@@ -528,6 +528,9 @@ def _merge_mechanics_data() -> None:
 
 
 def _write_mechanics_web_slices() -> None:
+    sources = [s for s in (BUILD_POKEAPI, BUILD_VEEKUN) if s.exists()]
+    if not sources:
+        return
     slice_paths = _web_mechanics_slice_paths()
     handles = {}
     try:
@@ -536,9 +539,7 @@ def _write_mechanics_web_slices() -> None:
             handle.write(TTL_PREFIX_HEADER)
             handles[key] = handle
 
-        for source in (BUILD_POKEAPI, BUILD_VEEKUN):
-            if not source.exists():
-                continue
+        for source in sources:
             for block in _iter_ttl_blocks(source):
                 handles[_classify_mechanics_block(block)].write(block)
     finally:
