@@ -10,6 +10,11 @@ build/*
 !build/shapes.ttl
 dev-artifacts/*
 !dev-artifacts/README.md
+queries/*
+!queries/README.md
+!queries/bundled/
+!queries/bundled/*.sparql
+!queries/scratch/
 queries/scratch/*
 !queries/scratch/README.md
 data/pokeapi/raw/
