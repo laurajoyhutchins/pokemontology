@@ -8,6 +8,8 @@ dist/
 build/*
 !build/ontology.ttl
 !build/shapes.ttl
+dev-artifacts/*
+!dev-artifacts/README.md
 data/pokeapi/raw/
 data/replays/
 *.zip

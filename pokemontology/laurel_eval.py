@@ -2,8 +2,13 @@
 
 from __future__ import annotations
 
+import json
 import re
+import signal
+import time
+from contextlib import contextmanager
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
 
@@ -62,6 +67,8 @@ class EvalConfig:
     endpoint: str = DEFAULT_OLLAMA_ENDPOINT
     timeout: float = 240.0
     limit: int | None = None
+    save_report: Path | None = None
+    execution_timeout: float | None = None
 
 
 @dataclass(frozen=True)
@@ -379,6 +386,28 @@ def execute_query(query_text: str, *, sources: tuple[Path, ...]) -> dict[str, ob
     return {"variables": variables, "rows": rows}
 
 
+class StepTimeoutError(TimeoutError):
+    """Raised when a timed Laurel evaluation step exceeds its budget."""
+
+
+@contextmanager
+def step_timeout(seconds: float | None):
+    if seconds is None:
+        yield
+        return
+
+    def _handle_timeout(_signum, _frame):
+        raise StepTimeoutError(f"timed out after {seconds:.1f}s")
+
+    previous = signal.signal(signal.SIGALRM, _handle_timeout)
+    signal.setitimer(signal.ITIMER_REAL, seconds)
+    try:
+        yield
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0)
+        signal.signal(signal.SIGALRM, previous)
+
+
 def assess_answer_correctness(case: EvalCase, answer: str) -> tuple[str, str]:
     normalized_answer = normalize(answer)
     normalized_expected = normalize(case.expected_answer)
@@ -472,6 +501,81 @@ def evaluate_item(
     }
 
 
+def evaluate_item_detailed(
+    case: EvalCase,
+    *,
+    mode: str,
+    sources: tuple[Path, ...],
+    schema_pack: dict[str, object] | None,
+    config: EvalConfig,
+) -> dict[str, object]:
+    generated: str | None = None
+    answer: str | None = None
+    payload: dict[str, object] | None = None
+    matches: list[dict[str, object]] | None = None
+    error: str | None = None
+    timings_ms: dict[str, float] = {}
+
+    total_started = time.perf_counter()
+    try:
+        started = time.perf_counter()
+        if schema_pack is not None:
+            matches = retrieve_matches(case.question, schema_pack)
+        timings_ms["retrieval"] = round((time.perf_counter() - started) * 1000, 3)
+
+        started = time.perf_counter()
+        generated = validate_sparql_text(
+            generate_sparql(
+                case.question,
+                matches=matches,
+                model=config.model,
+                endpoint=config.endpoint,
+                timeout=config.timeout,
+            )
+        )
+        timings_ms["generation"] = round((time.perf_counter() - started) * 1000, 3)
+
+        if mode == "pipeline" and case.mode != "adversarial":
+            started = time.perf_counter()
+            with step_timeout(config.execution_timeout):
+                payload = execute_query(generated, sources=sources)
+            timings_ms["execution"] = round((time.perf_counter() - started) * 1000, 3)
+
+            started = time.perf_counter()
+            answer = summarize_answer(case.question, payload)
+            timings_ms["summarization"] = round((time.perf_counter() - started) * 1000, 3)
+    except Exception as exc:  # pragma: no cover - explicit reporting path
+        error = f"{type(exc).__name__}: {exc}"
+
+    if case.mode == "adversarial":
+        scored = score_adversarial_item(case, generated, error)
+    elif mode == "pipeline":
+        scored = score_pipeline_mechanics_item(case, generated, answer, payload, error)
+    else:
+        scored = score_mechanics_item(case, generated, error)
+
+    timings_ms["total"] = round((time.perf_counter() - total_started) * 1000, 3)
+    detailed = {
+        "id": case.id,
+        "tier": case.bucket,
+        "question": case.question,
+        "category": case.category,
+        "mode": case.mode,
+        "expected_answer": case.expected_answer,
+        "timings_ms": timings_ms,
+        **scored,
+    }
+    if matches is not None:
+        detailed["rag_matches"] = matches
+    if generated is not None:
+        detailed["generated_sparql"] = generated
+    if payload is not None:
+        detailed["query_result"] = payload
+    if answer is not None:
+        detailed["answer"] = answer
+    return detailed
+
+
 def summarize_results(results: list[dict[str, object]]) -> dict[str, object]:
     by_status: dict[str, int] = {}
     by_tier: dict[str, dict[str, int]] = {}
@@ -518,16 +622,29 @@ def evaluate_suite(config: EvalConfig) -> dict[str, object]:
             timeout=config.timeout,
         )
 
-    results = [
-        evaluate_item(
-            case,
-            mode=config.mode,
-            sources=config.sources,
-            generator=generator,
-        )
-        for case in items
-    ]
-    return {
+    if config.save_report is not None:
+        results = [
+            evaluate_item_detailed(
+                case,
+                mode=config.mode,
+                sources=config.sources,
+                schema_pack=schema_pack,
+                config=config,
+            )
+            for case in items
+        ]
+    else:
+        results = [
+            evaluate_item(
+                case,
+                mode=config.mode,
+                sources=config.sources,
+                generator=generator,
+            )
+            for case in items
+        ]
+
+    payload = {
         "suite": display_path(config.suite),
         "suite_overview": describe_suite(suite),
         "evaluated_interface": (
@@ -543,3 +660,11 @@ def evaluate_suite(config: EvalConfig) -> dict[str, object]:
         "summary": summarize_results(results),
         "results": results,
     }
+    if config.execution_timeout is not None:
+        payload["execution_timeout"] = config.execution_timeout
+    if config.save_report is not None:
+        payload["generated_at"] = datetime.now(timezone.utc).isoformat()
+        payload["saved_report"] = str(config.save_report)
+        config.save_report.parent.mkdir(parents=True, exist_ok=True)
+        config.save_report.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    return payload

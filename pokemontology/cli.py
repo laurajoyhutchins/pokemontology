@@ -340,6 +340,8 @@ def cmd_evaluate_laurel(args: argparse.Namespace) -> int:
                 endpoint=args.endpoint,
                 timeout=args.timeout,
                 limit=args.limit,
+                save_report=args.save_report,
+                execution_timeout=args.execution_timeout,
             )
         )
     except ValueError as exc:
@@ -751,6 +753,18 @@ def build_parser() -> argparse.ArgumentParser:
         action=argparse.BooleanOptionalAction,
         default=True,
         help="Whether to include adversarial prompts in the evaluation run.",
+    )
+    eval_parser.add_argument(
+        "--save-report",
+        type=Path,
+        default=None,
+        help="Optional path to save a detailed JSON report with SPARQL, answers, raw payloads, and timings.",
+    )
+    eval_parser.add_argument(
+        "--execution-timeout",
+        type=float,
+        default=None,
+        help="Optional per-query execution timeout in seconds for pipeline evaluation reports.",
     )
     eval_parser.add_argument(
         "sources",

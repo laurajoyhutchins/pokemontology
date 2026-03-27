@@ -110,6 +110,63 @@ ASK {
     assert payload["results"][0]["rubric_alignment"]["answer_correctness"] == "pass"
 
 
+def test_evaluate_suite_can_save_detailed_report(
+    monkeypatch: object, tmp_path
+) -> None:
+    suite_path = tmp_path / "suite.json"
+    source_path = tmp_path / "source.ttl"
+    report_path = tmp_path / "artifacts" / "laurel-report.json"
+    write_eval_suite(
+        suite_path,
+        tier="custom",
+        item={
+            "id": "custom-fire",
+            "category": "custom",
+            "question": "Is Charizard a Fire type?",
+            "expected_answer": "Yes. Charizard is Fire type.",
+            "answer_type": "boolean",
+            "sources": [{"title": "Example", "url": "https://example.test"}],
+        },
+    )
+    write_charizard_fire_source(source_path)
+    monkeypatch.setattr(
+        "pokemontology.laurel_eval.generate_sparql",
+        lambda *args, **kwargs: """PREFIX pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#>
+ASK {
+  ?species a pkm:Species ;
+           pkm:hasName "Charizard" .
+  ?variant a pkm:Variant ;
+           pkm:belongsToSpecies ?species .
+  ?assignment a pkm:TypingAssignment ;
+              pkm:aboutVariant ?variant ;
+              pkm:aboutType ?type .
+  ?type pkm:hasName "Fire" .
+}""",
+    )
+
+    payload = evaluate_suite(
+        EvalConfig(
+            suite=suite_path,
+            mode="pipeline",
+            sources=(source_path,),
+            include_adversarial=False,
+            save_report=report_path,
+            execution_timeout=1.0,
+        )
+    )
+
+    assert payload["saved_report"] == str(report_path)
+    assert report_path.exists()
+    saved = json.loads(report_path.read_text(encoding="utf-8"))
+    assert saved["saved_report"] == str(report_path)
+    assert saved["execution_timeout"] == 1.0
+    assert saved["results"][0]["generated_sparql"].startswith("PREFIX pkm:")
+    assert saved["results"][0]["answer"] == "Yes. For: Is Charizard a Fire type?"
+    assert "query_result" in saved["results"][0]
+    assert "timings_ms" in saved["results"][0]
+    assert "generation" in saved["results"][0]["timings_ms"]
+
+
 def test_evaluate_laurel_cli_pipeline_requires_sources(capsys) -> None:
     try:
         cli.main(["evaluate-laurel", "--mode", "pipeline", "--limit", "1"])
@@ -269,3 +326,28 @@ def test_evaluate_laurel_cli_validates_suite_without_model(capsys, tmp_path) -> 
     payload = json.loads(capsys.readouterr().out)
     assert payload["valid"] is True
     assert payload["suite_overview"]["total"] == 1
+
+
+def test_evaluate_laurel_cli_can_save_report(monkeypatch: object, capsys, tmp_path) -> None:
+    report_path = tmp_path / "dev-artifacts" / "laurel" / "eval.json"
+    monkeypatch.setattr(
+        "pokemontology.laurel_eval.generate_sparql",
+        lambda *args, **kwargs: "SELECT ?s WHERE { ?s ?p ?o } ORDER BY ?s LIMIT 1",
+    )
+
+    exit_code = cli.main(
+        [
+            "evaluate-laurel",
+            "--limit",
+            "1",
+            "--no-include-adversarial",
+            "--save-report",
+            str(report_path),
+        ]
+    )
+
+    assert exit_code == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["saved_report"] == str(report_path)
+    saved = json.loads(report_path.read_text(encoding="utf-8"))
+    assert saved["results"][0]["generated_sparql"] == "SELECT ?s WHERE { ?s ?p ?o } ORDER BY ?s LIMIT 1"
