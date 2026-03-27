@@ -2,9 +2,7 @@ import { createState } from "./state.js";
 import {
   buildSources,
   configureQueryPresentation,
-  executeQuery,
   exportLastResultsToCsv,
-  loadComunicaEngine,
   renderGeneratedQuery,
   renderGrounding,
   renderQueryResults,
@@ -63,7 +61,7 @@ export async function createLaurelApp() {
     hydrateDefaultValues(state);
     if (document.getElementById("nl-question")) {
       initWorkers(state);
-      await initQueryEngine();
+      await initQueryRuntime(state);
       setStatus("[data-status-model]", supportsWebGpu() ? "WebGPU ready" : "CPU fallback");
       bindInteractiveActions(state);
     }
@@ -351,20 +349,33 @@ function initWorkers(state) {
   state.queryWorker = new Worker("./workers/query-worker.js", { type: "module" });
 }
 
-async function initQueryEngine() {
+async function initQueryRuntime(state) {
   const runButton = document.getElementById("run-btn");
   const runLabel = document.getElementById("run-btn-label");
   try {
-    await loadComunicaEngine();
+    const sources = buildSources();
+    if (sources.length) {
+      await askWorker(
+        state.queryWorker,
+        { action: "warmup", sources },
+        {
+          timeoutMs: 120000,
+          onProgress: (progress) => {
+            if (progress.message) setInlineStatus(progress.message);
+          },
+        },
+      );
+    }
     if (runButton) runButton.disabled = false;
     if (runLabel) runLabel.textContent = "Run SPARQL";
+    setInlineStatus("Ready for a new query.");
   } catch (error) {
     if (runLabel) runLabel.textContent = "Engine failed";
     setResultsContent(`<div class="qe-error">${error.message}</div>`);
   }
 }
 
-async function askWorker(worker, payload, { onProgress } = {}) {
+async function askWorker(worker, payload, { onProgress, timeoutMs = 10000 } = {}) {
   if (!worker.__pendingRequests) {
     worker.__pendingRequests = new Map();
     worker.onmessage = (event) => {
@@ -374,6 +385,12 @@ async function askWorker(worker, payload, { onProgress } = {}) {
       if (!pending) return;
       if (event.data?.type === "progress") {
         pending.onProgress?.(event.data);
+        return;
+      }
+      if (event.data?.error) {
+        window.clearTimeout(pending.timeout);
+        worker.__pendingRequests.delete(requestId);
+        pending.reject(new Error(event.data.error));
         return;
       }
       window.clearTimeout(pending.timeout);
@@ -395,7 +412,7 @@ async function askWorker(worker, payload, { onProgress } = {}) {
     const timeout = window.setTimeout(() => {
       worker.__pendingRequests.delete(requestId);
       reject(new Error("Worker response timed out."));
-    }, 10000);
+    }, timeoutMs);
     worker.__pendingRequests.set(requestId, {
       resolve,
       reject,
@@ -478,6 +495,7 @@ async function runLaurelPipeline(state) {
     let validation = state.validationCache.get(validationKey);
     if (!validation) {
       validation = await askWorker(state.queryWorker, {
+        action: "validate",
         sparql: generation.sparql,
         schemaPack: state.schemaPack,
       });
@@ -491,6 +509,7 @@ async function runLaurelPipeline(state) {
       let fallbackValidation = state.validationCache.get(fallbackValidationKey);
       if (!fallbackValidation) {
         fallbackValidation = await askWorker(state.queryWorker, {
+          action: "validate",
           sparql: generation.fallbackSparql,
           schemaPack: state.schemaPack,
         });
@@ -539,7 +558,22 @@ async function executeEditorQuery(state, sources = buildSources(), runId = state
     const executionKey = `${editor.value}::${JSON.stringify(sources)}`;
     let result = state.executionCache.get(executionKey);
     if (!result) {
-      result = await executeQuery(editor.value, sources);
+      result = (
+        await askWorker(
+          state.queryWorker,
+          {
+            action: "execute",
+            sparql: editor.value,
+            sources,
+          },
+          {
+            timeoutMs: 120000,
+            onProgress: (progress) => {
+              if (progress.message) setInlineStatus(progress.message);
+            },
+          },
+        )
+      ).result;
       state.executionCache.set(executionKey, result);
     }
     if (state.activeRunId !== runId) return;

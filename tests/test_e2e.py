@@ -428,7 +428,21 @@ def test_web_page_controller_prefers_actual_pokeapi_source(tmp_path: Path) -> No
                     summary: "synthetic test response",
                   }};
                 }} else {{
-                  message = {{ requestId: payload.requestId, ok: true, messages: [], normalized: payload.sparql }};
+                  sourceCalls.push(...(payload.sources || []));
+                  if (payload.action === "warmup") {{
+                    message = {{ requestId: payload.requestId, ok: true, warmed: true, sources: payload.sources || [] }};
+                  }} else if (payload.action === "execute") {{
+                    message = {{
+                      requestId: payload.requestId,
+                      result: {{
+                        type: "bindings",
+                        vars: ["species"],
+                        bindings: [],
+                      }},
+                    }};
+                  }} else {{
+                    message = {{ requestId: payload.requestId, ok: true, messages: [], normalized: payload.sparql }};
+                  }}
                 }}
                 this.onmessage?.({{ data: message }});
               }} catch (error) {{
@@ -463,16 +477,6 @@ def test_web_page_controller_prefers_actual_pokeapi_source(tmp_path: Path) -> No
         }};
         globalThis.performance = {{ now: () => 123 }};
         globalThis.URL = URL;
-        globalThis.Comunica = {{
-          QueryEngine: class {{
-            async queryBindings(_sparql, options) {{
-              sourceCalls.push(...options.sources);
-              return {{
-                async *[Symbol.asyncIterator]() {{}},
-              }};
-            }}
-          }},
-        }};
 
         const module = await import(pathToFileURL(path.join(repo, "docs", "js", "laurel-app.js")).href + "?sources-e2e");
         await module.createLaurelApp();
@@ -721,12 +725,36 @@ def test_web_page_controller_end_to_end(tmp_path: Path) -> None:
                     summary: "synthetic test response",
                   }};
                 }} else {{
-                  message = {{
-                    requestId: payload.requestId,
-                    ok: true,
-                    messages: ["validated in test harness"],
-                    normalized: queryText,
-                  }};
+                  if (payload.action === "warmup") {{
+                    message = {{
+                      requestId: payload.requestId,
+                      ok: true,
+                      warmed: true,
+                      sources: payload.sources || [],
+                    }};
+                  }} else if (payload.action === "execute") {{
+                    message = {{
+                      requestId: payload.requestId,
+                      result: {{
+                        type: "bindings",
+                        vars: ["myMoveLabel", "moveTypeName", "opponentLabel", "effectiveTypeName", "factor"],
+                        bindings: [{{
+                          myMoveLabel: {{ termType: "Literal", value: "Ember" }},
+                          moveTypeName: {{ termType: "Literal", value: "Fire" }},
+                          opponentLabel: {{ termType: "Literal", value: "Charizard" }},
+                          effectiveTypeName: {{ termType: "Literal", value: "Flying" }},
+                          factor: {{ termType: "Literal", value: "2.0" }},
+                        }}],
+                      }},
+                    }};
+                  }} else {{
+                    message = {{
+                      requestId: payload.requestId,
+                      ok: true,
+                      messages: ["validated in test harness"],
+                      normalized: queryText,
+                    }};
+                  }}
                 }}
                 this.onmessage?.({{ data: message }});
               }} catch (error) {{
@@ -778,22 +806,6 @@ def test_web_page_controller_end_to_end(tmp_path: Path) -> None:
         globalThis.URL = URL;
         globalThis.URL.createObjectURL = () => "blob:test";
         globalThis.URL.revokeObjectURL = () => {{}};
-        globalThis._qe_engine = {{
-          async queryBindings() {{
-            return {{
-              async *[Symbol.asyncIterator]() {{
-                yield new FakeBinding({{
-                  myMoveLabel: "Ember",
-                  moveTypeName: "Fire",
-                  opponentLabel: "Charizard",
-                  effectiveTypeName: "Flying",
-                  factor: "2.0",
-                }});
-              }},
-            }};
-          }},
-        }};
-
         const module = await import(pathToFileURL(path.join(repo, "docs", "js", "laurel-app.js")).href + "?page-e2e");
         await module.createLaurelApp();
         question.value = "Which of my moves are effective against Charizard?";
@@ -1033,14 +1045,39 @@ def test_web_page_controller_ignores_stale_prior_query_updates(tmp_path: Path) -
             }}
             if (this.url.includes("query-worker")) {{
               queueMicrotask(() => {{
-                this.onmessage?.({{
-                  data: {{
-                    requestId: payload.requestId,
-                    ok: true,
-                    messages: ["validated in test harness"],
-                    normalized: payload.sparql,
-                  }},
-                }});
+                if (payload.action === "warmup") {{
+                  this.onmessage?.({{
+                    data: {{
+                      requestId: payload.requestId,
+                      ok: true,
+                      warmed: true,
+                      sources: payload.sources || [],
+                    }},
+                  }});
+                }} else if (payload.action === "execute") {{
+                  const species = payload.sparql.includes("Pikachu") ? "Pikachu" : "Bulbasaur";
+                  this.onmessage?.({{
+                    data: {{
+                      requestId: payload.requestId,
+                      result: {{
+                        type: "bindings",
+                        vars: ["species"],
+                        bindings: [{{
+                          species: {{ termType: "Literal", value: species }},
+                        }}],
+                      }},
+                    }},
+                  }});
+                }} else {{
+                  this.onmessage?.({{
+                    data: {{
+                      requestId: payload.requestId,
+                      ok: true,
+                      messages: ["validated in test harness"],
+                      normalized: payload.sparql,
+                    }},
+                  }});
+                }}
               }});
               return;
             }}
@@ -1099,17 +1136,6 @@ def test_web_page_controller_ignores_stale_prior_query_updates(tmp_path: Path) -
         globalThis.URL = URL;
         globalThis.URL.createObjectURL = () => "blob:test";
         globalThis.URL.revokeObjectURL = () => {{}};
-        globalThis._qe_engine = {{
-          async queryBindings(sparql) {{
-            const species = sparql.includes("Pikachu") ? "Pikachu" : "Bulbasaur";
-            return {{
-              async *[Symbol.asyncIterator]() {{
-                yield new FakeBinding({{ species }});
-              }},
-            }};
-          }},
-        }};
-
         const module = await import(pathToFileURL(path.join(repo, "docs", "js", "laurel-app.js")).href + "?stale-query-e2e");
         await module.createLaurelApp();
 

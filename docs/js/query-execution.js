@@ -51,6 +51,14 @@ function formatTermHtml(term) {
   return escapeHtml(String(term.value));
 }
 
+function bindingTerm(binding, variable) {
+  if (!binding) return null;
+  if (typeof binding.get === "function") {
+    return binding.get(variable);
+  }
+  return binding[variable] || null;
+}
+
 export function setResultsContent(html) {
   const panel = document.getElementById("qe-results");
   if (panel) panel.innerHTML = html;
@@ -148,7 +156,7 @@ function variableLabel(variable) {
 }
 
 function bindingValue(binding, variable) {
-  const term = binding.get(variable);
+  const term = bindingTerm(binding, variable);
   return term ? shortenUri(term.value) : "";
 }
 
@@ -282,7 +290,7 @@ export function renderQueryResults(result, question = "") {
   const headerCells = vars.map((v) => `<th>?${escapeHtml(v)}</th>`).join("");
   const rows = bindings
     .map((binding) => {
-      const cells = vars.map((v) => `<td>${formatTermHtml(binding.get(v))}</td>`).join("");
+      const cells = vars.map((v) => `<td>${formatTermHtml(bindingTerm(binding, v))}</td>`).join("");
       return `<tr>${cells}</tr>`;
     })
     .join("");
@@ -307,7 +315,7 @@ export function exportLastResultsToCsv() {
     ...bindings.map((binding) =>
       vars
         .map((v) => {
-          const term = binding.get(v);
+          const term = bindingTerm(binding, v);
           return term ? JSON.stringify(term.value) : '""';
         })
         .join(","),

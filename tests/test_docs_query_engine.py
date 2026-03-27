@@ -161,3 +161,21 @@ def test_laurel_app_worker_transport_supports_overlapping_requests() -> None:
     assert "self.postMessage({ requestId, matches })" in retrieval_text
     assert "requestId," in llm_text
     assert "self.postMessage({ requestId, ...validation })" in query_text
+    assert 'action = "validate"' in query_text
+    assert 'action === "warmup"' in query_text
+    assert 'action === "execute"' in query_text
+    assert "new Store()" in query_text
+    assert "storeCache" in query_text
+
+
+def test_laurel_app_executes_queries_from_worker_backed_store() -> None:
+    app_text = (REPO / "docs" / "js" / "laurel-app.js").read_text(encoding="utf-8")
+    query_text = (REPO / "docs" / "workers" / "query-worker.js").read_text(
+        encoding="utf-8"
+    )
+
+    assert 'action: "warmup"' in app_text
+    assert 'action: "execute"' in app_text
+    assert "Warming local query graph" in query_text
+    assert "Local query graph ready." in query_text
+    assert "engine.queryBindings(sparql, { sources: querySources })" in query_text
