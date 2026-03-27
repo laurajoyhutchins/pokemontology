@@ -28,11 +28,14 @@ This repository models Pokemon battle mechanics as RDF/OWL and SHACL, with suppo
 ## Generated Artifacts
 
 - Treat `build/ontology.ttl`, `build/shapes.ttl`, `docs/ontology.ttl`, and `docs/shapes.ttl` as generated files.
+- Treat `build/mechanics.ttl` as the canonical local mechanics bundle.
+- Treat `docs/mechanics-base.ttl`, `docs/mechanics-learnsets-current.ttl`, `docs/mechanics-learnsets-modern.ttl`, `docs/mechanics-learnsets-legacy.ttl`, `docs/site-data.json`, and `docs/schema-index.json` as generated publishable web artifacts.
 - Rebuild these with:
   ```bash
   .venv/bin/python -m pokemontology build
   ```
 - `build/schema-index.json` is also a generated artifact used for RAG grounding.
+- If you change ontology/build/docs source wiring, rebuild before finishing and make sure generated files are committed.
 
 ## Professor Laurel (NL-to-SPARQL)
 
@@ -48,9 +51,21 @@ Professor Laurel translates natural-language questions into SPARQL queries, exec
 ## Testing & Evaluation
 
 - **Unit/Integration Tests**: Run with `.venv/bin/python -m pytest`.
+- **Fast regression gate**: Prefer running
+  ```bash
+  .venv/bin/python -m pytest tests/test_cli.py tests/test_turn_order.py tests/test_build_site_assets.py tests/test_docs_query_engine.py tests/test_e2e.py
+  ```
+  when changing CLI/build/frontend alignment.
 - **Laurel Evaluation**: Run with `.venv/bin/python -m pokemontology evaluate-laurel`.
   - The suite is defined in `tests/fixtures/laurel_eval_suite.json`.
   - It includes mechanics tiers (easy, medium, hard, gen-specific) and adversarial safety checks.
+
+## CI/CD Procedure
+
+- GitHub Actions `CI` is the main required gate for PRs and `main`.
+- `CI` rebuilds generated artifacts and fails if committed generated files drift from a fresh `.venv/bin/python -m pokemontology build`.
+- `CI` also enforces size checks on published `docs/*.ttl` artifacts; avoid growing web bundles casually.
+- GitHub Pages deploys from the `pages` workflow after `CI` succeeds on `main`.
 
 ## Replay Tooling
 
