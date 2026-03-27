@@ -348,8 +348,8 @@ export function buildSources() {
   if (document.getElementById("src-ontology")?.checked) {
     sources.push(new URL("./ontology.ttl", window.location.href).href);
   }
-  if (document.getElementById("src-pokeapi")?.checked) {
-    sources.push(new URL("./pokeapi.ttl", window.location.href).href);
+  if (document.getElementById("src-mechanics")?.checked) {
+    sources.push(new URL("./mechanics.ttl", window.location.href).href);
   }
   if (document.getElementById("src-pokeapi-demo")?.checked) {
     sources.push(new URL("./pokeapi-demo.ttl", window.location.href).href);

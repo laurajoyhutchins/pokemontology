@@ -84,7 +84,7 @@ def test_pokedex_page_uses_worker_backed_graph_browser() -> None:
     assert 'new Worker("./workers/query-worker.js", { type: "module" })' in script
     assert "pkm:TypingAssignment" in script
     assert "pkm:MoveLearnRecord" in script
-    assert 'new URL("../pokeapi.ttl", import.meta.url).href' in script
+    assert 'new URL("../mechanics.ttl", import.meta.url).href' in script
     assert 'new URL("../ontology.ttl", import.meta.url).href' in script
     assert "STRENDS(LCASE(STR(?variantName)), \"-default\")" in script
 
@@ -109,13 +109,14 @@ def test_docs_workers_are_present() -> None:
     assert "rdfs:label" not in llm_text
 
 
-def test_query_engine_defaults_to_actual_pokeapi_dataset() -> None:
+def test_query_engine_defaults_to_canonical_mechanics_dataset() -> None:
     text = (REPO / "docs" / "js" / "query-execution.js").read_text(encoding="utf-8")
     index_text = INDEX_HTML.read_text(encoding="utf-8")
-    assert 'id="src-pokeapi" checked' in index_text
+    assert 'id="src-mechanics" checked' in index_text
     assert 'id="src-pokeapi-demo"' in index_text
+    assert "mechanics.ttl" in index_text
     assert "pokeapi-demo.ttl (debug)" in index_text
-    assert 'new URL("./pokeapi.ttl", window.location.href).href' in text
+    assert 'new URL("./mechanics.ttl", window.location.href).href' in text
     assert 'new URL("./pokeapi-demo.ttl", window.location.href).href' in text
 
 

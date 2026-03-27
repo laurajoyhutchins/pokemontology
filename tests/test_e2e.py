@@ -355,8 +355,8 @@ def test_web_page_controller_prefers_actual_pokeapi_source(tmp_path: Path) -> No
         registerId("example-select", "select");
         const srcOntology = registerId("src-ontology", "input");
         srcOntology.checked = true;
-        const srcPokeapi = registerId("src-pokeapi", "input");
-        srcPokeapi.checked = true;
+        const srcMechanics = registerId("src-mechanics", "input");
+        srcMechanics.checked = true;
         const srcPokeapiDemo = registerId("src-pokeapi-demo", "input");
         srcPokeapiDemo.checked = false;
         const srcShapes = registerId("src-shapes", "input");
@@ -508,7 +508,7 @@ def test_web_page_controller_prefers_actual_pokeapi_source(tmp_path: Path) -> No
     assert payload["runLabel"] == "Run SPARQL"
     assert "./pokeapi.ttl" not in payload["editorValue"]
     assert any(source.endswith("/ontology.ttl") for source in payload["sourceCalls"])
-    assert any(source.endswith("/pokeapi.ttl") for source in payload["sourceCalls"])
+    assert any(source.endswith("/mechanics.ttl") for source in payload["sourceCalls"])
     assert not any(source.endswith("/pokeapi-demo.ttl") for source in payload["sourceCalls"])
 
 
@@ -965,8 +965,8 @@ def test_web_page_controller_ignores_stale_prior_query_updates(tmp_path: Path) -
         registerId("example-select", "select");
         const srcOntology = registerId("src-ontology", "input");
         srcOntology.checked = true;
-        const srcPokeapi = registerId("src-pokeapi", "input");
-        srcPokeapi.checked = true;
+        const srcMechanics = registerId("src-mechanics", "input");
+        srcMechanics.checked = true;
         const srcPokeapiDemo = registerId("src-pokeapi-demo", "input");
         srcPokeapiDemo.checked = false;
         const srcShapes = registerId("src-shapes", "input");

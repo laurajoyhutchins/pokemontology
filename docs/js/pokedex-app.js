@@ -155,8 +155,8 @@ function setupThemeToggle() {
 function sourceCandidates() {
   const ontology = new URL("../ontology.ttl", import.meta.url).href;
   return [
-    [ontology, new URL("../pokeapi.ttl", import.meta.url).href],
     [ontology, new URL("../mechanics.ttl", import.meta.url).href],
+    [ontology, new URL("../pokeapi.ttl", import.meta.url).href],
   ];
 }
 
