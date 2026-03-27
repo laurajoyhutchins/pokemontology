@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pokedex | Pokemontology</title>
+  <meta name="description" content="Browse Pokemon species, default variants, type assignments, and learnable moves from the published pokemontology dataset.">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-shell">
+      <div class="topbar fade-up">
+        <a class="brand" href="./index.html">
+          <span class="brand-mark">PK</span>
+          <span class="brand-copy">
+            <strong>Pokemontology</strong>
+            <span>Semantic Knowledge Engine</span>
+          </span>
+        </a>
+        <nav class="nav-links" aria-label="Primary">
+          <a href="./index.html">Query</a>
+          <a href="./pokedex.html" class="nav-active" aria-current="page">Pokedex</a>
+          <a href="./dev.html">Dev Console</a>
+          <a href="https://github.com/laurajoyhutchins/pokemontology" data-repository-url>Repo</a>
+        </nav>
+        <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false" aria-label="Toggle dark mode">
+          <span data-theme-label>Dark</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="pokedex-hero section-tight">
+      <div class="site-shell pokedex-hero-grid">
+        <div class="pokedex-intro fade-up">
+          <p class="eyebrow">Pokemontology / Species Browser</p>
+          <h1 class="laurel-title">Ontology Pokedex</h1>
+          <p class="laurel-lead">
+            Browse species and default variants directly from the published Turtle dataset, with type assignments and learnable moves resolved in-browser.
+          </p>
+          <div class="pokedex-runbar">
+            <label class="toolbar-label" for="pokedex-search">Search species or form</label>
+            <input
+              id="pokedex-search"
+              class="pokedex-search"
+              type="search"
+              placeholder="Search Charizard, Alolan Ninetales, Iron Valiant…"
+              autocomplete="off"
+            >
+          </div>
+          <div class="hero-stats pokedex-stats">
+            <div class="stat-chip">
+              <strong data-pokedex-status>Loading…</strong>
+              <span>Dataset status</span>
+            </div>
+            <div class="stat-chip">
+              <strong data-pokedex-count>0</strong>
+              <span>Default variants</span>
+            </div>
+            <div class="stat-chip">
+              <strong data-pokedex-visible>0</strong>
+              <span>Visible results</span>
+            </div>
+          </div>
+        </div>
+
+        <aside class="laurel-sidecar fade-up delay-1">
+          <div class="sidecar-card">
+            <p class="panel-kicker">Dataset Scope</p>
+            <p>
+              This page uses <code>ontology.ttl</code> and <code>pokeapi.ttl</code> only. Types and moves are live SPARQL results from the shipped docs artifacts.
+            </p>
+          </div>
+          <div class="sidecar-card">
+            <p class="panel-kicker">Returned Fields</p>
+            <div class="pokedex-meta-list">
+              <span>Species</span>
+              <span>Default variant</span>
+              <span>Typing</span>
+              <span>Learnable moves</span>
+              <span>Ruleset coverage</span>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section-tight">
+      <div class="site-shell pokedex-layout">
+        <section class="pokedex-catalog panel fade-up delay-1" aria-labelledby="pokedex-catalog-heading">
+          <div class="pokedex-panel-head">
+            <div>
+              <p class="panel-kicker">Catalog</p>
+              <h2 id="pokedex-catalog-heading">Species Index</h2>
+            </div>
+            <span class="mini-badge" data-pokedex-catalog-badge>Awaiting graph</span>
+          </div>
+          <div class="pokedex-results" id="pokedex-results" aria-live="polite">
+            <div class="qe-placeholder">
+              <span class="qe-placeholder-icon">◌</span>
+              <p>Loading the ontology-backed Pokedex…</p>
+            </div>
+          </div>
+        </section>
+
+        <aside class="pokedex-detail panel fade-up delay-2" aria-labelledby="pokedex-detail-heading">
+          <div class="pokedex-panel-head">
+            <div>
+              <p class="panel-kicker">Entry</p>
+              <h2 id="pokedex-detail-heading">Selected Pokemon</h2>
+            </div>
+            <span class="mini-badge" id="pokedex-entry-badge">No selection</span>
+          </div>
+          <div id="pokedex-detail">
+            <div class="qe-placeholder">
+              <span class="qe-placeholder-icon">◎</span>
+              <p>Choose a result to inspect its ontology-backed details.</p>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="site-shell footer-shell">
+      <div>
+        The same repository defines the ontology, the shapes, the replay tooling, and the ingest pipelines.
+      </div>
+      <div>
+        <a href="https://github.com/laurajoyhutchins/pokemontology">GitHub</a>
+      </div>
+    </div>
+  </footer>
+  <script type="module" src="./pokedex.js"></script>
+</body>
+</html>

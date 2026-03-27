@@ -902,6 +902,171 @@ body:not([data-power-mode="on"]) .qe-results-body {
   margin-bottom: 1rem;
 }
 
+.pokedex-hero-grid,
+.pokedex-layout {
+  display: grid;
+  gap: 1rem;
+}
+
+.pokedex-hero-grid {
+  grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr);
+  align-items: start;
+}
+
+.pokedex-layout {
+  grid-template-columns: minmax(0, 1.2fr) minmax(340px, 0.9fr);
+  align-items: start;
+}
+
+.pokedex-intro,
+.pokedex-catalog,
+.pokedex-detail {
+  padding: 1.25rem;
+}
+
+.pokedex-runbar {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 1rem;
+}
+
+.pokedex-search {
+  width: 100%;
+  min-height: 3rem;
+  border: 2px solid var(--line);
+  background: var(--control-bg);
+  color: var(--ink);
+  padding: 0.8rem 0.95rem;
+  box-shadow: var(--pixel-frame), var(--shadow);
+}
+
+.pokedex-stats {
+  margin-top: 1rem;
+}
+
+.pokedex-meta-list,
+.pokedex-type-row,
+.pokedex-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.pokedex-meta-list span,
+.info-chip,
+.type-chip {
+  border: 2px solid var(--line);
+  background: var(--control-bg);
+  padding: 0.42rem 0.65rem;
+  box-shadow: var(--pixel-frame), var(--shadow);
+}
+
+.pokedex-results {
+  display: grid;
+  gap: 0.85rem;
+  max-height: 68vh;
+  overflow: auto;
+  padding-right: 0.2rem;
+}
+
+.pokedex-panel-head,
+.pokedex-card-head,
+.pokedex-entry-head,
+.pokedex-stat-row,
+.pokedex-ruleset-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.pokedex-card {
+  width: 100%;
+  text-align: left;
+  border: 2px solid var(--line);
+  background: linear-gradient(180deg, rgba(248, 243, 225, 0.95), rgba(234, 223, 186, 0.95));
+  color: var(--ink);
+  padding: 1rem;
+  cursor: pointer;
+  box-shadow: var(--pixel-frame), var(--shadow);
+  transition: transform 120ms ease, background 120ms ease;
+}
+
+:root[data-theme="dark"] .pokedex-card {
+  background: linear-gradient(180deg, rgba(25, 45, 39, 0.96), rgba(18, 34, 29, 0.96));
+}
+
+.pokedex-card:hover,
+.pokedex-card.is-selected {
+  transform: translate(-2px, -2px);
+  background: linear-gradient(180deg, rgba(218, 204, 151, 0.96), rgba(241, 233, 197, 0.96));
+}
+
+:root[data-theme="dark"] .pokedex-card:hover,
+:root[data-theme="dark"] .pokedex-card.is-selected {
+  background: linear-gradient(180deg, rgba(55, 82, 56, 0.96), rgba(35, 58, 40, 0.96));
+}
+
+.pokedex-card h3,
+.pokedex-entry h3 {
+  margin: 0.35rem 0;
+}
+
+.pokedex-card p,
+.pokedex-subhead,
+.pokedex-summary {
+  color: var(--muted);
+  margin: 0 0 0.7rem;
+}
+
+.pokedex-dex,
+.pokedex-variant-tag {
+  font-family: var(--font-ui);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.76rem;
+}
+
+.pokedex-entry {
+  display: grid;
+  gap: 1rem;
+}
+
+.pokedex-section {
+  border-top: 2px solid rgba(47, 85, 71, 0.18);
+  padding-top: 0.9rem;
+}
+
+.pokedex-ruleset-list,
+.pokedex-stat-list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.type-chip {
+  color: #172922;
+  font-weight: 700;
+}
+
+.type-fire { background: #efad6c; }
+.type-water { background: #7cb8eb; }
+.type-grass { background: #99c978; }
+.type-electric { background: #f0d567; }
+.type-ice { background: #a8e4de; }
+.type-fighting { background: #d68367; }
+.type-poison { background: #ba8bd8; }
+.type-ground { background: #d1b173; }
+.type-flying { background: #b5c5f7; }
+.type-psychic { background: #ee8aa5; }
+.type-bug { background: #bdd062; }
+.type-rock { background: #c6ab70; }
+.type-ghost { background: #9387cc; }
+.type-dragon { background: #8c99f0; }
+.type-dark { background: #8b7767; color: #f9f2df; }
+.type-steel { background: #b5c1cf; }
+.type-fairy { background: #f4b7cf; }
+.type-normal { background: #d3c9aa; }
+
 .footer {
   padding: 2rem 0 2.5rem;
 }
@@ -934,7 +1099,9 @@ body:not([data-power-mode="on"]) .qe-results-body {
 @media (max-width: 980px) {
   .laurel-grid,
   .laurel-board,
-  .section-grid {
+  .section-grid,
+  .pokedex-hero-grid,
+  .pokedex-layout {
     grid-template-columns: 1fr;
   }
 
@@ -965,5 +1132,9 @@ body:not([data-power-mode="on"]) .qe-results-body {
 
   .qe-results-body {
     min-height: 12rem;
+  }
+
+  .pokedex-results {
+    max-height: none;
   }
 }

@@ -11,6 +11,7 @@ REPO = repo_path()
 APP_JS = REPO / "docs" / "app.js"
 SITE_DATA = REPO / "docs" / "site-data.json"
 INDEX_HTML = REPO / "docs" / "index.html"
+POKEDEX_HTML = REPO / "docs" / "pokedex.html"
 SCHEMA_INDEX = REPO / "docs" / "schema-index.json"
 PKM_PREFIX_TERM_RE = re.compile(r"\bpkm:([A-Za-z_][\w-]*)\b")
 
@@ -49,7 +50,10 @@ def test_query_engine_uses_generated_query_examples_and_schema_pack() -> None:
     assert "formatPrefixBlock" in text
     assert site_data["query_examples"]
     assert site_data["schema_pack"]["path"] == "schema-index.json"
-    assert any(artifact["path"] == "pokeapi.ttl" for artifact in site_data["artifacts"])
+    assert any(
+        artifact["path"] in {"pokeapi.ttl", "mechanics.ttl"}
+        for artifact in site_data["artifacts"]
+    )
     assert schema_index["examples"]
     assert schema_index["prefixes"][0]["alias"] == "pkm:"
     assert schema_index["inference"]["webllm_library_url"]
@@ -67,6 +71,22 @@ def test_professor_laurel_landing_page_is_primary_entry() -> None:
     assert "Grounding Notes" in text
     assert "Generated Query" in text
     assert "Advanced Query View" in text
+    assert './pokedex.html' in text
+
+
+def test_pokedex_page_uses_worker_backed_graph_browser() -> None:
+    html = POKEDEX_HTML.read_text(encoding="utf-8")
+    script = (REPO / "docs" / "js" / "pokedex-app.js").read_text(encoding="utf-8")
+
+    assert "Ontology Pokedex" in html
+    assert 'id="pokedex-search"' in html
+    assert 'src="./pokedex.js"' in html
+    assert 'new Worker("./workers/query-worker.js", { type: "module" })' in script
+    assert "pkm:TypingAssignment" in script
+    assert "pkm:MoveLearnRecord" in script
+    assert 'new URL("../pokeapi.ttl", import.meta.url).href' in script
+    assert 'new URL("../ontology.ttl", import.meta.url).href' in script
+    assert "STRENDS(LCASE(STR(?variantName)), \"-default\")" in script
 
 
 def test_docs_workers_are_present() -> None:
