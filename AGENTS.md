@@ -20,7 +20,7 @@ This repository models Pokemon battle mechanics as RDF/OWL and SHACL, with suppo
 - `ontology/modules/`: Canonical ontology source fragments.
 - `shapes/modules/shapes.ttl`: Canonical SHACL shapes source.
 - `pokemontology/`: Unified Python package for all logic.
-- `build/`: Generated consumer artifacts (e.g., `ontology.ttl`, `schema-index.json`).
+- `build/`: Generated consumer artifacts (e.g., `ontology.ttl`).
 - `docs/`: Published site data and workers for the web frontend.
 - `queries/bundled/`: Tracked SPARQL queries consumed by docs, tests, and examples.
 - `queries/scratch/`: Local scratch queries and fixtures; do not wire build/docs/tests to this directory.
@@ -36,7 +36,7 @@ This repository models Pokemon battle mechanics as RDF/OWL and SHACL, with suppo
   ```bash
   .venv/bin/python -m pokemontology build
   ```
-- `build/schema-index.json` is also a generated artifact used for RAG grounding.
+- `docs/schema-index.json` is the canonical generated schema pack used for RAG grounding and web query validation.
 - If you change ontology/build/docs source wiring, rebuild before finishing and make sure generated files are committed.
 
 ## Professor Laurel (NL-to-SPARQL)
@@ -44,7 +44,7 @@ This repository models Pokemon battle mechanics as RDF/OWL and SHACL, with suppo
 Professor Laurel translates natural-language questions into SPARQL queries, executes them, and synthesizes answers.
 
 - **Requirements**: Local Ollama instance running `qwen2.5:1.5b` (default).
-- **RAG Grounding**: Uses `build/schema-index.json` for vector-based retrieval of relevant ontology terms.
+- **RAG Grounding**: Uses `docs/schema-index.json` for vector-based retrieval of relevant ontology terms.
 - **Commands**:
   - `ask`: Translates a question to SPARQL and prints it.
   - `laurel`: Full pipeline (translate -> execute -> summarize).

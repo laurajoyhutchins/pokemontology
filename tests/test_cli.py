@@ -113,6 +113,10 @@ def test_query_command_defaults_to_build_sources(capsys, monkeypatch: object) ->
     assert captured["query_label"] == "queries/bundled/super_effective_moves.sparql"
 
 
+def test_schema_index_default_points_to_docs_artifact() -> None:
+    assert cli.DEFAULT_SCHEMA_INDEX == REPO / "docs" / "schema-index.json"
+
+
 def test_query_command_preserves_explicit_sources(monkeypatch: object) -> None:
     captured: dict[str, object] = {}
 

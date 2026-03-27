@@ -40,8 +40,7 @@ class CliUsageError(ValueError):
     """Raised when CLI input is syntactically valid but unusable."""
 
 
-DEFAULT_SCHEMA_INDEX = REPO_ROOT / "build" / "schema-index.json"
-DEFAULT_DOCS_SCHEMA_INDEX = REPO_ROOT / "docs" / "schema-index.json"
+DEFAULT_SCHEMA_INDEX = REPO_ROOT / "docs" / "schema-index.json"
 DEFAULT_DOCS_DIR = REPO_ROOT / "docs"
 DEFAULT_ONTOLOGY_SOURCE = REPO_ROOT / "build" / "ontology.ttl"
 DEFAULT_DOCS_ONTOLOGY_SOURCE = REPO_ROOT / "docs" / "ontology.ttl"
@@ -413,7 +412,6 @@ def _get_rag_matches(args: argparse.Namespace) -> list[dict[str, object]] | None
     try:
         schema_index_path = _resolve_existing_path(
             args.schema_index,
-            DEFAULT_DOCS_SCHEMA_INDEX,
             label="schema index",
         )
         cache_key = (
