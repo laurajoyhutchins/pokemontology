@@ -8,6 +8,7 @@ from pokemontology.build import build_ontology
 
 
 def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
+    queries_dir = tmp_path / "queries"
     monkeypatch.setattr(build_ontology, "PAGES_DIR", tmp_path)
     monkeypatch.setattr(build_ontology, "PAGES_ONTOLOGY", tmp_path / "ontology.ttl")
     monkeypatch.setattr(build_ontology, "PAGES_SHAPES", tmp_path / "shapes.ttl")
@@ -25,8 +26,10 @@ def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(build_ontology, "BUILD_POKEAPI", tmp_path / "build" / "pokeapi.ttl")
     monkeypatch.setattr(build_ontology, "BUILD_VEEKUN", tmp_path / "build" / "veekun.ttl")
     monkeypatch.setattr(build_ontology, "BUILD_MECHANICS", tmp_path / "build" / "mechanics.ttl")
+    monkeypatch.setattr(build_ontology, "QUERIES_DIR", queries_dir)
 
     (tmp_path / "build").mkdir()
+    queries_dir.mkdir()
     (tmp_path / "build" / "pokeapi.ttl").write_text(
         "@prefix pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#> .\n",
         encoding="utf-8",
@@ -35,12 +38,28 @@ def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
         "@prefix pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#> .\n",
         encoding="utf-8",
     )
+    (queries_dir / "super_effective_moves.sparql").write_text(
+        "# Super-effective move query\n"
+        "# Requires: build/ontology.ttl + build/mechanics.ttl + a replay slice TTL\n"
+        "ASK { ?s ?p ?o }\n",
+        encoding="utf-8",
+    )
 
     ontology_text, shapes_text, site_data = build_ontology.assemble_artifacts()
     build_ontology.write_artifacts(ontology_text, shapes_text, site_data)
 
     site_data = json.loads((tmp_path / "site-data.json").read_text(encoding="utf-8"))
     schema_index = json.loads((tmp_path / "schema-index.json").read_text(encoding="utf-8"))
+    bundled_query = next(
+        example
+        for example in site_data["query_examples"]
+        if example["source_path"] == "queries/super_effective_moves.sparql"
+    )
+    schema_example = next(
+        example
+        for example in schema_index["examples"]
+        if example["id"] == "super-effective-moves"
+    )
     assert (tmp_path / "mechanics-base.ttl").exists()
     assert (tmp_path / "mechanics-learnsets-current.ttl").exists()
     assert (tmp_path / "mechanics-learnsets-modern.ttl").exists()
@@ -54,9 +73,9 @@ def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
         "mechanics-learnsets-modern.ttl",
         "mechanics-learnsets-legacy.ttl",
     ]
-    assert "build/mechanics.ttl" in site_data["query_examples"][0]["query"]
-    assert "build/pokeapi.ttl" not in site_data["query_examples"][0]["query"]
-    assert "build/mechanics.ttl" in site_data["query_examples"][0]["command"]
+    assert "build/mechanics.ttl" in bundled_query["query"]
+    assert "build/pokeapi.ttl" not in bundled_query["query"]
+    assert "build/mechanics.ttl" in bundled_query["command"]
     assert schema_index["prefixes"]
     assert schema_index["retrieval"]["top_k"] == 4
     assert schema_index["retrieval"]["minimum_scores"][0] == {
@@ -77,8 +96,8 @@ def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
     assert schema_index["inference"]["webllm_model"]
     assert any(item["label"] == "Species" for item in schema_index["items"])
     assert any(item["label"] == "TypingAssignment pattern" for item in schema_index["items"])
-    assert any(example["id"] == "super-effective-moves" for example in schema_index["examples"])
-    assert "build/mechanics.ttl" in schema_index["examples"][0]["query"]
-    assert "build/pokeapi.ttl" not in schema_index["examples"][0]["query"]
+    assert schema_example
+    assert "build/mechanics.ttl" in schema_example["query"]
+    assert "build/pokeapi.ttl" not in schema_example["query"]
     assert "species" in schema_index["sparse_index"]
     assert schema_index["item_norms"]

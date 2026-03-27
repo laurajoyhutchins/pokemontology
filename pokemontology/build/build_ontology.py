@@ -7,7 +7,9 @@ import json
 import math
 import re
 import shutil
+import subprocess
 from collections.abc import Iterator
+from pathlib import Path
 
 from rdflib import Graph, Namespace, URIRef
 from rdflib.namespace import OWL, RDF, RDFS
@@ -113,7 +115,7 @@ def _validate_sources() -> None:
 
 def _query_examples() -> list[dict[str, object]]:
     examples: list[dict[str, object]] = []
-    for path in sorted(QUERIES_DIR.glob("*.sparql")):
+    for path in _query_example_paths():
         query_text = path.read_text(encoding="utf-8").strip()
         first_comment = next(
             (
@@ -134,6 +136,30 @@ def _query_examples() -> list[dict[str, object]]:
             }
         )
     return examples
+
+
+def _query_example_paths() -> list[Path]:
+    result = subprocess.run(
+        ["git", "-C", str(REPO), "ls-files", "queries/*.sparql"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode == 0 and result.stdout.strip():
+        return [repo_path(line) for line in sorted(result.stdout.splitlines())]
+    return sorted(QUERIES_DIR.glob("*.sparql"))
+
+
+def _preferred_schema_example_query(query_examples: list[dict[str, object]]) -> str:
+    preferred_source = "queries/super_effective_moves.sparql"
+    for example in query_examples:
+        if example.get("source_path") == preferred_source:
+            query = example.get("query", "")
+            return query if isinstance(query, str) else ""
+    if not query_examples:
+        return ""
+    query = query_examples[0].get("query", "")
+    return query if isinstance(query, str) else ""
 
 
 def _web_mechanics_slice_paths() -> dict[str, object]:
@@ -289,7 +315,7 @@ def _schema_pack(
             "question": "Which of my moves are effective against Charizard?",
             "summary": "Bundled query that links replay combatants, move typing, and type chart effectiveness.",
             "snippet": "Use MoveUseAction, MovePropertyAssignment, TypingAssignment, and TypeEffectivenessAssignment together.",
-            "query": query_examples[0]["query"] if query_examples else "",
+            "query": _preferred_schema_example_query(query_examples),
         },
         {
             "id": "charizard-fire-check",
