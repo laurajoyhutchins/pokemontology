@@ -421,6 +421,30 @@ def _entity_contexts(graph: Graph, entity: URIRef, type_iri: URIRef | None) -> l
     return sorted(contexts, key=lambda value: str(value))
 
 
+def cmd_rulesets(args: argparse.Namespace) -> int:
+    data_path = _resolve_existing_path(args.data, label="ruleset data source")
+    graph = _load_turtle_sources((data_path,))
+    rulesets = sorted(
+        {
+            subject
+            for subject in graph.subjects(RDF.type, PKM_RULESET)
+            if isinstance(subject, URIRef) and str(subject).startswith(PKM_NAMESPACE)
+        },
+        key=lambda value: (
+            _literal_texts(graph, value, PKM_HAS_NAME)[0]
+            if _literal_texts(graph, value, PKM_HAS_NAME)
+            else _curie_for_iri(value)
+        ),
+    )
+    for ruleset in rulesets:
+        names = _literal_texts(graph, ruleset, PKM_HAS_NAME)
+        if names:
+            print(f"{_curie_for_iri(ruleset)}\t{names[0]}")
+        else:
+            print(_curie_for_iri(ruleset))
+    return 0
+
+
 def cmd_lookup(args: argparse.Namespace) -> int:
     data_path = _resolve_existing_path(args.data, label="lookup data source")
     index = _build_entity_index(data_path)
@@ -1151,6 +1175,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="Maximum number of additional matches to print after the best result.",
     )
     lookup_parser.set_defaults(func=cmd_lookup)
+
+    rulesets_parser = subparsers.add_parser(
+        "rulesets", help="List available ruleset context individuals from mechanics data."
+    )
+    rulesets_parser.add_argument(
+        "--data",
+        type=Path,
+        default=DEFAULT_LOOKUP_SOURCE,
+        help="Mechanics Turtle file to inspect. Defaults to build/mechanics.ttl.",
+    )
+    rulesets_parser.set_defaults(func=cmd_rulesets)
 
     list_classes_parser = subparsers.add_parser(
         "list-classes", help="List ontology classes in the pkm namespace."

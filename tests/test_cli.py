@@ -195,6 +195,18 @@ def test_list_properties_outputs_known_terms(capsys) -> None:
     assert "pkm:hasDamageFactor" in output
 
 
+def test_rulesets_lists_available_contexts(tmp_path, capsys) -> None:
+    data_path = tmp_path / "lookup.ttl"
+    data_path.write_text(LOOKUP_TTL, encoding="utf-8")
+
+    exit_code = cli.main(["rulesets", "--data", str(data_path)])
+
+    assert exit_code == 0
+    output = capsys.readouterr().out.splitlines()
+    assert "pkm:Ruleset_PokeAPI_Default\tPokeAPI Default" in output
+    assert "pkm:Ruleset_scarlet_violet\tScarlet Violet" in output
+
+
 def test_lookup_prefers_variant_and_lists_contexts(tmp_path, capsys) -> None:
     data_path = tmp_path / "lookup.ttl"
     data_path.write_text(LOOKUP_TTL, encoding="utf-8")
