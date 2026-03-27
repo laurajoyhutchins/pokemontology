@@ -10,7 +10,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Sequence
 
-from rdflib import Graph, URIRef
+from rdflib import Graph, Literal, URIRef
 from rdflib.namespace import OWL, RDF, RDFS
 
 from ._script_loader import REPO_ROOT
@@ -44,15 +44,19 @@ DEFAULT_SCHEMA_INDEX = REPO_ROOT / "docs" / "schema-index.json"
 DEFAULT_DOCS_DIR = REPO_ROOT / "docs"
 DEFAULT_ONTOLOGY_SOURCE = REPO_ROOT / "build" / "ontology.ttl"
 DEFAULT_DOCS_ONTOLOGY_SOURCE = REPO_ROOT / "docs" / "ontology.ttl"
+DEFAULT_LOOKUP_SOURCE = REPO_ROOT / "build" / "mechanics.ttl"
 DEFAULT_QUERY_SOURCES = (
     DEFAULT_ONTOLOGY_SOURCE,
-    REPO_ROOT / "build" / "mechanics.ttl",
+    DEFAULT_LOOKUP_SOURCE,
 )
 
 
 _TURTLE_SOURCE_CACHE: dict[tuple[tuple[str, int, int], ...], Graph] = {}
 _JSON_OBJECT_CACHE: dict[tuple[str, int, int], dict[str, object]] = {}
 _RAG_MATCH_CACHE: dict[tuple[str, str, int, int], list[dict[str, object]]] = {}
+_ENTITY_INDEX_CACHE: dict[
+    tuple[str, int, int], list[dict[str, object]]
+] = {}
 
 PKM_NAMESPACE = "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#"
 CURIE_PREFIXES = (
@@ -61,6 +65,22 @@ CURIE_PREFIXES = (
     ("rdfs:", str(RDFS)),
     ("owl:", str(OWL)),
 )
+PKM_HAS_CONTEXT = URIRef(f"{PKM_NAMESPACE}hasContext")
+PKM_HAS_NAME = URIRef(f"{PKM_NAMESPACE}hasName")
+PKM_HAS_IDENTIFIER = URIRef(f"{PKM_NAMESPACE}hasIdentifier")
+PKM_BELONGS_TO_SPECIES = URIRef(f"{PKM_NAMESPACE}belongsToSpecies")
+PKM_RULESET = URIRef(f"{PKM_NAMESPACE}Ruleset")
+PKM_SPECIES = URIRef(f"{PKM_NAMESPACE}Species")
+
+LOOKUP_TYPE_PRIORITY = {
+    "Variant": 0,
+    "Species": 1,
+    "Move": 2,
+    "Ability": 3,
+    "Item": 4,
+    "Type": 5,
+    "Ruleset": 6,
+}
 
 
 def _repo_relative(path: Path) -> str:
@@ -264,6 +284,192 @@ def _query_results_to_json(result) -> dict[str, object]:
             row_json[variable] = None if value is None else str(value)
         rows.append(row_json)
     return {"variables": variables, "rows": rows}
+
+
+def _literal_texts(graph: Graph, subject: URIRef, predicate: URIRef) -> list[str]:
+    return [
+        str(obj)
+        for obj in graph.objects(subject, predicate)
+        if isinstance(obj, Literal)
+    ]
+
+
+def _normalize_lookup_text(text: str) -> str:
+    return " ".join(
+        "".join(
+            character.lower() if character.isalnum() else " "
+            for character in text.strip()
+        ).split()
+    )
+
+
+def _local_name(iri: str) -> str:
+    if "#" in iri:
+        return iri.rsplit("#", 1)[1]
+    return iri.rsplit("/", 1)[-1]
+
+
+def _friendly_local_name(local_name: str) -> str:
+    return local_name.replace("_", " ")
+
+
+def _entity_type_iri(graph: Graph, entity: URIRef) -> URIRef | None:
+    candidates = sorted(
+        [
+            obj
+            for obj in graph.objects(entity, RDF.type)
+            if isinstance(obj, URIRef) and str(obj).startswith(PKM_NAMESPACE)
+        ],
+        key=lambda value: (
+            LOOKUP_TYPE_PRIORITY.get(_local_name(str(value)), 999),
+            str(value),
+        ),
+    )
+    return candidates[0] if candidates else None
+
+
+def _entity_aliases(graph: Graph, entity: URIRef, type_iri: URIRef | None) -> set[str]:
+    aliases = {_normalize_lookup_text(name) for name in _literal_texts(graph, entity, PKM_HAS_NAME)}
+    local_name = _local_name(str(entity))
+    aliases.add(_normalize_lookup_text(local_name))
+    aliases.add(_normalize_lookup_text(_friendly_local_name(local_name)))
+    if type_iri is not None and _local_name(str(type_iri)) == "Variant":
+        for name in _literal_texts(graph, entity, PKM_HAS_NAME):
+            if name.endswith("-Default"):
+                aliases.add(_normalize_lookup_text(name.removesuffix("-Default")))
+    return {alias for alias in aliases if alias}
+
+
+def _build_entity_index(path: Path) -> list[dict[str, object]]:
+    cache_key = (str(path.resolve()), path.stat().st_mtime_ns, path.stat().st_size)
+    cached = _ENTITY_INDEX_CACHE.get(cache_key)
+    if cached is not None:
+        return cached
+    graph = _load_turtle_sources((path,))
+    items: list[dict[str, object]] = []
+    for entity in sorted(
+        {
+            subject
+            for subject in graph.subjects(RDF.type, None)
+            if isinstance(subject, URIRef) and str(subject).startswith(PKM_NAMESPACE)
+        },
+        key=lambda value: str(value),
+    ):
+        type_iri = _entity_type_iri(graph, entity)
+        if type_iri is None:
+            continue
+        labels = _literal_texts(graph, entity, PKM_HAS_NAME)
+        identifiers = _literal_texts(graph, entity, PKM_HAS_IDENTIFIER)
+        items.append(
+            {
+                "iri": entity,
+                "type_iri": type_iri,
+                "type_name": _local_name(str(type_iri)),
+                "labels": labels,
+                "identifiers": identifiers,
+                "aliases": _entity_aliases(graph, entity, type_iri),
+            }
+        )
+    _ENTITY_INDEX_CACHE[cache_key] = items
+    return items
+
+
+def _lookup_score(query: str, item: dict[str, object]) -> int:
+    normalized_query = _normalize_lookup_text(query)
+    if not normalized_query:
+        return 0
+    aliases = item.get("aliases", set())
+    if not isinstance(aliases, set):
+        return 0
+    score = 0
+    if normalized_query in aliases:
+        score = max(score, 400)
+    for alias in aliases:
+        if alias.startswith(normalized_query):
+            score = max(score, 250)
+        elif normalized_query in alias:
+            score = max(score, 180)
+        query_tokens = set(normalized_query.split())
+        alias_tokens = set(alias.split())
+        overlap = len(query_tokens & alias_tokens)
+        if overlap:
+            score = max(score, overlap * 40)
+    iri = _curie_for_iri(item["iri"])
+    if normalized_query == _normalize_lookup_text(iri):
+        score = max(score, 420)
+    return score
+
+
+def _entity_contexts(graph: Graph, entity: URIRef, type_iri: URIRef | None) -> list[URIRef]:
+    contexts: set[URIRef] = set()
+
+    def add_direct_contexts(target: URIRef) -> None:
+        for subject, predicate in graph.subject_predicates(target):
+            if predicate == PKM_HAS_CONTEXT:
+                continue
+            for context in graph.objects(subject, PKM_HAS_CONTEXT):
+                if isinstance(context, URIRef):
+                    contexts.add(context)
+
+    add_direct_contexts(entity)
+    if type_iri == PKM_SPECIES:
+        for variant in graph.subjects(PKM_BELONGS_TO_SPECIES, entity):
+            if isinstance(variant, URIRef):
+                add_direct_contexts(variant)
+    if type_iri == PKM_RULESET:
+        contexts.add(entity)
+    return sorted(contexts, key=lambda value: str(value))
+
+
+def cmd_lookup(args: argparse.Namespace) -> int:
+    data_path = _resolve_existing_path(args.data, label="lookup data source")
+    index = _build_entity_index(data_path)
+    query_graph = _load_turtle_sources((data_path,))
+    matches = [
+        item
+        for item in index
+        if _lookup_score(args.query, item) > 0
+    ]
+    matches.sort(
+        key=lambda item: (
+            -_lookup_score(args.query, item),
+            LOOKUP_TYPE_PRIORITY.get(str(item["type_name"]), 999),
+            _curie_for_iri(item["iri"]),
+        )
+    )
+    if not matches:
+        print(f'No entity matches found for "{args.query}".')
+        return 1
+    best = matches[0]
+    best_iri = best["iri"]
+    best_type_iri = best["type_iri"]
+    print(f"Query: {args.query}")
+    print(f"Canonical IRI: {_curie_for_iri(best_iri)}")
+    print(f"Entity Type: {_curie_for_iri(best_type_iri)}")
+    labels = best.get("labels", [])
+    if isinstance(labels, list) and labels:
+        print(f"Label: {labels[0]}")
+    identifiers = best.get("identifiers", [])
+    if isinstance(identifiers, list) and identifiers:
+        print(f"Identifier: {identifiers[0]}")
+    contexts = _entity_contexts(query_graph, best_iri, best_type_iri)
+    print("Contexts:")
+    if contexts:
+        for context in contexts:
+            context_names = _literal_texts(query_graph, context, PKM_HAS_NAME)
+            if context_names:
+                print(f"- {_curie_for_iri(context)} ({context_names[0]})")
+            else:
+                print(f"- {_curie_for_iri(context)}")
+    else:
+        print("- none")
+    if len(matches) > 1:
+        print("Other matches:")
+        for item in matches[1 : 1 + args.limit]:
+            labels = item.get("labels", [])
+            suffix = f" ({labels[0]})" if isinstance(labels, list) and labels else ""
+            print(f"- {_curie_for_iri(item['iri'])} [{_curie_for_iri(item['type_iri'])}]{suffix}")
+    return 0
 
 
 def _print_json(payload: object, *, pretty: bool = False) -> None:
@@ -927,6 +1133,24 @@ def build_parser() -> argparse.ArgumentParser:
         "--pretty", action="store_true", help="Print query results as indented JSON."
     )
     query_parser.set_defaults(func=cmd_query)
+
+    lookup_parser = subparsers.add_parser(
+        "lookup", help="Search mechanics entities by name and list their ruleset contexts."
+    )
+    lookup_parser.add_argument("query", help="Entity search text, such as Gengar.")
+    lookup_parser.add_argument(
+        "--data",
+        type=Path,
+        default=DEFAULT_LOOKUP_SOURCE,
+        help="Mechanics Turtle file to inspect. Defaults to build/mechanics.ttl.",
+    )
+    lookup_parser.add_argument(
+        "--limit",
+        type=int,
+        default=5,
+        help="Maximum number of additional matches to print after the best result.",
+    )
+    lookup_parser.set_defaults(func=cmd_lookup)
 
     list_classes_parser = subparsers.add_parser(
         "list-classes", help="List ontology classes in the pkm namespace."

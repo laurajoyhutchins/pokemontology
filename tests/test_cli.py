@@ -16,6 +16,40 @@ REPLAY_JSON = (
     / "gen9vgc2025regjbo3-2414024536-ey54jc53vyjqy20sq0ww1l5nd3bq5qhpw.json"
 )
 
+LOOKUP_TTL = """@prefix pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#> .
+
+pkm:Species_gengar a pkm:Species ;
+    pkm:hasName "Gengar" .
+
+pkm:Variant_gengar a pkm:Variant ;
+    pkm:belongsToSpecies pkm:Species_gengar ;
+    pkm:hasIdentifier "pokeapi:pokemon:94" ;
+    pkm:hasName "Gengar-Default" .
+
+pkm:Ruleset_PokeAPI_Default a pkm:Ruleset ;
+    pkm:hasName "PokeAPI Default" .
+
+pkm:Ruleset_scarlet_violet a pkm:Ruleset ;
+    pkm:hasName "Scarlet Violet" .
+
+pkm:Ability_cursed_body a pkm:Ability ;
+    pkm:hasName "Cursed Body" .
+
+pkm:AbilityAssignment_gengar_cursed_body_current a pkm:AbilityAssignment ;
+    pkm:aboutAbility pkm:Ability_cursed_body ;
+    pkm:aboutVariant pkm:Variant_gengar ;
+    pkm:hasContext pkm:Ruleset_PokeAPI_Default .
+
+pkm:Move_hex a pkm:Move ;
+    pkm:hasName "Hex" .
+
+pkm:MoveLearnRecord_gengar_hex_scarlet_violet a pkm:MoveLearnRecord ;
+    pkm:aboutVariant pkm:Variant_gengar ;
+    pkm:learnableMove pkm:Move_hex ;
+    pkm:hasContext pkm:Ruleset_scarlet_violet ;
+    pkm:isLearnableInRuleset true .
+"""
+
 
 def test_parse_replay_command_outputs_json(capsys) -> None:
     exit_code = cli.main(["parse-replay", str(REPLAY_JSON), "--pretty"])
@@ -159,6 +193,33 @@ def test_list_properties_outputs_known_terms(capsys) -> None:
     output = capsys.readouterr().out.splitlines()
     assert "pkm:aboutVariant" in output
     assert "pkm:hasDamageFactor" in output
+
+
+def test_lookup_prefers_variant_and_lists_contexts(tmp_path, capsys) -> None:
+    data_path = tmp_path / "lookup.ttl"
+    data_path.write_text(LOOKUP_TTL, encoding="utf-8")
+
+    exit_code = cli.main(["lookup", "Gengar", "--data", str(data_path)])
+
+    assert exit_code == 0
+    output = capsys.readouterr().out
+    assert "Canonical IRI: pkm:Variant_gengar" in output
+    assert "Entity Type: pkm:Variant" in output
+    assert "Identifier: pokeapi:pokemon:94" in output
+    assert "- pkm:Ruleset_PokeAPI_Default (PokeAPI Default)" in output
+    assert "- pkm:Ruleset_scarlet_violet (Scarlet Violet)" in output
+    assert "Other matches:" in output
+    assert "pkm:Species_gengar [pkm:Species]" in output
+
+
+def test_lookup_reports_no_matches(tmp_path, capsys) -> None:
+    data_path = tmp_path / "lookup.ttl"
+    data_path.write_text(LOOKUP_TTL, encoding="utf-8")
+
+    exit_code = cli.main(["lookup", "MissingNo", "--data", str(data_path)])
+
+    assert exit_code == 1
+    assert 'No entity matches found for "MissingNo".' in capsys.readouterr().out
 
 
 def test_describe_outputs_comment_and_usage_examples(capsys) -> None:
