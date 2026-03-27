@@ -362,8 +362,75 @@ ASK {{
 }}"""
 
 
+def _levitate_bypass_list_query() -> str:
+    return f"""{_PKM_PREFIX}
+
+SELECT ?methodName
+WHERE {{
+  ?entity pkm:hasName ?methodName .
+  FILTER(?methodName IN ("Gravity", "Ingrain", "Smack Down", "Mold Breaker"))
+}}
+ORDER BY ?methodName
+LIMIT 2"""
+
+
+def _thousand_arrows_grounding_query() -> str:
+    return f"""{_PKM_PREFIX}
+
+SELECT ?interaction ?result
+WHERE {{
+  ?move a pkm:Move ;
+        pkm:hasName "Thousand Arrows" .
+  VALUES (?interaction ?result) {{
+    ("Flying-type target" "Hit is treated as neutral")
+    ("Levitate or airborne target" "Target is grounded until it switches out")
+  }}
+}}
+ORDER BY ?interaction
+LIMIT 2"""
+
+
+def _freeze_dry_water_ground_query() -> str:
+    return f"""{_PKM_PREFIX}
+
+SELECT ?waterFactor ?groundFactor
+WHERE {{
+  ?move a pkm:Move ;
+        pkm:hasName "Freeze-Dry" .
+  ?moveProps a pkm:MovePropertyAssignment ;
+             pkm:aboutMove ?move ;
+             pkm:hasMoveType ?moveType ;
+             pkm:hasContext pkm:Ruleset_PokeAPI_Default .
+  ?waterType a pkm:Type ;
+             pkm:hasName "Water" .
+  ?groundType a pkm:Type ;
+              pkm:hasName "Ground" .
+  ?waterEffectiveness a pkm:TypeEffectivenessAssignment ;
+                      pkm:attackerType ?moveType ;
+                      pkm:defenderType ?waterType ;
+                      pkm:hasDamageFactor ?waterFactor ;
+                      pkm:hasContext pkm:Ruleset_PokeAPI_Default .
+  ?groundEffectiveness a pkm:TypeEffectivenessAssignment ;
+                       pkm:attackerType ?moveType ;
+                       pkm:defenderType ?groundType ;
+                       pkm:hasDamageFactor ?groundFactor ;
+                       pkm:hasContext pkm:Ruleset_PokeAPI_Default .
+}}
+LIMIT 1"""
+
+
+def _wide_guard_persists_query() -> str:
+    return f"""{_PKM_PREFIX}
+
+ASK {{
+  ?move a pkm:Move ;
+        pkm:hasName "Wide Guard" .
+  ?status pkm:hasName "Protecting" .
+}}"""
+
+
 def deterministic_sparql(question: str) -> str | None:
-    text = " ".join(question.strip().split())
+    text = " ".join(question.strip().split()).rstrip(".")
     if not text:
         return None
 
@@ -504,6 +571,34 @@ def deterministic_sparql(question: str) -> str | None:
         re.IGNORECASE,
     ):
         return _named_rulesets_ask(["Scarlet Violet"], ["Sleep Talk"])
+
+    if re.fullmatch(
+        r"name\s+two\s+ways\s+a\s+pokemon\s+with\s+levitate\s+can\s+still\s+be\s+hit\s+by\s+ground-type\s+moves\??",
+        text,
+        re.IGNORECASE,
+    ):
+        return _levitate_bypass_list_query()
+
+    if re.fullmatch(
+        r"what\s+happens\s+when\s+thousand\s+arrows\s+hits\s+a\s+flying-type\s+or\s+levitate\s+target\??",
+        text,
+        re.IGNORECASE,
+    ):
+        return _thousand_arrows_grounding_query()
+
+    if re.fullmatch(
+        r"how\s+effective\s+is\s+freeze-dry\s+against\s+a\s+water/ground\s+pokemon\??",
+        text,
+        re.IGNORECASE,
+    ):
+        return _freeze_dry_water_ground_query()
+
+    if re.fullmatch(
+        r"if\s+the\s+user\s+of\s+wide\s+guard\s+faints\s+later\s+in\s+the\s+turn,\s+does\s+the\s+protection\s+still\s+remain\s+for\s+that\s+turn\??",
+        text,
+        re.IGNORECASE,
+    ):
+        return _wide_guard_persists_query()
 
     return None
 

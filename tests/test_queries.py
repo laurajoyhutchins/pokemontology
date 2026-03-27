@@ -257,6 +257,65 @@ def test_generate_sparql_uses_deterministic_generation_pattern(monkeypatch: obje
     assert 'pkm:hasName "Dragon"' in query_text
 
 
+def test_generate_sparql_uses_deterministic_hard_levitate_bypass_pattern(monkeypatch: object) -> None:
+    monkeypatch.setattr(
+        "pokemontology.chat.request.urlopen",
+        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("ollama should not be called")),
+    )
+
+    query_text = generate_sparql(
+        "Name two ways a Pokemon with Levitate can still be hit by Ground-type moves."
+    )
+
+    assert "SELECT ?methodName" in query_text
+    assert 'FILTER(?methodName IN ("Gravity", "Ingrain", "Smack Down", "Mold Breaker"))' in query_text
+    assert "LIMIT 2" in query_text
+
+
+def test_generate_sparql_uses_deterministic_hard_thousand_arrows_pattern(monkeypatch: object) -> None:
+    monkeypatch.setattr(
+        "pokemontology.chat.request.urlopen",
+        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("ollama should not be called")),
+    )
+
+    query_text = generate_sparql(
+        "What happens when Thousand Arrows hits a Flying-type or Levitate target?"
+    )
+
+    assert 'pkm:hasName "Thousand Arrows"' in query_text
+    assert "SELECT ?interaction ?result" in query_text
+    assert "LIMIT 2" in query_text
+
+
+def test_generate_sparql_uses_deterministic_hard_freeze_dry_dual_type_pattern(monkeypatch: object) -> None:
+    monkeypatch.setattr(
+        "pokemontology.chat.request.urlopen",
+        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("ollama should not be called")),
+    )
+
+    query_text = generate_sparql("How effective is Freeze-Dry against a Water/Ground Pokemon?")
+
+    assert 'pkm:hasName "Freeze-Dry"' in query_text
+    assert 'pkm:hasName "Water"' in query_text
+    assert 'pkm:hasName "Ground"' in query_text
+    assert "SELECT ?waterFactor ?groundFactor" in query_text
+
+
+def test_generate_sparql_uses_deterministic_hard_wide_guard_persistence_pattern(monkeypatch: object) -> None:
+    monkeypatch.setattr(
+        "pokemontology.chat.request.urlopen",
+        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("ollama should not be called")),
+    )
+
+    query_text = generate_sparql(
+        "If the user of Wide Guard faints later in the turn, does the protection still remain for that turn?"
+    )
+
+    assert "ASK {" in query_text
+    assert 'pkm:hasName "Wide Guard"' in query_text
+    assert 'pkm:hasName "Protecting"' in query_text
+
+
 def test_laurel_command_answers_from_generated_query(
     built_ontology_path: str, tmp_path: Path, capsys, monkeypatch: object
 ) -> None:
