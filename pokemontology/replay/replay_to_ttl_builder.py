@@ -37,6 +37,7 @@ from pokemontology.replay.replay_parser import (
     parse_player_slot,
     parse_replay_payload,
     parse_side_token,
+    pokeapi_move_id,
     pokeapi_species_id,
     sanitize_identifier,
 )
@@ -1115,7 +1116,7 @@ def build_graph(payload: dict) -> Graph:
                 combatant_iri_for_token(actor_token, p1_name, p2_name),
             )
             actor_name = actor_display_name(actor_token)
-            move_iri_node = PKM[f"Move{sanitize_identifier(move_name)}"]
+            move_iri_node = PKM[f"Move_{sanitize_identifier(pokeapi_move_id(move_name))}"]
             action_iri = PKM[
                 f"Action_T{ev.turn}_{ev.order}_{sanitize_identifier(move_name)}_{sanitize_identifier(actor_name)}"
             ]

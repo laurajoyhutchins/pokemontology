@@ -229,10 +229,10 @@ def test_discover_moves() -> None:
     events = parse_log(FIXTURE_LOG)
     moves = discover_moves(events)
     assert len(moves) == 2
-    assert "MoveEarthquake" in moves
-    assert "MoveSurging_Strikes" in moves
-    assert moves["MoveEarthquake"] == "Earthquake"
-    assert moves["MoveSurging_Strikes"] == "Surging Strikes"
+    assert "Move_earthquake" in moves
+    assert "Move_surging_strikes" in moves
+    assert moves["Move_earthquake"] == "Earthquake"
+    assert moves["Move_surging_strikes"] == "Surging Strikes"
 
 
 def test_discover_moves_deduplicates_same_move() -> None:
@@ -253,8 +253,7 @@ def test_discover_moves_deduplicates_same_move() -> None:
 
 def test_collision_detection_moves() -> None:
     """Two move names that sanitize to the same IRI must raise ValueError."""
-    # "Air Slash" and "Air-Slash" both → sanitize_identifier → "Air_Slash"
-    # so both map to IRI "MoveAir_Slash"
+    # "Air Slash" and "Air-Slash" both → pokeapi_move_id → "air-slash" → "Move_air_slash"
     log = """|turn|1
 |move|p1a: Togekiss|Air Slash|p2a: Garchomp
 |move|p2a: Garchomp|Air-Slash|p1a: Togekiss

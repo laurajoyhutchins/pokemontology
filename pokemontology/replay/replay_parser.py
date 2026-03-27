@@ -104,6 +104,18 @@ def pokeapi_species_id(species_raw: str) -> str:
     return text
 
 
+def pokeapi_move_id(move_raw: str) -> str:
+    """Normalize a Showdown move name to a PokeAPI move identifier.
+
+    Examples: "Flamethrower" → "flamethrower", "Close Combat" → "close-combat",
+              "Thunder Wave" → "thunder-wave"
+    """
+    text = move_raw.lower().strip()
+    text = re.sub(r"[^a-z0-9]+", "-", text)
+    text = re.sub(r"-+", "-", text).strip("-")
+    return text
+
+
 def compact_species_name(raw: str) -> str:
     """Normalize battle log Pokémon names to a stable compact label."""
     text = raw.strip()
@@ -246,7 +258,7 @@ def discover_moves(events: Iterable[ReplayEvent]) -> OrderedDict[str, str]:
         if ev.kind != "move":
             continue
         move_name = ev.fields[1].strip()
-        iri = f"Move{sanitize_identifier(move_name)}"
+        iri = f"Move_{sanitize_identifier(pokeapi_move_id(move_name))}"
         if iri in moves:
             if moves[iri] != move_name:
                 raise ValueError(
