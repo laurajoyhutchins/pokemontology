@@ -82,5 +82,5 @@ def test_build_ttl_from_raw_serializes_valid_turtle(tmp_path) -> None:
     assert any(graph.triples((None, RDF.type, PKM.ExternalEntityReference)))
     assert any(graph.triples((None, RDF.type, PKM.MovePropertyAssignment)))
     assert any(graph.triples((None, RDF.type, PKM.TypingAssignment)))
-    assert not any(graph.triples((None, RDF.type, PKM.StatAssignment)))
-    assert not any(graph.triples((None, RDF.type, PKM.AbilityAssignment)))
+    assert any(graph.triples((None, RDF.type, PKM.StatAssignment)))
+    assert any(graph.triples((None, RDF.type, PKM.AbilityAssignment)))
