@@ -150,7 +150,7 @@ def test_builder_emits_status_and_target_resolution_for_supported_minor_actions(
     thunder_wave_action = next(
         action
         for action in graph.subjects(RDF.type, PKM.MoveUseAction)
-        if (action, PKM.usesMove, PKM.MoveThunder_Wave) in graph
+        if (action, PKM.usesMove, PKM.Move_thunder_wave) in graph
     )
     declared_targets = list(graph.objects(thunder_wave_action, PKM.hasDeclaredTarget))
     assert declared_targets
@@ -223,7 +223,7 @@ def test_builder_expands_spread_targets_and_tracks_mixed_outcomes() -> None:
     heat_wave_action = next(
         action
         for action in graph.subjects(RDF.type, PKM.MoveUseAction)
-        if (action, PKM.usesMove, PKM.MoveHeat_Wave) in graph
+        if (action, PKM.usesMove, PKM.Move_heat_wave) in graph
     )
     resolved_targets = set(graph.objects(heat_wave_action, PKM.hasResolvedTarget))
     assert PKM.Combatant_Bob_Venusaur in resolved_targets
@@ -288,7 +288,7 @@ def test_builder_distinguishes_declared_and_resolved_targets_under_redirection()
     action = next(
         action
         for action in graph.subjects(RDF.type, PKM.MoveUseAction)
-        if (action, PKM.usesMove, PKM.MoveThunderbolt) in graph
+        if (action, PKM.usesMove, PKM.Move_thunderbolt) in graph
     )
     declared_targets = set(graph.objects(action, PKM.hasDeclaredTarget))
     resolved_targets = set(graph.objects(action, PKM.hasResolvedTarget))

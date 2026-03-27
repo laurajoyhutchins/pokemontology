@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from rdflib import Graph, Literal, Namespace, URIRef
@@ -15,10 +16,14 @@ PKM = Namespace(f"{SITE_BASE}/ontology.ttl#")
 
 
 def sanitize_identifier(value: str) -> str:
-    safe = "".join(ch if ch.isalnum() else "_" for ch in value.strip())
-    while "__" in safe:
-        safe = safe.replace("__", "_")
-    return safe.strip("_") or "unnamed"
+    value = value.strip()
+    value = re.sub(r"[^A-Za-z0-9]+", "_", value)
+    value = re.sub(r"_+", "_", value).strip("_")
+    if not value:
+        return "Unnamed"
+    if value[0].isdigit():
+        return f"N_{value}"
+    return value
 
 
 def iri_for(class_name: str, identifier: str) -> URIRef:
