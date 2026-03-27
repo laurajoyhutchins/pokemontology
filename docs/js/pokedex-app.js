@@ -1,5 +1,5 @@
 import { createWorkerRpc, setupThemeToggle } from "./browser-runtime.js";
-import { getCanonicalMechanicsArtifact, mechanicsSourceCandidates } from "./docs-sources.js";
+import { getCanonicalMechanicsLabel, mechanicsSourceCandidates } from "./docs-sources.js";
 import { loadSiteData } from "./site-render.js";
 
 const PKM_PREFIX = "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#";
@@ -470,7 +470,7 @@ export async function createPokedexApp() {
     const repoLink = document.querySelector("[data-repository-url]");
     if (repoLink) repoLink.href = siteData.site?.repository_url || repoLink.href;
     const mechanicsNotice = document.querySelector("[data-pokedex-mechanics-artifact]");
-    if (mechanicsNotice) mechanicsNotice.textContent = getCanonicalMechanicsArtifact(siteData).path;
+    if (mechanicsNotice) mechanicsNotice.textContent = getCanonicalMechanicsLabel(siteData);
 
     bindCatalogInteractions(appState);
     await fetchCatalog(appState.worker, appState);

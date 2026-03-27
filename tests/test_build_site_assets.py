@@ -13,6 +13,10 @@ def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(build_ontology, "PAGES_SHAPES", tmp_path / "shapes.ttl")
     monkeypatch.setattr(build_ontology, "PAGES_POKEAPI", tmp_path / "pokeapi.ttl")
     monkeypatch.setattr(build_ontology, "PAGES_MECHANICS", tmp_path / "mechanics.ttl")
+    monkeypatch.setattr(build_ontology, "PAGES_MECHANICS_BASE", tmp_path / "mechanics-base.ttl")
+    monkeypatch.setattr(build_ontology, "PAGES_MECHANICS_CURRENT", tmp_path / "mechanics-learnsets-current.ttl")
+    monkeypatch.setattr(build_ontology, "PAGES_MECHANICS_MODERN", tmp_path / "mechanics-learnsets-modern.ttl")
+    monkeypatch.setattr(build_ontology, "PAGES_MECHANICS_LEGACY", tmp_path / "mechanics-learnsets-legacy.ttl")
     monkeypatch.setattr(build_ontology, "PAGES_SITE_DATA", tmp_path / "site-data.json")
     monkeypatch.setattr(build_ontology, "PAGES_SCHEMA_INDEX", tmp_path / "schema-index.json")
     monkeypatch.setattr(build_ontology, "BUILD_DIR", tmp_path / "build")
@@ -37,8 +41,19 @@ def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
 
     site_data = json.loads((tmp_path / "site-data.json").read_text(encoding="utf-8"))
     schema_index = json.loads((tmp_path / "schema-index.json").read_text(encoding="utf-8"))
-    assert (tmp_path / "mechanics.ttl").exists()
-    assert any(artifact["path"] == "mechanics.ttl" for artifact in site_data["artifacts"])
+    assert (tmp_path / "mechanics-base.ttl").exists()
+    assert (tmp_path / "mechanics-learnsets-current.ttl").exists()
+    assert (tmp_path / "mechanics-learnsets-modern.ttl").exists()
+    assert (tmp_path / "mechanics-learnsets-legacy.ttl").exists()
+    assert any(artifact["path"] == "mechanics-base.ttl" for artifact in site_data["artifacts"])
+    assert any(source["id"] == "src-mechanics" for source in site_data["query_sources"])
+    mechanics_source = next(source for source in site_data["query_sources"] if source["id"] == "src-mechanics")
+    assert mechanics_source["paths"] == [
+        "mechanics-base.ttl",
+        "mechanics-learnsets-current.ttl",
+        "mechanics-learnsets-modern.ttl",
+        "mechanics-learnsets-legacy.ttl",
+    ]
     assert "build/mechanics.ttl" in site_data["query_examples"][0]["query"]
     assert "build/pokeapi.ttl" not in site_data["query_examples"][0]["query"]
     assert "build/mechanics.ttl" in site_data["query_examples"][0]["command"]

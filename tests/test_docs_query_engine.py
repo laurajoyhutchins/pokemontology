@@ -27,7 +27,7 @@ def test_query_engine_uses_comunica_fallback_urls() -> None:
     assert 'import { createLaurelApp } from "./js/laurel-app.js";' in text
     assert "COMUNICA_BROWSER_URLS" in query_module
     assert "buildSelectedSources" in query_module
-    assert "getCanonicalMechanicsArtifact" in source_module
+    assert "getCanonicalMechanicsLabel" in source_module
     assert (
         "rdf.js.org/comunica-browser/versions/v4/engines/query-sparql/comunica-browser.js"
         in query_module
@@ -55,10 +55,8 @@ def test_query_engine_uses_generated_query_examples_and_schema_pack() -> None:
     assert "formatPrefixBlock" in text
     assert site_data["query_examples"]
     assert site_data["schema_pack"]["path"] == "schema-index.json"
-    assert any(
-        artifact["path"] in {"pokeapi.ttl", "mechanics.ttl"}
-        for artifact in site_data["artifacts"]
-    )
+    assert any(artifact["path"] == "mechanics-base.ttl" for artifact in site_data["artifacts"])
+    assert any(source["id"] == "src-mechanics" for source in site_data["query_sources"])
     assert schema_index["examples"]
     assert schema_index["prefixes"][0]["alias"] == "pkm:"
     assert schema_index["inference"]["webllm_library_url"]
@@ -93,6 +91,7 @@ def test_pokedex_page_uses_worker_backed_graph_browser() -> None:
     assert 'new Worker("./workers/query-worker.js", { type: "module" })' in script
     assert 'createWorkerRpc("pokedex")' in script
     assert "mechanicsSourceCandidates" in script
+    assert "getCanonicalMechanicsLabel" in script
     assert "setupThemeToggle" in runtime
     assert "pkm:TypingAssignment" in script
     assert "pkm:MoveLearnRecord" in script
@@ -130,7 +129,9 @@ def test_query_engine_defaults_to_canonical_mechanics_dataset() -> None:
     assert "buildSelectedSources" in text
     assert '"src-mechanics"' in sources_text
     assert '"pokeapi-demo.ttl (debug)"' in sources_text
-    assert "preferred_paths" in sources_text
+    assert '"mechanics-base.ttl"' in sources_text
+    assert "siteData?.query_sources" in sources_text
+    assert "source.paths" in sources_text
 
 
 def test_query_validator_enforces_ast_or_safe_fallback() -> None:

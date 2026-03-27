@@ -1,20 +1,13 @@
 const DEFAULT_ARTIFACTS = {
-  ontology: {
-    label: "ontology.ttl",
-    path: "ontology.ttl",
-  },
-  shapes: {
-    label: "shapes.ttl",
-    path: "shapes.ttl",
-  },
-  mechanics: {
-    label: "mechanics.ttl",
-    preferred_paths: ["mechanics.ttl", "pokeapi.ttl"],
-  },
-  debug: {
-    label: "pokeapi-demo.ttl (debug)",
-    path: "pokeapi-demo.ttl",
-  },
+  ontology: { label: "ontology.ttl", path: "ontology.ttl" },
+  shapes: { label: "shapes.ttl", path: "shapes.ttl" },
+  mechanicsSlices: [
+    "mechanics-base.ttl",
+    "mechanics-learnsets-current.ttl",
+    "mechanics-learnsets-modern.ttl",
+    "mechanics-learnsets-legacy.ttl",
+  ],
+  debug: { label: "pokeapi-demo.ttl (debug)", path: "pokeapi-demo.ttl" },
 };
 
 function artifactByPreferredPath(siteData, preferredPaths, fallback) {
@@ -26,53 +19,57 @@ function artifactByPreferredPath(siteData, preferredPaths, fallback) {
   return fallback;
 }
 
-export function getOntologyArtifact(siteData) {
-  return artifactByPreferredPath(siteData, ["ontology.ttl"], DEFAULT_ARTIFACTS.ontology);
-}
-
-export function getShapesArtifact(siteData) {
-  return artifactByPreferredPath(siteData, ["shapes.ttl"], DEFAULT_ARTIFACTS.shapes);
-}
-
-export function getCanonicalMechanicsArtifact(siteData) {
-  return artifactByPreferredPath(
-    siteData,
-    DEFAULT_ARTIFACTS.mechanics.preferred_paths,
-    { ...DEFAULT_ARTIFACTS.mechanics, path: DEFAULT_ARTIFACTS.mechanics.preferred_paths[0] },
-  );
-}
-
-export function getDebugMechanicsArtifact() {
-  return DEFAULT_ARTIFACTS.debug;
-}
-
 export function getQuerySourceDefinitions(siteData) {
+  if (Array.isArray(siteData?.query_sources) && siteData.query_sources.length) {
+    return siteData.query_sources.map((source) => ({
+      id: source.id,
+      label: source.label,
+      checked: Boolean(source.checked),
+      role: source.role || "data",
+      paths: Array.isArray(source.paths) ? source.paths : source.path ? [source.path] : [],
+    }));
+  }
+
   return [
     {
       id: "src-ontology",
-      path: getOntologyArtifact(siteData).path,
-      label: getOntologyArtifact(siteData).path,
+      label: DEFAULT_ARTIFACTS.ontology.path,
       checked: true,
+      role: "ontology",
+      paths: [DEFAULT_ARTIFACTS.ontology.path],
     },
     {
       id: "src-mechanics",
-      path: getCanonicalMechanicsArtifact(siteData).path,
-      label: getCanonicalMechanicsArtifact(siteData).path,
+      label: "mechanics slices",
       checked: true,
+      role: "mechanics",
+      paths: DEFAULT_ARTIFACTS.mechanicsSlices,
     },
     {
       id: "src-pokeapi-demo",
-      path: getDebugMechanicsArtifact().path,
-      label: getDebugMechanicsArtifact().label,
+      label: DEFAULT_ARTIFACTS.debug.label,
       checked: false,
+      role: "debug",
+      paths: [DEFAULT_ARTIFACTS.debug.path],
     },
     {
       id: "src-shapes",
-      path: getShapesArtifact(siteData).path,
-      label: getShapesArtifact(siteData).path,
+      label: DEFAULT_ARTIFACTS.shapes.path,
       checked: false,
+      role: "shapes",
+      paths: [DEFAULT_ARTIFACTS.shapes.path],
     },
   ];
+}
+
+function artifactPathsFromSources(siteData) {
+  const sourcePaths = getQuerySourceDefinitions(siteData).flatMap((source) => source.paths || []);
+  return [...new Set(sourcePaths)];
+}
+
+export function getCanonicalMechanicsLabel(siteData) {
+  const mechanics = getQuerySourceDefinitions(siteData).find((source) => source.role === "mechanics");
+  return mechanics?.label || "mechanics slices";
 }
 
 export function renderQuerySourceControls(siteData) {
@@ -92,16 +89,8 @@ export function renderQuerySourceControls(siteData) {
 export function renderQueryArtifactLinks(siteData) {
   const target = document.querySelector("[data-query-artifacts]");
   if (!target) return;
-  const artifacts = [
-    getOntologyArtifact(siteData),
-    getCanonicalMechanicsArtifact(siteData),
-    getDebugMechanicsArtifact(),
-    getShapesArtifact(siteData),
-  ];
-  target.innerHTML = artifacts
-    .map(
-      (artifact) => `<a class="button button-secondary" href="./${artifact.path}">${artifact.path}</a>`,
-    )
+  target.innerHTML = artifactPathsFromSources(siteData)
+    .map((path) => `<a class="button button-secondary" href="./${path}">${path}</a>`)
     .join("")
     .concat(
       siteData?.site?.repository_url
@@ -113,16 +102,19 @@ export function renderQueryArtifactLinks(siteData) {
 export function buildSelectedSources(siteData, { documentRef = document, baseUrl = window.location.href } = {}) {
   return getQuerySourceDefinitions(siteData)
     .filter((source) => documentRef.getElementById(source.id)?.checked)
-    .map((source) => new URL(`./${source.path}`, baseUrl).href);
+    .flatMap((source) => source.paths.map((path) => new URL(`./${path}`, baseUrl).href));
 }
 
 export function mechanicsSourceCandidates(siteData, { baseUrl } = {}) {
   const rootBase = baseUrl || window.location.href;
-  const ontology = new URL(`./${getOntologyArtifact(siteData).path}`, rootBase).href;
-  const canonical = getCanonicalMechanicsArtifact(siteData).path;
-  const candidates = [[ontology, new URL(`./${canonical}`, rootBase).href]];
-  if (canonical !== "pokeapi.ttl") {
-    candidates.push([ontology, new URL("./pokeapi.ttl", rootBase).href]);
-  }
-  return candidates;
+  const sourceDefs = getQuerySourceDefinitions(siteData);
+  const canonical = sourceDefs
+    .filter((source) => source.checked && source.role !== "debug" && source.role !== "shapes")
+    .flatMap((source) => source.paths)
+    .map((path) => new URL(`./${path}`, rootBase).href);
+  const fallback = [
+    new URL(`./${DEFAULT_ARTIFACTS.ontology.path}`, rootBase).href,
+    new URL("./pokeapi.ttl", rootBase).href,
+  ];
+  return canonical.length ? [canonical, fallback] : [fallback];
 }

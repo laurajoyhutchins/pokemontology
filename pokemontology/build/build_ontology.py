@@ -7,6 +7,7 @@ import json
 import math
 import re
 import shutil
+from collections.abc import Iterator
 
 from rdflib import Graph, Namespace, URIRef
 from rdflib.namespace import OWL, RDF, RDFS
@@ -34,12 +35,58 @@ PAGES_ONTOLOGY = PAGES_DIR / "ontology.ttl"
 PAGES_SHAPES = PAGES_DIR / "shapes.ttl"
 PAGES_POKEAPI = PAGES_DIR / "pokeapi.ttl"
 PAGES_MECHANICS = PAGES_DIR / "mechanics.ttl"
+PAGES_MECHANICS_BASE = PAGES_DIR / "mechanics-base.ttl"
+PAGES_MECHANICS_CURRENT = PAGES_DIR / "mechanics-learnsets-current.ttl"
+PAGES_MECHANICS_MODERN = PAGES_DIR / "mechanics-learnsets-modern.ttl"
+PAGES_MECHANICS_LEGACY = PAGES_DIR / "mechanics-learnsets-legacy.ttl"
 PAGES_SITE_DATA = PAGES_DIR / "site-data.json"
 PAGES_SCHEMA_INDEX = PAGES_DIR / "schema-index.json"
 
 SHAPES_SOURCE = repo_path("shapes", "modules", "shapes.ttl")
 QUERIES_DIR = repo_path("queries")
 PKM = Namespace("https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#")
+TTL_PREFIX_HEADER = """@prefix pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+"""
+WEB_MECHANICS_SLICES = (
+    {
+        "key": "base",
+        "label": "Mechanics Base",
+        "path": "mechanics-base.ttl",
+        "description": "Canonical entities, variants, typings, move properties, type chart data, and ruleset-scoped assignments excluding learnset archives.",
+    },
+    {
+        "key": "current",
+        "label": "Current Learnsets",
+        "path": "mechanics-learnsets-current.ttl",
+        "description": "Current-generation learnset coverage from the canonical mechanics graph, including the PokeAPI default ruleset and Scarlet/Violet-era records.",
+    },
+    {
+        "key": "modern",
+        "label": "Modern Learnsets",
+        "path": "mechanics-learnsets-modern.ttl",
+        "description": "Historical learnset archive for 3DS and Switch-era games prior to the current generation.",
+    },
+    {
+        "key": "legacy",
+        "label": "Legacy Learnsets",
+        "path": "mechanics-learnsets-legacy.ttl",
+        "description": "Older learnset archive for pre-3DS generations and side-game rulesets.",
+    },
+)
+CURRENT_RULESET_TOKENS = ("pokeapi_default", "scarlet_violet")
+MODERN_RULESET_TOKENS = (
+    "x_y",
+    "omega_ruby_alpha_sapphire",
+    "sun_moon",
+    "ultra_sun_ultra_moon",
+    "lets_go",
+    "sword_shield",
+    "brilliant_diamond_shining_pearl",
+    "legends_arceus",
+)
 
 MODULE_ORDER = [
     "00-header.ttl",
@@ -87,6 +134,43 @@ def _query_examples() -> list[dict[str, object]]:
             }
         )
     return examples
+
+
+def _web_mechanics_slice_paths() -> dict[str, object]:
+    return {
+        "base": PAGES_MECHANICS_BASE,
+        "current": PAGES_MECHANICS_CURRENT,
+        "modern": PAGES_MECHANICS_MODERN,
+        "legacy": PAGES_MECHANICS_LEGACY,
+    }
+
+
+def _iter_ttl_blocks(path) -> Iterator[str]:
+    block_lines: list[str] = []
+    with path.open("r", encoding="utf-8") as infile:
+        for line in infile:
+            if line.startswith("@prefix"):
+                continue
+            if not line.strip():
+                if block_lines:
+                    yield "".join(block_lines).rstrip() + "\n\n"
+                    block_lines = []
+                continue
+            block_lines.append(line)
+    if block_lines:
+        yield "".join(block_lines).rstrip() + "\n\n"
+
+
+def _classify_mechanics_block(block: str) -> str:
+    if " a pkm:MoveLearnRecord" not in block:
+        return "base"
+    match = re.search(r"pkm:hasContext pkm:Ruleset_([A-Za-z0-9_]+)\s*;", block)
+    ruleset_slug = match.group(1).lower() if match else ""
+    if any(token in ruleset_slug for token in CURRENT_RULESET_TOKENS):
+        return "current"
+    if any(token in ruleset_slug for token in MODERN_RULESET_TOKENS):
+        return "modern"
+    return "legacy"
 
 
 def _tokenize(text: str) -> list[str]:
@@ -294,6 +378,25 @@ def _merge_mechanics_data() -> None:
                 outfile.write("\n")
 
 
+def _write_mechanics_web_slices() -> None:
+    slice_paths = _web_mechanics_slice_paths()
+    handles = {}
+    try:
+        for key, path in slice_paths.items():
+            handle = path.open("w", encoding="utf-8")
+            handle.write(TTL_PREFIX_HEADER)
+            handles[key] = handle
+
+        for source in (BUILD_POKEAPI, BUILD_VEEKUN):
+            if not source.exists():
+                continue
+            for block in _iter_ttl_blocks(source):
+                handles[_classify_mechanics_block(block)].write(block)
+    finally:
+        for handle in handles.values():
+            handle.close()
+
+
 def assemble_artifacts() -> tuple[str, str, dict[str, object]]:
     _validate_sources()
     _merge_mechanics_data()
@@ -326,11 +429,44 @@ def assemble_artifacts() -> tuple[str, str, dict[str, object]]:
                 "iri": "https://laurajoyhutchins.github.io/pokemontology/shapes.ttl#",
                 "description": "Validation shapes used for replay slices, save-state data, and ingestion outputs.",
             },
+            *[
+                {
+                    "label": entry["label"],
+                    "path": entry["path"],
+                    "iri": f"https://laurajoyhutchins.github.io/pokemontology/{entry['path']}#",
+                    "description": entry["description"],
+                }
+                for entry in WEB_MECHANICS_SLICES
+            ],
+        ],
+        "query_sources": [
             {
-                "label": "Unified Mechanics Data",
-                "path": "mechanics.ttl",
-                "iri": "https://laurajoyhutchins.github.io/pokemontology/mechanics.ttl#",
-                "description": "Published ontology-native mechanics dataset merging PokeAPI and Veekun ingestion outputs.",
+                "id": "src-ontology",
+                "label": "ontology.ttl",
+                "paths": ["ontology.ttl"],
+                "checked": True,
+                "role": "ontology",
+            },
+            {
+                "id": "src-mechanics",
+                "label": "mechanics slices",
+                "paths": [entry["path"] for entry in WEB_MECHANICS_SLICES],
+                "checked": True,
+                "role": "mechanics",
+            },
+            {
+                "id": "src-pokeapi-demo",
+                "label": "pokeapi-demo.ttl (debug)",
+                "paths": ["pokeapi-demo.ttl"],
+                "checked": False,
+                "role": "debug",
+            },
+            {
+                "id": "src-shapes",
+                "label": "shapes.ttl",
+                "paths": ["shapes.ttl"],
+                "checked": False,
+                "role": "shapes",
             },
         ],
         "modules": [
@@ -403,8 +539,9 @@ def write_artifacts(
     PAGES_ONTOLOGY.write_text(ontology_text, encoding="utf-8")
     PAGES_SHAPES.write_text(shapes_text, encoding="utf-8")
 
-    if BUILD_MECHANICS.exists():
-        shutil.copyfile(BUILD_MECHANICS, PAGES_MECHANICS)
+    _write_mechanics_web_slices()
+    if PAGES_MECHANICS.exists():
+        PAGES_MECHANICS.unlink()
 
     PAGES_SITE_DATA.write_text(json.dumps(site_data, indent=2) + "\n", encoding="utf-8")
     PAGES_SCHEMA_INDEX.write_text(
@@ -421,8 +558,8 @@ def main() -> None:
     print(f"wrote {BUILD_SHAPES.relative_to(REPO)}")
     print(f"wrote {PAGES_ONTOLOGY.relative_to(REPO)}")
     print(f"wrote {PAGES_SHAPES.relative_to(REPO)}")
-    if BUILD_MECHANICS.exists():
-        print(f"wrote {PAGES_MECHANICS.relative_to(REPO)}")
+    for path in _web_mechanics_slice_paths().values():
+        print(f"wrote {path.relative_to(REPO)}")
     print(f"wrote {PAGES_SITE_DATA.relative_to(REPO)}")
     print(f"wrote {PAGES_SCHEMA_INDEX.relative_to(REPO)}")
 

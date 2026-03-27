@@ -19,10 +19,69 @@
       "description": "Validation shapes used for replay slices, save-state data, and ingestion outputs."
     },
     {
-      "label": "Unified Mechanics Data",
-      "path": "mechanics.ttl",
-      "iri": "https://laurajoyhutchins.github.io/pokemontology/mechanics.ttl#",
-      "description": "Published ontology-native mechanics dataset merging PokeAPI and Veekun ingestion outputs."
+      "label": "Mechanics Base",
+      "path": "mechanics-base.ttl",
+      "iri": "https://laurajoyhutchins.github.io/pokemontology/mechanics-base.ttl#",
+      "description": "Canonical entities, variants, typings, move properties, type chart data, and ruleset-scoped assignments excluding learnset archives."
+    },
+    {
+      "label": "Current Learnsets",
+      "path": "mechanics-learnsets-current.ttl",
+      "iri": "https://laurajoyhutchins.github.io/pokemontology/mechanics-learnsets-current.ttl#",
+      "description": "Current-generation learnset coverage from the canonical mechanics graph, including the PokeAPI default ruleset and Scarlet/Violet-era records."
+    },
+    {
+      "label": "Modern Learnsets",
+      "path": "mechanics-learnsets-modern.ttl",
+      "iri": "https://laurajoyhutchins.github.io/pokemontology/mechanics-learnsets-modern.ttl#",
+      "description": "Historical learnset archive for 3DS and Switch-era games prior to the current generation."
+    },
+    {
+      "label": "Legacy Learnsets",
+      "path": "mechanics-learnsets-legacy.ttl",
+      "iri": "https://laurajoyhutchins.github.io/pokemontology/mechanics-learnsets-legacy.ttl#",
+      "description": "Older learnset archive for pre-3DS generations and side-game rulesets."
+    }
+  ],
+  "query_sources": [
+    {
+      "id": "src-ontology",
+      "label": "ontology.ttl",
+      "paths": [
+        "ontology.ttl"
+      ],
+      "checked": true,
+      "role": "ontology"
+    },
+    {
+      "id": "src-mechanics",
+      "label": "mechanics slices",
+      "paths": [
+        "mechanics-base.ttl",
+        "mechanics-learnsets-current.ttl",
+        "mechanics-learnsets-modern.ttl",
+        "mechanics-learnsets-legacy.ttl"
+      ],
+      "checked": true,
+      "role": "mechanics"
+    },
+    {
+      "id": "src-pokeapi-demo",
+      "label": "pokeapi-demo.ttl (debug)",
+      "paths": [
+        "pokeapi-demo.ttl"
+      ],
+      "checked": false,
+      "role": "debug"
+    },
+    {
+      "id": "src-shapes",
+      "label": "shapes.ttl",
+      "paths": [
+        "shapes.ttl"
+      ],
+      "checked": false,
+      "role": "shapes"
     }
   ],
   "modules": [
