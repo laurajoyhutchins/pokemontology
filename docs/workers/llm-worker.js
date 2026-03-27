@@ -107,6 +107,12 @@ function buildSystemPrompt(matches, schemaPack) {
     "Allowed query forms: SELECT, ASK, DESCRIBE, CONSTRUCT.",
     `Forbidden keywords: ${(schemaPack?.validation?.forbidden_keywords || []).join(", ")}.`,
     "If the question is unrelated to Pokemon mechanics or the supplied schema context, return exactly: ERROR: unrelated_request",
+    "Concrete transformation patterns:",
+    "1. Boolean species typing questions should usually become ASK queries over Species, Variant, TypingAssignment, and Type.",
+    "2. Species matchup questions should become bounded SELECT queries over Species, Variant, TypingAssignment, TypeEffectivenessAssignment, and ORDER BY the score.",
+    "3. Replay combat questions should reuse MoveUseAction, MovePropertyAssignment, BattleParticipant, and a bounded ORDER BY clause.",
+    "Always bind every projected SELECT variable in WHERE or BIND.",
+    "Always bound SELECT queries with ORDER BY, LIMIT, or both.",
     context ? `Relevant grounding notes:\n${context}` : "",
   ]
     .filter(Boolean)

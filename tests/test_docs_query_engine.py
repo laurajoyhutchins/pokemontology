@@ -83,6 +83,8 @@ def test_docs_workers_are_present() -> None:
     assert "webllm_library_url" in llm_text
     assert "deterministic fallback synthesizer" in llm_text
     assert "fallbackSparql" in llm_text
+    assert "Concrete transformation patterns:" in llm_text
+    assert "Always bind every projected SELECT variable" in llm_text
     assert 'pkm:hasName "${species}"' in llm_text
     assert "rdfs:label" not in llm_text
 

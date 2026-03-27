@@ -10,7 +10,7 @@ from rdflib import Graph
 from rdflib.namespace import RDF
 
 from pokemontology import cli
-from pokemontology.chat import validate_sparql_text
+from pokemontology.chat import build_prompt, generate_sparql, validate_sparql_text
 from tests.support import REPO
 from tests.support.laurel import write_dense_schema_index, write_super_effective_fixture
 
@@ -177,6 +177,86 @@ def test_ask_command_passes_retrieved_matches(capsys, monkeypatch: object, tmp_p
     assert "SELECT ?myMoveLabel ?moveTypeName ?opponentLabel" in output
 
 
+def test_build_prompt_includes_concrete_transformation_patterns() -> None:
+    prompt = build_prompt("Is Charizard a Fire type?")
+    assert "CONCRETE TRANSFORMATION PATTERNS:" in prompt
+    assert "Boolean species typing questions" in prompt
+    assert "Species matchup questions" in prompt
+    assert "Replay combat questions" in prompt
+    assert "Every projected SELECT variable must be bound" in prompt
+    assert "Every SELECT must be bounded with ORDER BY, LIMIT, or both." in prompt
+
+
+def test_generate_sparql_uses_deterministic_species_type_pattern(monkeypatch: object) -> None:
+    monkeypatch.setattr(
+        "pokemontology.chat.request.urlopen",
+        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("ollama should not be called")),
+    )
+
+    query_text = generate_sparql("Is Charizard a Fire type?")
+
+    assert 'pkm:hasName "Charizard"' in query_text
+    assert 'pkm:hasName "Fire"' in query_text
+    assert "ASK {" in query_text
+
+
+def test_generate_sparql_uses_deterministic_species_matchup_pattern(monkeypatch: object) -> None:
+    monkeypatch.setattr(
+        "pokemontology.chat.request.urlopen",
+        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("ollama should not be called")),
+    )
+
+    query_text = generate_sparql("Which move types are super effective against Charizard?")
+
+    assert 'pkm:hasName "Charizard"' in query_text
+    assert "SELECT ?moveTypeName" in query_text
+    assert "ORDER BY ?moveTypeName" in query_text
+
+
+def test_generate_sparql_uses_deterministic_move_type_pattern(monkeypatch: object) -> None:
+    monkeypatch.setattr(
+        "pokemontology.chat.request.urlopen",
+        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("ollama should not be called")),
+    )
+
+    query_text = generate_sparql("Is Freeze-Dry super effective against Water-types?")
+
+    assert 'pkm:hasName "Freeze-Dry"' in query_text
+    assert 'pkm:hasName "Water"' in query_text
+    assert "FILTER(?factor > 1.0)" in query_text
+
+
+def test_generate_sparql_uses_deterministic_ability_exception_pattern(monkeypatch: object) -> None:
+    monkeypatch.setattr(
+        "pokemontology.chat.request.urlopen",
+        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("ollama should not be called")),
+    )
+
+    query_text = generate_sparql(
+        "If a Mold Breaker user uses Earthquake on a target with Levitate, can Earthquake hit?"
+    )
+
+    assert 'pkm:hasName "Mold Breaker"' in query_text
+    assert 'pkm:hasName "Earthquake"' in query_text
+    assert 'pkm:hasName "Levitate"' in query_text
+
+
+def test_generate_sparql_uses_deterministic_generation_pattern(monkeypatch: object) -> None:
+    monkeypatch.setattr(
+        "pokemontology.chat.request.urlopen",
+        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("ollama should not be called")),
+    )
+
+    query_text = generate_sparql(
+        "Starting in Generation VI, are Fairy-types immune to Dragon-type moves?"
+    )
+
+    assert 'pkm:hasName "X Y"' in query_text
+    assert 'pkm:hasName "Scarlet Violet"' in query_text
+    assert 'pkm:hasName "Fairy"' in query_text
+    assert 'pkm:hasName "Dragon"' in query_text
+
+
 def test_laurel_command_answers_from_generated_query(
     built_ontology_path: str, tmp_path: Path, capsys, monkeypatch: object
 ) -> None:
@@ -266,3 +346,15 @@ def test_validate_sparql_text_requires_bounded_select() -> None:
         assert "must include LIMIT or ORDER BY" in str(exc)
     else:
         raise AssertionError("expected unbounded SELECT SPARQL to be rejected")
+
+
+def test_validate_sparql_text_allows_move_terms_without_treating_them_as_update_keywords() -> None:
+    query = """PREFIX pkm: <https://example.test#>
+
+ASK {
+  ?attackEntity a pkm:Move .
+  ?assignment a pkm:MovePropertyAssignment ;
+              pkm:aboutMove ?attackEntity .
+}"""
+
+    assert validate_sparql_text(query) == query
