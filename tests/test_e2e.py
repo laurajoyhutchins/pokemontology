@@ -6,6 +6,7 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 import textwrap
 from pathlib import Path
 
@@ -16,7 +17,7 @@ from tests.support import REPO
 from tests.support.laurel import write_super_effective_fixture
 
 
-PYTHON = REPO / ".venv" / "bin" / "python"
+PYTHON = Path(sys.executable)
 SCHEMA_INDEX = REPO / "docs" / "schema-index.json"
 SUPER_EFFECTIVE_QUERY = REPO / "queries" / "bundled" / "super_effective_moves.sparql"
 
