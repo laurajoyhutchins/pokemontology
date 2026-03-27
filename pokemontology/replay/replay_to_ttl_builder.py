@@ -19,25 +19,24 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 from pathlib import Path
 from dataclasses import dataclass, field
 
 from rdflib import Graph, Literal, Namespace, URIRef
 from rdflib.namespace import RDF, RDFS, XSD
 
-from pokemontology.ingest_common import serialize_turtle_to_path
+from pokemontology.ingest_common import bind_namespaces, serialize_turtle_to_path
 from pokemontology.replay.replay_parser import (
     PKM_PREFIX,
     actor_display_name,
     compact_species_name,
     discover_moves,
     discover_participants,
+    move_iri_local,
     parse_log,
     parse_player_slot,
     parse_replay_payload,
     parse_side_token,
-    pokeapi_move_id,
     pokeapi_species_id,
     sanitize_identifier,
 )
@@ -47,10 +46,7 @@ SITE_BASE = "https://laurajoyhutchins.github.io/pokemontology"
 
 
 def _species_iri(species_raw: str) -> URIRef:
-    pokeapi_id = pokeapi_species_id(species_raw)
-    safe = re.sub(r"[^A-Za-z0-9]+", "_", pokeapi_id).strip("_")
-    safe = re.sub(r"_+", "_", safe)
-    return PKM[f"Species_{safe}"]
+    return PKM[f"Species_{sanitize_identifier(pokeapi_species_id(species_raw))}"]
 
 
 STAT_TOKEN_TO_NAME = {
@@ -861,10 +857,7 @@ def discover_pre_turn_switches(log: str) -> list[tuple[str, str, str | None]]:
 
 def build_graph(payload: dict) -> Graph:
     g = Graph()
-    g.bind("pkm", PKM)
-    g.bind("rdf", RDF)
-    g.bind("rdfs", RDFS)
-    g.bind("xsd", XSD)
+    bind_namespaces(g)
 
     replay_id, fmt, source_url, p1_name, p2_name = parse_replay_payload(payload)
     events = parse_log(payload["log"])
@@ -1116,7 +1109,7 @@ def build_graph(payload: dict) -> Graph:
                 combatant_iri_for_token(actor_token, p1_name, p2_name),
             )
             actor_name = actor_display_name(actor_token)
-            move_iri_node = PKM[f"Move_{sanitize_identifier(pokeapi_move_id(move_name))}"]
+            move_iri_node = PKM[move_iri_local(move_name)]
             action_iri = PKM[
                 f"Action_T{ev.turn}_{ev.order}_{sanitize_identifier(move_name)}_{sanitize_identifier(actor_name)}"
             ]

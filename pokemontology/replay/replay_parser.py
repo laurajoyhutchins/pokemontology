@@ -17,6 +17,8 @@ from collections import OrderedDict
 from dataclasses import dataclass
 from typing import Iterable
 
+from pokemontology.ingest_common import sanitize_identifier
+
 
 PKM_PREFIX = "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#"
 SUPPORTED_EVENT_TAGS = {
@@ -81,39 +83,24 @@ SUPPORTED_EVENT_TAGS = {
 }
 
 
-def sanitize_identifier(text: str) -> str:
-    text = text.strip()
-    text = re.sub(r"[^A-Za-z0-9]+", "_", text)
-    text = re.sub(r"_+", "_", text).strip("_")
-    if not text:
-        text = "Unnamed"
-    if text[0].isdigit():
-        text = f"N_{text}"
-    return text
+def pokeapi_slug(name: str) -> str:
+    """Normalize any Showdown display name to its PokeAPI URL slug.
 
-
-def pokeapi_species_id(species_raw: str) -> str:
-    """Normalize a Showdown species display name to a PokeAPI pokemon identifier.
-
-    Examples: "Pikachu" → "pikachu", "Mr. Mime" → "mr-mime",
+    Examples: "Mr. Mime" → "mr-mime", "Close Combat" → "close-combat",
               "Farfetch'd" → "farfetchd", "Type: Null" → "type-null"
     """
-    text = species_raw.lower().strip()
+    text = name.lower().strip()
     text = re.sub(r"[^a-z0-9]+", "-", text)
-    text = re.sub(r"-+", "-", text).strip("-")
-    return text
+    return re.sub(r"-+", "-", text).strip("-")
 
 
-def pokeapi_move_id(move_raw: str) -> str:
-    """Normalize a Showdown move name to a PokeAPI move identifier.
+pokeapi_species_id = pokeapi_slug
+pokeapi_move_id = pokeapi_slug
 
-    Examples: "Flamethrower" → "flamethrower", "Close Combat" → "close-combat",
-              "Thunder Wave" → "thunder-wave"
-    """
-    text = move_raw.lower().strip()
-    text = re.sub(r"[^a-z0-9]+", "-", text)
-    text = re.sub(r"-+", "-", text).strip("-")
-    return text
+
+def move_iri_local(move_name: str) -> str:
+    """Return the IRI local name for a move, matching the PokeAPI ingest scheme."""
+    return f"Move_{sanitize_identifier(pokeapi_slug(move_name))}"
 
 
 def compact_species_name(raw: str) -> str:
@@ -258,7 +245,7 @@ def discover_moves(events: Iterable[ReplayEvent]) -> OrderedDict[str, str]:
         if ev.kind != "move":
             continue
         move_name = ev.fields[1].strip()
-        iri = f"Move_{sanitize_identifier(pokeapi_move_id(move_name))}"
+        iri = move_iri_local(move_name)
         if iri in moves:
             if moves[iri] != move_name:
                 raise ValueError(
