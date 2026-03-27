@@ -39,6 +39,9 @@ def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
     schema_index = json.loads((tmp_path / "schema-index.json").read_text(encoding="utf-8"))
     assert (tmp_path / "mechanics.ttl").exists()
     assert any(artifact["path"] == "mechanics.ttl" for artifact in site_data["artifacts"])
+    assert "build/mechanics.ttl" in site_data["query_examples"][0]["query"]
+    assert "build/pokeapi.ttl" not in site_data["query_examples"][0]["query"]
+    assert "build/mechanics.ttl" in site_data["query_examples"][0]["command"]
     assert schema_index["prefixes"]
     assert schema_index["retrieval"]["top_k"] == 4
     assert schema_index["retrieval"]["minimum_scores"][0] == {
@@ -60,5 +63,7 @@ def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
     assert any(item["label"] == "Species" for item in schema_index["items"])
     assert any(item["label"] == "TypingAssignment pattern" for item in schema_index["items"])
     assert any(example["id"] == "super-effective-moves" for example in schema_index["examples"])
+    assert "build/mechanics.ttl" in schema_index["examples"][0]["query"]
+    assert "build/pokeapi.ttl" not in schema_index["examples"][0]["query"]
     assert "species" in schema_index["sparse_index"]
     assert schema_index["item_norms"]

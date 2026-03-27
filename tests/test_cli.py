@@ -113,6 +113,32 @@ def test_query_command_defaults_to_build_sources(capsys, monkeypatch: object) ->
     assert captured["query_label"] == "queries/super_effective_moves.sparql"
 
 
+def test_query_command_preserves_explicit_sources(monkeypatch: object) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_execute(query_text, *, sources, pretty=False, query_label):
+        captured["sources"] = tuple(sources)
+        return 0
+
+    monkeypatch.setattr(cli, "_execute_query_text", fake_execute)
+
+    query_path = REPO / "queries" / "super_effective_moves.sparql"
+    exit_code = cli.main(
+        [
+            "query",
+            str(query_path),
+            "custom-ontology.ttl",
+            "custom-mechanics.ttl",
+        ]
+    )
+
+    assert exit_code == 0
+    assert captured["sources"] == (
+        Path("custom-ontology.ttl"),
+        Path("custom-mechanics.ttl"),
+    )
+
+
 def test_laurel_command_defaults_to_build_sources(monkeypatch: object, capsys) -> None:
     captured: dict[str, object] = {}
 
@@ -133,6 +159,35 @@ def test_laurel_command_defaults_to_build_sources(monkeypatch: object, capsys) -
     assert exit_code == 0
     assert captured["sources"] == cli.DEFAULT_QUERY_SOURCES
     assert captured["query_label"] == "<generated>"
+
+
+def test_laurel_command_preserves_explicit_sources(monkeypatch: object) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_generate_sparql(*_args, **_kwargs):
+        return "SELECT * WHERE { ?s ?p ?o } LIMIT 1"
+
+    def fake_run_query_text(query_text, *, sources, query_label):
+        captured["sources"] = tuple(sources)
+        return {"variables": ["answer"], "rows": [{"answer": "ok"}]}
+
+    monkeypatch.setattr(cli, "generate_sparql", fake_generate_sparql)
+    monkeypatch.setattr(cli, "_run_query_text", fake_run_query_text)
+
+    exit_code = cli.main(
+        [
+            "laurel",
+            "Is Charizard Fire type?",
+            "custom-ontology.ttl",
+            "custom-mechanics.ttl",
+        ]
+    )
+
+    assert exit_code == 0
+    assert captured["sources"] == (
+        Path("custom-ontology.ttl"),
+        Path("custom-mechanics.ttl"),
+    )
 
 
 def test_resolve_order_command_outputs_json(tmp_path, capsys) -> None:
