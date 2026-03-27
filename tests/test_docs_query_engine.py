@@ -49,6 +49,7 @@ def test_query_engine_uses_generated_query_examples_and_schema_pack() -> None:
     assert "formatPrefixBlock" in text
     assert site_data["query_examples"]
     assert site_data["schema_pack"]["path"] == "schema-index.json"
+    assert any(artifact["path"] == "pokeapi.ttl" for artifact in site_data["artifacts"])
     assert schema_index["examples"]
     assert schema_index["prefixes"][0]["alias"] == "pkm:"
     assert schema_index["inference"]["webllm_library_url"]
@@ -84,6 +85,16 @@ def test_docs_workers_are_present() -> None:
     assert "fallbackSparql" in llm_text
     assert 'pkm:hasName "${species}"' in llm_text
     assert "rdfs:label" not in llm_text
+
+
+def test_query_engine_defaults_to_actual_pokeapi_dataset() -> None:
+    text = (REPO / "docs" / "js" / "query-execution.js").read_text(encoding="utf-8")
+    index_text = INDEX_HTML.read_text(encoding="utf-8")
+    assert 'id="src-pokeapi" checked' in index_text
+    assert 'id="src-pokeapi-demo"' in index_text
+    assert "pokeapi-demo.ttl (debug)" in index_text
+    assert 'new URL("./pokeapi.ttl", window.location.href).href' in text
+    assert 'new URL("./pokeapi-demo.ttl", window.location.href).href' in text
 
 
 def test_query_validator_enforces_ast_or_safe_fallback() -> None:

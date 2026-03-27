@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import math
 import re
+import shutil
 
 from rdflib import Graph, Namespace, URIRef
 from rdflib.namespace import OWL, RDF, RDFS
@@ -27,6 +28,8 @@ BUILD_SHAPES = BUILD_DIR / "shapes.ttl"
 PAGES_DIR = repo_path("docs")
 PAGES_ONTOLOGY = PAGES_DIR / "ontology.ttl"
 PAGES_SHAPES = PAGES_DIR / "shapes.ttl"
+BUILD_POKEAPI = BUILD_DIR / "pokeapi.ttl"
+PAGES_POKEAPI = PAGES_DIR / "pokeapi.ttl"
 PAGES_SITE_DATA = PAGES_DIR / "site-data.json"
 PAGES_SCHEMA_INDEX = PAGES_DIR / "schema-index.json"
 SHAPES_SOURCE = repo_path("shapes", "modules", "shapes.ttl")
@@ -299,6 +302,12 @@ def assemble_artifacts() -> tuple[str, str, dict[str, object]]:
                 "iri": "https://laurajoyhutchins.github.io/pokemontology/shapes.ttl#",
                 "description": "Validation shapes used for replay slices, save-state data, and ingestion outputs.",
             },
+            {
+                "label": "PokeAPI Mechanics Data",
+                "path": "pokeapi.ttl",
+                "iri": "https://laurajoyhutchins.github.io/pokemontology/pokeapi.ttl#",
+                "description": "Published ontology-native mechanics dataset transformed from the repository's cached PokeAPI ingest output.",
+            },
         ],
         "modules": [
             {
@@ -369,6 +378,8 @@ def write_artifacts(
     BUILD_SHAPES.write_text(shapes_text, encoding="utf-8")
     PAGES_ONTOLOGY.write_text(ontology_text, encoding="utf-8")
     PAGES_SHAPES.write_text(shapes_text, encoding="utf-8")
+    if BUILD_POKEAPI.exists():
+        shutil.copyfile(BUILD_POKEAPI, PAGES_POKEAPI)
     PAGES_SITE_DATA.write_text(json.dumps(site_data, indent=2) + "\n", encoding="utf-8")
     PAGES_SCHEMA_INDEX.write_text(
         json.dumps(_schema_pack(ontology_text, site_data["query_examples"]), indent=2)
@@ -384,6 +395,8 @@ def main() -> None:
     print(f"wrote {BUILD_SHAPES.relative_to(REPO)}")
     print(f"wrote {PAGES_ONTOLOGY.relative_to(REPO)}")
     print(f"wrote {PAGES_SHAPES.relative_to(REPO)}")
+    if BUILD_POKEAPI.exists():
+        print(f"wrote {PAGES_POKEAPI.relative_to(REPO)}")
     print(f"wrote {PAGES_SITE_DATA.relative_to(REPO)}")
     print(f"wrote {PAGES_SCHEMA_INDEX.relative_to(REPO)}")
 

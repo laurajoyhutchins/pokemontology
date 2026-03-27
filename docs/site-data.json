@@ -17,6 +17,12 @@
       "path": "shapes.ttl",
       "iri": "https://laurajoyhutchins.github.io/pokemontology/shapes.ttl#",
       "description": "Validation shapes used for replay slices, save-state data, and ingestion outputs."
+    },
+    {
+      "label": "PokeAPI Mechanics Data",
+      "path": "pokeapi.ttl",
+      "iri": "https://laurajoyhutchins.github.io/pokemontology/pokeapi.ttl#",
+      "description": "Published ontology-native mechanics dataset transformed from the repository's cached PokeAPI ingest output."
     }
   ],
   "modules": [

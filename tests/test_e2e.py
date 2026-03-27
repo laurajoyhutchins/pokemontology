@@ -235,6 +235,278 @@ def test_web_worker_query_executes_actual_species_question() -> None:
     assert "Ground" not in scores
 
 
+@pytest.mark.skipif(shutil.which("node") is None, reason="node is required for web E2E")
+def test_web_page_controller_prefers_actual_pokeapi_source(tmp_path: Path) -> None:
+    site_data_text = (REPO / "docs" / "site-data.json").read_text(encoding="utf-8")
+    schema_index_text = SCHEMA_INDEX.read_text(encoding="utf-8")
+    script = textwrap.dedent(
+        f"""
+        import path from "node:path";
+        import {{ pathToFileURL }} from "node:url";
+
+        const repo = {json.dumps(str(REPO))};
+        const siteData = {site_data_text};
+        const schemaPack = {schema_index_text};
+        const sourceCalls = [];
+
+        class FakeClassList {{
+          constructor() {{
+            this.names = new Set();
+          }}
+          toggle(name, force) {{
+            if (force === undefined) {{
+              if (this.names.has(name)) this.names.delete(name);
+              else this.names.add(name);
+              return this.names.has(name);
+            }}
+            if (force) this.names.add(name);
+            else this.names.delete(name);
+            return force;
+          }}
+        }}
+
+        class FakeElement {{
+          constructor(id = "", tag = "div") {{
+            this.id = id;
+            this.tagName = tag.toUpperCase();
+            this.listeners = {{}};
+            this.children = [];
+            this.attributes = new Map();
+            this.dataset = {{}};
+            this.classList = new FakeClassList();
+            this.hidden = false;
+            this.checked = false;
+            this.disabled = false;
+            this.open = false;
+            this.value = "";
+            this.innerHTML = "";
+            this.textContent = "";
+            this.href = "";
+          }}
+          addEventListener(type, listener) {{
+            (this.listeners[type] ||= []).push(listener);
+          }}
+          async dispatch(type, event = {{}}) {{
+            for (const listener of this.listeners[type] || []) {{
+              await listener({{
+                preventDefault() {{}},
+                stopPropagation() {{}},
+                target: this,
+                currentTarget: this,
+                ...event,
+              }});
+            }}
+          }}
+          async click() {{
+            await this.dispatch("click");
+          }}
+          setAttribute(name, value) {{
+            this.attributes.set(name, String(value));
+            if (name === "hidden") this.hidden = true;
+          }}
+          removeAttribute(name) {{
+            this.attributes.delete(name);
+            if (name === "hidden") this.hidden = false;
+          }}
+          appendChild(child) {{
+            this.children.push(child);
+            return child;
+          }}
+          removeChild(child) {{
+            this.children = this.children.filter((entry) => entry !== child);
+          }}
+          focus() {{}}
+        }}
+
+        const byId = new Map();
+        const bySelector = new Map();
+        const selectorLists = new Map([
+          ["main section[id]", []],
+          [".nav-links a[href^='#']", []],
+        ]);
+
+        function registerId(id, tag = "div") {{
+          const element = new FakeElement(id, tag);
+          byId.set(id, element);
+          return element;
+        }}
+        function registerSelector(selector, element) {{
+          bySelector.set(selector, element);
+          return element;
+        }}
+
+        const documentElement = new FakeElement("", "html");
+        documentElement.dataset = {{}};
+        const body = new FakeElement("", "body");
+        body.dataset = {{}};
+        const head = new FakeElement("", "head");
+
+        const question = registerId("nl-question", "textarea");
+        const laurelRunBtn = registerId("laurel-run-btn", "button");
+        const sparqlEditor = registerId("sparql-editor", "textarea");
+        registerId("generated-query-preview", "code");
+        registerId("validation-list");
+        registerId("validation-badge");
+        registerId("grounding-notes");
+        registerId("qe-results");
+        registerId("laurel-status");
+        const runBtn = registerId("run-btn", "button");
+        const runBtnLabel = registerId("run-btn-label");
+        registerId("example-select", "select");
+        const srcOntology = registerId("src-ontology", "input");
+        srcOntology.checked = true;
+        const srcPokeapi = registerId("src-pokeapi", "input");
+        srcPokeapi.checked = true;
+        const srcPokeapiDemo = registerId("src-pokeapi-demo", "input");
+        srcPokeapiDemo.checked = false;
+        const srcShapes = registerId("src-shapes", "input");
+        srcShapes.checked = false;
+        registerId("export-csv-btn", "button");
+        registerId("clear-results-btn", "button");
+        registerId("copy-sparql-btn", "button");
+        registerId("sample-question-btn", "button");
+        registerId("toggle-advanced-btn", "button");
+        registerId("advanced-console", "details");
+        registerId("focus-question-btn", "button");
+        registerId("copy-query-btn", "button");
+        registerId("clear-query-btn", "button");
+        registerId("qe-status");
+
+        registerSelector("[data-status-model]", new FakeElement("", "span"));
+        registerSelector("[data-status-grounding]", new FakeElement("", "span"));
+        registerSelector("[data-status-validator]", new FakeElement("", "span"));
+        registerSelector("[data-grounding-count]", new FakeElement("", "span"));
+        registerSelector("[data-theme-toggle]", new FakeElement("", "button"));
+        registerSelector("[data-theme-label]", new FakeElement("", "span"));
+        registerSelector("[data-power-toggle]", new FakeElement("", "button"));
+        registerSelector("[data-power-label]", new FakeElement("", "span"));
+        registerSelector("[data-repository-url]", new FakeElement("", "a"));
+        registerSelector("[data-pages-base-url]", new FakeElement("", "span"));
+        const siteError = registerSelector("[data-site-error]", new FakeElement("", "div"));
+        siteError.hidden = true;
+
+        const document = {{
+          body,
+          head,
+          documentElement,
+          getElementById(id) {{
+            return byId.get(id) || null;
+          }},
+          querySelector(selector) {{
+            return bySelector.get(selector) || null;
+          }},
+          querySelectorAll(selector) {{
+            return selectorLists.get(selector) || [];
+          }},
+          createElement(tag) {{
+            const element = new FakeElement("", tag);
+            if (tag === "script") {{
+              queueMicrotask(() => element.onload?.());
+            }}
+            return element;
+          }},
+        }};
+
+        class FakeWorker {{
+          constructor(url) {{
+            this.url = url;
+            this.onmessage = null;
+            this.onerror = null;
+          }}
+          postMessage(payload) {{
+            queueMicrotask(() => {{
+              try {{
+                let message;
+                if (this.url.includes("retrieval-worker")) {{
+                  message = {{ matches: [] }};
+                }} else if (this.url.includes("llm-worker")) {{
+                  message = {{
+                    backend: "CPU fallback synthesizer",
+                    sparql: "PREFIX pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#>\\nSELECT ?species WHERE {{ ?species a pkm:Species }} LIMIT 1",
+                    fallbackSparql: "PREFIX pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#>\\nSELECT ?species WHERE {{ ?species a pkm:Species }} LIMIT 1",
+                    summary: "synthetic test response",
+                  }};
+                }} else {{
+                  message = {{ ok: true, messages: [], normalized: payload.sparql }};
+                }}
+                this.onmessage?.({{ data: message }});
+              }} catch (error) {{
+                this.onerror?.({{ error }});
+              }}
+            }});
+          }}
+        }}
+
+        globalThis.document = document;
+        globalThis.window = globalThis;
+        Object.defineProperty(globalThis, "navigator", {{
+          configurable: true,
+          value: {{ gpu: null, clipboard: {{ writeText: async () => {{}} }} }},
+        }});
+        Object.defineProperty(globalThis, "location", {{
+          configurable: true,
+          value: {{ href: "http://localhost:8000/index.html" }},
+        }});
+        Object.defineProperty(globalThis, "localStorage", {{
+          configurable: true,
+          value: {{ getItem() {{ return null; }}, setItem() {{}} }},
+        }});
+        globalThis.matchMedia = () => ({{ matches: false }});
+        globalThis.IntersectionObserver = class {{ observe() {{}} disconnect() {{}} }};
+        globalThis.Worker = FakeWorker;
+        globalThis.fetch = async (url) => {{
+          const target = String(url);
+          if (target.endsWith("site-data.json")) return {{ ok: true, json: async () => siteData }};
+          if (target.endsWith("schema-index.json")) return {{ ok: true, json: async () => schemaPack }};
+          throw new Error(`unexpected fetch: ${{target}}`);
+        }};
+        globalThis.performance = {{ now: () => 123 }};
+        globalThis.URL = URL;
+        globalThis.Comunica = {{
+          QueryEngine: class {{
+            async queryBindings(_sparql, options) {{
+              sourceCalls.push(...options.sources);
+              return {{
+                async *[Symbol.asyncIterator]() {{}},
+              }};
+            }}
+          }},
+        }};
+
+        const module = await import(pathToFileURL(path.join(repo, "docs", "js", "laurel-app.js")).href + "?sources-e2e");
+        await module.createLaurelApp();
+        question.value = "Which move types are super effective against Charizard?";
+        await laurelRunBtn.click();
+
+        console.log(JSON.stringify({{
+          sourceCalls,
+          runDisabled: runBtn.disabled,
+          runLabel: runBtnLabel.textContent,
+          editorValue: sparqlEditor.value,
+        }}));
+        """
+    )
+
+    script_path = tmp_path / "web-source-e2e.mjs"
+    script_path.write_text(script, encoding="utf-8")
+
+    completed = subprocess.run(
+        ["node", str(script_path)],
+        cwd=REPO,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    payload = json.loads(completed.stdout)
+    assert payload["runDisabled"] is False
+    assert payload["runLabel"] == "Run SPARQL"
+    assert "./pokeapi.ttl" not in payload["editorValue"]
+    assert any(source.endswith("/ontology.ttl") for source in payload["sourceCalls"])
+    assert any(source.endswith("/pokeapi.ttl") for source in payload["sourceCalls"])
+    assert not any(source.endswith("/pokeapi-demo.ttl") for source in payload["sourceCalls"])
+
+
 @pytest.mark.skipif(shutil.which("node") is None, reason="node is required for web integration")
 def test_web_page_controller_end_to_end(tmp_path: Path) -> None:
     query_text = SUPER_EFFECTIVE_QUERY.read_text(encoding="utf-8")
@@ -546,8 +818,8 @@ def test_web_page_controller_end_to_end(tmp_path: Path) -> None:
 
     payload = json.loads(completed.stdout)
     assert "pkm:actor" in payload["generatedQuery"]
-    assert "1 matching row" in payload["findingsHtml"]
-    assert "myMoveLabel=Ember" in payload["findingsHtml"]
+    assert "Ember is a Fire-type move" in payload["findingsHtml"]
+    assert "hits Charizard's Flying typing for 2.0x damage" in payload["findingsHtml"]
     assert "validated in test harness" in payload["validationHtml"]
     assert payload["validationBadge"] == "Validated"
     assert payload["statusText"] == "Field query complete."

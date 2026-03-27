@@ -133,39 +133,99 @@ export function configureQueryPresentation(schemaPack) {
   };
 }
 
+function joinNaturalLanguageList(values) {
+  if (!values.length) return "";
+  if (values.length === 1) return values[0];
+  if (values.length === 2) return `${values[0]} and ${values[1]}`;
+  return `${values.slice(0, -1).join(", ")}, and ${values.at(-1)}`;
+}
+
+function variableLabel(variable) {
+  return String(variable || "")
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/^./, (match) => match.toLowerCase())
+    .replace(/\biri\b/gi, "IRI");
+}
+
+function bindingValue(binding, variable) {
+  const term = binding.get(variable);
+  return term ? shortenUri(term.value) : "";
+}
+
+function describeSingleBinding(question, vars, binding) {
+  const record = Object.fromEntries(
+    vars.map((variable) => [variable, bindingValue(binding, variable)]),
+  );
+
+  if (
+    record.myMoveLabel &&
+    record.moveTypeName &&
+    record.opponentLabel &&
+    record.effectiveTypeName &&
+    record.factor
+  ) {
+    return `${record.myMoveLabel} is a ${record.moveTypeName}-type move and hits ${record.opponentLabel}'s ${record.effectiveTypeName} typing for ${record.factor}x damage.`;
+  }
+
+  if (record.moveTypeName && record.netScore) {
+    return `Against this target, ${record.moveTypeName} is a strong attacking type with a net effectiveness score of ${record.netScore}.`;
+  }
+
+  const details = vars
+    .map((variable) => {
+      const value = record[variable];
+      if (!value) return null;
+      return `${variableLabel(variable)} ${value}`;
+    })
+    .filter(Boolean);
+  if (!details.length) {
+    return question ? `I found one matching result for "${question}".` : "I found one matching result.";
+  }
+  return details.join(", ").replace(/, ([^,]*)$/, ", and $1.") || "I found one matching result.";
+}
+
 export function summarizeQueryResult(question, result) {
   if (result.type === "boolean") {
-    return `${result.value ? "Yes," : "No,"} regarding: "${question}"`.trim();
+    return result.value ? `Yes. ${question}` : `No. ${question}`;
   }
   if (result.type === "quads") {
-    return `Assembled ${result.quads.length} triples for the query: "${question}"`;
+    return `I assembled ${result.quads.length} triples from the graph for "${question}".`;
   }
   const { vars, bindings } = result;
   if (!bindings.length) {
-    return `No matching results for: "${question}"`;
+    return question ? `I couldn't find matching graph results for "${question}".` : "I couldn't find matching graph results.";
   }
   const previewLimit = summaryPolicy.list_preview_limit || DEFAULT_SUMMARY_POLICY.list_preview_limit;
+
+  if (vars.includes("moveTypeName") && vars.includes("netScore")) {
+    const ranked = bindings
+      .map((binding) => ({
+        moveTypeName: bindingValue(binding, "moveTypeName"),
+        netScore: bindingValue(binding, "netScore"),
+      }))
+      .filter((row) => row.moveTypeName);
+    if (ranked.length) {
+      const best = ranked[0];
+      const others = ranked.slice(1, previewLimit).map((row) => row.moveTypeName);
+      const followUp = others.length ? ` Other strong options are ${joinNaturalLanguageList(others)}.` : "";
+      return `${best.moveTypeName} is the strongest attacking type match.${followUp}`.trim();
+    }
+  }
+
   if (vars.length === 1) {
     const values = bindings
-      .map((binding) => binding.get(vars[0])?.value)
+      .map((binding) => bindingValue(binding, vars[0]))
       .filter(Boolean)
-      .map(shortenUri);
     if (values.length === 1) {
-      return `Found 1 result for "${question}": ${values[0]}.`;
+      return `The matching ${variableLabel(vars[0])} is ${values[0]}.`;
     }
-    const preview = values.slice(0, previewLimit).join(", ");
-    return `Found ${values.length} results for "${question}": ${preview}${values.length > previewLimit ? ", …" : ""}.`;
+    const preview = values.slice(0, previewLimit);
+    return `The matching ${variableLabel(vars[0])} values are ${joinNaturalLanguageList(preview)}${values.length > previewLimit ? ", and more" : ""}.`;
   }
   if (bindings.length === 1) {
-    const fields = vars
-      .map((variable) => {
-        const term = bindings[0].get(variable);
-        return `${variable}=${term ? shortenUri(term.value) : "—"}`;
-      })
-      .join(", ");
-    return `Found 1 matching row for "${question}": ${fields}.`;
+    return describeSingleBinding(question, vars, bindings[0]);
   }
-  return `Found ${bindings.length} matching rows for: "${question}"`;
+  return `I found ${bindings.length} matching rows for "${question}".`;
 }
 
 export function renderQueryResults(result, question = "") {
@@ -279,6 +339,9 @@ export function buildSources() {
   const sources = [];
   if (document.getElementById("src-ontology")?.checked) {
     sources.push(new URL("./ontology.ttl", window.location.href).href);
+  }
+  if (document.getElementById("src-pokeapi")?.checked) {
+    sources.push(new URL("./pokeapi.ttl", window.location.href).href);
   }
   if (document.getElementById("src-pokeapi-demo")?.checked) {
     sources.push(new URL("./pokeapi-demo.ttl", window.location.href).href);
