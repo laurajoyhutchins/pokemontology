@@ -12,6 +12,7 @@ This repository models Pokemon battle mechanics as RDF/OWL and SHACL, with suppo
   - `.venv/bin/python -m pokemontology build`
   - `.venv/bin/python -m pokemontology laurel "Can Water-type Pokemon be burned?" data/pokeapi/transformed/pokeapi.ttl`
 - Keep changes minimal and repo-local. Do not introduce new dependencies unless the task requires them.
+- After finishing code changes, commit them and push the branch.
 - Follow the reified `pkm:ContextualFact` pattern for mechanics that vary by generation.
 
 ## Important Paths
