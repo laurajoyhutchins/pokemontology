@@ -10,7 +10,14 @@ from rdflib import Graph
 from rdflib.namespace import RDF
 
 from pokemontology import cli
-from pokemontology.chat import build_prompt, generate_sparql, validate_sparql_text
+from pokemontology.chat import (
+    LaurelIntent,
+    build_prompt,
+    compile_intent,
+    generate_sparql,
+    parse_intent,
+    validate_sparql_text,
+)
 from tests.support import REPO
 from tests.support.laurel import write_dense_schema_index, write_super_effective_fixture
 
@@ -211,6 +218,40 @@ def test_generate_sparql_uses_deterministic_species_matchup_pattern(monkeypatch:
     assert 'pkm:hasName "Charizard"' in query_text
     assert "SELECT ?moveTypeName" in query_text
     assert "ORDER BY ?moveTypeName" in query_text
+
+
+def test_parse_intent_maps_paraphrases_to_same_burn_intent() -> None:
+    canonical = parse_intent("Does burn reduce the damage a Pokemon deals with physical moves?")
+    paraphrase = parse_intent("Can burn cut the power of physical attacks?")
+
+    assert canonical == LaurelIntent(kind="burn_physical_damage")
+    assert paraphrase == canonical
+
+
+def test_parse_intent_maps_paraphrases_to_same_levitate_intent() -> None:
+    canonical = parse_intent("Does Levitate make a Pokemon immune to Ground-type moves?")
+    paraphrase = parse_intent("Is a Pokemon with Levitate immune to Ground-type attacks?")
+
+    assert canonical == LaurelIntent(kind="levitate_ground_immunity")
+    assert paraphrase == canonical
+
+
+def test_compile_intent_produces_same_query_for_burn_paraphrases() -> None:
+    left = compile_intent(parse_intent("Does burn reduce the damage a Pokemon deals with physical moves?"))
+    right = compile_intent(parse_intent("Can burn cut the power of physical attacks?"))
+
+    assert left == right
+    assert left is not None
+    assert "SELECT ?answerText" in left
+
+
+def test_compile_intent_produces_same_query_for_levitate_paraphrases() -> None:
+    left = compile_intent(parse_intent("Does Levitate make a Pokemon immune to Ground-type moves?"))
+    right = compile_intent(parse_intent("Is a Pokemon with Levitate immune to Ground-type attacks?"))
+
+    assert left == right
+    assert left is not None
+    assert "Thousand Arrows" in left
 
 
 def test_generate_sparql_uses_deterministic_move_type_pattern(monkeypatch: object) -> None:

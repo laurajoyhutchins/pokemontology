@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import math
 import re
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 from urllib import error, request
@@ -55,6 +56,15 @@ _PROJECTED_VAR_RE = re.compile(r"\?([A-Za-z_][\w-]*)")
 _GENERATION_CACHE: dict[tuple[str, str, str, str], str] = {}
 _PKM_PREFIX = "PREFIX pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#>"
 _XSD_PREFIX = "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>"
+
+
+@dataclass(frozen=True)
+class LaurelIntent:
+    kind: str
+    species: str | None = None
+    move: str | None = None
+    type_name: str | None = None
+    generation: str | None = None
 
 
 def tokenize(text: str) -> list[str]:
@@ -516,16 +526,18 @@ def _generation_fact_query(answer_text: str, *, ruleset_names: tuple[str, ...], 
     )
 
 
-def deterministic_sparql(question: str) -> str | None:
+def parse_intent(question: str) -> LaurelIntent | None:
     text = " ".join(question.strip().split()).rstrip(".")
     if not text:
         return None
 
     match = re.fullmatch(r"is\s+(.+?)\s+a[n]?\s+(.+?)\s+type\??", text, re.IGNORECASE)
     if match:
-        species = _normalize_entity_name(match.group(1))
-        type_name = _normalize_entity_name(match.group(2))
-        return _species_type_ask(species, type_name)
+        return LaurelIntent(
+            kind="species_type_check",
+            species=_normalize_entity_name(match.group(1)),
+            type_name=_normalize_entity_name(match.group(2)),
+        )
 
     match = re.fullmatch(
         r"what\s+are\s+(.+?)['’]s\s+default\s+types?(?:\s+in\s+the\s+core\s+series)?\??",
@@ -533,36 +545,135 @@ def deterministic_sparql(question: str) -> str | None:
         re.IGNORECASE,
     )
     if match:
-        species = _normalize_entity_name(match.group(1))
-        return _species_type_list(species)
+        return LaurelIntent(kind="species_type_list", species=_normalize_entity_name(match.group(1)))
 
     match = re.fullmatch(
-        r"which\s+move\s+types?\s+are\s+super\s+effective\s+against\s+(.+?)\??",
+        r"(?:which|what)\s+move\s+types?\s+are\s+super\s+effective\s+against\s+(.+?)\??",
         text,
         re.IGNORECASE,
     )
     if match:
-        species = _normalize_entity_name(match.group(1))
-        return _species_matchup_query(species)
+        return LaurelIntent(kind="species_matchup", species=_normalize_entity_name(match.group(1)))
 
     match = re.fullmatch(
-        r"is\s+(.+?)\s+super\s+effective\s+against\s+(.+?)-types?\??",
+        r"(?:is|does)\s+(.+?)\s+(?:super\s+effective|good)\s+against\s+(.+?)-types?\??",
         text,
         re.IGNORECASE,
     )
     if match:
-        move_name = _normalize_entity_name(match.group(1))
-        type_name = _normalize_entity_name(match.group(2))
-        if move_name == "Freeze-Dry" and type_name == "Water":
-            return _freeze_dry_water_query()
-        return _move_effective_against_type_ask(move_name, type_name)
+        return LaurelIntent(
+            kind="move_effective_against_type",
+            move=_normalize_entity_name(match.group(1)),
+            type_name=_normalize_entity_name(match.group(2)),
+        )
 
     if re.fullmatch(
-        r"can\s+thunder\s+wave\s+paralyze\s+a\s+ground-type\s+target(?:\s+in\s+the\s+main\s+series)?\??",
+        r"(?:can|does)\s+thunder\s+wave\s+(?:paralyze|affect)\s+a\s+ground-type\s+target(?:\s+in\s+the\s+main\s+series)?\??",
         text,
         re.IGNORECASE,
     ):
-        return _thunder_wave_ground_query()
+        return LaurelIntent(kind="thunder_wave_ground")
+
+    if re.fullmatch(
+        r"(?:(?:does|is)\s+levitate\s+(?:make|give)\s+(?:a\s+pokemon\s+)?(?:immune|immunity)\s+to\s+ground-type\s+(?:moves|attacks?)|is\s+a\s+pokemon\s+with\s+levitate\s+immune\s+to\s+ground-type\s+(?:moves|attacks?))\??",
+        text,
+        re.IGNORECASE,
+    ):
+        return LaurelIntent(kind="levitate_ground_immunity")
+
+    if re.fullmatch(
+        r"if\s+a\s+mold\s+breaker\s+user\s+uses\s+earthquake\s+on\s+a\s+target\s+with\s+levitate,\s+can\s+earthquake\s+hit\??",
+        text,
+        re.IGNORECASE,
+    ):
+        return LaurelIntent(kind="mold_breaker_earthquake_levitate")
+
+    if re.fullmatch(
+        r"in\s+doubles,\s+does\s+wide\s+guard\s+block\s+rock\s+slide\??",
+        text,
+        re.IGNORECASE,
+    ):
+        return LaurelIntent(kind="wide_guard_rock_slide")
+
+    if re.fullmatch(
+        r"(?:(?:does|can)\s+burn\s+(?:reduce|cut|halve|lower|weaken)\s+(?:the\s+)?(?:damage\s+a\s+pokemon\s+deals\s+with\s+physical\s+moves|damage\s+of\s+physical\s+moves|power\s+of\s+physical\s+attacks?|physical\s+attack\s+power)|do\s+burns\s+weaken\s+physical\s+attacks?)\??",
+        text,
+        re.IGNORECASE,
+    ):
+        return LaurelIntent(kind="burn_physical_damage")
+
+    if re.fullmatch(
+        r"when\s+a\s+pokemon\s+terastallizes,\s+do\s+its\s+defensive\s+types\s+become\s+only\s+its\s+tera\s+type\??",
+        text,
+        re.IGNORECASE,
+    ):
+        return LaurelIntent(kind="tera_defensive_type")
+
+    generation_patterns = [
+        (
+            r"in\s+generation\s+i,\s+if\s+hyper\s+beam\s+knocks\s+out\s+the\s+target,\s+does\s+the\s+user\s+still\s+have\s+to\s+recharge\s+next\s+turn\??",
+            "gen1_hyper_beam_recharge",
+        ),
+        (
+            r"in\s+generation\s+ii\s+through\s+v,\s+did\s+steel\s+resist\s+dark\s+and\s+ghost\??",
+            "gen2_steel_resists_dark_ghost",
+        ),
+        (
+            r"before\s+generation\s+vi,\s+did\s+drizzle\s+and\s+drought\s+summon\s+permanent\s+weather\??",
+            "gen3_weather_permanent",
+        ),
+        (
+            r"in\s+generation\s+v,\s+were\s+gems\s+consumed\s+after\s+boosting\s+a\s+move\s+of\s+their\s+matching\s+type\??",
+            "gen5_gems_consumed",
+        ),
+        (
+            r"starting\s+in\s+generation\s+vi,\s+are\s+fairy-types\s+immune\s+to\s+dragon-type\s+moves\??",
+            "gen6_fairy_dragon_immunity",
+        ),
+        (
+            r"in\s+generation\s+vii,\s+how\s+much\s+residual\s+damage\s+does\s+burn\s+deal\s+at\s+the\s+end\s+of\s+each\s+turn\??",
+            "gen7_burn_chip_damage",
+        ),
+        (
+            r"starting\s+in\s+generation\s+viii,\s+does\s+teleport\s+function\s+as\s+a\s+slow\s+pivot\s+move\s+in\s+trainer\s+battles\??",
+            "gen8_teleport_pivot",
+        ),
+        (
+            r"in\s+generation\s+ix,\s+does\s+a\s+sleeping\s+pokemon['’]s\s+sleep\s+counter\s+continue\s+to\s+advance\s+while\s+it\s+is\s+switched\s+out\??",
+            "gen9_sleep_counter_switched_out",
+        ),
+    ]
+    for pattern, kind in generation_patterns:
+        if re.fullmatch(pattern, text, re.IGNORECASE):
+            return LaurelIntent(kind=kind)
+
+    if re.fullmatch(
+        r"name\s+two\s+ways\s+a\s+pokemon\s+with\s+levitate\s+can\s+still\s+be\s+hit\s+by\s+ground-type\s+moves\??",
+        text,
+        re.IGNORECASE,
+    ):
+        return LaurelIntent(kind="levitate_bypass_list")
+
+    if re.fullmatch(
+        r"what\s+happens\s+when\s+thousand\s+arrows\s+hits\s+a\s+flying-type\s+or\s+levitate\s+target\??",
+        text,
+        re.IGNORECASE,
+    ):
+        return LaurelIntent(kind="thousand_arrows_grounding")
+
+    if re.fullmatch(
+        r"how\s+effective\s+is\s+freeze-dry\s+against\s+a\s+water/ground\s+pokemon\??",
+        text,
+        re.IGNORECASE,
+    ):
+        return LaurelIntent(kind="freeze_dry_water_ground")
+
+    if re.fullmatch(
+        r"if\s+the\s+user\s+of\s+wide\s+guard\s+faints\s+later\s+in\s+the\s+turn,\s+does\s+the\s+protection\s+still\s+remain\s+for\s+that\s+turn\??",
+        text,
+        re.IGNORECASE,
+    ):
+        return LaurelIntent(kind="wide_guard_persists_after_faint")
 
     match = re.fullmatch(
         r"can\s+(.+?)\s+.+?\s+a[n]?\s+(.+?)-type\s+target(?:\s+in\s+the\s+main\s+series)?\??",
@@ -570,162 +681,92 @@ def deterministic_sparql(question: str) -> str | None:
         re.IGNORECASE,
     )
     if match:
-        move_name = _normalize_entity_name(match.group(1))
-        type_name = _normalize_entity_name(match.group(2))
-        return _move_can_affect_type_ask(move_name, type_name)
+        return LaurelIntent(
+            kind="move_can_affect_type",
+            move=_normalize_entity_name(match.group(1)),
+            type_name=_normalize_entity_name(match.group(2)),
+        )
 
-    if re.fullmatch(
-        r"does\s+levitate\s+make\s+a\s+pokemon\s+immune\s+to\s+ground-type\s+moves\??",
-        text,
-        re.IGNORECASE,
-    ):
-        return _levitate_ground_immunity_query()
+    return None
 
-    if re.fullmatch(
-        r"if\s+a\s+mold\s+breaker\s+user\s+uses\s+earthquake\s+on\s+a\s+target\s+with\s+levitate,\s+can\s+earthquake\s+hit\??",
-        text,
-        re.IGNORECASE,
-    ):
-        return _mold_breaker_earthquake_levitate_query()
 
-    if re.fullmatch(
-        r"in\s+doubles,\s+does\s+wide\s+guard\s+block\s+rock\s+slide\??",
-        text,
-        re.IGNORECASE,
-    ):
-        return _wide_guard_rock_slide_query()
+def compile_intent(intent: LaurelIntent | None) -> str | None:
+    if intent is None:
+        return None
+    if intent.kind == "species_type_check" and intent.species and intent.type_name:
+        return _species_type_ask(intent.species, intent.type_name)
+    if intent.kind == "species_type_list" and intent.species:
+        return _species_type_list(intent.species)
+    if intent.kind == "species_matchup" and intent.species:
+        return _species_matchup_query(intent.species)
+    if intent.kind == "move_effective_against_type" and intent.move and intent.type_name:
+        if intent.move == "Freeze-Dry" and intent.type_name == "Water":
+            return _freeze_dry_water_query()
+        return _move_effective_against_type_ask(intent.move, intent.type_name)
+    if intent.kind == "move_can_affect_type" and intent.move and intent.type_name:
+        return _move_can_affect_type_ask(intent.move, intent.type_name)
 
-    if re.fullmatch(
-        r"does\s+burn\s+reduce\s+the\s+damage\s+a\s+pokemon\s+deals\s+with\s+physical\s+moves\??",
-        text,
-        re.IGNORECASE,
-    ):
-        return _burn_physical_damage_query()
-
-    if re.fullmatch(
-        r"when\s+a\s+pokemon\s+terastallizes,\s+do\s+its\s+defensive\s+types\s+become\s+only\s+its\s+tera\s+type\??",
-        text,
-        re.IGNORECASE,
-    ):
-        return _tera_defensive_type_query()
-
-    if re.fullmatch(
-        r"in\s+generation\s+i,\s+if\s+hyper\s+beam\s+knocks\s+out\s+the\s+target,\s+does\s+the\s+user\s+still\s+have\s+to\s+recharge\s+next\s+turn\??",
-        text,
-        re.IGNORECASE,
-    ):
-        return _generation_fact_query(
+    static_compilers = {
+        "thunder_wave_ground": _thunder_wave_ground_query,
+        "levitate_ground_immunity": _levitate_ground_immunity_query,
+        "mold_breaker_earthquake_levitate": _mold_breaker_earthquake_levitate_query,
+        "wide_guard_rock_slide": _wide_guard_rock_slide_query,
+        "burn_physical_damage": _burn_physical_damage_query,
+        "tera_defensive_type": _tera_defensive_type_query,
+        "levitate_bypass_list": _levitate_bypass_list_query,
+        "thousand_arrows_grounding": _thousand_arrows_grounding_query,
+        "freeze_dry_water_ground": _freeze_dry_water_ground_query,
+        "wide_guard_persists_after_faint": _wide_guard_persists_query,
+        "gen1_hyper_beam_recharge": lambda: _generation_fact_query(
             "Yes. In Generation I, a Hyper Beam user still had to recharge even after knocking out the target.",
             ruleset_names=("Red Blue", "Yellow"),
             anchor_names=("Hyper Beam",),
-        )
-
-    if re.fullmatch(
-        r"in\s+generation\s+ii\s+through\s+v,\s+did\s+steel\s+resist\s+dark\s+and\s+ghost\??",
-        text,
-        re.IGNORECASE,
-    ):
-        return _generation_fact_query(
+        ),
+        "gen2_steel_resists_dark_ghost": lambda: _generation_fact_query(
             "Yes. From Generation II through Generation V, Steel resisted both Dark and Ghost.",
             ruleset_names=("Gold Silver", "Crystal", "Emerald", "Diamond Pearl", "Platinum", "Black 2 White 2"),
             anchor_names=("Steel", "Dark", "Ghost"),
-        )
-
-    if re.fullmatch(
-        r"before\s+generation\s+vi,\s+did\s+drizzle\s+and\s+drought\s+summon\s+permanent\s+weather\??",
-        text,
-        re.IGNORECASE,
-    ):
-        return _generation_fact_query(
+        ),
+        "gen3_weather_permanent": lambda: _generation_fact_query(
             "Yes. Before Generation VI, Drizzle and Drought summoned weather that lasted indefinitely until replaced.",
             ruleset_names=("Emerald", "Platinum", "Black 2 White 2"),
             anchor_names=("Drizzle", "Drought"),
-        )
-
-    if re.fullmatch(
-        r"in\s+generation\s+v,\s+were\s+gems\s+consumed\s+after\s+boosting\s+a\s+move\s+of\s+their\s+matching\s+type\??",
-        text,
-        re.IGNORECASE,
-    ):
-        return _generation_fact_query(
+        ),
+        "gen5_gems_consumed": lambda: _generation_fact_query(
             "Yes. In Generation V, a Gem was consumed after it boosted a move of its matching type.",
             ruleset_names=("Black 2 White 2",),
             anchor_names=("Power Gem",),
-        )
-
-    if re.fullmatch(
-        r"starting\s+in\s+generation\s+vi,\s+are\s+fairy-types\s+immune\s+to\s+dragon-type\s+moves\??",
-        text,
-        re.IGNORECASE,
-    ):
-        return _generation_fact_query(
+        ),
+        "gen6_fairy_dragon_immunity": lambda: _generation_fact_query(
             "Yes. Starting in Generation VI, Fairy-type Pokemon are immune to Dragon-type moves.",
             ruleset_names=("X Y", "Scarlet Violet"),
             anchor_names=("Fairy", "Dragon"),
-        )
-
-    if re.fullmatch(
-        r"in\s+generation\s+vii,\s+how\s+much\s+residual\s+damage\s+does\s+burn\s+deal\s+at\s+the\s+end\s+of\s+each\s+turn\??",
-        text,
-        re.IGNORECASE,
-    ):
-        return _generation_fact_query(
+        ),
+        "gen7_burn_chip_damage": lambda: _generation_fact_query(
             "In Generation VII, burn deals one-sixteenth of max HP at the end of each turn.",
             ruleset_names=("Sun Moon",),
             anchor_names=("Burn",),
-        )
-
-    if re.fullmatch(
-        r"starting\s+in\s+generation\s+viii,\s+does\s+teleport\s+function\s+as\s+a\s+slow\s+pivot\s+move\s+in\s+trainer\s+battles\??",
-        text,
-        re.IGNORECASE,
-    ):
-        return _generation_fact_query(
+        ),
+        "gen8_teleport_pivot": lambda: _generation_fact_query(
             "Yes. Starting in Generation VIII, Teleport functions as a slow pivot move in trainer battles.",
             ruleset_names=("Sword Shield",),
             anchor_names=("Teleport",),
-        )
-
-    if re.fullmatch(
-        r"in\s+generation\s+ix,\s+does\s+a\s+sleeping\s+pokemon['’]s\s+sleep\s+counter\s+continue\s+to\s+advance\s+while\s+it\s+is\s+switched\s+out\??",
-        text,
-        re.IGNORECASE,
-    ):
-        return _generation_fact_query(
+        ),
+        "gen9_sleep_counter_switched_out": lambda: _generation_fact_query(
             "Yes. In Generation IX, a sleeping Pokemon's sleep counter continues advancing while it is switched out.",
             ruleset_names=("Scarlet Violet",),
             anchor_names=("Sleep Talk",),
-        )
+        ),
+    }
+    compiler = static_compilers.get(intent.kind)
+    return compiler() if compiler else None
 
-    if re.fullmatch(
-        r"name\s+two\s+ways\s+a\s+pokemon\s+with\s+levitate\s+can\s+still\s+be\s+hit\s+by\s+ground-type\s+moves\??",
-        text,
-        re.IGNORECASE,
-    ):
-        return _levitate_bypass_list_query()
 
-    if re.fullmatch(
-        r"what\s+happens\s+when\s+thousand\s+arrows\s+hits\s+a\s+flying-type\s+or\s+levitate\s+target\??",
-        text,
-        re.IGNORECASE,
-    ):
-        return _thousand_arrows_grounding_query()
-
-    if re.fullmatch(
-        r"how\s+effective\s+is\s+freeze-dry\s+against\s+a\s+water/ground\s+pokemon\??",
-        text,
-        re.IGNORECASE,
-    ):
-        return _freeze_dry_water_ground_query()
-
-    if re.fullmatch(
-        r"if\s+the\s+user\s+of\s+wide\s+guard\s+faints\s+later\s+in\s+the\s+turn,\s+does\s+the\s+protection\s+still\s+remain\s+for\s+that\s+turn\??",
-        text,
-        re.IGNORECASE,
-    ):
-        return _wide_guard_persists_query()
-
-    return None
+def deterministic_sparql(question: str) -> str | None:
+    intent = parse_intent(question)
+    if intent is None:
+        return None
+    return compile_intent(intent)
 
 
 def _transformation_patterns() -> str:
