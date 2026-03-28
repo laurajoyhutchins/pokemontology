@@ -1159,6 +1159,10 @@ body:not([data-power-mode="on"]) .qe-results-body {
   flex-wrap: wrap;
 }
 
+.graph-stage-meta {
+  justify-content: space-between;
+}
+
 .graph-control-row {
   flex-wrap: wrap;
 }
@@ -1321,6 +1325,13 @@ body:not([data-power-mode="on"]) .qe-results-body {
 
 :root[data-theme="dark"] .graph-stage-floating {
   background: rgba(21, 38, 33, 0.74);
+}
+
+.graph-stage-floating-zoom {
+  left: auto;
+  right: calc(var(--graph-sidebar-width) + (var(--graph-panel-offset) * 2));
+  z-index: 21;
+  max-width: calc(100vw - var(--graph-sidebar-width) - (var(--graph-panel-offset) * 4));
 }
 
 .graph-results {
@@ -1552,6 +1563,12 @@ body:not([data-power-mode="on"]) .qe-results-body {
     bottom: var(--graph-panel-offset);
     max-width: min(42rem, calc(100vw - (var(--graph-panel-offset) * 2)));
   }
+
+  .graph-stage-floating-zoom {
+    left: auto;
+    right: calc(20rem + (var(--graph-panel-offset) * 2));
+    max-width: calc(100vw - 20rem - (var(--graph-panel-offset) * 4));
+  }
 }
 
 @media (max-width: 640px) {
@@ -1598,6 +1615,13 @@ body:not([data-power-mode="on"]) .qe-results-body {
     right: 0.9rem;
     bottom: calc(42vh + 1.1rem);
     max-width: none;
+  }
+
+  .graph-stage-floating-zoom {
+    left: 0.9rem;
+    right: auto;
+    bottom: calc(42vh + 5.35rem);
+    max-width: calc(100vw - 1.8rem);
   }
 
   .graph-canvas,
