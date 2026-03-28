@@ -23,6 +23,7 @@ const MIN_ZOOM = 0.3;
 const MAX_ZOOM = 2.8;
 const ZOOM_STEP_IN = 1.12;
 const ZOOM_STEP_OUT = 0.88;
+const DEFAULT_NODE_LIMIT = 240;
 
 function escapeHtml(value) {
   return String(value)
@@ -343,7 +344,9 @@ function renderQueryStatus(projected, state) {
   if (!target) return;
   const query = state.searchText.trim();
   if (!query) {
-    target.textContent = `No query text. Showing top-degree overview limited to ${state.nodeLimit} nodes.`;
+    target.textContent = Number.isFinite(state.nodeLimit)
+      ? `No query text. Showing top-degree overview limited to ${state.nodeLimit} nodes.`
+      : "No query text. Showing the full top-degree overview.";
     return;
   }
   const topMatch = projected.queryMatches[0];
@@ -355,6 +358,20 @@ function renderQueryStatus(projected, state) {
   target.textContent = exact
     ? `Exact match: ${topMatch.label}. Rendering a ${state.hopDepth}-hop neighborhood.`
     : `${projected.queryMatches.length} matches for "${query}". Focused on ${topMatch.label}.`;
+}
+
+function syncNodeLimitControls(state) {
+  const input = document.getElementById("graph-node-limit");
+  const maxButton = document.getElementById("graph-node-limit-max");
+  if (input instanceof HTMLInputElement) {
+    input.disabled = !Number.isFinite(state.nodeLimit);
+    if (Number.isFinite(state.nodeLimit)) {
+      input.value = String(state.nodeLimit);
+    }
+  }
+  if (maxButton instanceof HTMLButtonElement) {
+    maxButton.setAttribute("aria-pressed", Number.isFinite(state.nodeLimit) ? "false" : "true");
+  }
 }
 
 function edgeKindBreakdown(nodeId, projected) {
@@ -693,7 +710,14 @@ function wireControls(state, rerender) {
     rerender();
   });
   document.getElementById("graph-node-limit")?.addEventListener("change", (event) => {
-    state.nodeLimit = Number(event.target.value || 240);
+    const next = Number.parseInt(event.target.value, 10);
+    state.nodeLimit = Number.isFinite(next) && next > 0 ? next : DEFAULT_NODE_LIMIT;
+    syncNodeLimitControls(state);
+    rerender();
+  });
+  document.getElementById("graph-node-limit-max")?.addEventListener("click", () => {
+    state.nodeLimit = Number.isFinite(state.nodeLimit) ? Infinity : DEFAULT_NODE_LIMIT;
+    syncNodeLimitControls(state);
     rerender();
   });
   document.getElementById("graph-ruleset")?.addEventListener("change", (event) => {
@@ -734,7 +758,7 @@ export async function createGraphApp() {
     selectedNodeId: "",
     hoverNodeId: "",
     hopDepth: 2,
-    nodeLimit: 240,
+    nodeLimit: DEFAULT_NODE_LIMIT,
     panX: 0,
     panY: 0,
     zoom: 1,
@@ -756,6 +780,7 @@ export async function createGraphApp() {
   if (searchInput instanceof HTMLInputElement) {
     searchInput.value = state.searchText;
   }
+  syncNodeLimitControls(state);
   resetViewport(state);
 
   const rerender = () => {

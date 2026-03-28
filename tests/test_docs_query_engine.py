@@ -132,12 +132,14 @@ def test_graph_page_uses_generated_projection_index() -> None:
     assert 'id="graph-canvas"' in html
     assert 'id="graph-hop-depth"' in html
     assert 'id="graph-node-limit"' in html
+    assert 'id="graph-node-limit-max"' in html
     assert 'id="graph-clear-query"' in html
     assert 'id="graph-reset-query"' in html
     assert 'id="graph-zoom-out"' in html
     assert 'id="graph-zoom-in"' in html
     assert 'id="graph-zoom-reset"' in html
     assert 'id="graph-zoom-level"' in html
+    assert "graph-cap-controls" in html
     assert 'id="graph-query-status"' in html
     assert 'data-graph-preset="Pikachu"' in html
     assert 'id="graph-detail"' in html
@@ -153,6 +155,8 @@ def test_graph_page_uses_generated_projection_index() -> None:
     assert "controls.hidden = false" in app
     assert "reopen.hidden = true" in app
     assert "controls.hidden = collapsed" not in app
+    assert "syncNodeLimitControls" in app
+    assert 'state.nodeLimit = Number.isFinite(state.nodeLimit) ? Infinity : DEFAULT_NODE_LIMIT;' in app
     assert "autoCollapseControls" in app
     assert "updateZoomReadout" in app
     assert "resetViewport" in app
