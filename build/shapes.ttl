@@ -617,11 +617,14 @@ pkmsh:TypingAssignmentShape
     a sh:NodeShape ;
     sh:targetClass pkm:TypingAssignment ;
     sh:property [
-        sh:path pkm:aboutVariant ;
+        sh:path pkm:aboutPokemon ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
-        sh:class pkm:Variant ;
-        sh:message "A TypingAssignment must reference exactly one Variant."
+        sh:or (
+            [ sh:class pkm:Species ]
+            [ sh:class pkm:Variant ]
+        ) ;
+        sh:message "A TypingAssignment must reference exactly one Species or Variant."
     ] ;
     sh:property [
         sh:path pkm:aboutType ;
@@ -645,15 +648,15 @@ pkmsh:TypingAssignmentShape
         sh:message "A TypingAssignment must declare exactly one integer hasTypeSlot value."
     ] ;
     sh:sparql [
-        sh:message "There must be at most one TypingAssignment per variant/ruleset/type-slot." ;
+        sh:message "There must be at most one TypingAssignment per subject/ruleset/type-slot." ;
         sh:select """
             SELECT $this
             WHERE {
-              $this pkm:aboutVariant ?variant ;
+              $this pkm:aboutPokemon ?pokemon ;
                     pkm:hasContext ?ruleset ;
                     pkm:hasTypeSlot ?slot .
               ?other a pkm:TypingAssignment ;
-                     pkm:aboutVariant ?variant ;
+                     pkm:aboutPokemon ?pokemon ;
                      pkm:hasContext ?ruleset ;
                      pkm:hasTypeSlot ?slot .
               FILTER (?other != $this)

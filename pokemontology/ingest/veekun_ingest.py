@@ -212,6 +212,14 @@ def add_variant_links(g: Graph, rows: list[dict[str, str]]) -> None:
         g.add((variant_iri, PKM.belongsToSpecies, species_iri))
 
 
+def mechanics_subject_iri(subject_kind: str, subject_identifier: str) -> URIRef:
+    if subject_kind == "species":
+        return iri_for("Species", subject_identifier)
+    if subject_kind == "variant":
+        return iri_for("Variant", subject_identifier)
+    raise SystemExit(f"unsupported mechanics subject kind: {subject_kind}")
+
+
 def add_optional_int(g: Graph, subject: URIRef, predicate: URIRef, value: str) -> None:
     if value.strip():
         g.add((subject, predicate, Literal(int(value), datatype=XSD.integer)))
@@ -267,7 +275,8 @@ def build_graph_from_csv(source_dir: Path) -> Graph:
                 path,
                 reader.fieldnames,
                 (
-                    "variant_identifier",
+                    "pokemon_kind",
+                    "pokemon_identifier",
                     "type_identifier",
                     "version_group_identifier",
                     "type_slot",
@@ -276,14 +285,14 @@ def build_graph_from_csv(source_dir: Path) -> Graph:
             for row in reader:
                 assignment_iri = iri_for(
                     "TypingAssignment",
-                    f"{row['variant_identifier']}_{row['type_identifier']}_{row['version_group_identifier']}_{row['type_slot']}",
+                    f"{row['pokemon_kind']}_{row['pokemon_identifier']}_{row['type_identifier']}_{row['version_group_identifier']}_{row['type_slot']}",
                 )
                 g.add((assignment_iri, RDF.type, PKM.TypingAssignment))
                 g.add(
                     (
                         assignment_iri,
-                        PKM.aboutVariant,
-                        iri_for("Variant", row["variant_identifier"]),
+                        PKM.aboutPokemon,
+                        mechanics_subject_iri(row["pokemon_kind"], row["pokemon_identifier"]),
                     )
                 )
                 g.add((assignment_iri, PKM.aboutType, iri_for("Type", row["type_identifier"])))
@@ -310,7 +319,8 @@ def build_graph_from_csv(source_dir: Path) -> Graph:
                 path,
                 reader.fieldnames,
                 (
-                    "variant_identifier",
+                    "pokemon_kind",
+                    "pokemon_identifier",
                     "ability_identifier",
                     "version_group_identifier",
                     "is_hidden_ability",
@@ -319,14 +329,14 @@ def build_graph_from_csv(source_dir: Path) -> Graph:
             for row in reader:
                 assignment_iri = iri_for(
                     "AbilityAssignment",
-                    f"{row['variant_identifier']}_{row['ability_identifier']}_{row['version_group_identifier']}",
+                    f"{row['pokemon_kind']}_{row['pokemon_identifier']}_{row['ability_identifier']}_{row['version_group_identifier']}",
                 )
                 g.add((assignment_iri, RDF.type, PKM.AbilityAssignment))
                 g.add(
                     (
                         assignment_iri,
-                        PKM.aboutVariant,
-                        iri_for("Variant", row["variant_identifier"]),
+                        PKM.aboutPokemon,
+                        mechanics_subject_iri(row["pokemon_kind"], row["pokemon_identifier"]),
                     )
                 )
                 g.add(
@@ -362,7 +372,8 @@ def build_graph_from_csv(source_dir: Path) -> Graph:
                 path,
                 reader.fieldnames,
                 (
-                    "variant_identifier",
+                    "pokemon_kind",
+                    "pokemon_identifier",
                     "stat_identifier",
                     "version_group_identifier",
                     "value",
@@ -371,14 +382,14 @@ def build_graph_from_csv(source_dir: Path) -> Graph:
             for row in reader:
                 assignment_iri = iri_for(
                     "StatAssignment",
-                    f"{row['variant_identifier']}_{row['stat_identifier']}_{row['version_group_identifier']}",
+                    f"{row['pokemon_kind']}_{row['pokemon_identifier']}_{row['stat_identifier']}_{row['version_group_identifier']}",
                 )
                 g.add((assignment_iri, RDF.type, PKM.StatAssignment))
                 g.add(
                     (
                         assignment_iri,
-                        PKM.aboutVariant,
-                        iri_for("Variant", row["variant_identifier"]),
+                        PKM.aboutPokemon,
+                        mechanics_subject_iri(row["pokemon_kind"], row["pokemon_identifier"]),
                     )
                 )
                 g.add((assignment_iri, PKM.aboutStat, iri_for("Stat", row["stat_identifier"])))
@@ -448,7 +459,8 @@ def build_graph_from_csv(source_dir: Path) -> Graph:
                 path,
                 reader.fieldnames,
                 (
-                    "variant_identifier",
+                    "pokemon_kind",
+                    "pokemon_identifier",
                     "move_identifier",
                     "version_group_identifier",
                     "is_learnable",
@@ -457,14 +469,14 @@ def build_graph_from_csv(source_dir: Path) -> Graph:
             for row in reader:
                 assignment_iri = iri_for(
                     "MoveLearnRecord",
-                    f"{row['variant_identifier']}_{row['move_identifier']}_{row['version_group_identifier']}",
+                    f"{row['pokemon_kind']}_{row['pokemon_identifier']}_{row['move_identifier']}_{row['version_group_identifier']}",
                 )
                 g.add((assignment_iri, RDF.type, PKM.MoveLearnRecord))
                 g.add(
                     (
                         assignment_iri,
-                        PKM.aboutVariant,
-                        iri_for("Variant", row["variant_identifier"]),
+                        PKM.aboutPokemon,
+                        mechanics_subject_iri(row["pokemon_kind"], row["pokemon_identifier"]),
                     )
                 )
                 g.add(
@@ -748,14 +760,15 @@ def normalize_veekun_csv(
 
     variant_rows: list[dict[str, str]] = []
     for row in pokemon_rows:
+        if row["is_default"] == "1":
+            continue
         species = species_by_id[row["species_id"]]
-        default_name = species_names.get(species["id"], titleize_name(species["identifier"]))
         variant_rows.append(
             {
                 "identifier": row["identifier"],
                 "name": form_name_by_pokemon_id.get(
                     row["id"],
-                    default_name if row["is_default"] == "1" else titleize_name(row["identifier"]),
+                    titleize_name(row["identifier"]),
                 ),
                 "species_identifier": species["identifier"],
             }
@@ -845,9 +858,15 @@ def normalize_veekun_csv(
         species = species_by_id[pokemon_by_id[pokemon_id]["species_id"]]
         return version_groups_from_generation(species["generation_id"])
 
+    def mechanics_subject_for_pokemon(pokemon: dict[str, str]) -> tuple[str, str]:
+        if pokemon["is_default"] == "1":
+            species = species_by_id[pokemon["species_id"]]
+            return ("species", species["identifier"])
+        return ("variant", pokemon["identifier"])
+
     handle, writer = open_csv_writer(
         source_dir / "typing_assignments.csv",
-        ("variant_identifier", "type_identifier", "version_group_identifier", "type_slot"),
+        ("pokemon_kind", "pokemon_identifier", "type_identifier", "version_group_identifier", "type_slot"),
     )
     try:
         with (raw_dir / "pokemon_types.csv").open(encoding="utf-8", newline="") as handle_in:
@@ -859,11 +878,13 @@ def normalize_veekun_csv(
             )
             for row in reader:
                 pokemon = pokemon_by_id[row["pokemon_id"]]
+                pokemon_kind, pokemon_identifier = mechanics_subject_for_pokemon(pokemon)
                 pokemon_version_groups = introduced_version_groups_for_pokemon(row["pokemon_id"])
                 for version_group in pokemon_version_groups:
                     writer.writerow(
                         {
-                            "variant_identifier": pokemon["identifier"],
+                            "pokemon_kind": pokemon_kind,
+                            "pokemon_identifier": pokemon_identifier,
                             "type_identifier": types_by_id[row["type_id"]]["identifier"],
                             "version_group_identifier": version_group["identifier"],
                             "type_slot": row["slot"],
@@ -875,7 +896,8 @@ def normalize_veekun_csv(
     handle, writer = open_csv_writer(
         source_dir / "ability_assignments.csv",
         (
-            "variant_identifier",
+            "pokemon_kind",
+            "pokemon_identifier",
             "ability_identifier",
             "version_group_identifier",
             "is_hidden_ability",
@@ -891,11 +913,13 @@ def normalize_veekun_csv(
             )
             for row in reader:
                 pokemon = pokemon_by_id[row["pokemon_id"]]
+                pokemon_kind, pokemon_identifier = mechanics_subject_for_pokemon(pokemon)
                 pokemon_version_groups = introduced_version_groups_for_pokemon(row["pokemon_id"])
                 for version_group in pokemon_version_groups:
                     writer.writerow(
                         {
-                            "variant_identifier": pokemon["identifier"],
+                            "pokemon_kind": pokemon_kind,
+                            "pokemon_identifier": pokemon_identifier,
                             "ability_identifier": abilities_by_id[row["ability_id"]]["identifier"],
                             "version_group_identifier": version_group["identifier"],
                             "is_hidden_ability": "true" if row["is_hidden"] == "1" else "false",
@@ -906,7 +930,7 @@ def normalize_veekun_csv(
 
     handle, writer = open_csv_writer(
         source_dir / "stat_assignments.csv",
-        ("variant_identifier", "stat_identifier", "version_group_identifier", "value"),
+        ("pokemon_kind", "pokemon_identifier", "stat_identifier", "version_group_identifier", "value"),
     )
     try:
         with (raw_dir / "pokemon_stats.csv").open(encoding="utf-8", newline="") as handle_in:
@@ -918,11 +942,13 @@ def normalize_veekun_csv(
             )
             for row in reader:
                 pokemon = pokemon_by_id[row["pokemon_id"]]
+                pokemon_kind, pokemon_identifier = mechanics_subject_for_pokemon(pokemon)
                 pokemon_version_groups = introduced_version_groups_for_pokemon(row["pokemon_id"])
                 for version_group in pokemon_version_groups:
                     writer.writerow(
                         {
-                            "variant_identifier": pokemon["identifier"],
+                            "pokemon_kind": pokemon_kind,
+                            "pokemon_identifier": pokemon_identifier,
                             "stat_identifier": stats_by_id[row["stat_id"]]["identifier"],
                             "version_group_identifier": version_group["identifier"],
                             "value": row["base_stat"],
@@ -1006,7 +1032,8 @@ def normalize_veekun_csv(
         handle, writer = open_csv_writer(
             source_dir / "move_learn_records.csv",
             (
-                "variant_identifier",
+                "pokemon_kind",
+                "pokemon_identifier",
                 "move_identifier",
                 "version_group_identifier",
                 "is_learnable",
@@ -1028,9 +1055,12 @@ def normalize_veekun_csv(
                     if key in seen:
                         continue
                     seen.add(key)
+                    pokemon = pokemon_by_id[row["pokemon_id"]]
+                    pokemon_kind, pokemon_identifier = mechanics_subject_for_pokemon(pokemon)
                     writer.writerow(
                         {
-                            "variant_identifier": pokemon_by_id[row["pokemon_id"]]["identifier"],
+                            "pokemon_kind": pokemon_kind,
+                            "pokemon_identifier": pokemon_identifier,
                             "move_identifier": move_identifier_by_id[row["move_id"]],
                             "version_group_identifier": version_group_identifier_by_id[row["version_group_id"]],
                             "is_learnable": "true",

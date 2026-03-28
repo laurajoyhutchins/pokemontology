@@ -380,7 +380,7 @@ def _build_entity_index() -> dict[str, object]:
             if context_curie is None:
                 continue
             for predicate in (
-                "aboutVariant",
+                "aboutPokemon",
                 "aboutMove",
                 "aboutAbility",
                 "aboutItem",
@@ -535,7 +535,7 @@ def _build_graph_index() -> dict[str, object]:
             context_curie = curie_object(block, "hasContext")
             if context_curie:
                 for predicate in (
-                    "aboutVariant",
+                    "aboutPokemon",
                     "aboutMove",
                     "aboutAbility",
                     "aboutItem",
@@ -546,7 +546,7 @@ def _build_graph_index() -> dict[str, object]:
                         contexts_by_curie.setdefault(target_curie, set()).add(context_curie)
                         ensure_edge(target_curie, context_curie, "availableIn", context_curie)
 
-            variant_curie = curie_object(block, "aboutVariant")
+            pokemon_curie = curie_object(block, "aboutPokemon")
             type_curie = curie_object(block, "aboutType")
             ability_curie = curie_object(block, "aboutAbility")
             move_curie = curie_object(block, "learnableMove")
@@ -554,12 +554,12 @@ def _build_graph_index() -> dict[str, object]:
             move_type_curie = curie_object(block, "hasMoveType")
             learnable_flag = re.search(r"pkm:isLearnableInRuleset\s+true\b", block)
 
-            if variant_curie and type_curie:
-                ensure_edge(variant_curie, type_curie, "hasType", context_curie)
-            if variant_curie and ability_curie:
-                ensure_edge(variant_curie, ability_curie, "hasAbility", context_curie)
-            if variant_curie and move_curie and learnable_flag:
-                ensure_edge(variant_curie, move_curie, "learnsMove", context_curie)
+            if pokemon_curie and type_curie:
+                ensure_edge(pokemon_curie, type_curie, "hasType", context_curie)
+            if pokemon_curie and ability_curie:
+                ensure_edge(pokemon_curie, ability_curie, "hasAbility", context_curie)
+            if pokemon_curie and move_curie and learnable_flag:
+                ensure_edge(pokemon_curie, move_curie, "learnsMove", context_curie)
             if about_move_curie and move_type_curie:
                 ensure_edge(about_move_curie, move_type_curie, "hasMoveType", context_curie)
 
@@ -701,7 +701,7 @@ def _schema_pack(
             "label": "TypingAssignment pattern",
             "iri": "",
             "summary": "Variant typing is modeled as a contextual fact.",
-            "snippet": "TypingAssignment aboutVariant ?variant ; hasContext pkm:Ruleset_PokeAPI_Default ; aboutType ?type .",
+            "snippet": "TypingAssignment aboutPokemon ?pokemon ; hasContext pkm:Ruleset_PokeAPI_Default ; aboutType ?type .",
         },
         {
             "kind": "pattern",
@@ -727,16 +727,14 @@ def _schema_pack(
             "kind": "example",
             "label": "type ask query",
             "question": "Is Charizard a Fire type?",
-            "summary": "ASK pattern for a species whose variant has a typing assignment matching Fire.",
-            "snippet": "Match Species, then Variant, then TypingAssignment aboutVariant/aboutType.",
+            "summary": "ASK pattern for a species with a direct typing assignment matching Fire.",
+            "snippet": "Match Species, then TypingAssignment aboutPokemon/aboutType.",
             "query": """PREFIX pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#>
 
 ASK {
   ?species pkm:hasName "Charizard" .
-  ?variant a pkm:Variant ;
-           pkm:belongsToSpecies ?species .
   ?assignment a pkm:TypingAssignment ;
-              pkm:aboutVariant ?variant ;
+              pkm:aboutPokemon ?species ;
               pkm:aboutType ?type .
   ?type pkm:hasName "Fire" .
 }""",

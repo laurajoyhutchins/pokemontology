@@ -41,7 +41,7 @@ def test_normalize_veekun_csv_emits_expected_export(tmp_path) -> None:
 
     graph = veekun_ingest.build_graph_from_csv(source_dir)
     assert (PKM.Species_froakie, RDF.type, PKM.Species) in graph
-    assert (PKM.Variant_froakie, PKM.belongsToSpecies, PKM.Species_froakie) in graph
+    assert not any(graph.triples((PKM.Variant_froakie, PKM.belongsToSpecies, PKM.Species_froakie)))
     assert (PKM.Ruleset_x_y, RDF.type, PKM.Ruleset) in graph
     assert any(graph.triples((PKM.MovePropertyAssignment_bubble_x_y, PKM.hasPP, None)))
     assert any(
@@ -64,7 +64,8 @@ def test_build_graph_from_csv_emits_contextual_mechanics_assignments(tmp_path) -
 
     assert (PKM.DatasetArtifact_Veekun, RDF.type, PKM.EvidenceArtifact) in graph
     assert (PKM.Species_froakie, RDF.type, PKM.Species) in graph
-    assert (PKM.Variant_froakie, PKM.belongsToSpecies, PKM.Species_froakie) in graph
+    assert not any(graph.triples((PKM.Variant_froakie, PKM.belongsToSpecies, PKM.Species_froakie)))
+    assert any(graph.triples((None, PKM.aboutPokemon, PKM.Species_froakie)))
     assert (PKM.Ruleset_x_y, RDF.type, PKM.Ruleset) in graph
     assert any(graph.triples((None, RDF.type, PKM.TypingAssignment)))
     assert any(graph.triples((None, RDF.type, PKM.AbilityAssignment)))

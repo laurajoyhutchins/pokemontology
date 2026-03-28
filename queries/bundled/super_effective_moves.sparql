@@ -45,9 +45,8 @@ WHERE {
               pkm:hasTransformationState/pkm:hasTeraType [] .
     }
     ?opponent pkm:representsSpecies ?species .
-    ?variant pkm:belongsToSpecies ?species .
     ?ta a pkm:TypingAssignment ;
-        pkm:aboutVariant ?variant ;
+        pkm:aboutPokemon ?species ;
         pkm:hasContext pkm:Ruleset_PokeAPI_Default ;
         pkm:aboutType ?effectiveType .
   }

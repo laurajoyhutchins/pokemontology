@@ -1,2 +1,2 @@
-variant_identifier,move_identifier,version_group_identifier,is_learnable
-froakie,bubble,x_y,true
+pokemon_kind,pokemon_identifier,move_identifier,version_group_identifier,is_learnable
+species,froakie,bubble,x_y,true

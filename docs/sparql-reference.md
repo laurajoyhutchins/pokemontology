@@ -23,7 +23,7 @@ These are the recurring graph shapes the codebase expects queries to use.
 Variant typing is modeled as a contextual fact.
 
 ```sparql
-TypingAssignment aboutVariant ?variant ; hasContext pkm:Ruleset_PokeAPI_Default ; aboutType ?type .
+TypingAssignment aboutPokemon ?pokemon ; hasContext pkm:Ruleset_PokeAPI_Default ; aboutType ?type .
 ```
 
 ### Type effectiveness pattern
@@ -90,9 +90,8 @@ WHERE {
               pkm:hasTransformationState/pkm:hasTeraType [] .
     }
     ?opponent pkm:representsSpecies ?species .
-    ?variant pkm:belongsToSpecies ?species .
     ?ta a pkm:TypingAssignment ;
-        pkm:aboutVariant ?variant ;
+        pkm:aboutPokemon ?species ;
         pkm:hasContext pkm:Ruleset_PokeAPI_Default ;
         pkm:aboutType ?effectiveType .
   }
@@ -111,17 +110,15 @@ ORDER BY DESC(?factor) ?opponentLabel ?myMoveLabel
 
 ### type ask query
 
-ASK pattern for a species whose variant has a typing assignment matching Fire.
+ASK pattern for a species with a direct typing assignment matching Fire.
 
 ```sparql
 PREFIX pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#>
 
 ASK {
   ?species pkm:hasName "Charizard" .
-  ?variant a pkm:Variant ;
-           pkm:belongsToSpecies ?species .
   ?assignment a pkm:TypingAssignment ;
-              pkm:aboutVariant ?variant ;
+              pkm:aboutPokemon ?species ;
               pkm:aboutType ?type .
   ?type pkm:hasName "Fire" .
 }

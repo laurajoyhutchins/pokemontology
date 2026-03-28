@@ -441,14 +441,14 @@ def test_typing_assignment_rejects_duplicate_type_slots_per_variant_and_ruleset(
 
             pkm:Typing1
                 a pkm:TypingAssignment ;
-                pkm:aboutVariant pkm:Var1 ;
+                pkm:aboutPokemon pkm:Var1 ;
                 pkm:aboutType pkm:Fire ;
                 pkm:hasContext pkm:Rule1 ;
                 pkm:hasTypeSlot 1 .
 
             pkm:Typing2
                 a pkm:TypingAssignment ;
-                pkm:aboutVariant pkm:Var1 ;
+                pkm:aboutPokemon pkm:Var1 ;
                 pkm:aboutType pkm:Water ;
                 pkm:hasContext pkm:Rule1 ;
                 pkm:hasTypeSlot 1 .
@@ -457,7 +457,7 @@ def test_typing_assignment_rejects_duplicate_type_slots_per_variant_and_ruleset(
         inference="none",
     )
     assert not conforms
-    assert "per variant/ruleset/type-slot" in results_text
+    assert "per subject/ruleset/type-slot" in results_text
 
 
 def test_shacl_rejects_undeclared_pkm_predicates() -> None:

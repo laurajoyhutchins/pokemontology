@@ -257,15 +257,30 @@ def add_version_group_context(g: Graph, payload: dict) -> URIRef:
     return ruleset_iri
 
 
-def default_variant_name(
+def is_default_pokemon(
+    pokemon_payload: dict, species_payloads: dict[str, dict]
+) -> bool:
+    pokemon_name = payload_name(pokemon_payload)
+    species_name = pokemon_payload.get("species", {}).get("name")
+    species_payload = species_payloads.get(species_name or "")
+    if species_payload:
+        for variety in species_payload.get("varieties", []):
+            pokemon_entry = variety.get("pokemon", {})
+            if pokemon_entry.get("name") == pokemon_name:
+                return bool(variety.get("is_default"))
+    return pokemon_name == species_name
+
+
+def variant_display_name(
     pokemon_payload: dict, species_payloads: dict[str, dict]
 ) -> str:
     pokemon_name = payload_name(pokemon_payload)
     species_name = pokemon_payload.get("species", {}).get("name")
     species_payload = species_payloads.get(species_name or "")
     species_display = english_name(species_payload) if species_payload else None
-    if "-" not in pokemon_name and species_display:
-        return f"{species_display}-Default"
+    if species_display and pokemon_name.startswith(f"{species_name}-"):
+        suffix = pokemon_name.removeprefix(f"{species_name}-")
+        return f"{titleize_name(suffix)} {species_display}"
     return titleize_name(pokemon_name)
 
 
@@ -407,34 +422,36 @@ def build_graph_from_raw(raw_dir: Path) -> Graph:
     learn_records_seen: set[tuple[str, str, str]] = set()
     for payload in payloads["pokemon"]:
         pokemon_name = payload_name(payload)
-        variant_iri = iri_for("Variant", pokemon_name)
         species_name = payload.get("species", {}).get("name")
         if not species_name:
             raise SystemExit(f"pokemon payload missing species link: {pokemon_name}")
         species_iri = iri_for("Species", species_name)
-
-        g.add((variant_iri, RDF.type, PKM.Variant))
-        g.add((variant_iri, PKM.belongsToSpecies, species_iri))
-        g.add(
-            (
-                variant_iri,
-                PKM.hasName,
-                Literal(default_variant_name(payload, species_by_name)),
+        mechanics_subject_iri = species_iri
+        if not is_default_pokemon(payload, species_by_name):
+            variant_iri = iri_for("Variant", pokemon_name)
+            mechanics_subject_iri = variant_iri
+            g.add((variant_iri, RDF.type, PKM.Variant))
+            g.add((variant_iri, PKM.belongsToSpecies, species_iri))
+            g.add(
+                (
+                    variant_iri,
+                    PKM.hasName,
+                    Literal(variant_display_name(payload, species_by_name)),
+                )
             )
-        )
-        g.add(
-            (
-                variant_iri,
-                PKM.hasIdentifier,
-                Literal(f"pokeapi:pokemon:{payload['id']}"),
+            g.add(
+                (
+                    variant_iri,
+                    PKM.hasIdentifier,
+                    Literal(f"pokeapi:pokemon:{payload['id']}"),
+                )
             )
-        )
         add_external_reference(
             g,
             source_slug="PokeAPI",
             resource="pokemon",
             identifier=pokemon_name,
-            entity_iri=variant_iri,
+            entity_iri=mechanics_subject_iri,
             artifact_iri=PKM.DatasetArtifact_PokeAPI,
             external_iri=pokeapi_resource_url("pokemon", payload),
         )
@@ -451,7 +468,7 @@ def build_graph_from_raw(raw_dir: Path) -> Graph:
                 f"{pokemon_name}_{type_name}_current",
             )
             g.add((typing_assignment_iri, RDF.type, PKM.TypingAssignment))
-            g.add((typing_assignment_iri, PKM.aboutVariant, variant_iri))
+            g.add((typing_assignment_iri, PKM.aboutPokemon, mechanics_subject_iri))
             g.add((typing_assignment_iri, PKM.aboutType, type_iri))
             g.add((typing_assignment_iri, PKM.hasContext, default_ruleset_iri))
             g.add(
@@ -474,7 +491,7 @@ def build_graph_from_raw(raw_dir: Path) -> Graph:
                 f"{pokemon_name}_{ability_name}_current",
             )
             g.add((assignment_iri, RDF.type, PKM.AbilityAssignment))
-            g.add((assignment_iri, PKM.aboutVariant, variant_iri))
+            g.add((assignment_iri, PKM.aboutPokemon, mechanics_subject_iri))
             g.add((assignment_iri, PKM.aboutAbility, ability_iri))
             g.add((assignment_iri, PKM.hasContext, default_ruleset_iri))
             g.add((assignment_iri, PKM.isHiddenAbility, boolean_literal(is_hidden)))
@@ -491,7 +508,7 @@ def build_graph_from_raw(raw_dir: Path) -> Graph:
                 f"{pokemon_name}_{stat_name}_current",
             )
             g.add((assignment_iri, RDF.type, PKM.StatAssignment))
-            g.add((assignment_iri, PKM.aboutVariant, variant_iri))
+            g.add((assignment_iri, PKM.aboutPokemon, mechanics_subject_iri))
             g.add((assignment_iri, PKM.aboutStat, stat_iri))
             g.add((assignment_iri, PKM.hasContext, default_ruleset_iri))
             g.add(
@@ -521,7 +538,7 @@ def build_graph_from_raw(raw_dir: Path) -> Graph:
                     f"{pokemon_name}_{move_name}_{version_group_name}",
                 )
                 g.add((assignment_iri, RDF.type, PKM.MoveLearnRecord))
-                g.add((assignment_iri, PKM.aboutVariant, variant_iri))
+                g.add((assignment_iri, PKM.aboutPokemon, mechanics_subject_iri))
                 g.add((assignment_iri, PKM.learnableMove, iri_for("Move", move_name)))
                 g.add(
                     (

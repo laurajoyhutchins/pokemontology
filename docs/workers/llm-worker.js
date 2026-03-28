@@ -177,10 +177,8 @@ SELECT ?moveTypeName (SUM(?factorScore) AS ?netScore)
 WHERE {
   ?species a pkm:Species ;
            pkm:hasName "${species}" .
-  ?variant a pkm:Variant ;
-           pkm:belongsToSpecies ?species .
   ?assignment a pkm:TypingAssignment ;
-              pkm:aboutVariant ?variant ;
+              pkm:aboutPokemon ?species ;
               pkm:aboutType ?defenderType .
   ?moveType a pkm:Type ;
             pkm:hasName ?moveTypeName .
@@ -229,10 +227,8 @@ ORDER BY DESC(?netScore) ?moveTypeName`,
 ASK {
   ?species a pkm:Species ;
            pkm:hasName "${species}" .
-  ?variant a pkm:Variant ;
-           pkm:belongsToSpecies ?species .
   ?assignment a pkm:TypingAssignment ;
-              pkm:aboutVariant ?variant ;
+              pkm:aboutPokemon ?species ;
               pkm:aboutType ?type .
   ?type pkm:hasName "${typeName}" .
 }`,

@@ -47,13 +47,9 @@ pkm:MovePropertyAssignment_ember
     pkm:hasContext pkm:Ruleset_PokeAPI_Default ;
     pkm:hasMoveType pkm:Type_fire .
 
-pkm:Variant_bulbasaur
-    a pkm:Variant ;
-    pkm:belongsToSpecies pkm:Species_bulbasaur .
-
 pkm:TypingAssignment_bulbasaur_grass
     a pkm:TypingAssignment ;
-    pkm:aboutVariant pkm:Variant_bulbasaur ;
+    pkm:aboutPokemon pkm:Species_bulbasaur ;
     pkm:hasContext pkm:Ruleset_PokeAPI_Default ;
     pkm:aboutType pkm:Type_grass .
 
@@ -120,14 +116,11 @@ def write_charizard_fire_source(path: Path) -> None:
 pkm:Species_charizard a pkm:Species ;
     pkm:hasName "Charizard" .
 
-pkm:Variant_charizard a pkm:Variant ;
-    pkm:belongsToSpecies pkm:Species_charizard .
-
 pkm:Type_fire a pkm:Type ;
     pkm:hasName "Fire" .
 
 pkm:TypingAssignment_charizard_fire a pkm:TypingAssignment ;
-    pkm:aboutVariant pkm:Variant_charizard ;
+    pkm:aboutPokemon pkm:Species_charizard ;
     pkm:aboutType pkm:Type_fire .
 """.strip()
         + "\n",

@@ -114,7 +114,7 @@ def test_pokedex_page_uses_worker_backed_graph_browser() -> None:
     assert "setupThemeToggle" in runtime
     assert "pkm:TypingAssignment" in script
     assert "pkm:MoveLearnRecord" in script
-    assert "STRENDS(LCASE(STR(?variantName)), \"-default\")" in script
+    assert "pkm:aboutPokemon ?species" in script
 
 
 def test_graph_page_uses_generated_projection_index() -> None:

@@ -19,12 +19,8 @@ REPLAY_JSON = (
 LOOKUP_TTL = """@prefix pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#> .
 
 pkm:Species_gengar a pkm:Species ;
+    pkm:hasIdentifier "pokeapi:species:94" ;
     pkm:hasName "Gengar" .
-
-pkm:Variant_gengar a pkm:Variant ;
-    pkm:belongsToSpecies pkm:Species_gengar ;
-    pkm:hasIdentifier "pokeapi:pokemon:94" ;
-    pkm:hasName "Gengar-Default" .
 
 pkm:Ruleset_PokeAPI_Default a pkm:Ruleset ;
     pkm:hasName "PokeAPI Default" .
@@ -37,14 +33,14 @@ pkm:Ability_cursed_body a pkm:Ability ;
 
 pkm:AbilityAssignment_gengar_cursed_body_current a pkm:AbilityAssignment ;
     pkm:aboutAbility pkm:Ability_cursed_body ;
-    pkm:aboutVariant pkm:Variant_gengar ;
+    pkm:aboutPokemon pkm:Species_gengar ;
     pkm:hasContext pkm:Ruleset_PokeAPI_Default .
 
 pkm:Move_hex a pkm:Move ;
     pkm:hasName "Hex" .
 
 pkm:MoveLearnRecord_gengar_hex_scarlet_violet a pkm:MoveLearnRecord ;
-    pkm:aboutVariant pkm:Variant_gengar ;
+    pkm:aboutPokemon pkm:Species_gengar ;
     pkm:learnableMove pkm:Move_hex ;
     pkm:hasContext pkm:Ruleset_scarlet_violet ;
     pkm:isLearnableInRuleset true .
@@ -52,22 +48,8 @@ pkm:MoveLearnRecord_gengar_hex_scarlet_violet a pkm:MoveLearnRecord ;
 
 LOOKUP_INDEX = {
     "source": "build/mechanics.ttl",
-    "entity_count": 2,
+    "entity_count": 1,
     "entities": [
-        {
-            "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#Variant_gengar",
-            "curie": "pkm:Variant_gengar",
-            "type_iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#Variant",
-            "type_curie": "pkm:Variant",
-            "type_name": "Variant",
-            "labels": ["Gengar-Default"],
-            "identifiers": ["pokeapi:pokemon:94"],
-            "aliases": ["gengar", "gengar default", "variant gengar"],
-            "contexts": [
-                {"iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#Ruleset_PokeAPI_Default", "curie": "pkm:Ruleset_PokeAPI_Default", "label": "PokeAPI Default"},
-                {"iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#Ruleset_scarlet_violet", "curie": "pkm:Ruleset_scarlet_violet", "label": "Scarlet Violet"},
-            ],
-        },
         {
             "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#Species_gengar",
             "curie": "pkm:Species_gengar",
@@ -75,10 +57,11 @@ LOOKUP_INDEX = {
             "type_curie": "pkm:Species",
             "type_name": "Species",
             "labels": ["Gengar"],
-            "identifiers": [],
+            "identifiers": ["pokeapi:species:94"],
             "aliases": ["gengar", "species gengar"],
             "contexts": [
                 {"iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#Ruleset_PokeAPI_Default", "curie": "pkm:Ruleset_PokeAPI_Default", "label": "PokeAPI Default"},
+                {"iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#Ruleset_scarlet_violet", "curie": "pkm:Ruleset_scarlet_violet", "label": "Scarlet Violet"},
             ],
         },
     ],
@@ -269,7 +252,7 @@ def test_list_properties_outputs_known_terms(capsys) -> None:
     assert exit_code == 0
 
     output = capsys.readouterr().out.splitlines()
-    assert "pkm:aboutVariant" in output
+    assert "pkm:aboutPokemon" in output
     assert "pkm:hasDamageFactor" in output
 
 
@@ -306,7 +289,7 @@ def test_rulesets_uses_warm_start_index(tmp_path, capsys, monkeypatch: object) -
     assert "pkm:Ruleset_scarlet_violet\tScarlet Violet" in output
 
 
-def test_lookup_prefers_variant_and_lists_contexts(tmp_path, capsys) -> None:
+def test_lookup_prefers_species_and_lists_contexts(tmp_path, capsys) -> None:
     data_path = tmp_path / "lookup.ttl"
     data_path.write_text(LOOKUP_TTL, encoding="utf-8")
 
@@ -314,13 +297,12 @@ def test_lookup_prefers_variant_and_lists_contexts(tmp_path, capsys) -> None:
 
     assert exit_code == 0
     output = capsys.readouterr().out
-    assert "Canonical IRI: pkm:Variant_gengar" in output
-    assert "Entity Type: pkm:Variant" in output
-    assert "Identifier: pokeapi:pokemon:94" in output
+    assert "Canonical IRI: pkm:Species_gengar" in output
+    assert "Entity Type: pkm:Species" in output
+    assert "Identifier: pokeapi:species:94" in output
     assert "- pkm:Ruleset_PokeAPI_Default (PokeAPI Default)" in output
     assert "- pkm:Ruleset_scarlet_violet (Scarlet Violet)" in output
-    assert "Other matches:" in output
-    assert "pkm:Species_gengar [pkm:Species]" in output
+    assert "Other matches:" not in output
 
 
 def test_lookup_uses_warm_start_index(tmp_path, capsys, monkeypatch: object) -> None:
@@ -340,7 +322,7 @@ def test_lookup_uses_warm_start_index(tmp_path, capsys, monkeypatch: object) -> 
 
     assert exit_code == 0
     output = capsys.readouterr().out
-    assert "Canonical IRI: pkm:Variant_gengar" in output
+    assert "Canonical IRI: pkm:Species_gengar" in output
     assert "- pkm:Ruleset_scarlet_violet (Scarlet Violet)" in output
 
 

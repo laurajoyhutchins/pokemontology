@@ -47,15 +47,14 @@ def test_build_graph_from_raw_emits_expected_ontology_nodes(tmp_path) -> None:
     graph = pokeapi_ingest.build_graph_from_raw(raw_dir)
 
     species = PKM.Species_froakie
-    variant = PKM.Variant_froakie
     move_record = PKM.MoveLearnRecord_froakie_bubble_x_y
 
     assert (species, RDF.type, PKM.Species) in graph
-    assert (variant, RDF.type, PKM.Variant) in graph
-    assert (variant, PKM.belongsToSpecies, species) in graph
+    assert not any(graph.triples((PKM.Variant_froakie, RDF.type, PKM.Variant)))
     assert (PKM.Ruleset_x_y, RDF.type, PKM.Ruleset) in graph
     assert (move_record, RDF.type, PKM.MoveLearnRecord) in graph
     assert (move_record, PKM.hasContext, PKM.Ruleset_x_y) in graph
+    assert (move_record, PKM.aboutPokemon, species) in graph
     assert (PKM.DatasetArtifact_PokeAPI, RDF.type, PKM.EvidenceArtifact) in graph
     assert (
         PKM.Ref_PokeAPI_pokemon_species_froakie,
@@ -66,6 +65,11 @@ def test_build_graph_from_raw_emits_expected_ontology_nodes(tmp_path) -> None:
         PKM.Ref_PokeAPI_move_bubble,
         PKM.describedByArtifact,
         PKM.DatasetArtifact_PokeAPI,
+    ) in graph
+    assert (
+        PKM.Ref_PokeAPI_pokemon_froakie,
+        PKM.refersToEntity,
+        species,
     ) in graph
 
 

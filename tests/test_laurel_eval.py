@@ -87,10 +87,8 @@ def test_evaluate_suite_pipeline_mode_scores_answer(
 ASK {
   ?species a pkm:Species ;
            pkm:hasName "Charizard" .
-  ?variant a pkm:Variant ;
-           pkm:belongsToSpecies ?species .
   ?assignment a pkm:TypingAssignment ;
-              pkm:aboutVariant ?variant ;
+              pkm:aboutPokemon ?species ;
               pkm:aboutType ?type .
   ?type pkm:hasName "Fire" .
 }""",
@@ -135,10 +133,8 @@ def test_evaluate_suite_can_save_detailed_report(
 ASK {
   ?species a pkm:Species ;
            pkm:hasName "Charizard" .
-  ?variant a pkm:Variant ;
-           pkm:belongsToSpecies ?species .
   ?assignment a pkm:TypingAssignment ;
-              pkm:aboutVariant ?variant ;
+              pkm:aboutPokemon ?species ;
               pkm:aboutType ?type .
   ?type pkm:hasName "Fire" .
 }""",

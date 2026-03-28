@@ -236,10 +236,8 @@ def _species_type_ask(species: str, type_name: str) -> str:
 ASK {{
   ?species a pkm:Species ;
            pkm:hasName "{_escape_literal(species)}" .
-  ?variant a pkm:Variant ;
-           pkm:belongsToSpecies ?species .
   ?assignment a pkm:TypingAssignment ;
-              pkm:aboutVariant ?variant ;
+              pkm:aboutPokemon ?species ;
               pkm:aboutType ?type ;
               pkm:hasContext pkm:Ruleset_PokeAPI_Default .
   ?type pkm:hasName "{_escape_literal(type_name)}" .
@@ -253,10 +251,8 @@ SELECT ?typeName
 WHERE {{
   ?species a pkm:Species ;
            pkm:hasName "{_escape_literal(species)}" .
-  ?variant a pkm:Variant ;
-           pkm:belongsToSpecies ?species .
   ?assignment a pkm:TypingAssignment ;
-              pkm:aboutVariant ?variant ;
+              pkm:aboutPokemon ?species ;
               pkm:aboutType ?type ;
               pkm:hasContext pkm:Ruleset_PokeAPI_Default .
   ?type pkm:hasName ?typeName .
@@ -272,10 +268,8 @@ SELECT ?moveTypeName
 WHERE {{
   ?species a pkm:Species ;
            pkm:hasName "{_escape_literal(species)}" .
-  ?variant a pkm:Variant ;
-           pkm:belongsToSpecies ?species .
   ?assignment a pkm:TypingAssignment ;
-              pkm:aboutVariant ?variant ;
+              pkm:aboutPokemon ?species ;
               pkm:aboutType ?defenderType ;
               pkm:hasContext pkm:Ruleset_PokeAPI_Default .
   ?moveType a pkm:Type ;
@@ -777,8 +771,7 @@ def _transformation_patterns() -> str:
         "   PREFIX pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#>\n"
         "   ASK {\n"
         '     ?species a pkm:Species ; pkm:hasName "Charizard" .\n'
-        "     ?variant a pkm:Variant ; pkm:belongsToSpecies ?species .\n"
-        "     ?assignment a pkm:TypingAssignment ; pkm:aboutVariant ?variant ; pkm:aboutType ?type .\n"
+        "     ?assignment a pkm:TypingAssignment ; pkm:aboutPokemon ?species ; pkm:aboutType ?type .\n"
         '     ?type pkm:hasName "Fire" .\n'
         "   }\n"
         "2. Species matchup questions such as 'Which move types are super effective against Charizard?' should become a bounded SELECT query.\n"
@@ -788,8 +781,7 @@ def _transformation_patterns() -> str:
         "   SELECT ?moveTypeName (SUM(?factorScore) AS ?netScore)\n"
         "   WHERE {\n"
         '     ?species a pkm:Species ; pkm:hasName "Charizard" .\n'
-        "     ?variant a pkm:Variant ; pkm:belongsToSpecies ?species .\n"
-        "     ?assignment a pkm:TypingAssignment ; pkm:aboutVariant ?variant ; pkm:aboutType ?defenderType .\n"
+        "     ?assignment a pkm:TypingAssignment ; pkm:aboutPokemon ?species ; pkm:aboutType ?defenderType .\n"
         "     ?moveType a pkm:Type ; pkm:hasName ?moveTypeName .\n"
         "     OPTIONAL {\n"
         "       ?effectiveness a pkm:TypeEffectivenessAssignment ;\n"

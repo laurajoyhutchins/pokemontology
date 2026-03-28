@@ -361,12 +361,15 @@ pkm:TypingAssignment
     rdfs:label "TypingAssignment" ;
     rdfs:subClassOf pkm:ContextualFact ;
     rdfs:subClassOf pkm:MaterializedStateAssignment ;
-    rdfs:comment "Assigns a type to a variant within a ruleset." ;
+    rdfs:comment "Assigns a type to a species or form variant within a ruleset." ;
     rdfs:subClassOf [
         a owl:Restriction ;
-        owl:onProperty pkm:aboutVariant ;
+        owl:onProperty pkm:aboutPokemon ;
         owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
-        owl:onClass pkm:Variant
+        owl:onClass [
+            a owl:Class ;
+            owl:unionOf (pkm:Species pkm:Variant)
+        ]
     ] ;
     rdfs:subClassOf [
         a owl:Restriction ;
@@ -385,12 +388,15 @@ pkm:StatAssignment
     a owl:Class ;
     rdfs:label "StatAssignment" ;
     rdfs:subClassOf pkm:ContextualFact ;
-    rdfs:comment "Assigns a base stat value to a variant within a ruleset." ;
+    rdfs:comment "Assigns a base stat value to a species or form variant within a ruleset." ;
     rdfs:subClassOf [
         a owl:Restriction ;
-        owl:onProperty pkm:aboutVariant ;
+        owl:onProperty pkm:aboutPokemon ;
         owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
-        owl:onClass pkm:Variant
+        owl:onClass [
+            a owl:Class ;
+            owl:unionOf (pkm:Species pkm:Variant)
+        ]
     ] ;
     rdfs:subClassOf [
         a owl:Restriction ;
@@ -415,12 +421,15 @@ pkm:AbilityAssignment
     a owl:Class ;
     rdfs:label "AbilityAssignment" ;
     rdfs:subClassOf pkm:ContextualFact ;
-    rdfs:comment "Assigns an ability to a variant within a ruleset." ;
+    rdfs:comment "Assigns an ability to a species or form variant within a ruleset." ;
     rdfs:subClassOf [
         a owl:Restriction ;
-        owl:onProperty pkm:aboutVariant ;
+        owl:onProperty pkm:aboutPokemon ;
         owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
-        owl:onClass pkm:Variant
+        owl:onClass [
+            a owl:Class ;
+            owl:unionOf (pkm:Species pkm:Variant)
+        ]
     ] ;
     rdfs:subClassOf [
         a owl:Restriction ;
@@ -439,12 +448,15 @@ pkm:MoveLearnRecord
     a owl:Class ;
     rdfs:label "MoveLearnRecord" ;
     rdfs:subClassOf pkm:ContextualFact ;
-    rdfs:comment "Records whether a variant can learn a move within a ruleset." ;
+    rdfs:comment "Records whether a species or form variant can learn a move within a ruleset." ;
     rdfs:subClassOf [
         a owl:Restriction ;
-        owl:onProperty pkm:aboutVariant ;
+        owl:onProperty pkm:aboutPokemon ;
         owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
-        owl:onClass pkm:Variant
+        owl:onClass [
+            a owl:Class ;
+            owl:unionOf (pkm:Species pkm:Variant)
+        ]
     ] ;
     rdfs:subClassOf [
         a owl:Restriction ;
@@ -543,11 +555,15 @@ pkm:TypeEffectivenessAssignment
 # MODULE 2: RULESET MECHANICS — Object Properties
 # =============================================================================
 
-pkm:aboutVariant
+pkm:aboutPokemon
     a owl:ObjectProperty ;
     a owl:FunctionalProperty ;
-    rdfs:label "aboutVariant" ;
-    rdfs:range pkm:Variant .
+    rdfs:label "aboutPokemon" ;
+    rdfs:range [
+        a owl:Class ;
+        owl:unionOf (pkm:Species pkm:Variant)
+    ] ;
+    rdfs:comment "Links a mechanics assignment to the species it describes by default, or to a Variant when the ruleset fact is specific to a real alternate form." .
 
 pkm:aboutMove
     a owl:ObjectProperty ;

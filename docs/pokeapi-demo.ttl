@@ -17,11 +17,6 @@ pkm:Species_Charizard
     a pkm:Species ;
     pkm:hasName "Charizard" .
 
-pkm:Variant_Charizard_Default
-    a pkm:Variant ;
-    pkm:hasName "Charizard" ;
-    pkm:belongsToSpecies pkm:Species_Charizard .
-
 pkm:Type_Fire a pkm:Type ; pkm:hasName "Fire" .
 pkm:Type_Flying a pkm:Type ; pkm:hasName "Flying" .
 pkm:Type_Water a pkm:Type ; pkm:hasName "Water" .
@@ -38,13 +33,13 @@ pkm:Type_Normal a pkm:Type ; pkm:hasName "Normal" .
 
 pkm:TypingAssignment_Charizard_Fire
     a pkm:TypingAssignment ;
-    pkm:aboutVariant pkm:Variant_Charizard_Default ;
+    pkm:aboutPokemon pkm:Species_Charizard ;
     pkm:aboutType pkm:Type_Fire ;
     pkm:hasContext pkm:Ruleset_Demo .
 
 pkm:TypingAssignment_Charizard_Flying
     a pkm:TypingAssignment ;
-    pkm:aboutVariant pkm:Variant_Charizard_Default ;
+    pkm:aboutPokemon pkm:Species_Charizard ;
     pkm:aboutType pkm:Type_Flying ;
     pkm:hasContext pkm:Ruleset_Demo .
 

@@ -8,26 +8,22 @@ const askWorker = createWorkerRpc("pokedex");
 const CATALOG_QUERY = `
 PREFIX pkm: <${PKM_PREFIX}>
 
-SELECT ?species ?speciesName ?variant ?variantName ?identifier
+SELECT ?species ?speciesName ?identifier
        (GROUP_CONCAT(DISTINCT CONCAT(STR(?slot), ":", ?typeName); separator="|") AS ?typePairs)
 WHERE {
   ?species a pkm:Species ;
-           pkm:hasName ?speciesName .
-  ?variant a pkm:Variant ;
-           pkm:belongsToSpecies ?species ;
-           pkm:hasName ?variantName ;
+           pkm:hasName ?speciesName ;
            pkm:hasIdentifier ?identifier .
-  FILTER(STRENDS(LCASE(STR(?variantName)), "-default"))
   OPTIONAL {
     ?typing a pkm:TypingAssignment ;
-            pkm:aboutVariant ?variant ;
+            pkm:aboutPokemon ?species ;
             pkm:aboutType ?type ;
             pkm:hasContext pkm:Ruleset_PokeAPI_Default ;
             pkm:hasTypeSlot ?slot .
     ?type pkm:hasName ?typeName .
   }
 }
-GROUP BY ?species ?speciesName ?variant ?variantName ?identifier
+GROUP BY ?species ?speciesName ?identifier
 `;
 
 const TYPE_QUERY = `
@@ -35,9 +31,9 @@ PREFIX pkm: <${PKM_PREFIX}>
 
 SELECT ?typeName ?slot
 WHERE {
-  VALUES ?variant { __VARIANT__ }
+  VALUES ?pokemon { __POKEMON__ }
   ?typing a pkm:TypingAssignment ;
-          pkm:aboutVariant ?variant ;
+          pkm:aboutPokemon ?pokemon ;
           pkm:aboutType ?type ;
           pkm:hasContext pkm:Ruleset_PokeAPI_Default ;
           pkm:hasTypeSlot ?slot .
@@ -51,9 +47,9 @@ PREFIX pkm: <${PKM_PREFIX}>
 
 SELECT DISTINCT ?moveName
 WHERE {
-  VALUES ?variant { __VARIANT__ }
+  VALUES ?pokemon { __POKEMON__ }
   ?record a pkm:MoveLearnRecord ;
-          pkm:aboutVariant ?variant ;
+          pkm:aboutPokemon ?pokemon ;
           pkm:learnableMove ?move ;
           pkm:isLearnableInRuleset true .
   ?move pkm:hasName ?moveName .
@@ -67,9 +63,9 @@ PREFIX pkm: <${PKM_PREFIX}>
 
 SELECT ?rulesetName (COUNT(DISTINCT ?move) AS ?moveCount)
 WHERE {
-  VALUES ?variant { __VARIANT__ }
+  VALUES ?pokemon { __POKEMON__ }
   ?record a pkm:MoveLearnRecord ;
-          pkm:aboutVariant ?variant ;
+          pkm:aboutPokemon ?pokemon ;
           pkm:hasContext ?ruleset ;
           pkm:learnableMove ?move ;
           pkm:isLearnableInRuleset true .
@@ -85,9 +81,9 @@ PREFIX pkm: <${PKM_PREFIX}>
 
 SELECT ?abilityName ?hidden
 WHERE {
-  VALUES ?variant { __VARIANT__ }
+  VALUES ?pokemon { __POKEMON__ }
   ?assignment a pkm:AbilityAssignment ;
-              pkm:aboutVariant ?variant ;
+              pkm:aboutPokemon ?pokemon ;
               pkm:aboutAbility ?ability .
   ?ability pkm:hasName ?abilityName .
   OPTIONAL { ?assignment pkm:isHiddenAbility ?hidden . }
@@ -100,9 +96,9 @@ PREFIX pkm: <${PKM_PREFIX}>
 
 SELECT ?statName ?value
 WHERE {
-  VALUES ?variant { __VARIANT__ }
+  VALUES ?pokemon { __POKEMON__ }
   ?assignment a pkm:StatAssignment ;
-              pkm:aboutVariant ?variant ;
+              pkm:aboutPokemon ?pokemon ;
               pkm:aboutStat ?stat ;
               pkm:hasValue ?value .
   ?stat pkm:hasName ?statName .
@@ -149,17 +145,14 @@ function slugify(value) {
 
 function toCatalogEntry(binding) {
   const speciesName = termValue(binding, "speciesName");
-  const variantName = termValue(binding, "variantName");
   const identifier = termValue(binding, "identifier");
   return {
     speciesIri: termValue(binding, "species"),
-    variantIri: termValue(binding, "variant"),
     speciesName,
-    variantName,
     identifier,
     dexNumber: parseDexNumber(identifier),
     typePairs: parseTypePairs(termValue(binding, "typePairs")),
-    slug: slugify(`${speciesName}-${variantName}`),
+    slug: slugify(speciesName),
   };
 }
 
@@ -192,14 +185,14 @@ function renderCatalog(entries, selectedSlug) {
       <button
         class="pokedex-card ${entry.slug === selectedSlug ? "is-selected" : ""}"
         type="button"
-        data-variant-slug="${escapeHtml(entry.slug)}"
+        data-pokemon-slug="${escapeHtml(entry.slug)}"
       >
         <div class="pokedex-card-head">
           <span class="pokedex-dex">#${entry.dexNumber}</span>
-          <span class="pokedex-variant-tag">${escapeHtml(entry.variantName.replace(/-Default$/i, ""))}</span>
+          <span class="pokedex-variant-tag">Species</span>
         </div>
         <h3>${escapeHtml(entry.speciesName)}</h3>
-        <p>${escapeHtml(entry.variantName)}</p>
+        <p>${escapeHtml(entry.identifier)}</p>
         <div class="pokedex-type-row">
           ${entry.typePairs.map((type) => typeBadgeHtml(type.name)).join("")}
         </div>
@@ -275,7 +268,7 @@ function renderDetail(entry, detail) {
         <div>
           <p class="panel-kicker">Species</p>
           <h3>${escapeHtml(entry.speciesName)}</h3>
-          <p class="pokedex-subhead">${escapeHtml(entry.variantName)} · ${escapeHtml(entry.identifier)}</p>
+          <p class="pokedex-subhead">${escapeHtml(entry.speciesName)} · ${escapeHtml(entry.identifier)}</p>
         </div>
         <div class="pokedex-chip-row">
           ${detail.types.map((row) => typeBadgeHtml(row.typeName)).join("")}
@@ -326,8 +319,8 @@ function renderError(message) {
   if (detail) detail.innerHTML = html;
 }
 
-function buildVariantQuery(template, variantIri) {
-  return template.replace("__VARIANT__", `<${variantIri}>`);
+function buildPokemonQuery(template, pokemonIri) {
+  return template.replace("__POKEMON__", `<${pokemonIri}>`);
 }
 
 async function fetchCatalog(worker, appState) {
@@ -365,7 +358,7 @@ async function fetchCatalog(worker, appState) {
 
   appState.catalog = response.result.bindings.map(toCatalogEntry).sort((a, b) => {
     if (a.dexNumber !== b.dexNumber) return a.dexNumber - b.dexNumber;
-    return a.variantName.localeCompare(b.variantName);
+    return a.speciesName.localeCompare(b.speciesName);
   });
 
   if (status) status.textContent = "Graph ready";
@@ -377,7 +370,6 @@ function filteredCatalog(catalog, search) {
   if (!needle) return catalog;
   return catalog.filter((entry) =>
     entry.speciesName.toLowerCase().includes(needle) ||
-    entry.variantName.toLowerCase().includes(needle) ||
     String(entry.dexNumber).includes(needle),
   );
 }
@@ -395,11 +387,11 @@ async function loadDetail(worker, entry) {
     throw new Error("No active mechanics sources are available.");
   }
   const [types, moves, rulesets, abilities, stats] = await Promise.all([
-    askWorker(worker, { action: "execute", sparql: buildVariantQuery(TYPE_QUERY, entry.variantIri), sources: sourceList }, { timeoutMs: 20000 }),
-    askWorker(worker, { action: "execute", sparql: buildVariantQuery(MOVES_QUERY, entry.variantIri), sources: sourceList }, { timeoutMs: 20000 }),
-    askWorker(worker, { action: "execute", sparql: buildVariantQuery(RULESET_QUERY, entry.variantIri), sources: sourceList }, { timeoutMs: 20000 }),
-    askWorker(worker, { action: "execute", sparql: buildVariantQuery(ABILITY_QUERY, entry.variantIri), sources: sourceList }, { timeoutMs: 20000 }),
-    askWorker(worker, { action: "execute", sparql: buildVariantQuery(STATS_QUERY, entry.variantIri), sources: sourceList }, { timeoutMs: 20000 }),
+    askWorker(worker, { action: "execute", sparql: buildPokemonQuery(TYPE_QUERY, entry.speciesIri), sources: sourceList }, { timeoutMs: 20000 }),
+    askWorker(worker, { action: "execute", sparql: buildPokemonQuery(MOVES_QUERY, entry.speciesIri), sources: sourceList }, { timeoutMs: 20000 }),
+    askWorker(worker, { action: "execute", sparql: buildPokemonQuery(RULESET_QUERY, entry.speciesIri), sources: sourceList }, { timeoutMs: 20000 }),
+    askWorker(worker, { action: "execute", sparql: buildPokemonQuery(ABILITY_QUERY, entry.speciesIri), sources: sourceList }, { timeoutMs: 20000 }),
+    askWorker(worker, { action: "execute", sparql: buildPokemonQuery(STATS_QUERY, entry.speciesIri), sources: sourceList }, { timeoutMs: 20000 }),
   ]);
 
   return {
@@ -433,8 +425,8 @@ function bindCatalogInteractions(appState) {
   });
 
   results?.addEventListener("click", (event) => {
-    const button = event.target instanceof Element ? event.target.closest("[data-variant-slug]") : null;
-    const slug = button?.getAttribute("data-variant-slug");
+    const button = event.target instanceof Element ? event.target.closest("[data-pokemon-slug]") : null;
+    const slug = button?.getAttribute("data-pokemon-slug");
     if (!slug) return;
     void selectEntry(appState, slug);
   });
