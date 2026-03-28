@@ -12,7 +12,7 @@ self.onmessage = async (event) => {
       message: "Loading browser-local model…",
     });
     try {
-      const engine = await getWebLlmEngine(inferenceConfig);
+      const engine = await getWebLlmEngine(inferenceConfig, requestId);
       self.postMessage({
         requestId,
         type: "progress",
@@ -48,13 +48,13 @@ self.onmessage = async (event) => {
   });
 };
 
-async function getWebLlmEngine(inferenceConfig) {
+async function getWebLlmEngine(inferenceConfig, requestId) {
   if (enginePromise) return enginePromise;
-  enginePromise = loadWebLlmEngine(inferenceConfig);
+  enginePromise = loadWebLlmEngine(inferenceConfig, requestId);
   return enginePromise;
 }
 
-async function loadWebLlmEngine(inferenceConfig) {
+async function loadWebLlmEngine(inferenceConfig, requestId) {
   const libraryUrl = inferenceConfig.webllm_library_url || "https://esm.run/@mlc-ai/web-llm";
   const model = inferenceConfig.webllm_model || "Llama-3.2-1B-Instruct-q4f32_1-MLC";
   const module = await import(libraryUrl);
