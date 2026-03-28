@@ -393,7 +393,6 @@ function renderDetail(projected, state) {
           <h3>${escapeHtml(node.label)}</h3>
           <p class="pokedex-summary">${escapeHtml(node.id)}</p>
         </div>
-        <span class="graph-type-pill graph-type-${slugify(node.type)}">${escapeHtml(node.type)}</span>
       </div>
       <div class="graph-detail-grid">
         <div class="graph-detail-metric">
