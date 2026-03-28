@@ -150,6 +150,9 @@ def test_graph_page_uses_generated_projection_index() -> None:
     assert "renderQueryStatus" in app
     assert "applyQueryValue" in app
     assert "setControlsCollapsed" in app
+    assert "controls.hidden = false" in app
+    assert "reopen.hidden = true" in app
+    assert "controls.hidden = collapsed" not in app
     assert "autoCollapseControls" in app
     assert "updateZoomReadout" in app
     assert "resetViewport" in app
