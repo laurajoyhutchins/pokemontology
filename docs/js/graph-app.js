@@ -624,16 +624,22 @@ function autoCollapseControls(state) {
 }
 
 function setupCanvasInteractions(canvas, state, rerender) {
-  let dragging = false;
-  let lastX = 0;
-  let lastY = 0;
+  const activePointers = new Map();
+  let lastPinchDist = null;
+
+  function getPinchDist() {
+    const pts = [...activePointers.values()];
+    if (pts.length < 2) return null;
+    return Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+  }
 
   canvas.addEventListener("pointerdown", (event) => {
     autoCollapseControls(state);
-    dragging = true;
-    lastX = event.clientX;
-    lastY = event.clientY;
+    activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
     canvas.setPointerCapture(event.pointerId);
+    if (activePointers.size === 2) {
+      lastPinchDist = getPinchDist();
+    }
   });
   canvas.addEventListener("pointermove", (event) => {
     const rect = canvas.getBoundingClientRect();
@@ -650,25 +656,44 @@ function setupCanvasInteractions(canvas, state, rerender) {
     if (hit) {
       const node = state.nodesById.get(hit.id);
       updateHoverReadout(state, `${node?.label || hit.id} · ${node?.type || ""}`);
-    } else if (!dragging) {
+    } else if (activePointers.size === 0) {
       updateHoverReadout(state, state.selectedNodeId ? "Click nodes to repivot the local graph" : "Search or click a node to query locally");
     }
 
-    if (!dragging) return;
-    state.panX += event.clientX - lastX;
-    state.panY += event.clientY - lastY;
-    lastX = event.clientX;
-    lastY = event.clientY;
-    rerender();
+    if (!activePointers.has(event.pointerId)) return;
+    const prev = activePointers.get(event.pointerId);
+    const dx = event.clientX - prev.x;
+    const dy = event.clientY - prev.y;
+    activePointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+
+    if (activePointers.size >= 2) {
+      const dist = getPinchDist();
+      if (dist && lastPinchDist) {
+        state.zoom = clampZoom(state.zoom * (dist / lastPinchDist));
+      }
+      lastPinchDist = dist;
+      rerender();
+    } else {
+      state.panX += dx;
+      state.panY += dy;
+      rerender();
+    }
   });
   canvas.addEventListener("pointerup", (event) => {
-    dragging = false;
+    activePointers.delete(event.pointerId);
     canvas.releasePointerCapture(event.pointerId);
+    if (activePointers.size < 2) lastPinchDist = null;
   });
-  canvas.addEventListener("pointerleave", () => {
-    dragging = false;
-    state.hoverNodeId = "";
-    updateHoverReadout(state, state.selectedNodeId ? "Click nodes to repivot the local graph" : "Search or click a node to query locally");
+  canvas.addEventListener("pointerleave", (event) => {
+    activePointers.delete(event.pointerId);
+    if (activePointers.size === 0) {
+      state.hoverNodeId = "";
+      updateHoverReadout(state, state.selectedNodeId ? "Click nodes to repivot the local graph" : "Search or click a node to query locally");
+    }
+  });
+  canvas.addEventListener("pointercancel", (event) => {
+    activePointers.delete(event.pointerId);
+    lastPinchDist = null;
   });
   canvas.addEventListener(
     "wheel",
@@ -871,12 +896,19 @@ export async function createGraphApp() {
     renderDetail(projected, state);
     updateZoomReadout(state);
     drawGraph(canvas, projected, state);
+    if (window.innerWidth <= 640 && state.selectedNodeId) {
+      document.querySelector(".graph-workbench")?.classList.remove("sidebar-dismissed");
+    }
   };
 
   setupCanvasInteractions(canvas, state, rerender);
   bindSelectionHandlers(state, rerender);
   wireControls(state, rerender);
-  setControlsCollapsed(state, false);
+  setControlsCollapsed(state, window.innerWidth <= 640);
+
+  document.getElementById("graph-sidebar-close")?.addEventListener("click", () => {
+    document.querySelector(".graph-workbench")?.classList.add("sidebar-dismissed");
+  });
 
   canvas.addEventListener("click", (event) => {
     autoCollapseControls(state);
