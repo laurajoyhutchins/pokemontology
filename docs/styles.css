@@ -1150,6 +1150,10 @@ body:not([data-power-mode="on"]) .qe-results-body {
   margin-top: 0.75rem;
 }
 
+.graph-controls-body[hidden] {
+  display: none;
+}
+
 .graph-controls.is-collapsed {
   width: fit-content;
   max-width: min(20rem, calc(100vw - (var(--graph-panel-offset) * 2)));
