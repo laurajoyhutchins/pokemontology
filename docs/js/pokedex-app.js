@@ -1,4 +1,4 @@
-import { createWorkerRpc, setupThemeToggle } from "./browser-runtime.js";
+import { createWorkerRpc, setupMobileNav, setupThemeToggle } from "./browser-runtime.js";
 import { getCanonicalMechanicsLabel, mechanicsSourceCandidates } from "./docs-sources.js";
 import { loadSiteData } from "./site-render.js";
 
@@ -448,6 +448,7 @@ export async function createPokedexApp() {
   if (!document.getElementById("pokedex-results")) return;
 
   setupThemeToggle();
+  setupMobileNav();
   const appState = {
     catalog: [],
     search: "",

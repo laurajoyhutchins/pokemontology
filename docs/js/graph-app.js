@@ -1,4 +1,4 @@
-import { setupThemeToggle } from "./browser-runtime.js";
+import { setupMobileNav, setupThemeToggle } from "./browser-runtime.js";
 import { loadSiteData } from "./site-render.js";
 
 const TYPE_ORDER = ["Species", "Variant", "Move", "Ability", "Item", "Type", "Ruleset"];
@@ -816,6 +816,7 @@ function wireControls(state, rerender) {
 
 export async function createGraphApp() {
   setupThemeToggle();
+  setupMobileNav();
   const [siteData, rawGraph] = await Promise.all([loadSiteData(), loadGraphIndex()]);
   const status = document.querySelector("[data-graph-status]");
   const repoLink = document.querySelector("[data-repository-url]");

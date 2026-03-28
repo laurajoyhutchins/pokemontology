@@ -43,6 +43,24 @@ export function setupThemeToggle() {
   });
 }
 
+export function setupMobileNav() {
+  const toggle = document.querySelector("[data-nav-toggle]");
+  const header = document.querySelector(".site-header");
+  if (!toggle || !header) return;
+  toggle.addEventListener("click", () => {
+    const isOpen = header.classList.toggle("nav-open");
+    toggle.setAttribute("aria-expanded", String(isOpen));
+    toggle.setAttribute("aria-label", isOpen ? "Close navigation" : "Open navigation");
+  });
+  document.querySelectorAll(".nav-links a").forEach((link) => {
+    link.addEventListener("click", () => {
+      header.classList.remove("nav-open");
+      toggle.setAttribute("aria-expanded", "false");
+      toggle.setAttribute("aria-label", "Open navigation");
+    });
+  });
+}
+
 export function createWorkerRpc(requestPrefix = "req") {
   let nextWorkerRequestId = 0;
 
