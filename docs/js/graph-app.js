@@ -544,8 +544,14 @@ function updateZoomReadout(state) {
   target.textContent = `${Math.round(state.zoom * 100)}%`;
 }
 
+function homePanOffsetX() {
+  const sidebar = document.querySelector(".graph-sidebar");
+  if (!(sidebar instanceof HTMLElement) || sidebar.hidden) return 0;
+  return -Math.round(sidebar.getBoundingClientRect().width / 2);
+}
+
 function resetViewport(state) {
-  state.panX = 0;
+  state.panX = homePanOffsetX();
   state.panY = 0;
   state.zoom = 1;
 }
