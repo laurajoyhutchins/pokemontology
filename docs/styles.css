@@ -301,12 +301,7 @@ textarea {
   font-weight: 700;
 }
 
-.header-actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.header-actions > button {
+.power-toggle {
   min-width: 9.5rem;
   justify-content: center;
 }
@@ -1884,11 +1879,6 @@ body:not([data-power-mode="on"]) .qe-results-body {
 
   .nav-links a:last-child {
     border-bottom: none;
-  }
-
-  /* Keep header-actions compact */
-  .header-actions {
-    gap: 0.35rem;
   }
 
   /* Hide power-toggle on mobile — technical mode is a desktop feature */
