@@ -1157,9 +1157,10 @@ body:not([data-power-mode="on"]) .qe-results-body {
 .graph-controls.is-collapsed {
   display: inline-grid;
   width: max-content;
-  max-width: min(24rem, calc(100vw - (var(--graph-panel-offset) * 2)));
+  max-width: fit-content;
   min-width: 0;
   justify-items: start;
+  padding: 0.6rem 0.7rem;
 }
 
 .graph-controls.is-collapsed .graph-controls-head {
@@ -1172,6 +1173,10 @@ body:not([data-power-mode="on"]) .qe-results-body {
 
 .graph-controls.is-collapsed .graph-controls-title {
   flex: 0 1 auto;
+}
+
+.graph-controls.is-collapsed .graph-controls-subtitle {
+  display: none;
 }
 
 .graph-pane-toggle {
