@@ -1075,6 +1075,7 @@ body:not([data-power-mode="on"]) .qe-results-body {
   --graph-panel-offset: 1.4rem;
   --graph-sidebar-width: clamp(19rem, 24vw, 24rem);
   --graph-controls-width: min(68rem, calc(100vw - (var(--graph-gutter) * 2)));
+  font-size: 1.125rem;
 }
 
 .graph-header {
@@ -1261,7 +1262,7 @@ body:not([data-power-mode="on"]) .qe-results-body {
 
 .graph-query-status {
   color: var(--ink);
-  font-size: 0.82rem;
+  font-size: 0.94rem;
   line-height: 1.5;
 }
 
@@ -1422,7 +1423,7 @@ body:not([data-power-mode="on"]) .qe-results-body {
   display: block;
   color: var(--muted);
   margin-top: 0.3rem;
-  font-size: 0.82rem;
+  font-size: 0.94rem;
 }
 
 .graph-detail-card {
@@ -1446,7 +1447,7 @@ body:not([data-power-mode="on"]) .qe-results-body {
 .graph-detail-metric strong {
   display: block;
   margin-top: 0.35rem;
-  font-size: 1.15rem;
+  font-size: 1.27rem;
 }
 
 .graph-neighbor-list {
@@ -1472,7 +1473,7 @@ body:not([data-power-mode="on"]) .qe-results-body {
   font-family: var(--font-ui);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  font-size: 0.72rem;
+  font-size: 0.84rem;
   color: #172922;
 }
 
@@ -1485,7 +1486,7 @@ body:not([data-power-mode="on"]) .qe-results-body {
 .graph-type-ruleset { background: #6c8f80; color: #f8f2dd; }
 
 .graph-hover-readout {
-  font-size: 0.78rem;
+  font-size: 0.9rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--muted);
