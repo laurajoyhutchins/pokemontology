@@ -611,7 +611,7 @@ export async function createGraphApp() {
     nodesById,
     adjacency,
     selectedRuleset: "",
-    searchText: "",
+    searchText: "Pikachu",
     selectedNodeId: "",
     hoverNodeId: "",
     hopDepth: 2,
@@ -631,6 +631,10 @@ export async function createGraphApp() {
   const canvas = document.getElementById("graph-canvas");
   if (!(canvas instanceof HTMLCanvasElement)) {
     throw new Error("Graph canvas missing.");
+  }
+  const searchInput = document.getElementById("graph-search");
+  if (searchInput instanceof HTMLInputElement) {
+    searchInput.value = state.searchText;
   }
 
   const rerender = () => {
