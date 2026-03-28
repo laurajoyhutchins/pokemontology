@@ -12,6 +12,7 @@ from tests.support import copy_fixture_tree, fixture_path
 
 
 PKM = Namespace("https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#")
+PKMI = Namespace("https://laurajoyhutchins.github.io/pokemontology/id/")
 
 
 def test_fetch_seed_data_expands_related_resources(tmp_path, monkeypatch) -> None:
@@ -46,28 +47,28 @@ def test_build_graph_from_raw_emits_expected_ontology_nodes(tmp_path) -> None:
 
     graph = pokeapi_ingest.build_graph_from_raw(raw_dir)
 
-    species = PKM.Species_froakie
-    move_record = PKM.MoveLearnRecord_froakie_bubble_x_y
+    species = PKMI["species/froakie"]
+    move_record = PKMI["assignment/move-learn/pokemon/froakie/move/bubble/ruleset/x-y"]
 
     assert (species, RDF.type, PKM.Species) in graph
-    assert not any(graph.triples((PKM.Variant_froakie, RDF.type, PKM.Variant)))
-    assert (PKM.Ruleset_x_y, RDF.type, PKM.Ruleset) in graph
+    assert not any(graph.triples((PKMI["variant/froakie"], RDF.type, PKM.Variant)))
+    assert (PKMI["ruleset/x-y"], RDF.type, PKM.Ruleset) in graph
     assert (move_record, RDF.type, PKM.MoveLearnRecord) in graph
-    assert (move_record, PKM.hasContext, PKM.Ruleset_x_y) in graph
+    assert (move_record, PKM.hasContext, PKMI["ruleset/x-y"]) in graph
     assert (move_record, PKM.aboutPokemon, species) in graph
-    assert (PKM.DatasetArtifact_PokeAPI, RDF.type, PKM.EvidenceArtifact) in graph
+    assert (PKMI["artifact/pokeapi"], RDF.type, PKM.EvidenceArtifact) in graph
     assert (
-        PKM.Ref_PokeAPI_pokemon_species_froakie,
+        PKMI["reference/pokeapi/pokemon-species/froakie"],
         PKM.refersToEntity,
         species,
     ) in graph
     assert (
-        PKM.Ref_PokeAPI_move_bubble,
+        PKMI["reference/pokeapi/move/bubble"],
         PKM.describedByArtifact,
-        PKM.DatasetArtifact_PokeAPI,
+        PKMI["artifact/pokeapi"],
     ) in graph
     assert (
-        PKM.Ref_PokeAPI_pokemon_froakie,
+        PKMI["reference/pokeapi/pokemon/froakie"],
         PKM.refersToEntity,
         species,
     ) in graph

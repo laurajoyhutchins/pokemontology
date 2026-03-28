@@ -21,8 +21,10 @@ from pokemontology.ingest_common import (
     add_dataset_artifact as add_dataset_artifact_node,
     add_dataset_header,
     add_external_reference as add_external_reference_node,
+    assignment_iri,
     bind_namespaces,
-    iri_for,
+    entity_iri,
+    instance_iri,
     serialize_turtle_to_path,
 )
 
@@ -158,7 +160,7 @@ def add_veekun_external_reference(
         resource=resource,
         identifier=identifier,
         entity_iri=entity_iri,
-        artifact_iri=PKM.DatasetArtifact_Veekun,
+        artifact_iri=instance_iri("artifact", "veekun"),
         external_iri=veekun_external_iri(resource, identifier),
     )
 
@@ -167,7 +169,7 @@ def add_named_entity(
     g: Graph, class_name: str, rdf_class: URIRef, row: dict[str, str], resource: str
 ) -> URIRef:
     identifier = row["identifier"]
-    iri = iri_for(class_name, identifier)
+    iri = entity_iri(class_name, identifier)
     g.add((iri, RDF.type, rdf_class))
     g.add((iri, PKM.hasName, Literal(row["name"])))
     g.add((iri, PKM.hasIdentifier, Literal(f"veekun:{resource}:{identifier}")))
@@ -177,8 +179,8 @@ def add_named_entity(
 
 def add_version_group(g: Graph, row: dict[str, str]) -> URIRef:
     identifier = row["identifier"]
-    version_group_iri = iri_for("VersionGroup", identifier)
-    ruleset_iri = iri_for("Ruleset", identifier)
+    version_group_iri = entity_iri("VersionGroup", identifier)
+    ruleset_iri = entity_iri("Ruleset", identifier)
 
     g.add((version_group_iri, RDF.type, PKM.VersionGroup))
     g.add((version_group_iri, PKM.hasName, Literal(row["name"])))
@@ -201,22 +203,22 @@ def add_version_group(g: Graph, row: dict[str, str]) -> URIRef:
 
 def add_veekun_dataset_artifact(g: Graph) -> None:
     add_dataset_artifact_node(
-        g, PKM.DatasetArtifact_Veekun, "Veekun", "https://github.com/veekun/pokedex"
+        g, instance_iri("artifact", "veekun"), "Veekun", "https://github.com/veekun/pokedex"
     )
 
 
 def add_variant_links(g: Graph, rows: list[dict[str, str]]) -> None:
     for row in rows:
-        variant_iri = iri_for("Variant", row["identifier"])
-        species_iri = iri_for("Species", row["species_identifier"])
+        variant_iri = entity_iri("Variant", row["identifier"])
+        species_iri = entity_iri("Species", row["species_identifier"])
         g.add((variant_iri, PKM.belongsToSpecies, species_iri))
 
 
 def mechanics_subject_iri(subject_kind: str, subject_identifier: str) -> URIRef:
     if subject_kind == "species":
-        return iri_for("Species", subject_identifier)
+        return entity_iri("Species", subject_identifier)
     if subject_kind == "variant":
-        return iri_for("Variant", subject_identifier)
+        return entity_iri("Variant", subject_identifier)
     raise SystemExit(f"unsupported mechanics subject kind: {subject_kind}")
 
 
@@ -283,29 +285,36 @@ def build_graph_from_csv(source_dir: Path) -> Graph:
                 ),
             )
             for row in reader:
-                assignment_iri = iri_for(
+                typing_assignment_iri = assignment_iri(
                     "TypingAssignment",
-                    f"{row['pokemon_kind']}_{row['pokemon_identifier']}_{row['type_identifier']}_{row['version_group_identifier']}_{row['type_slot']}",
+                    row["pokemon_kind"],
+                    row["pokemon_identifier"],
+                    "type",
+                    row["type_identifier"],
+                    "ruleset",
+                    row["version_group_identifier"],
+                    "slot",
+                    row["type_slot"],
                 )
-                g.add((assignment_iri, RDF.type, PKM.TypingAssignment))
+                g.add((typing_assignment_iri, RDF.type, PKM.TypingAssignment))
                 g.add(
                     (
-                        assignment_iri,
+                        typing_assignment_iri,
                         PKM.aboutPokemon,
                         mechanics_subject_iri(row["pokemon_kind"], row["pokemon_identifier"]),
                     )
                 )
-                g.add((assignment_iri, PKM.aboutType, iri_for("Type", row["type_identifier"])))
+                g.add((typing_assignment_iri, PKM.aboutType, entity_iri("Type", row["type_identifier"])))
                 g.add(
                     (
-                        assignment_iri,
+                        typing_assignment_iri,
                         PKM.hasContext,
-                        iri_for("Ruleset", row["version_group_identifier"]),
+                        entity_iri("Ruleset", row["version_group_identifier"]),
                     )
                 )
                 g.add(
                     (
-                        assignment_iri,
+                        typing_assignment_iri,
                         PKM.hasTypeSlot,
                         Literal(int(row["type_slot"]), datatype=XSD.integer),
                     )
@@ -327,35 +336,40 @@ def build_graph_from_csv(source_dir: Path) -> Graph:
                 ),
             )
             for row in reader:
-                assignment_iri = iri_for(
+                ability_assignment_iri = assignment_iri(
                     "AbilityAssignment",
-                    f"{row['pokemon_kind']}_{row['pokemon_identifier']}_{row['ability_identifier']}_{row['version_group_identifier']}",
+                    row["pokemon_kind"],
+                    row["pokemon_identifier"],
+                    "ability",
+                    row["ability_identifier"],
+                    "ruleset",
+                    row["version_group_identifier"],
                 )
-                g.add((assignment_iri, RDF.type, PKM.AbilityAssignment))
+                g.add((ability_assignment_iri, RDF.type, PKM.AbilityAssignment))
                 g.add(
                     (
-                        assignment_iri,
+                        ability_assignment_iri,
                         PKM.aboutPokemon,
                         mechanics_subject_iri(row["pokemon_kind"], row["pokemon_identifier"]),
                     )
                 )
                 g.add(
                     (
-                        assignment_iri,
+                        ability_assignment_iri,
                         PKM.aboutAbility,
-                        iri_for("Ability", row["ability_identifier"]),
+                        entity_iri("Ability", row["ability_identifier"]),
                     )
                 )
                 g.add(
                     (
-                        assignment_iri,
+                        ability_assignment_iri,
                         PKM.hasContext,
-                        iri_for("Ruleset", row["version_group_identifier"]),
+                        entity_iri("Ruleset", row["version_group_identifier"]),
                     )
                 )
                 g.add(
                     (
-                        assignment_iri,
+                        ability_assignment_iri,
                         PKM.isHiddenAbility,
                         Literal(
                             row["is_hidden_ability"].lower() == "true",
@@ -380,29 +394,34 @@ def build_graph_from_csv(source_dir: Path) -> Graph:
                 ),
             )
             for row in reader:
-                assignment_iri = iri_for(
+                stat_assignment_iri = assignment_iri(
                     "StatAssignment",
-                    f"{row['pokemon_kind']}_{row['pokemon_identifier']}_{row['stat_identifier']}_{row['version_group_identifier']}",
+                    row["pokemon_kind"],
+                    row["pokemon_identifier"],
+                    "stat",
+                    row["stat_identifier"],
+                    "ruleset",
+                    row["version_group_identifier"],
                 )
-                g.add((assignment_iri, RDF.type, PKM.StatAssignment))
+                g.add((stat_assignment_iri, RDF.type, PKM.StatAssignment))
                 g.add(
                     (
-                        assignment_iri,
+                        stat_assignment_iri,
                         PKM.aboutPokemon,
                         mechanics_subject_iri(row["pokemon_kind"], row["pokemon_identifier"]),
                     )
                 )
-                g.add((assignment_iri, PKM.aboutStat, iri_for("Stat", row["stat_identifier"])))
+                g.add((stat_assignment_iri, PKM.aboutStat, entity_iri("Stat", row["stat_identifier"])))
                 g.add(
                     (
-                        assignment_iri,
+                        stat_assignment_iri,
                         PKM.hasContext,
-                        iri_for("Ruleset", row["version_group_identifier"]),
+                        entity_iri("Ruleset", row["version_group_identifier"]),
                     )
                 )
                 g.add(
                     (
-                        assignment_iri,
+                        stat_assignment_iri,
                         PKM.hasValue,
                         Literal(int(row["value"]), datatype=XSD.integer),
                     )
@@ -426,30 +445,32 @@ def build_graph_from_csv(source_dir: Path) -> Graph:
                 ),
             )
             for row in reader:
-                assignment_iri = iri_for(
+                move_property_assignment_iri = assignment_iri(
                     "MovePropertyAssignment",
-                    f"{row['move_identifier']}_{row['version_group_identifier']}",
+                    row["move_identifier"],
+                    "ruleset",
+                    row["version_group_identifier"],
                 )
-                g.add((assignment_iri, RDF.type, PKM.MovePropertyAssignment))
-                g.add((assignment_iri, PKM.aboutMove, iri_for("Move", row["move_identifier"])))
+                g.add((move_property_assignment_iri, RDF.type, PKM.MovePropertyAssignment))
+                g.add((move_property_assignment_iri, PKM.aboutMove, entity_iri("Move", row["move_identifier"])))
                 g.add(
                     (
-                        assignment_iri,
+                        move_property_assignment_iri,
                         PKM.hasContext,
-                        iri_for("Ruleset", row["version_group_identifier"]),
+                        entity_iri("Ruleset", row["version_group_identifier"]),
                     )
                 )
                 g.add(
                     (
-                        assignment_iri,
+                        move_property_assignment_iri,
                         PKM.hasMoveType,
-                        iri_for("Type", row["move_type_identifier"]),
+                        entity_iri("Type", row["move_type_identifier"]),
                     )
                 )
-                add_optional_int(g, assignment_iri, PKM.hasBasePower, row["base_power"])
-                add_optional_int(g, assignment_iri, PKM.hasAccuracy, row["accuracy"])
-                add_optional_int(g, assignment_iri, PKM.hasPP, row["pp"])
-                add_optional_int(g, assignment_iri, PKM.hasPriority, row["priority"])
+                add_optional_int(g, move_property_assignment_iri, PKM.hasBasePower, row["base_power"])
+                add_optional_int(g, move_property_assignment_iri, PKM.hasAccuracy, row["accuracy"])
+                add_optional_int(g, move_property_assignment_iri, PKM.hasPP, row["pp"])
+                add_optional_int(g, move_property_assignment_iri, PKM.hasPriority, row["priority"])
 
     path = source_dir / "move_learn_records.csv"
     if path.exists():
@@ -467,31 +488,36 @@ def build_graph_from_csv(source_dir: Path) -> Graph:
                 ),
             )
             for row in reader:
-                assignment_iri = iri_for(
+                move_learn_record_iri = assignment_iri(
                     "MoveLearnRecord",
-                    f"{row['pokemon_kind']}_{row['pokemon_identifier']}_{row['move_identifier']}_{row['version_group_identifier']}",
+                    row["pokemon_kind"],
+                    row["pokemon_identifier"],
+                    "move",
+                    row["move_identifier"],
+                    "ruleset",
+                    row["version_group_identifier"],
                 )
-                g.add((assignment_iri, RDF.type, PKM.MoveLearnRecord))
+                g.add((move_learn_record_iri, RDF.type, PKM.MoveLearnRecord))
                 g.add(
                     (
-                        assignment_iri,
+                        move_learn_record_iri,
                         PKM.aboutPokemon,
                         mechanics_subject_iri(row["pokemon_kind"], row["pokemon_identifier"]),
                     )
                 )
                 g.add(
-                    (assignment_iri, PKM.learnableMove, iri_for("Move", row["move_identifier"]))
+                    (move_learn_record_iri, PKM.learnableMove, entity_iri("Move", row["move_identifier"]))
                 )
                 g.add(
                     (
-                        assignment_iri,
+                        move_learn_record_iri,
                         PKM.hasContext,
-                        iri_for("Ruleset", row["version_group_identifier"]),
+                        entity_iri("Ruleset", row["version_group_identifier"]),
                     )
                 )
                 g.add(
                     (
-                        assignment_iri,
+                        move_learn_record_iri,
                         PKM.isLearnableInRuleset,
                         Literal(row["is_learnable"].lower() == "true", datatype=XSD.boolean),
                     )
@@ -512,35 +538,38 @@ def build_graph_from_csv(source_dir: Path) -> Graph:
                 ),
             )
             for row in reader:
-                assignment_iri = iri_for(
+                type_effectiveness_iri = assignment_iri(
                     "TypeEffectivenessAssignment",
-                    f"{row['attacker_type_identifier']}_{row['defender_type_identifier']}_{row['version_group_identifier']}",
+                    row["attacker_type_identifier"],
+                    row["defender_type_identifier"],
+                    "ruleset",
+                    row["version_group_identifier"],
                 )
-                g.add((assignment_iri, RDF.type, PKM.TypeEffectivenessAssignment))
+                g.add((type_effectiveness_iri, RDF.type, PKM.TypeEffectivenessAssignment))
                 g.add(
                     (
-                        assignment_iri,
+                        type_effectiveness_iri,
                         PKM.attackerType,
-                        iri_for("Type", row["attacker_type_identifier"]),
+                        entity_iri("Type", row["attacker_type_identifier"]),
                     )
                 )
                 g.add(
                     (
-                        assignment_iri,
+                        type_effectiveness_iri,
                         PKM.defenderType,
-                        iri_for("Type", row["defender_type_identifier"]),
+                        entity_iri("Type", row["defender_type_identifier"]),
                     )
                 )
                 g.add(
                     (
-                        assignment_iri,
+                        type_effectiveness_iri,
                         PKM.hasContext,
-                        iri_for("Ruleset", row["version_group_identifier"]),
+                        entity_iri("Ruleset", row["version_group_identifier"]),
                     )
                 )
                 g.add(
                     (
-                        assignment_iri,
+                        type_effectiveness_iri,
                         PKM.hasDamageFactor,
                         Literal(row["damage_factor"], datatype=XSD.decimal),
                     )

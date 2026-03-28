@@ -9,9 +9,9 @@
     rdfs:label "Pokemontology Browser Demo Data" ;
     rdfs:comment "Small browser-friendly Pokemon data slice for Professor Laurel demos." .
 
-pkm:Ruleset_Demo
+<https://laurajoyhutchins.github.io/pokemontology/id/ruleset/pokeapi-default>
     a pkm:Ruleset ;
-    pkm:hasName "Browser Demo Ruleset" .
+    pkm:hasName "PokeAPI Default (Current Generation)" .
 
 pkm:Species_Charizard
     a pkm:Species ;
@@ -35,115 +35,115 @@ pkm:TypingAssignment_Charizard_Fire
     a pkm:TypingAssignment ;
     pkm:aboutPokemon pkm:Species_Charizard ;
     pkm:aboutType pkm:Type_Fire ;
-    pkm:hasContext pkm:Ruleset_Demo .
+    pkm:hasContext <https://laurajoyhutchins.github.io/pokemontology/id/ruleset/pokeapi-default> .
 
 pkm:TypingAssignment_Charizard_Flying
     a pkm:TypingAssignment ;
     pkm:aboutPokemon pkm:Species_Charizard ;
     pkm:aboutType pkm:Type_Flying ;
-    pkm:hasContext pkm:Ruleset_Demo .
+    pkm:hasContext <https://laurajoyhutchins.github.io/pokemontology/id/ruleset/pokeapi-default> .
 
 pkm:TypeEffectiveness_Water_Fire
     a pkm:TypeEffectivenessAssignment ;
     pkm:attackerType pkm:Type_Water ;
     pkm:defenderType pkm:Type_Fire ;
     pkm:hasDamageFactor "2.0"^^xsd:decimal ;
-    pkm:hasContext pkm:Ruleset_Demo .
+    pkm:hasContext <https://laurajoyhutchins.github.io/pokemontology/id/ruleset/pokeapi-default> .
 
 pkm:TypeEffectiveness_Electric_Flying
     a pkm:TypeEffectivenessAssignment ;
     pkm:attackerType pkm:Type_Electric ;
     pkm:defenderType pkm:Type_Flying ;
     pkm:hasDamageFactor "2.0"^^xsd:decimal ;
-    pkm:hasContext pkm:Ruleset_Demo .
+    pkm:hasContext <https://laurajoyhutchins.github.io/pokemontology/id/ruleset/pokeapi-default> .
 
 pkm:TypeEffectiveness_Rock_Fire
     a pkm:TypeEffectivenessAssignment ;
     pkm:attackerType pkm:Type_Rock ;
     pkm:defenderType pkm:Type_Fire ;
     pkm:hasDamageFactor "2.0"^^xsd:decimal ;
-    pkm:hasContext pkm:Ruleset_Demo .
+    pkm:hasContext <https://laurajoyhutchins.github.io/pokemontology/id/ruleset/pokeapi-default> .
 
 pkm:TypeEffectiveness_Rock_Flying
     a pkm:TypeEffectivenessAssignment ;
     pkm:attackerType pkm:Type_Rock ;
     pkm:defenderType pkm:Type_Flying ;
     pkm:hasDamageFactor "2.0"^^xsd:decimal ;
-    pkm:hasContext pkm:Ruleset_Demo .
+    pkm:hasContext <https://laurajoyhutchins.github.io/pokemontology/id/ruleset/pokeapi-default> .
 
 pkm:TypeEffectiveness_Ground_Fire
     a pkm:TypeEffectivenessAssignment ;
     pkm:attackerType pkm:Type_Ground ;
     pkm:defenderType pkm:Type_Fire ;
     pkm:hasDamageFactor "2.0"^^xsd:decimal ;
-    pkm:hasContext pkm:Ruleset_Demo .
+    pkm:hasContext <https://laurajoyhutchins.github.io/pokemontology/id/ruleset/pokeapi-default> .
 
 pkm:TypeEffectiveness_Ground_Flying
     a pkm:TypeEffectivenessAssignment ;
     pkm:attackerType pkm:Type_Ground ;
     pkm:defenderType pkm:Type_Flying ;
     pkm:hasDamageFactor "0.0"^^xsd:decimal ;
-    pkm:hasContext pkm:Ruleset_Demo .
+    pkm:hasContext <https://laurajoyhutchins.github.io/pokemontology/id/ruleset/pokeapi-default> .
 
 pkm:TypeEffectiveness_Ice_Fire
     a pkm:TypeEffectivenessAssignment ;
     pkm:attackerType pkm:Type_Ice ;
     pkm:defenderType pkm:Type_Fire ;
     pkm:hasDamageFactor "0.5"^^xsd:decimal ;
-    pkm:hasContext pkm:Ruleset_Demo .
+    pkm:hasContext <https://laurajoyhutchins.github.io/pokemontology/id/ruleset/pokeapi-default> .
 
 pkm:TypeEffectiveness_Ice_Flying
     a pkm:TypeEffectivenessAssignment ;
     pkm:attackerType pkm:Type_Ice ;
     pkm:defenderType pkm:Type_Flying ;
     pkm:hasDamageFactor "2.0"^^xsd:decimal ;
-    pkm:hasContext pkm:Ruleset_Demo .
+    pkm:hasContext <https://laurajoyhutchins.github.io/pokemontology/id/ruleset/pokeapi-default> .
 
 pkm:TypeEffectiveness_Grass_Fire
     a pkm:TypeEffectivenessAssignment ;
     pkm:attackerType pkm:Type_Grass ;
     pkm:defenderType pkm:Type_Fire ;
     pkm:hasDamageFactor "0.5"^^xsd:decimal ;
-    pkm:hasContext pkm:Ruleset_Demo .
+    pkm:hasContext <https://laurajoyhutchins.github.io/pokemontology/id/ruleset/pokeapi-default> .
 
 pkm:TypeEffectiveness_Grass_Flying
     a pkm:TypeEffectivenessAssignment ;
     pkm:attackerType pkm:Type_Grass ;
     pkm:defenderType pkm:Type_Flying ;
     pkm:hasDamageFactor "0.5"^^xsd:decimal ;
-    pkm:hasContext pkm:Ruleset_Demo .
+    pkm:hasContext <https://laurajoyhutchins.github.io/pokemontology/id/ruleset/pokeapi-default> .
 
 pkm:TypeEffectiveness_Fighting_Flying
     a pkm:TypeEffectivenessAssignment ;
     pkm:attackerType pkm:Type_Fighting ;
     pkm:defenderType pkm:Type_Flying ;
     pkm:hasDamageFactor "0.5"^^xsd:decimal ;
-    pkm:hasContext pkm:Ruleset_Demo .
+    pkm:hasContext <https://laurajoyhutchins.github.io/pokemontology/id/ruleset/pokeapi-default> .
 
 pkm:TypeEffectiveness_Bug_Fire
     a pkm:TypeEffectivenessAssignment ;
     pkm:attackerType pkm:Type_Bug ;
     pkm:defenderType pkm:Type_Fire ;
     pkm:hasDamageFactor "0.5"^^xsd:decimal ;
-    pkm:hasContext pkm:Ruleset_Demo .
+    pkm:hasContext <https://laurajoyhutchins.github.io/pokemontology/id/ruleset/pokeapi-default> .
 
 pkm:TypeEffectiveness_Bug_Flying
     a pkm:TypeEffectivenessAssignment ;
     pkm:attackerType pkm:Type_Bug ;
     pkm:defenderType pkm:Type_Flying ;
     pkm:hasDamageFactor "0.5"^^xsd:decimal ;
-    pkm:hasContext pkm:Ruleset_Demo .
+    pkm:hasContext <https://laurajoyhutchins.github.io/pokemontology/id/ruleset/pokeapi-default> .
 
 pkm:TypeEffectiveness_Steel_Fire
     a pkm:TypeEffectivenessAssignment ;
     pkm:attackerType pkm:Type_Steel ;
     pkm:defenderType pkm:Type_Fire ;
     pkm:hasDamageFactor "0.5"^^xsd:decimal ;
-    pkm:hasContext pkm:Ruleset_Demo .
+    pkm:hasContext <https://laurajoyhutchins.github.io/pokemontology/id/ruleset/pokeapi-default> .
 
 pkm:TypeEffectiveness_Fairy_Fire
     a pkm:TypeEffectivenessAssignment ;
     pkm:attackerType pkm:Type_Fairy ;
     pkm:defenderType pkm:Type_Fire ;
     pkm:hasDamageFactor "0.5"^^xsd:decimal ;
-    pkm:hasContext pkm:Ruleset_Demo .
+    pkm:hasContext <https://laurajoyhutchins.github.io/pokemontology/id/ruleset/pokeapi-default> .

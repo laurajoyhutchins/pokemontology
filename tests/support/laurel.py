@@ -13,7 +13,7 @@ def write_super_effective_fixture(path: Path) -> None:
 @prefix pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
-pkm:Ruleset_PokeAPI_Default a pkm:Ruleset .
+<https://laurajoyhutchins.github.io/pokemontology/id/ruleset/pokeapi-default> a pkm:Ruleset .
 
 pkm:MyCombatant
     a pkm:BattleParticipant ;
@@ -44,20 +44,20 @@ pkm:Type_grass
 pkm:MovePropertyAssignment_ember
     a pkm:MovePropertyAssignment ;
     pkm:aboutMove pkm:Move_ember ;
-    pkm:hasContext pkm:Ruleset_PokeAPI_Default ;
+    pkm:hasContext <https://laurajoyhutchins.github.io/pokemontology/id/ruleset/pokeapi-default> ;
     pkm:hasMoveType pkm:Type_fire .
 
 pkm:TypingAssignment_bulbasaur_grass
     a pkm:TypingAssignment ;
     pkm:aboutPokemon pkm:Species_bulbasaur ;
-    pkm:hasContext pkm:Ruleset_PokeAPI_Default ;
+    pkm:hasContext <https://laurajoyhutchins.github.io/pokemontology/id/ruleset/pokeapi-default> ;
     pkm:aboutType pkm:Type_grass .
 
 pkm:TypeEffectivenessAssignment_fire_grass
     a pkm:TypeEffectivenessAssignment ;
     pkm:attackerType pkm:Type_fire ;
     pkm:defenderType pkm:Type_grass ;
-    pkm:hasContext pkm:Ruleset_PokeAPI_Default ;
+    pkm:hasContext <https://laurajoyhutchins.github.io/pokemontology/id/ruleset/pokeapi-default> ;
     pkm:hasDamageFactor "2.0"^^xsd:decimal .
 """.strip()
         + "\n",

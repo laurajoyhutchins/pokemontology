@@ -3,6 +3,7 @@ import { getCanonicalMechanicsLabel, mechanicsSourceCandidates } from "./docs-so
 import { loadSiteData } from "./site-render.js";
 
 const PKM_PREFIX = "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#";
+const POKEAPI_DEFAULT_RULESET_IRI = "<https://laurajoyhutchins.github.io/pokemontology/id/ruleset/pokeapi-default>";
 const askWorker = createWorkerRpc("pokedex");
 
 const CATALOG_QUERY = `
@@ -18,7 +19,7 @@ WHERE {
     ?typing a pkm:TypingAssignment ;
             pkm:aboutPokemon ?species ;
             pkm:aboutType ?type ;
-            pkm:hasContext pkm:Ruleset_PokeAPI_Default ;
+            pkm:hasContext ${POKEAPI_DEFAULT_RULESET_IRI} ;
             pkm:hasTypeSlot ?slot .
     ?type pkm:hasName ?typeName .
   }
@@ -35,7 +36,7 @@ WHERE {
   ?typing a pkm:TypingAssignment ;
           pkm:aboutPokemon ?pokemon ;
           pkm:aboutType ?type ;
-          pkm:hasContext pkm:Ruleset_PokeAPI_Default ;
+          pkm:hasContext ${POKEAPI_DEFAULT_RULESET_IRI} ;
           pkm:hasTypeSlot ?slot .
   ?type pkm:hasName ?typeName .
 }

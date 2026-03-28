@@ -19,7 +19,7 @@ WHERE {
   # Move type from PokeAPI data
   ?mpa a pkm:MovePropertyAssignment ;
        pkm:aboutMove ?moveEntity ;
-       pkm:hasContext pkm:Ruleset_PokeAPI_Default ;
+       pkm:hasContext <https://laurajoyhutchins.github.io/pokemontology/id/ruleset/pokeapi-default> ;
        pkm:hasMoveType ?moveType .
   ?moveType pkm:hasName ?moveTypeName .
 
@@ -47,7 +47,7 @@ WHERE {
     ?opponent pkm:representsSpecies ?species .
     ?ta a pkm:TypingAssignment ;
         pkm:aboutPokemon ?species ;
-        pkm:hasContext pkm:Ruleset_PokeAPI_Default ;
+        pkm:hasContext <https://laurajoyhutchins.github.io/pokemontology/id/ruleset/pokeapi-default> ;
         pkm:aboutType ?effectiveType .
   }
   ?effectiveType pkm:hasName ?effectiveTypeName .
@@ -56,7 +56,7 @@ WHERE {
   ?tea a pkm:TypeEffectivenessAssignment ;
        pkm:attackerType ?moveType ;
        pkm:defenderType ?effectiveType ;
-       pkm:hasContext pkm:Ruleset_PokeAPI_Default ;
+       pkm:hasContext <https://laurajoyhutchins.github.io/pokemontology/id/ruleset/pokeapi-default> ;
        pkm:hasDamageFactor ?factor .
   FILTER(?factor > 1.0)
 }

@@ -162,6 +162,8 @@ function cleanModelOutput(text) {
   return (fenced ? fenced[1] : text).trim();
 }
 
+const POKEAPI_DEFAULT_RULESET_IRI = "<https://laurajoyhutchins.github.io/pokemontology/id/ruleset/pokeapi-default>";
+
 function buildFallbackQuery(question, matches, schemaPack) {
   const lower = question.toLowerCase();
   const examples = schemaPack?.examples || [];
@@ -179,7 +181,8 @@ WHERE {
            pkm:hasName "${species}" .
   ?assignment a pkm:TypingAssignment ;
               pkm:aboutPokemon ?species ;
-              pkm:aboutType ?defenderType .
+              pkm:aboutType ?defenderType ;
+              pkm:hasContext ${POKEAPI_DEFAULT_RULESET_IRI} .
   ?moveType a pkm:Type ;
             pkm:hasName ?moveTypeName .
   OPTIONAL {
@@ -229,7 +232,8 @@ ASK {
            pkm:hasName "${species}" .
   ?assignment a pkm:TypingAssignment ;
               pkm:aboutPokemon ?species ;
-              pkm:aboutType ?type .
+              pkm:aboutType ?type ;
+              pkm:hasContext ${POKEAPI_DEFAULT_RULESET_IRI} .
   ?type pkm:hasName "${typeName}" .
 }`,
       summary: "Synthesized a typed ASK query from the question pattern.",

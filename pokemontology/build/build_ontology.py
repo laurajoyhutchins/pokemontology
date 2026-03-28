@@ -21,6 +21,7 @@ from pokemontology.chat import (
     PROMPT_MATCH_LIMIT,
     RETRIEVAL_MINIMUM_SCORES,
 )
+from pokemontology.ingest_common import PKMI
 from pokemontology.laurel import SUMMARY_PREVIEW_LIMIT
 from pokemontology.io_utils import display_repo_path, write_json_file
 
@@ -54,6 +55,7 @@ SHAPES_SOURCE = repo_path("shapes", "modules", "shapes.ttl")
 BUNDLED_QUERIES_DIR = repo_path("queries", "bundled")
 PKM = Namespace("https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#")
 TTL_PREFIX_HEADER = """@prefix pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#> .
+@prefix pkmi: <https://laurajoyhutchins.github.io/pokemontology/id/> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
@@ -84,16 +86,16 @@ WEB_MECHANICS_SLICES = (
         "description": "Older learnset archive for pre-3DS generations and side-game rulesets.",
     },
 )
-CURRENT_RULESET_TOKENS = ("pokeapi_default", "scarlet_violet")
+CURRENT_RULESET_TOKENS = ("pokeapi-default", "scarlet-violet")
 MODERN_RULESET_TOKENS = (
-    "x_y",
-    "omega_ruby_alpha_sapphire",
-    "sun_moon",
-    "ultra_sun_ultra_moon",
+    "x-y",
+    "omega-ruby-alpha-sapphire",
+    "sun-moon",
+    "ultra-sun-ultra-moon",
     "lets_go",
-    "sword_shield",
-    "brilliant_diamond_shining_pearl",
-    "legends_arceus",
+    "sword-shield",
+    "brilliant-diamond-shining-pearl",
+    "legends-arceus",
 )
 LOOKUP_TYPE_PRIORITY = {
     "Variant": 0,
@@ -105,10 +107,7 @@ LOOKUP_TYPE_PRIORITY = {
     "Ruleset": 6,
 }
 ENTITY_INDEX_TARGET_TYPES = frozenset(LOOKUP_TYPE_PRIORITY)
-ENTITY_BLOCK_RE = re.compile(
-    r"^(pkm:[A-Za-z0-9_]+)\s+a\s+pkm:([A-Za-z0-9_]+)\b", re.MULTILINE
-)
-
+INSTANCE_TERM_RE = r"(?:pkm:[A-Za-z0-9_]+|<https://laurajoyhutchins\.github\.io/pokemontology/id/[^>]+>)"
 MODULE_ORDER = [
     "00-header.ttl",
     "10-core.ttl",
@@ -220,8 +219,12 @@ def _iter_ttl_blocks(path) -> Iterator[str]:
 def _classify_mechanics_block(block: str) -> str:
     if " a pkm:MoveLearnRecord" not in block:
         return "base"
-    match = re.search(r"pkm:hasContext pkm:Ruleset_([A-Za-z0-9_]+)\s*;", block)
-    ruleset_slug = match.group(1).lower() if match else ""
+    match = re.search(r"pkm:hasContext\s+<https://laurajoyhutchins.github.io/pokemontology/id/ruleset/([^>]+)>", block)
+    if match is None:
+        legacy_match = re.search(r"pkm:hasContext pkm:Ruleset_([A-Za-z0-9_]+)\s*;", block)
+        ruleset_slug = legacy_match.group(1).lower().replace("_", "-") if legacy_match else ""
+    else:
+        ruleset_slug = match.group(1).lower()
     if any(token in ruleset_slug for token in CURRENT_RULESET_TOKENS):
         return "current"
     if any(token in ruleset_slug for token in MODERN_RULESET_TOKENS):
@@ -240,9 +243,36 @@ def _tokenize(text: str) -> list[str]:
 
 
 def _local_name(iri: str) -> str:
+    if iri.startswith(str(PKM)):
+        return iri.removeprefix(str(PKM))
+    if iri.startswith(str(PKMI)):
+        return iri.removeprefix(str(PKMI))
     if "#" in iri:
         return iri.rsplit("#", 1)[1]
     return iri.rsplit("/", 1)[-1]
+
+
+def _curie_for_iri(iri: URIRef | str) -> str:
+    iri_text = str(iri)
+    if iri_text.startswith(str(PKM)):
+        return f"pkm:{iri_text.removeprefix(str(PKM))}"
+    if iri_text.startswith(str(PKMI)):
+        return f"pkmi:{iri_text.removeprefix(str(PKMI))}"
+    return iri_text
+
+
+def _iri_for_curie(curie: str) -> str:
+    if curie.startswith("pkm:"):
+        return str(PKM[curie.removeprefix("pkm:")])
+    if curie.startswith("pkmi:"):
+        return f"{PKMI}{curie.removeprefix('pkmi:')}"
+    return curie
+
+
+def _curie_from_term(term: str) -> str:
+    if term.startswith("<") and term.endswith(">"):
+        return _curie_for_iri(term[1:-1])
+    return term
 
 
 def _literal_texts(graph: Graph, subject: URIRef, predicate: URIRef) -> list[str]:
@@ -263,7 +293,9 @@ def _normalize_lookup_text(text: str) -> str:
 
 
 def _friendly_local_name(local_name: str) -> str:
-    return local_name.replace("_", " ")
+    if "/" in local_name:
+        local_name = local_name.rsplit("/", 1)[-1]
+    return local_name.replace("_", " ").replace("-", " ")
 
 
 def _entity_type_iri(graph: Graph, entity: URIRef) -> URIRef | None:
@@ -281,6 +313,15 @@ def _entity_type_iri(graph: Graph, entity: URIRef) -> URIRef | None:
         ),
     )
     return candidates[0] if candidates else None
+
+
+def _is_instance_entity(graph: Graph, entity: URIRef) -> bool:
+    if str(entity).startswith(str(PKMI)):
+        return True
+    if str(entity).startswith(str(PKM)):
+        type_iri = _entity_type_iri(graph, entity)
+        return type_iri is not None
+    return False
 
 
 def _entity_aliases(graph: Graph, entity: URIRef, type_iri: URIRef | None) -> list[str]:
@@ -319,7 +360,7 @@ def _entity_contexts(graph: Graph, entity: URIRef, type_iri: URIRef | None) -> l
     return [
         {
             "iri": str(context),
-            "curie": f"pkm:{_local_name(str(context))}",
+            "curie": _curie_for_iri(context),
             "label": _literal_texts(graph, context, PKM.hasName)[0]
             if _literal_texts(graph, context, PKM.hasName)
             else _local_name(str(context)),
@@ -343,25 +384,24 @@ def _build_entity_index() -> dict[str, object]:
         return values
 
     def curie_object(block: str, predicate: str) -> str | None:
-        match = re.search(rf"pkm:{predicate}\s+(pkm:[A-Za-z0-9_]+)\b", block)
-        return match.group(1) if match else None
+        match = re.search(rf"pkm:{predicate}\s+({INSTANCE_TERM_RE})", block)
+        return _curie_from_term(match.group(1)) if match else None
 
     for source in (BUILD_POKEAPI, BUILD_VEEKUN):
         if not source.exists():
             continue
         for block in _iter_ttl_blocks(source):
-            entity_match = ENTITY_BLOCK_RE.search(block)
+            entity_match = re.search(rf"^({INSTANCE_TERM_RE})\s+a\s+pkm:([A-Za-z0-9_]+)\b", block, re.MULTILINE)
             if entity_match is not None:
-                subject_curie = entity_match.group(1)
+                subject_curie = _curie_from_term(entity_match.group(1))
                 type_name = entity_match.group(2)
                 if type_name in ENTITY_INDEX_TARGET_TYPES:
-                    local_name = subject_curie.removeprefix("pkm:")
                     names = literal_values(block, "hasName")
                     identifiers = literal_values(block, "hasIdentifier")
                     entity = entities_by_curie.setdefault(
                         subject_curie,
                         {
-                            "iri": str(PKM[local_name]),
+                            "iri": _iri_for_curie(subject_curie),
                             "curie": subject_curie,
                             "type_iri": str(PKM[type_name]),
                             "type_curie": f"pkm:{type_name}",
@@ -404,12 +444,8 @@ def _build_entity_index() -> dict[str, object]:
         if type_name == "Ruleset":
             contexts.add(subject_curie)
         labels = entity.get("labels", [])
-        if not isinstance(labels, list):
-            labels = []
         identifiers = entity.get("identifiers", [])
-        if not isinstance(identifiers, list):
-            identifiers = []
-        local_name = subject_curie.removeprefix("pkm:")
+        local_name = _local_name(_iri_for_curie(subject_curie))
         aliases = {
             _normalize_lookup_text(label)
             for label in labels
@@ -417,31 +453,19 @@ def _build_entity_index() -> dict[str, object]:
         }
         aliases.add(_normalize_lookup_text(local_name))
         aliases.add(_normalize_lookup_text(_friendly_local_name(local_name)))
-        if type_name == "Variant":
-            for label in labels:
-                if isinstance(label, str) and label.endswith("-Default"):
-                    aliases.add(_normalize_lookup_text(label.removesuffix("-Default")))
-        context_payloads = []
-        for context_curie in sorted(contexts):
-            context_entity = entities_by_curie.get(context_curie)
-            context_labels = (
-                context_entity.get("labels", [])
-                if isinstance(context_entity, dict)
-                else []
-            )
-            context_payloads.append(
-                {
-                    "iri": str(PKM[context_curie.removeprefix("pkm:")]),
-                    "curie": context_curie,
-                    "label": context_labels[0]
-                    if isinstance(context_labels, list) and context_labels
-                    else context_curie.removeprefix("pkm:"),
-                }
-            )
         payload = {
             **entity,
             "aliases": sorted(alias for alias in aliases if alias),
-            "contexts": context_payloads,
+            "contexts": [
+                {
+                    "iri": _iri_for_curie(context_curie),
+                    "curie": context_curie,
+                    "label": context_curie.removeprefix("pkmi:").rsplit("/", 1)[-1]
+                    if context_curie.startswith("pkmi:")
+                    else context_curie.removeprefix("pkm:"),
+                }
+                for context_curie in sorted(contexts)
+            ],
         }
         entities.append(payload)
         if type_name == "Ruleset":
@@ -475,16 +499,16 @@ def _build_graph_index() -> dict[str, object]:
         return values
 
     def curie_object(block: str, predicate: str) -> str | None:
-        match = re.search(rf"pkm:{predicate}\s+(pkm:[A-Za-z0-9_]+)\b", block)
-        return match.group(1) if match else None
+        match = re.search(rf"pkm:{predicate}\s+({INSTANCE_TERM_RE})", block)
+        return _curie_from_term(match.group(1)) if match else None
 
     def node_payload(subject_curie: str, type_name: str) -> dict[str, object]:
-        local_name = subject_curie.removeprefix("pkm:")
+        local_name = _local_name(_iri_for_curie(subject_curie))
         return nodes_by_curie.setdefault(
             subject_curie,
             {
                 "id": subject_curie,
-                "iri": str(PKM[local_name]),
+                "iri": _iri_for_curie(subject_curie),
                 "label": local_name,
                 "type": type_name,
                 "type_curie": f"pkm:{type_name}",
@@ -516,9 +540,9 @@ def _build_graph_index() -> dict[str, object]:
         if not source.exists():
             continue
         for block in _iter_ttl_blocks(source):
-            entity_match = ENTITY_BLOCK_RE.search(block)
+            entity_match = re.search(rf"^({INSTANCE_TERM_RE})\s+a\s+pkm:([A-Za-z0-9_]+)\b", block, re.MULTILINE)
             if entity_match is not None:
-                subject_curie = entity_match.group(1)
+                subject_curie = _curie_from_term(entity_match.group(1))
                 type_name = entity_match.group(2)
                 if type_name in ENTITY_INDEX_TARGET_TYPES:
                     node = node_payload(subject_curie, type_name)
@@ -682,6 +706,10 @@ def _schema_pack(
             "alias": "pkm:",
             "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#",
         },
+        {
+            "alias": "pkmi:",
+            "iri": "https://laurajoyhutchins.github.io/pokemontology/id/",
+        },
         {"alias": "rdf:", "iri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#"},
         {"alias": "rdfs:", "iri": "http://www.w3.org/2000/01/rdf-schema#"},
         {"alias": "owl:", "iri": "http://www.w3.org/2002/07/owl#"},
@@ -701,7 +729,7 @@ def _schema_pack(
             "label": "TypingAssignment pattern",
             "iri": "",
             "summary": "Variant typing is modeled as a contextual fact.",
-            "snippet": "TypingAssignment aboutPokemon ?pokemon ; hasContext pkm:Ruleset_PokeAPI_Default ; aboutType ?type .",
+            "snippet": "TypingAssignment aboutPokemon ?pokemon ; hasContext <https://laurajoyhutchins.github.io/pokemontology/id/ruleset/pokeapi-default> ; aboutType ?type .",
         },
         {
             "kind": "pattern",

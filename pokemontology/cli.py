@@ -20,7 +20,7 @@ from .chat import (
     generate_sparql,
     retrieve_matches,
 )
-from .ingest_common import serialize_turtle_to_path
+from .ingest_common import PKMI, serialize_turtle_to_path
 from .io_utils import display_repo_path, format_json_text, read_json_file
 from .laurel_eval import DEFAULT_SUITE, EvalConfig, describe_suite, evaluate_suite, load_suite
 from .laurel import summarize_results
@@ -58,8 +58,10 @@ _RAG_MATCH_CACHE: dict[tuple[str, str, int, int], list[dict[str, object]]] = {}
 _ENTITY_INDEX_CACHE: dict[tuple[str, int, int], dict[str, object]] = {}
 
 PKM_NAMESPACE = "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#"
+PKMI_NAMESPACE = "https://laurajoyhutchins.github.io/pokemontology/id/"
 CURIE_PREFIXES = (
     ("pkm:", PKM_NAMESPACE),
+    ("pkmi:", PKMI_NAMESPACE),
     ("rdf:", str(RDF)),
     ("rdfs:", str(RDFS)),
     ("owl:", str(OWL)),
@@ -182,7 +184,7 @@ def _normalize_pkm_term(value: str) -> URIRef:
         if not local_name:
             raise CliUsageError("pkm term must include a local name")
         return URIRef(f"{PKM_NAMESPACE}{local_name}")
-    if term.startswith(PKM_NAMESPACE):
+    if term.startswith(PKM_NAMESPACE) or term.startswith(PKMI_NAMESPACE):
         return URIRef(term)
     if "://" in term:
         raise CliUsageError(
@@ -303,13 +305,19 @@ def _normalize_lookup_text(text: str) -> str:
 
 
 def _local_name(iri: str) -> str:
+    if iri.startswith(PKM_NAMESPACE):
+        return iri.removeprefix(PKM_NAMESPACE)
+    if iri.startswith(PKMI_NAMESPACE):
+        return iri.removeprefix(PKMI_NAMESPACE)
     if "#" in iri:
         return iri.rsplit("#", 1)[1]
     return iri.rsplit("/", 1)[-1]
 
 
 def _friendly_local_name(local_name: str) -> str:
-    return local_name.replace("_", " ")
+    if "/" in local_name:
+        local_name = local_name.rsplit("/", 1)[-1]
+    return local_name.replace("_", " ").replace("-", " ")
 
 
 def _entity_type_iri(graph: Graph, entity: URIRef) -> URIRef | None:
@@ -327,6 +335,15 @@ def _entity_type_iri(graph: Graph, entity: URIRef) -> URIRef | None:
         ),
     )
     return candidates[0] if candidates else None
+
+
+def _is_instance_entity(graph: Graph, entity: URIRef) -> bool:
+    if str(entity).startswith(PKMI_NAMESPACE):
+        return True
+    if str(entity).startswith(PKM_NAMESPACE):
+        type_iri = _entity_type_iri(graph, entity)
+        return type_iri is not None
+    return False
 
 
 def _entity_aliases(graph: Graph, entity: URIRef, type_iri: URIRef | None) -> set[str]:
@@ -366,7 +383,7 @@ def _build_entity_index_from_ttl(path: Path) -> dict[str, object]:
         {
             subject
             for subject in graph.subjects(RDF.type, None)
-            if isinstance(subject, URIRef) and str(subject).startswith(PKM_NAMESPACE)
+            if isinstance(subject, URIRef) and _is_instance_entity(graph, subject)
         },
         key=lambda value: str(value),
     ):

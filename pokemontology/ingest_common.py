@@ -13,6 +13,28 @@ from ._script_loader import REPO_ROOT
 
 SITE_BASE = "https://laurajoyhutchins.github.io/pokemontology"
 PKM = Namespace(f"{SITE_BASE}/ontology.ttl#")
+PKMI = Namespace(f"{SITE_BASE}/id/")
+
+INSTANCE_KIND_BY_CLASS_NAME = {
+    "Species": "species",
+    "Variant": "variant",
+    "Move": "move",
+    "Ability": "ability",
+    "Item": "item",
+    "Type": "type",
+    "Stat": "stat",
+    "Ruleset": "ruleset",
+    "VersionGroup": "version-group",
+    "TypingAssignment": "assignment/typing",
+    "StatAssignment": "assignment/stat",
+    "AbilityAssignment": "assignment/ability",
+    "MoveLearnRecord": "assignment/move-learn",
+    "MovePropertyAssignment": "assignment/move-property",
+    "ItemPropertyAssignment": "assignment/item-property",
+    "TypeEffectivenessAssignment": "assignment/type-effectiveness",
+    "Ref": "reference",
+    "DatasetArtifact": "artifact",
+}
 
 
 def sanitize_identifier(value: str) -> str:
@@ -26,12 +48,44 @@ def sanitize_identifier(value: str) -> str:
     return value
 
 
-def iri_for(class_name: str, identifier: str) -> URIRef:
-    return PKM[f"{class_name}_{sanitize_identifier(identifier)}"]
+def sanitize_path_segment(value: str) -> str:
+    value = value.strip().lower()
+    value = re.sub(r"[^a-z0-9]+", "-", value)
+    value = re.sub(r"-+", "-", value).strip("-")
+    if not value:
+        return "unnamed"
+    if value[0].isdigit():
+        return f"n-{value}"
+    return value
+
+
+def vocab_iri(local_name: str) -> URIRef:
+    return PKM[local_name]
+
+
+def instance_iri(*segments: str) -> URIRef:
+    path = "/".join(sanitize_path_segment(segment) for segment in segments if segment)
+    return URIRef(f"{PKMI}{path}")
+
+
+def entity_iri(class_name: str, identifier: str) -> URIRef:
+    kind = INSTANCE_KIND_BY_CLASS_NAME.get(class_name)
+    if kind is None:
+        raise KeyError(f"unsupported instance class name: {class_name}")
+    return instance_iri(kind, identifier)
+
+
+def assignment_iri(class_name: str, *segments: str) -> URIRef:
+    kind = INSTANCE_KIND_BY_CLASS_NAME.get(class_name)
+    if kind is None or not kind.startswith("assignment/"):
+        raise KeyError(f"unsupported assignment class name: {class_name}")
+    prefix_segments = kind.split("/")
+    return instance_iri(*prefix_segments, *segments)
 
 
 def bind_namespaces(g: Graph) -> None:
     g.bind("pkm", PKM)
+    g.bind("pkmi", PKMI)
     g.bind("rdf", RDF)
     g.bind("rdfs", RDFS)
     g.bind("xsd", XSD)
@@ -64,7 +118,7 @@ def add_external_reference(
     artifact_iri: URIRef,
     external_iri: str,
 ) -> URIRef:
-    ref_iri = iri_for("Ref", f"{source_slug}_{resource}_{identifier}")
+    ref_iri = instance_iri("reference", source_slug, resource, identifier)
     g.add((ref_iri, RDF.type, PKM.ExternalEntityReference))
     g.add((ref_iri, PKM.refersToEntity, entity_iri))
     g.add((ref_iri, PKM.describedByArtifact, artifact_iri))

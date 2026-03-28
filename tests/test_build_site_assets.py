@@ -42,7 +42,7 @@ def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
         "  pkm:hasName \"Froakie\" ;\n"
         "  pkm:hasIdentifier \"pokeapi:species:froakie\" .\n"
         "\n"
-        "pkm:Ruleset_PokeAPI_Default a pkm:Ruleset ;\n"
+        "<https://laurajoyhutchins.github.io/pokemontology/id/ruleset/pokeapi-default> a pkm:Ruleset ;\n"
         "  pkm:hasName \"PokeAPI Default (Current Generation)\" .\n"
         "\n"
         "pkm:Type_water a pkm:Type ;\n"
@@ -60,24 +60,24 @@ def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
         "pkm:TypingAssignment_froakie a pkm:TypingAssignment ;\n"
         "  pkm:aboutPokemon pkm:Species_froakie ;\n"
         "  pkm:aboutType pkm:Type_water ;\n"
-        "  pkm:hasContext pkm:Ruleset_PokeAPI_Default ;\n"
+        "  pkm:hasContext <https://laurajoyhutchins.github.io/pokemontology/id/ruleset/pokeapi-default> ;\n"
         "  pkm:hasTypeSlot 1 .\n"
         "\n"
         "pkm:AbilityAssignment_froakie a pkm:AbilityAssignment ;\n"
         "  pkm:aboutPokemon pkm:Species_froakie ;\n"
         "  pkm:aboutAbility pkm:Ability_torrent ;\n"
-        "  pkm:hasContext pkm:Ruleset_PokeAPI_Default .\n"
+        "  pkm:hasContext <https://laurajoyhutchins.github.io/pokemontology/id/ruleset/pokeapi-default> .\n"
         "\n"
         "pkm:MovePropertyAssignment_bubble a pkm:MovePropertyAssignment ;\n"
         "  pkm:aboutMove pkm:Move_bubble ;\n"
         "  pkm:hasMoveType pkm:Type_water ;\n"
-        "  pkm:hasContext pkm:Ruleset_PokeAPI_Default .\n"
+        "  pkm:hasContext <https://laurajoyhutchins.github.io/pokemontology/id/ruleset/pokeapi-default> .\n"
         "\n"
         "pkm:MoveLearnRecord_froakie_bubble a pkm:MoveLearnRecord ;\n"
         "  pkm:aboutPokemon pkm:Species_froakie ;\n"
         "  pkm:learnableMove pkm:Move_bubble ;\n"
         "  pkm:isLearnableInRuleset true ;\n"
-        "  pkm:hasContext pkm:Ruleset_PokeAPI_Default .\n",
+        "  pkm:hasContext <https://laurajoyhutchins.github.io/pokemontology/id/ruleset/pokeapi-default> .\n",
         encoding="utf-8",
     )
     (tmp_path / "build" / "veekun.ttl").write_text(
@@ -93,7 +93,7 @@ def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
         "# Super-effective move query\n"
         "# Requires: build/ontology.ttl + build/mechanics.ttl + a replay slice TTL\n"
         "PREFIX pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#>\n"
-        "ASK { ?assignment pkm:hasContext pkm:Ruleset_PokeAPI_Default . }\n",
+        "ASK { ?assignment pkm:hasContext <https://laurajoyhutchins.github.io/pokemontology/id/ruleset/pokeapi-default> . }\n",
         encoding="utf-8",
     )
 
@@ -162,7 +162,7 @@ def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
     assert "SERVICE" in schema_index["validation"]["forbidden_keywords"]
     assert "Species" in schema_index["validation"]["known_terms"]
     assert "actor" in schema_index["validation"]["known_terms"]
-    assert "Ruleset_PokeAPI_Default" in schema_index["validation"]["known_terms"]
+    assert "Ruleset" in schema_index["validation"]["known_terms"]
     assert schema_index["response"]["list_preview_limit"] == 5
     assert schema_index["inference"]["webllm_model"]
     assert any(item["label"] == "Species" for item in schema_index["items"])

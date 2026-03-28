@@ -21,8 +21,10 @@ from pokemontology.ingest_common import (
     add_dataset_artifact,
     add_dataset_header,
     add_external_reference,
+    assignment_iri,
     bind_namespaces,
-    iri_for,
+    entity_iri,
+    instance_iri,
     serialize_turtle_to_path,
     sanitize_identifier,
 )
@@ -32,6 +34,7 @@ REPO = REPO_ROOT
 DEFAULT_RAW_DIR = REPO / "data" / "pokeapi" / "raw"
 DEFAULT_OUTPUT = REPO / "data" / "ingested" / "pokeapi.ttl"
 POKEAPI_BASE = "https://pokeapi.co/api/v2"
+POKEAPI_ARTIFACT_IRI = instance_iri("artifact", "pokeapi")
 
 SUPPORTED_RESOURCES = (
     "pokemon",
@@ -233,15 +236,15 @@ def add_named_resource(
         resource=resource,
         identifier=payload_name(payload),
         entity_iri=iri,
-        artifact_iri=PKM.DatasetArtifact_PokeAPI,
+        artifact_iri=POKEAPI_ARTIFACT_IRI,
         external_iri=pokeapi_resource_url(resource, payload),
     )
 
 
 def add_version_group_context(g: Graph, payload: dict) -> URIRef:
     version_group_name = payload_name(payload)
-    version_group_iri = iri_for("VersionGroup", version_group_name)
-    ruleset_iri = iri_for("Ruleset", version_group_name)
+    version_group_iri = entity_iri("VersionGroup", version_group_name)
+    ruleset_iri = entity_iri("Ruleset", version_group_name)
 
     add_named_resource(g, version_group_iri, PKM.VersionGroup, payload, "version-group")
     g.add((ruleset_iri, RDF.type, PKM.Ruleset))
@@ -301,10 +304,10 @@ def build_graph_from_raw(raw_dir: Path) -> Graph:
         "Only data that maps cleanly into the ontology is emitted: canonical entities, "
         "variant-to-species links, version-group contexts, and version-group-scoped move learnability.",
     )
-    add_dataset_artifact(g, PKM.DatasetArtifact_PokeAPI, "PokeAPI", f"{POKEAPI_BASE}/")
+    add_dataset_artifact(g, POKEAPI_ARTIFACT_IRI, "PokeAPI", f"{POKEAPI_BASE}/")
 
     # Synthetic default ruleset for current-gen PokeAPI data (referenced throughout)
-    default_ruleset_iri = PKM["Ruleset_PokeAPI_Default"]
+    default_ruleset_iri = entity_iri("Ruleset", "PokeAPI_Default")
     g.add((default_ruleset_iri, RDF.type, PKM.Ruleset))
     g.add(
         (
@@ -317,18 +320,18 @@ def build_graph_from_raw(raw_dir: Path) -> Graph:
 
     for payload in payloads["type"]:
         add_named_resource(
-            g, iri_for("Type", payload_name(payload)), PKM.Type, payload, "type"
+            g, entity_iri("Type", payload_name(payload)), PKM.Type, payload, "type"
         )
 
     for payload in payloads["stat"]:
         add_named_resource(
-            g, iri_for("Stat", payload_name(payload)), PKM.Stat, payload, "stat"
+            g, entity_iri("Stat", payload_name(payload)), PKM.Stat, payload, "stat"
         )
 
     for payload in payloads["ability"]:
         add_named_resource(
             g,
-            iri_for("Ability", payload_name(payload)),
+            entity_iri("Ability", payload_name(payload)),
             PKM.Ability,
             payload,
             "ability",
@@ -336,21 +339,21 @@ def build_graph_from_raw(raw_dir: Path) -> Graph:
 
     for payload in payloads["item"]:
         item_name = payload_name(payload)
-        item_iri = iri_for("Item", item_name)
+        item_iri = entity_iri("Item", item_name)
         add_named_resource(g, item_iri, PKM.Item, payload, "item")
-        ipa_iri = iri_for("ItemPropertyAssignment", f"{item_name}_current")
+        ipa_iri = assignment_iri("ItemPropertyAssignment", item_name, "current")
         g.add((ipa_iri, RDF.type, PKM.ItemPropertyAssignment))
         g.add((ipa_iri, PKM.aboutItem, item_iri))
         g.add((ipa_iri, PKM.hasContext, default_ruleset_iri))
 
     for payload in payloads["move"]:
         move_name = payload_name(payload)
-        add_named_resource(g, iri_for("Move", move_name), PKM.Move, payload, "move")
+        add_named_resource(g, entity_iri("Move", move_name), PKM.Move, payload, "move")
         move_type_name = payload.get("type", {}).get("name")
         if move_type_name:
-            type_iri = iri_for("Type", move_type_name)
-            move_iri = iri_for("Move", move_name)
-            mpa_iri = iri_for("MovePropertyAssignment", f"{move_name}_current")
+            type_iri = entity_iri("Type", move_type_name)
+            move_iri = entity_iri("Move", move_name)
+            mpa_iri = assignment_iri("MovePropertyAssignment", move_name, "current")
             g.add((mpa_iri, RDF.type, PKM.MovePropertyAssignment))
             g.add((mpa_iri, PKM.aboutMove, move_iri))
             g.add((mpa_iri, PKM.hasContext, default_ruleset_iri))
@@ -381,7 +384,7 @@ def build_graph_from_raw(raw_dir: Path) -> Graph:
     for payload in payloads["pokemon-species"]:
         add_named_resource(
             g,
-            iri_for("Species", payload_name(payload)),
+            entity_iri("Species", payload_name(payload)),
             PKM.Species,
             payload,
             "pokemon-species",
@@ -397,23 +400,25 @@ def build_graph_from_raw(raw_dir: Path) -> Graph:
         "no_damage_to": Decimal("0.0"),
     }
     for payload in payloads["type"]:
-        attacker_iri = iri_for("Type", payload_name(payload))
+        attacker_iri = entity_iri("Type", payload_name(payload))
         relations = payload.get("damage_relations", {})
         for relation_key, factor in damage_factor_map.items():
             for defender_entry in relations.get(relation_key, []):
                 defender_name = defender_entry["name"]
-                defender_iri = iri_for("Type", defender_name)
-                assignment_iri = iri_for(
+                defender_iri = entity_iri("Type", defender_name)
+                type_effectiveness_iri = assignment_iri(
                     "TypeEffectivenessAssignment",
-                    f"{payload_name(payload)}_{defender_name}_current",
+                    payload_name(payload),
+                    defender_name,
+                    "current",
                 )
-                g.add((assignment_iri, RDF.type, PKM.TypeEffectivenessAssignment))
-                g.add((assignment_iri, PKM.attackerType, attacker_iri))
-                g.add((assignment_iri, PKM.defenderType, defender_iri))
-                g.add((assignment_iri, PKM.hasContext, default_ruleset_iri))
+                g.add((type_effectiveness_iri, RDF.type, PKM.TypeEffectivenessAssignment))
+                g.add((type_effectiveness_iri, PKM.attackerType, attacker_iri))
+                g.add((type_effectiveness_iri, PKM.defenderType, defender_iri))
+                g.add((type_effectiveness_iri, PKM.hasContext, default_ruleset_iri))
                 g.add(
                     (
-                        assignment_iri,
+                        type_effectiveness_iri,
                         PKM.hasDamageFactor,
                         Literal(factor, datatype=XSD.decimal),
                     )
@@ -425,10 +430,10 @@ def build_graph_from_raw(raw_dir: Path) -> Graph:
         species_name = payload.get("species", {}).get("name")
         if not species_name:
             raise SystemExit(f"pokemon payload missing species link: {pokemon_name}")
-        species_iri = iri_for("Species", species_name)
+        species_iri = entity_iri("Species", species_name)
         mechanics_subject_iri = species_iri
         if not is_default_pokemon(payload, species_by_name):
-            variant_iri = iri_for("Variant", pokemon_name)
+            variant_iri = entity_iri("Variant", pokemon_name)
             mechanics_subject_iri = variant_iri
             g.add((variant_iri, RDF.type, PKM.Variant))
             g.add((variant_iri, PKM.belongsToSpecies, species_iri))
@@ -452,7 +457,7 @@ def build_graph_from_raw(raw_dir: Path) -> Graph:
             resource="pokemon",
             identifier=pokemon_name,
             entity_iri=mechanics_subject_iri,
-            artifact_iri=PKM.DatasetArtifact_PokeAPI,
+            artifact_iri=POKEAPI_ARTIFACT_IRI,
             external_iri=pokeapi_resource_url("pokemon", payload),
         )
 
@@ -462,10 +467,14 @@ def build_graph_from_raw(raw_dir: Path) -> Graph:
             type_name = type_slot.get("type", {}).get("name")
             if not type_name:
                 continue
-            type_iri = iri_for("Type", type_name)
-            typing_assignment_iri = iri_for(
+            type_iri = entity_iri("Type", type_name)
+            typing_assignment_iri = assignment_iri(
                 "TypingAssignment",
-                f"{pokemon_name}_{type_name}_current",
+                "pokemon",
+                pokemon_name,
+                "type",
+                type_name,
+                "current",
             )
             g.add((typing_assignment_iri, RDF.type, PKM.TypingAssignment))
             g.add((typing_assignment_iri, PKM.aboutPokemon, mechanics_subject_iri))
@@ -484,17 +493,21 @@ def build_graph_from_raw(raw_dir: Path) -> Graph:
             ability_name = ability_slot.get("ability", {}).get("name")
             if not ability_name:
                 continue
-            ability_iri = iri_for("Ability", ability_name)
+            ability_iri = entity_iri("Ability", ability_name)
             is_hidden = ability_slot.get("is_hidden", False)
-            assignment_iri = iri_for(
+            ability_assignment_iri = assignment_iri(
                 "AbilityAssignment",
-                f"{pokemon_name}_{ability_name}_current",
+                "pokemon",
+                pokemon_name,
+                "ability",
+                ability_name,
+                "current",
             )
-            g.add((assignment_iri, RDF.type, PKM.AbilityAssignment))
-            g.add((assignment_iri, PKM.aboutPokemon, mechanics_subject_iri))
-            g.add((assignment_iri, PKM.aboutAbility, ability_iri))
-            g.add((assignment_iri, PKM.hasContext, default_ruleset_iri))
-            g.add((assignment_iri, PKM.isHiddenAbility, boolean_literal(is_hidden)))
+            g.add((ability_assignment_iri, RDF.type, PKM.AbilityAssignment))
+            g.add((ability_assignment_iri, PKM.aboutPokemon, mechanics_subject_iri))
+            g.add((ability_assignment_iri, PKM.aboutAbility, ability_iri))
+            g.add((ability_assignment_iri, PKM.hasContext, default_ruleset_iri))
+            g.add((ability_assignment_iri, PKM.isHiddenAbility, boolean_literal(is_hidden)))
 
         # StatAssignment from pokemon.stats
         for stat_slot in payload.get("stats", []):
@@ -502,18 +515,22 @@ def build_graph_from_raw(raw_dir: Path) -> Graph:
             base_stat = stat_slot.get("base_stat")
             if not stat_name or base_stat is None:
                 continue
-            stat_iri = iri_for("Stat", stat_name)
-            assignment_iri = iri_for(
+            stat_iri = entity_iri("Stat", stat_name)
+            stat_assignment_iri = assignment_iri(
                 "StatAssignment",
-                f"{pokemon_name}_{stat_name}_current",
+                "pokemon",
+                pokemon_name,
+                "stat",
+                stat_name,
+                "current",
             )
-            g.add((assignment_iri, RDF.type, PKM.StatAssignment))
-            g.add((assignment_iri, PKM.aboutPokemon, mechanics_subject_iri))
-            g.add((assignment_iri, PKM.aboutStat, stat_iri))
-            g.add((assignment_iri, PKM.hasContext, default_ruleset_iri))
+            g.add((stat_assignment_iri, RDF.type, PKM.StatAssignment))
+            g.add((stat_assignment_iri, PKM.aboutPokemon, mechanics_subject_iri))
+            g.add((stat_assignment_iri, PKM.aboutStat, stat_iri))
+            g.add((stat_assignment_iri, PKM.hasContext, default_ruleset_iri))
             g.add(
                 (
-                    assignment_iri,
+                    stat_assignment_iri,
                     PKM.hasValue,
                     Literal(base_stat, datatype=XSD.integer),
                 )
@@ -533,21 +550,26 @@ def build_graph_from_raw(raw_dir: Path) -> Graph:
                 if key in learn_records_seen:
                     continue
                 learn_records_seen.add(key)
-                assignment_iri = iri_for(
+                move_learn_record_iri = assignment_iri(
                     "MoveLearnRecord",
-                    f"{pokemon_name}_{move_name}_{version_group_name}",
+                    "pokemon",
+                    pokemon_name,
+                    "move",
+                    move_name,
+                    "ruleset",
+                    version_group_name,
                 )
-                g.add((assignment_iri, RDF.type, PKM.MoveLearnRecord))
-                g.add((assignment_iri, PKM.aboutPokemon, mechanics_subject_iri))
-                g.add((assignment_iri, PKM.learnableMove, iri_for("Move", move_name)))
+                g.add((move_learn_record_iri, RDF.type, PKM.MoveLearnRecord))
+                g.add((move_learn_record_iri, PKM.aboutPokemon, mechanics_subject_iri))
+                g.add((move_learn_record_iri, PKM.learnableMove, entity_iri("Move", move_name)))
                 g.add(
                     (
-                        assignment_iri,
+                        move_learn_record_iri,
                         PKM.hasContext,
-                        iri_for("Ruleset", version_group_name),
+                        entity_iri("Ruleset", version_group_name),
                     )
                 )
-                g.add((assignment_iri, PKM.isLearnableInRuleset, boolean_literal(True)))
+                g.add((move_learn_record_iri, PKM.isLearnableInRuleset, boolean_literal(True)))
 
     return g
 

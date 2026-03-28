@@ -55,6 +55,7 @@ _WHERE_VAR_RE = re.compile(r"\bWHERE\s*\{([^}]*)\}", re.IGNORECASE | re.DOTALL)
 _PROJECTED_VAR_RE = re.compile(r"\?([A-Za-z_][\w-]*)")
 _GENERATION_CACHE: dict[tuple[str, str, str, str], str] = {}
 _PKM_PREFIX = "PREFIX pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#>"
+_POKEAPI_DEFAULT_RULESET_IRI = "<https://laurajoyhutchins.github.io/pokemontology/id/ruleset/pokeapi-default>"
 _XSD_PREFIX = "PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>"
 
 
@@ -239,7 +240,7 @@ ASK {{
   ?assignment a pkm:TypingAssignment ;
               pkm:aboutPokemon ?species ;
               pkm:aboutType ?type ;
-              pkm:hasContext pkm:Ruleset_PokeAPI_Default .
+              pkm:hasContext {_POKEAPI_DEFAULT_RULESET_IRI} .
   ?type pkm:hasName "{_escape_literal(type_name)}" .
 }}"""
 
@@ -254,7 +255,7 @@ WHERE {{
   ?assignment a pkm:TypingAssignment ;
               pkm:aboutPokemon ?species ;
               pkm:aboutType ?type ;
-              pkm:hasContext pkm:Ruleset_PokeAPI_Default .
+              pkm:hasContext {_POKEAPI_DEFAULT_RULESET_IRI} .
   ?type pkm:hasName ?typeName .
 }}
 ORDER BY ?typeName
@@ -271,14 +272,14 @@ WHERE {{
   ?assignment a pkm:TypingAssignment ;
               pkm:aboutPokemon ?species ;
               pkm:aboutType ?defenderType ;
-              pkm:hasContext pkm:Ruleset_PokeAPI_Default .
+              pkm:hasContext {_POKEAPI_DEFAULT_RULESET_IRI} .
   ?moveType a pkm:Type ;
             pkm:hasName ?moveTypeName .
   ?effectiveness a pkm:TypeEffectivenessAssignment ;
                  pkm:attackerType ?moveType ;
                  pkm:defenderType ?defenderType ;
                  pkm:hasDamageFactor ?factor ;
-                 pkm:hasContext pkm:Ruleset_PokeAPI_Default .
+                 pkm:hasContext {_POKEAPI_DEFAULT_RULESET_IRI} .
   FILTER(?factor > 1.0)
 }}
 ORDER BY ?moveTypeName
@@ -294,14 +295,14 @@ ASK {{
   ?moveProps a pkm:MovePropertyAssignment ;
              pkm:aboutMove ?attackEntity ;
              pkm:hasMoveType ?moveType ;
-             pkm:hasContext pkm:Ruleset_PokeAPI_Default .
+             pkm:hasContext {_POKEAPI_DEFAULT_RULESET_IRI} .
   ?defenderType a pkm:Type ;
                 pkm:hasName "{_escape_literal(type_name)}" .
   ?effectiveness a pkm:TypeEffectivenessAssignment ;
                  pkm:attackerType ?moveType ;
                  pkm:defenderType ?defenderType ;
                  pkm:hasDamageFactor ?factor ;
-                 pkm:hasContext pkm:Ruleset_PokeAPI_Default .
+                 pkm:hasContext {_POKEAPI_DEFAULT_RULESET_IRI} .
   FILTER(?factor > 1.0)
 }}"""
 
@@ -315,14 +316,14 @@ ASK {{
   ?moveProps a pkm:MovePropertyAssignment ;
              pkm:aboutMove ?attackEntity ;
              pkm:hasMoveType ?moveType ;
-             pkm:hasContext pkm:Ruleset_PokeAPI_Default .
+             pkm:hasContext {_POKEAPI_DEFAULT_RULESET_IRI} .
   ?defenderType a pkm:Type ;
                 pkm:hasName "{_escape_literal(type_name)}" .
   ?effectiveness a pkm:TypeEffectivenessAssignment ;
                  pkm:attackerType ?moveType ;
                  pkm:defenderType ?defenderType ;
                  pkm:hasDamageFactor ?factor ;
-                 pkm:hasContext pkm:Ruleset_PokeAPI_Default .
+                 pkm:hasContext {_POKEAPI_DEFAULT_RULESET_IRI} .
   FILTER(?factor > 0.0)
 }}"""
 
@@ -771,7 +772,7 @@ def _transformation_patterns() -> str:
         "   PREFIX pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#>\n"
         "   ASK {\n"
         '     ?species a pkm:Species ; pkm:hasName "Charizard" .\n'
-        "     ?assignment a pkm:TypingAssignment ; pkm:aboutPokemon ?species ; pkm:aboutType ?type .\n"
+        f"     ?assignment a pkm:TypingAssignment ; pkm:aboutPokemon ?species ; pkm:aboutType ?type ; pkm:hasContext {_POKEAPI_DEFAULT_RULESET_IRI} .\n"
         '     ?type pkm:hasName "Fire" .\n'
         "   }\n"
         "2. Species matchup questions such as 'Which move types are super effective against Charizard?' should become a bounded SELECT query.\n"
@@ -781,7 +782,7 @@ def _transformation_patterns() -> str:
         "   SELECT ?moveTypeName (SUM(?factorScore) AS ?netScore)\n"
         "   WHERE {\n"
         '     ?species a pkm:Species ; pkm:hasName "Charizard" .\n'
-        "     ?assignment a pkm:TypingAssignment ; pkm:aboutPokemon ?species ; pkm:aboutType ?defenderType .\n"
+        f"     ?assignment a pkm:TypingAssignment ; pkm:aboutPokemon ?species ; pkm:aboutType ?defenderType ; pkm:hasContext {_POKEAPI_DEFAULT_RULESET_IRI} .\n"
         "     ?moveType a pkm:Type ; pkm:hasName ?moveTypeName .\n"
         "     OPTIONAL {\n"
         "       ?effectiveness a pkm:TypeEffectivenessAssignment ;\n"

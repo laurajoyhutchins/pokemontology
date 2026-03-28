@@ -8,6 +8,7 @@ Rebuild with `python3 -m pokemontology build`.
 | Prefix | IRI |
 | --- | --- |
 | `pkm:` | `https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#` |
+| `pkmi:` | `https://laurajoyhutchins.github.io/pokemontology/id/` |
 | `rdf:` | `http://www.w3.org/1999/02/22-rdf-syntax-ns#` |
 | `rdfs:` | `http://www.w3.org/2000/01/rdf-schema#` |
 | `owl:` | `http://www.w3.org/2002/07/owl#` |
@@ -23,7 +24,7 @@ These are the recurring graph shapes the codebase expects queries to use.
 Variant typing is modeled as a contextual fact.
 
 ```sparql
-TypingAssignment aboutPokemon ?pokemon ; hasContext pkm:Ruleset_PokeAPI_Default ; aboutType ?type .
+TypingAssignment aboutPokemon ?pokemon ; hasContext <https://laurajoyhutchins.github.io/pokemontology/id/ruleset/pokeapi-default> ; aboutType ?type .
 ```
 
 ### Type effectiveness pattern
@@ -64,7 +65,7 @@ WHERE {
   # Move type from PokeAPI data
   ?mpa a pkm:MovePropertyAssignment ;
        pkm:aboutMove ?moveEntity ;
-       pkm:hasContext pkm:Ruleset_PokeAPI_Default ;
+       pkm:hasContext <https://laurajoyhutchins.github.io/pokemontology/id/ruleset/pokeapi-default> ;
        pkm:hasMoveType ?moveType .
   ?moveType pkm:hasName ?moveTypeName .
 
@@ -92,7 +93,7 @@ WHERE {
     ?opponent pkm:representsSpecies ?species .
     ?ta a pkm:TypingAssignment ;
         pkm:aboutPokemon ?species ;
-        pkm:hasContext pkm:Ruleset_PokeAPI_Default ;
+        pkm:hasContext <https://laurajoyhutchins.github.io/pokemontology/id/ruleset/pokeapi-default> ;
         pkm:aboutType ?effectiveType .
   }
   ?effectiveType pkm:hasName ?effectiveTypeName .
@@ -101,7 +102,7 @@ WHERE {
   ?tea a pkm:TypeEffectivenessAssignment ;
        pkm:attackerType ?moveType ;
        pkm:defenderType ?effectiveType ;
-       pkm:hasContext pkm:Ruleset_PokeAPI_Default ;
+       pkm:hasContext <https://laurajoyhutchins.github.io/pokemontology/id/ruleset/pokeapi-default> ;
        pkm:hasDamageFactor ?factor .
   FILTER(?factor > 1.0)
 }

@@ -13,6 +13,7 @@ from tests.support import copy_fixture_tree, fixture_path
 
 
 PKM = Namespace("https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#")
+PKMI = Namespace("https://laurajoyhutchins.github.io/pokemontology/id/")
 
 
 def test_extract_upstream_csv_archive_writes_required_files(tmp_path) -> None:
@@ -40,14 +41,14 @@ def test_normalize_veekun_csv_emits_expected_export(tmp_path) -> None:
     veekun_ingest.normalize_veekun_csv(raw_dir, source_dir, include_learnsets=True)
 
     graph = veekun_ingest.build_graph_from_csv(source_dir)
-    assert (PKM.Species_froakie, RDF.type, PKM.Species) in graph
-    assert not any(graph.triples((PKM.Variant_froakie, PKM.belongsToSpecies, PKM.Species_froakie)))
-    assert (PKM.Ruleset_x_y, RDF.type, PKM.Ruleset) in graph
-    assert any(graph.triples((PKM.MovePropertyAssignment_bubble_x_y, PKM.hasPP, None)))
+    assert (PKMI["species/froakie"], RDF.type, PKM.Species) in graph
+    assert not any(graph.triples((PKMI["variant/froakie"], PKM.belongsToSpecies, PKMI["species/froakie"])))
+    assert (PKMI["ruleset/x-y"], RDF.type, PKM.Ruleset) in graph
+    assert any(graph.triples((PKMI["assignment/move-property/bubble/ruleset/x-y"], PKM.hasPP, None)))
     assert any(
         graph.triples(
             (
-                PKM.MovePropertyAssignment_bubble_omega_ruby_alpha_sapphire,
+                PKMI["assignment/move-property/bubble/ruleset/omega-ruby-alpha-sapphire"],
                 PKM.hasPriority,
                 None,
             )
@@ -62,11 +63,11 @@ def test_build_graph_from_csv_emits_contextual_mechanics_assignments(tmp_path) -
 
     graph = veekun_ingest.build_graph_from_csv(source_dir)
 
-    assert (PKM.DatasetArtifact_Veekun, RDF.type, PKM.EvidenceArtifact) in graph
-    assert (PKM.Species_froakie, RDF.type, PKM.Species) in graph
-    assert not any(graph.triples((PKM.Variant_froakie, PKM.belongsToSpecies, PKM.Species_froakie)))
-    assert any(graph.triples((None, PKM.aboutPokemon, PKM.Species_froakie)))
-    assert (PKM.Ruleset_x_y, RDF.type, PKM.Ruleset) in graph
+    assert (PKMI["artifact/veekun"], RDF.type, PKM.EvidenceArtifact) in graph
+    assert (PKMI["species/froakie"], RDF.type, PKM.Species) in graph
+    assert not any(graph.triples((PKMI["variant/froakie"], PKM.belongsToSpecies, PKMI["species/froakie"])))
+    assert any(graph.triples((None, PKM.aboutPokemon, PKMI["species/froakie"])))
+    assert (PKMI["ruleset/x-y"], RDF.type, PKM.Ruleset) in graph
     assert any(graph.triples((None, RDF.type, PKM.TypingAssignment)))
     assert any(graph.triples((None, RDF.type, PKM.AbilityAssignment)))
     assert any(graph.triples((None, RDF.type, PKM.StatAssignment)))
@@ -86,7 +87,7 @@ def test_build_graph_from_csv_allows_blank_move_numeric_fields(tmp_path) -> None
     )
 
     graph = veekun_ingest.build_graph_from_csv(source_dir)
-    assignment = PKM.MovePropertyAssignment_bubble_x_y
+    assignment = PKMI["assignment/move-property/bubble/ruleset/x-y"]
 
     assert any(graph.triples((None, RDF.type, PKM.MovePropertyAssignment)))
     assert not any(graph.triples((assignment, PKM.hasBasePower, None)))
@@ -103,7 +104,7 @@ def test_build_ttl_from_csv_serializes_valid_turtle(tmp_path) -> None:
     assert len(graph) > 0
     assert any(graph.triples((None, RDF.type, PKM.ExternalEntityReference)))
     assert (
-        PKM.Ref_Veekun_species_froakie,
+        PKMI["reference/veekun/species/froakie"],
         PKM.refersToEntity,
-        PKM.Species_froakie,
+        PKMI["species/froakie"],
     ) in graph
