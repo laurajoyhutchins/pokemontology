@@ -105,8 +105,16 @@
 
       <section class="graph-stage fade-up delay-1">
         <div class="graph-stage-head graph-stage-floating">
-          <span class="mini-badge" id="graph-focus-badge">Top-degree overview</span>
-          <span class="graph-hover-readout" id="graph-hover-readout">No hover</span>
+          <div class="graph-stage-meta">
+            <span class="mini-badge" id="graph-focus-badge">Top-degree overview</span>
+            <span class="graph-hover-readout" id="graph-hover-readout">No hover</span>
+          </div>
+          <div class="graph-zoom-controls" aria-label="Graph zoom controls">
+            <span class="mini-badge graph-zoom-level" id="graph-zoom-level">100%</span>
+            <button class="qe-action-btn graph-zoom-btn" id="graph-zoom-out" type="button" aria-label="Zoom out">-</button>
+            <button class="qe-action-btn graph-zoom-btn" id="graph-zoom-in" type="button" aria-label="Zoom in">+</button>
+            <button class="qe-action-btn graph-zoom-reset" id="graph-zoom-reset" type="button">Center</button>
+          </div>
         </div>
         <div class="graph-canvas-shell">
           <canvas id="graph-canvas" class="graph-canvas" aria-label="Pokemontology knowledge graph visualization"></canvas>

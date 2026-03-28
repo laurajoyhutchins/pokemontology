@@ -19,6 +19,10 @@ const TYPE_COLORS = {
   Type: "#d85c8c",
   Ruleset: "#6c8f80",
 };
+const MIN_ZOOM = 0.3;
+const MAX_ZOOM = 2.8;
+const ZOOM_STEP_IN = 1.12;
+const ZOOM_STEP_OUT = 0.88;
 
 function escapeHtml(value) {
   return String(value)
@@ -530,6 +534,22 @@ function updateHoverReadout(state, text, locked = false) {
   target.textContent = text;
 }
 
+function clampZoom(value) {
+  return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, value));
+}
+
+function updateZoomReadout(state) {
+  const target = document.getElementById("graph-zoom-level");
+  if (!target) return;
+  target.textContent = `${Math.round(state.zoom * 100)}%`;
+}
+
+function resetViewport(state) {
+  state.panX = 0;
+  state.panY = 0;
+  state.zoom = 1;
+}
+
 function setupCanvasInteractions(canvas, state, rerender) {
   let dragging = false;
   let lastX = 0;
@@ -581,15 +601,13 @@ function setupCanvasInteractions(canvas, state, rerender) {
     (event) => {
       event.preventDefault();
       const next = state.zoom * (event.deltaY < 0 ? 1.08 : 0.92);
-      state.zoom = Math.max(0.3, Math.min(2.8, next));
+      state.zoom = clampZoom(next);
       rerender();
     },
     { passive: false },
   );
   canvas.addEventListener("dblclick", () => {
-    state.panX = 0;
-    state.panY = 0;
-    state.zoom = 1;
+    resetViewport(state);
     rerender();
   });
 }
@@ -614,6 +632,18 @@ function wireControls(state, rerender) {
   });
   document.getElementById("graph-reset-query")?.addEventListener("click", () => {
     applyQueryValue(state, "Pikachu", rerender);
+  });
+  document.getElementById("graph-zoom-out")?.addEventListener("click", () => {
+    state.zoom = clampZoom(state.zoom * ZOOM_STEP_OUT);
+    rerender();
+  });
+  document.getElementById("graph-zoom-in")?.addEventListener("click", () => {
+    state.zoom = clampZoom(state.zoom * ZOOM_STEP_IN);
+    rerender();
+  });
+  document.getElementById("graph-zoom-reset")?.addEventListener("click", () => {
+    resetViewport(state);
+    rerender();
   });
   document.querySelectorAll("[data-graph-preset]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -694,6 +724,7 @@ export async function createGraphApp() {
     renderFocus(projected);
     renderQueryStatus(projected, state);
     renderDetail(projected, state);
+    updateZoomReadout(state);
     drawGraph(canvas, projected, state);
   };
 

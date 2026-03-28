@@ -1151,6 +1151,14 @@ body:not([data-power-mode="on"]) .qe-results-body {
   align-items: center;
 }
 
+.graph-stage-meta,
+.graph-zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
 .graph-control-row {
   flex-wrap: wrap;
 }
@@ -1421,6 +1429,19 @@ body:not([data-power-mode="on"]) .qe-results-body {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--muted);
+}
+
+.graph-zoom-controls {
+  justify-content: flex-end;
+}
+
+.graph-zoom-btn {
+  min-width: 2.4rem;
+  padding-inline: 0.7rem;
+}
+
+.graph-zoom-reset {
+  min-width: 4.9rem;
 }
 
 #graph-detail,

@@ -130,6 +130,10 @@ def test_graph_page_uses_generated_projection_index() -> None:
     assert 'id="graph-node-limit"' in html
     assert 'id="graph-clear-query"' in html
     assert 'id="graph-reset-query"' in html
+    assert 'id="graph-zoom-out"' in html
+    assert 'id="graph-zoom-in"' in html
+    assert 'id="graph-zoom-reset"' in html
+    assert 'id="graph-zoom-level"' in html
     assert 'id="graph-query-status"' in html
     assert 'data-graph-preset="Pikachu"' in html
     assert 'id="graph-detail"' in html
@@ -141,6 +145,8 @@ def test_graph_page_uses_generated_projection_index() -> None:
     assert "bfsNeighborhood" in app
     assert "renderQueryStatus" in app
     assert "applyQueryValue" in app
+    assert "updateZoomReadout" in app
+    assert "resetViewport" in app
     assert "EDGE_KINDS" in app
     assert graph_index["node_count"] > 0
     assert graph_index["edge_count"] > 0
