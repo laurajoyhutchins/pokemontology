@@ -1412,6 +1412,11 @@ body:not([data-power-mode="on"]) .qe-results-body {
   right: calc(var(--graph-sidebar-width) + (var(--graph-panel-offset) * 2));
   z-index: 21;
   max-width: calc(100vw - var(--graph-sidebar-width) - (var(--graph-panel-offset) * 4));
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
 }
 
 .graph-results {
@@ -1523,7 +1528,20 @@ body:not([data-power-mode="on"]) .qe-results-body {
 }
 
 .graph-zoom-controls {
+  display: flex;
+  align-items: stretch;
+  gap: 0.45rem;
   justify-content: flex-end;
+}
+
+.graph-zoom-level {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 4.9rem;
+  padding: 0.62rem 0.8rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
 }
 
 .graph-zoom-btn {
@@ -1531,8 +1549,9 @@ body:not([data-power-mode="on"]) .qe-results-body {
   padding-inline: 0.7rem;
 }
 
-.graph-zoom-reset {
-  min-width: 4.9rem;
+.graph-zoom-home {
+  font-size: 1rem;
+  line-height: 1;
 }
 
 #graph-detail,
