@@ -416,6 +416,9 @@ def _load_entity_index(index_path: Path) -> dict[str, object]:
 
 
 def _resolved_lookup_payload(data_path: Path, index_path: Path) -> dict[str, object]:
+    use_default_index = index_path == DEFAULT_ENTITY_INDEX
+    if use_default_index and data_path != DEFAULT_LOOKUP_SOURCE:
+        return _build_entity_index_from_ttl(data_path)
     if index_path.exists():
         return _load_entity_index(index_path)
     return _build_entity_index_from_ttl(data_path)

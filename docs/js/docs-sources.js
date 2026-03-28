@@ -40,10 +40,17 @@ export function getQuerySourceDefinitions(siteData) {
     },
     {
       id: "src-mechanics",
-      label: "mechanics slices",
+      label: "canonical mechanics core",
       checked: true,
       role: "mechanics",
-      paths: DEFAULT_ARTIFACTS.mechanicsSlices,
+      paths: DEFAULT_ARTIFACTS.mechanicsSlices.slice(0, 2),
+    },
+    {
+      id: "src-mechanics-archive",
+      label: "historical learnset archive",
+      checked: false,
+      role: "archive",
+      paths: DEFAULT_ARTIFACTS.mechanicsSlices.slice(2),
     },
     {
       id: "src-pokeapi-demo",

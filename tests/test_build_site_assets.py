@@ -82,9 +82,18 @@ def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
     assert mechanics_source["paths"] == [
         "mechanics-base.ttl",
         "mechanics-learnsets-current.ttl",
+    ]
+    assert mechanics_source["checked"] is True
+    archive_source = next(
+        source
+        for source in site_data["query_sources"]
+        if source["id"] == "src-mechanics-archive"
+    )
+    assert archive_source["paths"] == [
         "mechanics-learnsets-modern.ttl",
         "mechanics-learnsets-legacy.ttl",
     ]
+    assert archive_source["checked"] is False
     assert "pkm:Battle_test a pkm:Battle ." in (tmp_path / "build" / "mechanics.ttl").read_text(
         encoding="utf-8"
     )

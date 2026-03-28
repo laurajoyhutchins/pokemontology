@@ -58,6 +58,7 @@ def test_query_engine_uses_generated_query_examples_and_schema_pack() -> None:
     assert site_data["schema_pack"]["path"] == "schema-index.json"
     assert any(artifact["path"] == "mechanics-base.ttl" for artifact in site_data["artifacts"])
     assert any(source["id"] == "src-mechanics" for source in site_data["query_sources"])
+    assert any(source["id"] == "src-mechanics-archive" for source in site_data["query_sources"])
     assert schema_index["examples"]
     assert schema_index["prefixes"][0]["alias"] == "pkm:"
     assert schema_index["inference"]["webllm_library_url"]
@@ -143,6 +144,7 @@ def test_query_engine_defaults_to_canonical_mechanics_dataset() -> None:
     assert "data-query-artifacts" in index_text
     assert "buildSelectedSources" in text
     assert '"src-mechanics"' in sources_text
+    assert '"src-mechanics-archive"' in sources_text
     assert '"pokeapi-demo.ttl (debug)"' in sources_text
     assert '"mechanics-base.ttl"' in sources_text
     assert "siteData?.query_sources" in sources_text

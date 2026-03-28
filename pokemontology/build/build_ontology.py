@@ -831,10 +831,23 @@ def assemble_artifacts() -> tuple[str, str, dict[str, object]]:
             },
             {
                 "id": "src-mechanics",
-                "label": "mechanics slices",
-                "paths": [entry["path"] for entry in WEB_MECHANICS_SLICES],
+                "label": "canonical mechanics core",
+                "paths": [
+                    PAGES_MECHANICS_BASE.name,
+                    PAGES_MECHANICS_CURRENT.name,
+                ],
                 "checked": True,
                 "role": "mechanics",
+            },
+            {
+                "id": "src-mechanics-archive",
+                "label": "historical learnset archive",
+                "paths": [
+                    PAGES_MECHANICS_MODERN.name,
+                    PAGES_MECHANICS_LEGACY.name,
+                ],
+                "checked": False,
+                "role": "archive",
             },
             {
                 "id": "src-pokeapi-demo",

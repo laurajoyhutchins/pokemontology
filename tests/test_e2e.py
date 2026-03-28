@@ -511,8 +511,8 @@ def test_web_page_controller_prefers_actual_pokeapi_source(tmp_path: Path) -> No
     assert any(source.endswith("/ontology.ttl") for source in payload["sourceCalls"])
     assert any(source.endswith("/mechanics-base.ttl") for source in payload["sourceCalls"])
     assert any(source.endswith("/mechanics-learnsets-current.ttl") for source in payload["sourceCalls"])
-    assert any(source.endswith("/mechanics-learnsets-modern.ttl") for source in payload["sourceCalls"])
-    assert any(source.endswith("/mechanics-learnsets-legacy.ttl") for source in payload["sourceCalls"])
+    assert not any(source.endswith("/mechanics-learnsets-modern.ttl") for source in payload["sourceCalls"])
+    assert not any(source.endswith("/mechanics-learnsets-legacy.ttl") for source in payload["sourceCalls"])
     assert not any(source.endswith("/pokeapi-demo.ttl") for source in payload["sourceCalls"])
 
 
