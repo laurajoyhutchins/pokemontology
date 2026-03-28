@@ -1072,6 +1072,7 @@ body:not([data-power-mode="on"]) .qe-results-body {
   min-height: 100dvh;
   overflow: hidden;
   --graph-gutter: 0.75rem;
+  --graph-panel-offset: 1.4rem;
   --graph-sidebar-width: clamp(19rem, 24vw, 24rem);
   --graph-controls-width: min(68rem, calc(100vw - (var(--graph-gutter) * 2)));
 }
@@ -1080,7 +1081,7 @@ body:not([data-power-mode="on"]) .qe-results-body {
   position: fixed;
   inset: 0 0 auto 0;
   z-index: 40;
-  padding-top: 0.45rem;
+  padding-top: var(--graph-panel-offset);
   background: transparent;
 }
 
@@ -1090,7 +1091,7 @@ body:not([data-power-mode="on"]) .qe-results-body {
 }
 
 .graph-header .graph-shell {
-  width: calc(100vw - (var(--graph-gutter) * 2));
+  width: calc(100vw - (var(--graph-panel-offset) * 2));
   max-width: none;
 }
 
@@ -1115,10 +1116,10 @@ body:not([data-power-mode="on"]) .qe-results-body {
 
 .graph-controls {
   position: fixed;
-  top: 5.45rem;
-  left: var(--graph-gutter);
+  top: calc(5.45rem + var(--graph-panel-offset));
+  left: var(--graph-panel-offset);
   width: max(20rem, var(--graph-controls-width));
-  max-width: calc(100vw - (var(--graph-gutter) * 2));
+  max-width: calc(100vw - (var(--graph-panel-offset) * 2));
   z-index: 30;
   margin-bottom: 0;
   background: rgba(248, 243, 225, 0.88);
@@ -1234,9 +1235,9 @@ body:not([data-power-mode="on"]) .qe-results-body {
 
 .graph-sidebar {
   position: fixed;
-  top: 5.45rem;
-  right: var(--graph-gutter);
-  bottom: var(--graph-gutter);
+  top: calc(5.45rem + var(--graph-panel-offset));
+  right: var(--graph-panel-offset);
+  bottom: var(--graph-panel-offset);
   width: var(--graph-sidebar-width);
   z-index: 25;
   display: grid;
@@ -1259,11 +1260,11 @@ body:not([data-power-mode="on"]) .qe-results-body {
 
 .graph-stage-floating {
   position: fixed;
-  left: var(--graph-gutter);
-  bottom: var(--graph-gutter);
+  left: var(--graph-panel-offset);
+  bottom: var(--graph-panel-offset);
   z-index: 20;
   width: fit-content;
-  max-width: min(52rem, calc(100vw - (var(--graph-gutter) * 2)));
+  max-width: min(52rem, calc(100vw - (var(--graph-panel-offset) * 2)));
   padding: 0.55rem 0.75rem;
   border: 2px solid var(--line);
   background: rgba(248, 243, 225, 0.78);
@@ -1432,16 +1433,21 @@ body:not([data-power-mode="on"]) .qe-results-body {
 
   .graph-controls {
     top: 5.2rem;
-    width: min(42rem, calc(100vw - (var(--graph-gutter) * 2)));
-    max-width: calc(100vw - (var(--graph-gutter) * 2));
+    left: var(--graph-panel-offset);
+    width: min(42rem, calc(100vw - (var(--graph-panel-offset) * 2)));
+    max-width: calc(100vw - (var(--graph-panel-offset) * 2));
   }
 
   .graph-sidebar {
-    width: min(20rem, calc(100vw - (var(--graph-gutter) * 2)));
+    right: var(--graph-panel-offset);
+    bottom: var(--graph-panel-offset);
+    width: min(20rem, calc(100vw - (var(--graph-panel-offset) * 2)));
   }
 
   .graph-stage-floating {
-    max-width: min(42rem, calc(100vw - (var(--graph-gutter) * 2)));
+    left: var(--graph-panel-offset);
+    bottom: var(--graph-panel-offset);
+    max-width: min(42rem, calc(100vw - (var(--graph-panel-offset) * 2)));
   }
 }
 
@@ -1469,25 +1475,25 @@ body:not([data-power-mode="on"]) .qe-results-body {
 
   .graph-controls {
     top: 4.9rem;
-    left: 0.25rem;
-    width: calc(100vw - 0.5rem);
-    max-width: calc(100vw - 0.5rem);
+    left: 0.9rem;
+    width: calc(100vw - 1.8rem);
+    max-width: calc(100vw - 1.8rem);
   }
 
   .graph-sidebar {
     top: auto;
-    left: 0.25rem;
-    right: 0.25rem;
-    bottom: 0.25rem;
+    left: 0.9rem;
+    right: 0.9rem;
+    bottom: 0.9rem;
     width: auto;
     min-height: 14rem;
     max-height: 42vh;
   }
 
   .graph-stage-floating {
-    left: 0.25rem;
-    right: 0.25rem;
-    bottom: calc(42vh + 0.5rem);
+    left: 0.9rem;
+    right: 0.9rem;
+    bottom: calc(42vh + 1.1rem);
     max-width: none;
   }
 
