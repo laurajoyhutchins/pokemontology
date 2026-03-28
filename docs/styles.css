@@ -1539,6 +1539,7 @@ body:not([data-power-mode="on"]) .qe-results-body {
   display: inline-flex;
   align-items: stretch;
   gap: 0.45rem;
+  position: relative;
 }
 
 .graph-cap-label {
@@ -1562,22 +1563,22 @@ body:not([data-power-mode="on"]) .qe-results-body {
   appearance: textfield;
 }
 
+.graph-cap-input[hidden] {
+  display: none;
+}
+
 .graph-cap-input::-webkit-outer-spin-button,
 .graph-cap-input::-webkit-inner-spin-button {
   margin: 0;
   -webkit-appearance: none;
 }
 
-.graph-cap-input:disabled {
-  opacity: 0.7;
-}
-
-.graph-cap-max {
-  min-width: 4.4rem;
+.graph-cap-toggle {
+  min-width: 5.5rem;
   padding-inline: 0.8rem;
 }
 
-.graph-cap-max[aria-pressed="true"] {
+.graph-cap-toggle[aria-pressed="true"] {
   background: var(--moss);
   color: #f8f2dd;
   border-color: #385f4d;

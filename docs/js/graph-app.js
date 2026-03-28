@@ -362,15 +362,14 @@ function renderQueryStatus(projected, state) {
 
 function syncNodeLimitControls(state) {
   const input = document.getElementById("graph-node-limit");
-  const maxButton = document.getElementById("graph-node-limit-max");
+  const toggle = document.getElementById("graph-node-limit-toggle");
   if (input instanceof HTMLInputElement) {
-    input.disabled = !Number.isFinite(state.nodeLimit);
-    if (Number.isFinite(state.nodeLimit)) {
-      input.value = String(state.nodeLimit);
-    }
+    input.hidden = !state.nodeLimitEditing;
+    input.value = String(state.lastFiniteNodeLimit);
   }
-  if (maxButton instanceof HTMLButtonElement) {
-    maxButton.setAttribute("aria-pressed", Number.isFinite(state.nodeLimit) ? "false" : "true");
+  if (toggle instanceof HTMLButtonElement) {
+    toggle.textContent = Number.isFinite(state.nodeLimit) ? String(state.nodeLimit) : "MAX";
+    toggle.setAttribute("aria-pressed", state.nodeLimitEditing || !Number.isFinite(state.nodeLimit) ? "true" : "false");
   }
 }
 
@@ -709,16 +708,63 @@ function wireControls(state, rerender) {
     state.hopDepth = Number(event.target.value || 2);
     rerender();
   });
-  document.getElementById("graph-node-limit")?.addEventListener("change", (event) => {
-    const next = Number.parseInt(event.target.value, 10);
-    state.nodeLimit = Number.isFinite(next) && next > 0 ? next : DEFAULT_NODE_LIMIT;
+  document.getElementById("graph-node-limit-toggle")?.addEventListener("pointerdown", () => {
+    state.nodeLimitTogglePending = state.nodeLimitEditing;
+  });
+  document.getElementById("graph-node-limit-toggle")?.addEventListener("click", () => {
+    if (!state.nodeLimitEditing) {
+      state.nodeLimitEditing = true;
+      state.nodeLimitTogglePending = false;
+      if (!Number.isFinite(state.nodeLimit)) {
+        state.nodeLimit = state.lastFiniteNodeLimit;
+      }
+      syncNodeLimitControls(state);
+      const input = document.getElementById("graph-node-limit");
+      if (input instanceof HTMLInputElement) {
+        input.focus();
+        input.select();
+      }
+      return;
+    }
+    state.nodeLimitEditing = false;
+    state.nodeLimitTogglePending = false;
+    state.nodeLimit = Infinity;
     syncNodeLimitControls(state);
     rerender();
   });
-  document.getElementById("graph-node-limit-max")?.addEventListener("click", () => {
-    state.nodeLimit = Number.isFinite(state.nodeLimit) ? Infinity : DEFAULT_NODE_LIMIT;
+  document.getElementById("graph-node-limit")?.addEventListener("change", (event) => {
+    const next = Number.parseInt(event.target.value, 10);
+    state.lastFiniteNodeLimit = Number.isFinite(next) && next > 0 ? next : DEFAULT_NODE_LIMIT;
+    state.nodeLimit = state.lastFiniteNodeLimit;
+    state.nodeLimitEditing = false;
     syncNodeLimitControls(state);
     rerender();
+  });
+  document.getElementById("graph-node-limit")?.addEventListener("blur", (event) => {
+    if (!state.nodeLimitEditing) return;
+    if (state.nodeLimitTogglePending) return;
+    const next = Number.parseInt(event.target.value, 10);
+    state.lastFiniteNodeLimit = Number.isFinite(next) && next > 0 ? next : DEFAULT_NODE_LIMIT;
+    state.nodeLimit = state.lastFiniteNodeLimit;
+    state.nodeLimitEditing = false;
+    syncNodeLimitControls(state);
+    rerender();
+  });
+  document.getElementById("graph-node-limit")?.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      event.target.blur();
+      return;
+    }
+    if (event.key === "Escape") {
+      state.nodeLimitEditing = false;
+      state.nodeLimitTogglePending = false;
+      if (!Number.isFinite(state.nodeLimit)) {
+        state.nodeLimit = state.lastFiniteNodeLimit;
+      }
+      syncNodeLimitControls(state);
+      rerender();
+    }
   });
   document.getElementById("graph-ruleset")?.addEventListener("change", (event) => {
     state.selectedRuleset = event.target.value;
@@ -759,6 +805,9 @@ export async function createGraphApp() {
     hoverNodeId: "",
     hopDepth: 2,
     nodeLimit: DEFAULT_NODE_LIMIT,
+    lastFiniteNodeLimit: DEFAULT_NODE_LIMIT,
+    nodeLimitEditing: false,
+    nodeLimitTogglePending: false,
     panX: 0,
     panY: 0,
     zoom: 1,

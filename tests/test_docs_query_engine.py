@@ -132,7 +132,7 @@ def test_graph_page_uses_generated_projection_index() -> None:
     assert 'id="graph-canvas"' in html
     assert 'id="graph-hop-depth"' in html
     assert 'id="graph-node-limit"' in html
-    assert 'id="graph-node-limit-max"' in html
+    assert 'id="graph-node-limit-toggle"' in html
     assert 'id="graph-clear-query"' in html
     assert 'id="graph-reset-query"' in html
     assert 'id="graph-zoom-out"' in html
@@ -156,7 +156,8 @@ def test_graph_page_uses_generated_projection_index() -> None:
     assert "reopen.hidden = true" in app
     assert "controls.hidden = collapsed" not in app
     assert "syncNodeLimitControls" in app
-    assert 'state.nodeLimit = Number.isFinite(state.nodeLimit) ? Infinity : DEFAULT_NODE_LIMIT;' in app
+    assert "state.nodeLimitEditing = true;" in app
+    assert "state.nodeLimit = Infinity;" in app
     assert "autoCollapseControls" in app
     assert "updateZoomReadout" in app
     assert "resetViewport" in app
