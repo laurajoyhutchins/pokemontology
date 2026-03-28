@@ -45,6 +45,7 @@ DEFAULT_DOCS_DIR = REPO_ROOT / "docs"
 DEFAULT_ONTOLOGY_SOURCE = REPO_ROOT / "build" / "ontology.ttl"
 DEFAULT_DOCS_ONTOLOGY_SOURCE = REPO_ROOT / "docs" / "ontology.ttl"
 DEFAULT_LOOKUP_SOURCE = REPO_ROOT / "build" / "mechanics.ttl"
+DEFAULT_ENTITY_INDEX = REPO_ROOT / "build" / "entity-index.json"
 DEFAULT_QUERY_SOURCES = (
     DEFAULT_ONTOLOGY_SOURCE,
     DEFAULT_LOOKUP_SOURCE,
@@ -54,9 +55,7 @@ DEFAULT_QUERY_SOURCES = (
 _TURTLE_SOURCE_CACHE: dict[tuple[tuple[str, int, int], ...], Graph] = {}
 _JSON_OBJECT_CACHE: dict[tuple[str, int, int], dict[str, object]] = {}
 _RAG_MATCH_CACHE: dict[tuple[str, str, int, int], list[dict[str, object]]] = {}
-_ENTITY_INDEX_CACHE: dict[
-    tuple[str, int, int], list[dict[str, object]]
-] = {}
+_ENTITY_INDEX_CACHE: dict[tuple[str, int, int], dict[str, object]] = {}
 
 PKM_NAMESPACE = "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#"
 CURIE_PREFIXES = (
@@ -318,7 +317,9 @@ def _entity_type_iri(graph: Graph, entity: URIRef) -> URIRef | None:
         [
             obj
             for obj in graph.objects(entity, RDF.type)
-            if isinstance(obj, URIRef) and str(obj).startswith(PKM_NAMESPACE)
+            if isinstance(obj, URIRef)
+            and str(obj).startswith(PKM_NAMESPACE)
+            and _local_name(str(obj)) in LOOKUP_TYPE_PRIORITY
         ],
         key=lambda value: (
             LOOKUP_TYPE_PRIORITY.get(_local_name(str(value)), 999),
@@ -340,13 +341,27 @@ def _entity_aliases(graph: Graph, entity: URIRef, type_iri: URIRef | None) -> se
     return {alias for alias in aliases if alias}
 
 
-def _build_entity_index(path: Path) -> list[dict[str, object]]:
+def _entity_context_payloads(graph: Graph, entity: URIRef, type_iri: URIRef | None) -> list[dict[str, str]]:
+    return [
+        {
+            "iri": str(context),
+            "curie": _curie_for_iri(context),
+            "label": _literal_texts(graph, context, PKM_HAS_NAME)[0]
+            if _literal_texts(graph, context, PKM_HAS_NAME)
+            else _local_name(str(context)),
+        }
+        for context in _entity_contexts(graph, entity, type_iri)
+    ]
+
+
+def _build_entity_index_from_ttl(path: Path) -> dict[str, object]:
     cache_key = (str(path.resolve()), path.stat().st_mtime_ns, path.stat().st_size)
     cached = _ENTITY_INDEX_CACHE.get(cache_key)
     if cached is not None:
         return cached
     graph = _load_turtle_sources((path,))
-    items: list[dict[str, object]] = []
+    entities: list[dict[str, object]] = []
+    rulesets: list[dict[str, str]] = []
     for entity in sorted(
         {
             subject
@@ -360,26 +375,62 @@ def _build_entity_index(path: Path) -> list[dict[str, object]]:
             continue
         labels = _literal_texts(graph, entity, PKM_HAS_NAME)
         identifiers = _literal_texts(graph, entity, PKM_HAS_IDENTIFIER)
-        items.append(
+        entities.append(
             {
-                "iri": entity,
-                "type_iri": type_iri,
+                "iri": str(entity),
+                "curie": _curie_for_iri(entity),
+                "type_iri": str(type_iri),
+                "type_curie": _curie_for_iri(type_iri),
                 "type_name": _local_name(str(type_iri)),
                 "labels": labels,
                 "identifiers": identifiers,
-                "aliases": _entity_aliases(graph, entity, type_iri),
+                "aliases": sorted(_entity_aliases(graph, entity, type_iri)),
+                "contexts": _entity_context_payloads(graph, entity, type_iri),
             }
         )
-    _ENTITY_INDEX_CACHE[cache_key] = items
-    return items
+        if type_iri == PKM_RULESET:
+            rulesets.append(
+                {
+                    "iri": str(entity),
+                    "curie": _curie_for_iri(entity),
+                    "label": labels[0] if labels else _local_name(str(entity)),
+                }
+            )
+    payload = {
+        "source": _repo_relative(path),
+        "entity_count": len(entities),
+        "entities": entities,
+        "rulesets": sorted(rulesets, key=lambda item: (item["label"], item["curie"])),
+    }
+    _ENTITY_INDEX_CACHE[cache_key] = payload
+    return payload
+
+
+def _load_entity_index(index_path: Path) -> dict[str, object]:
+    payload = _load_json_object(index_path, label="entity index")
+    entities = payload.get("entities")
+    rulesets = payload.get("rulesets")
+    if not isinstance(entities, list) or not isinstance(rulesets, list):
+        raise CliUsageError("entity index must contain 'entities' and 'rulesets' lists")
+    return payload
+
+
+def _resolved_lookup_payload(data_path: Path, index_path: Path) -> dict[str, object]:
+    if index_path.exists():
+        return _load_entity_index(index_path)
+    return _build_entity_index_from_ttl(data_path)
 
 
 def _lookup_score(query: str, item: dict[str, object]) -> int:
     normalized_query = _normalize_lookup_text(query)
     if not normalized_query:
         return 0
-    aliases = item.get("aliases", set())
-    if not isinstance(aliases, set):
+    aliases_raw = item.get("aliases", set())
+    if isinstance(aliases_raw, set):
+        aliases = aliases_raw
+    elif isinstance(aliases_raw, list):
+        aliases = {alias for alias in aliases_raw if isinstance(alias, str)}
+    else:
         return 0
     score = 0
     if normalized_query in aliases:
@@ -423,68 +474,61 @@ def _entity_contexts(graph: Graph, entity: URIRef, type_iri: URIRef | None) -> l
 
 def cmd_rulesets(args: argparse.Namespace) -> int:
     data_path = _resolve_existing_path(args.data, label="ruleset data source")
-    graph = _load_turtle_sources((data_path,))
-    rulesets = sorted(
-        {
-            subject
-            for subject in graph.subjects(RDF.type, PKM_RULESET)
-            if isinstance(subject, URIRef) and str(subject).startswith(PKM_NAMESPACE)
-        },
-        key=lambda value: (
-            _literal_texts(graph, value, PKM_HAS_NAME)[0]
-            if _literal_texts(graph, value, PKM_HAS_NAME)
-            else _curie_for_iri(value)
-        ),
-    )
+    payload = _resolved_lookup_payload(data_path, args.index)
+    rulesets = payload.get("rulesets", [])
+    if not isinstance(rulesets, list):
+        raise CliUsageError("entity index rulesets payload must be a list")
     for ruleset in rulesets:
-        names = _literal_texts(graph, ruleset, PKM_HAS_NAME)
-        if names:
-            print(f"{_curie_for_iri(ruleset)}\t{names[0]}")
-        else:
-            print(_curie_for_iri(ruleset))
+        if not isinstance(ruleset, dict):
+            continue
+        curie = ruleset.get("curie")
+        label = ruleset.get("label")
+        if isinstance(curie, str) and isinstance(label, str):
+            print(f"{curie}\t{label}")
+        elif isinstance(curie, str):
+            print(curie)
     return 0
 
 
 def cmd_lookup(args: argparse.Namespace) -> int:
     data_path = _resolve_existing_path(args.data, label="lookup data source")
-    index = _build_entity_index(data_path)
-    query_graph = _load_turtle_sources((data_path,))
-    matches = [
-        item
-        for item in index
-        if _lookup_score(args.query, item) > 0
-    ]
+    payload = _resolved_lookup_payload(data_path, args.index)
+    entities = payload.get("entities", [])
+    if not isinstance(entities, list):
+        raise CliUsageError("entity index entities payload must be a list")
+    matches = [item for item in entities if _lookup_score(args.query, item) > 0]
     matches.sort(
         key=lambda item: (
             -_lookup_score(args.query, item),
             LOOKUP_TYPE_PRIORITY.get(str(item["type_name"]), 999),
-            _curie_for_iri(item["iri"]),
+            str(item["curie"]),
         )
     )
     if not matches:
         print(f'No entity matches found for "{args.query}".')
         return 1
     best = matches[0]
-    best_iri = best["iri"]
-    best_type_iri = best["type_iri"]
     print(f"Query: {args.query}")
-    print(f"Canonical IRI: {_curie_for_iri(best_iri)}")
-    print(f"Entity Type: {_curie_for_iri(best_type_iri)}")
+    print(f"Canonical IRI: {best['curie']}")
+    print(f"Entity Type: {best['type_curie']}")
     labels = best.get("labels", [])
     if isinstance(labels, list) and labels:
         print(f"Label: {labels[0]}")
     identifiers = best.get("identifiers", [])
     if isinstance(identifiers, list) and identifiers:
         print(f"Identifier: {identifiers[0]}")
-    contexts = _entity_contexts(query_graph, best_iri, best_type_iri)
+    contexts = best.get("contexts", [])
     print("Contexts:")
-    if contexts:
+    if isinstance(contexts, list) and contexts:
         for context in contexts:
-            context_names = _literal_texts(query_graph, context, PKM_HAS_NAME)
-            if context_names:
-                print(f"- {_curie_for_iri(context)} ({context_names[0]})")
-            else:
-                print(f"- {_curie_for_iri(context)}")
+            if not isinstance(context, dict):
+                continue
+            curie = context.get("curie")
+            label = context.get("label")
+            if isinstance(curie, str) and isinstance(label, str):
+                print(f"- {curie} ({label})")
+            elif isinstance(curie, str):
+                print(f"- {curie}")
     else:
         print("- none")
     if len(matches) > 1:
@@ -492,7 +536,7 @@ def cmd_lookup(args: argparse.Namespace) -> int:
         for item in matches[1 : 1 + args.limit]:
             labels = item.get("labels", [])
             suffix = f" ({labels[0]})" if isinstance(labels, list) and labels else ""
-            print(f"- {_curie_for_iri(item['iri'])} [{_curie_for_iri(item['type_iri'])}]{suffix}")
+            print(f"- {item['curie']} [{item['type_curie']}]{suffix}")
     return 0
 
 
@@ -939,6 +983,12 @@ def add_replay_dataset_subcommands(
         default=replay_dataset.DEFAULT_OUTPUT_DIR,
         help="Directory where replay slice TTL files will be written.",
     )
+    transform_parser.add_argument(
+        "--bundle-output",
+        type=Path,
+        default=replay_dataset.DEFAULT_BUNDLE_PATH,
+        help="Canonical combined replay Turtle bundle to write.",
+    )
     transform_parser.set_defaults(func=_return_zero(replay_dataset.cmd_transform))
 
 
@@ -1185,6 +1235,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Mechanics Turtle file to inspect. Defaults to build/mechanics.ttl.",
     )
     lookup_parser.add_argument(
+        "--index",
+        type=Path,
+        default=DEFAULT_ENTITY_INDEX,
+        help="Warm-start entity index JSON. Defaults to build/entity-index.json.",
+    )
+    lookup_parser.add_argument(
         "--limit",
         type=int,
         default=5,
@@ -1200,6 +1256,12 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=DEFAULT_LOOKUP_SOURCE,
         help="Mechanics Turtle file to inspect. Defaults to build/mechanics.ttl.",
+    )
+    rulesets_parser.add_argument(
+        "--index",
+        type=Path,
+        default=DEFAULT_ENTITY_INDEX,
+        help="Warm-start entity index JSON. Defaults to build/entity-index.json.",
     )
     rulesets_parser.set_defaults(func=cmd_rulesets)
 

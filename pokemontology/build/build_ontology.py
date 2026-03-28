@@ -11,7 +11,7 @@ import subprocess
 from collections.abc import Iterator
 from pathlib import Path
 
-from rdflib import Graph, Namespace, URIRef
+from rdflib import Graph, Literal, Namespace, URIRef
 from rdflib.namespace import OWL, RDF, RDFS
 
 from pokemontology._script_loader import repo_path
@@ -22,6 +22,7 @@ from pokemontology.chat import (
     RETRIEVAL_MINIMUM_SCORES,
 )
 from pokemontology.laurel import SUMMARY_PREVIEW_LIMIT
+from pokemontology.io_utils import display_repo_path, write_json_file
 
 REPO = repo_path()
 MODULES_DIR = repo_path("ontology", "modules")
@@ -30,7 +31,9 @@ OUTPUT = BUILD_DIR / "ontology.ttl"
 BUILD_SHAPES = BUILD_DIR / "shapes.ttl"
 BUILD_POKEAPI = repo_path("data", "ingested", "pokeapi.ttl")
 BUILD_VEEKUN = repo_path("data", "ingested", "veekun-with-learnsets.ttl")
+BUILD_SHOWDOWN = repo_path("data", "ingested", "showdown.ttl")
 BUILD_MECHANICS = BUILD_DIR / "mechanics.ttl"
+BUILD_ENTITY_INDEX = BUILD_DIR / "entity-index.json"
 
 PAGES_DIR = repo_path("docs")
 PAGES_ONTOLOGY = PAGES_DIR / "ontology.ttl"
@@ -90,6 +93,19 @@ MODERN_RULESET_TOKENS = (
     "sword_shield",
     "brilliant_diamond_shining_pearl",
     "legends_arceus",
+)
+LOOKUP_TYPE_PRIORITY = {
+    "Variant": 0,
+    "Species": 1,
+    "Move": 2,
+    "Ability": 3,
+    "Item": 4,
+    "Type": 5,
+    "Ruleset": 6,
+}
+ENTITY_INDEX_TARGET_TYPES = frozenset(LOOKUP_TYPE_PRIORITY)
+ENTITY_BLOCK_RE = re.compile(
+    r"^(pkm:[A-Za-z0-9_]+)\s+a\s+pkm:([A-Za-z0-9_]+)\b", re.MULTILINE
 )
 
 MODULE_ORDER = [
@@ -226,6 +242,221 @@ def _local_name(iri: str) -> str:
     if "#" in iri:
         return iri.rsplit("#", 1)[1]
     return iri.rsplit("/", 1)[-1]
+
+
+def _literal_texts(graph: Graph, subject: URIRef, predicate: URIRef) -> list[str]:
+    return [
+        str(obj)
+        for obj in graph.objects(subject, predicate)
+        if isinstance(obj, Literal)
+    ]
+
+
+def _normalize_lookup_text(text: str) -> str:
+    return " ".join(
+        "".join(
+            character.lower() if character.isalnum() else " "
+            for character in text.strip()
+        ).split()
+    )
+
+
+def _friendly_local_name(local_name: str) -> str:
+    return local_name.replace("_", " ")
+
+
+def _entity_type_iri(graph: Graph, entity: URIRef) -> URIRef | None:
+    candidates = sorted(
+        [
+            obj
+            for obj in graph.objects(entity, RDF.type)
+            if isinstance(obj, URIRef)
+            and str(obj).startswith(str(PKM))
+            and _local_name(str(obj)) in LOOKUP_TYPE_PRIORITY
+        ],
+        key=lambda value: (
+            LOOKUP_TYPE_PRIORITY.get(_local_name(str(value)), 999),
+            str(value),
+        ),
+    )
+    return candidates[0] if candidates else None
+
+
+def _entity_aliases(graph: Graph, entity: URIRef, type_iri: URIRef | None) -> list[str]:
+    aliases = {
+        _normalize_lookup_text(name)
+        for name in _literal_texts(graph, entity, PKM.hasName)
+    }
+    local_name = _local_name(str(entity))
+    aliases.add(_normalize_lookup_text(local_name))
+    aliases.add(_normalize_lookup_text(_friendly_local_name(local_name)))
+    if type_iri is not None and _local_name(str(type_iri)) == "Variant":
+        for name in _literal_texts(graph, entity, PKM.hasName):
+            if name.endswith("-Default"):
+                aliases.add(_normalize_lookup_text(name.removesuffix("-Default")))
+    return sorted(alias for alias in aliases if alias)
+
+
+def _entity_contexts(graph: Graph, entity: URIRef, type_iri: URIRef | None) -> list[dict[str, str]]:
+    contexts: set[URIRef] = set()
+
+    def add_direct_contexts(target: URIRef) -> None:
+        for subject, predicate in graph.subject_predicates(target):
+            if predicate == PKM.hasContext:
+                continue
+            for context in graph.objects(subject, PKM.hasContext):
+                if isinstance(context, URIRef):
+                    contexts.add(context)
+
+    add_direct_contexts(entity)
+    if type_iri == PKM.Species:
+        for variant in graph.subjects(PKM.belongsToSpecies, entity):
+            if isinstance(variant, URIRef):
+                add_direct_contexts(variant)
+    if type_iri == PKM.Ruleset:
+        contexts.add(entity)
+    return [
+        {
+            "iri": str(context),
+            "curie": f"pkm:{_local_name(str(context))}",
+            "label": _literal_texts(graph, context, PKM.hasName)[0]
+            if _literal_texts(graph, context, PKM.hasName)
+            else _local_name(str(context)),
+        }
+        for context in sorted(contexts, key=lambda value: str(value))
+    ]
+
+
+def _build_entity_index() -> dict[str, object]:
+    entities_by_curie: dict[str, dict[str, object]] = {}
+    variant_species: dict[str, str] = {}
+    contexts_by_curie: dict[str, set[str]] = {}
+
+    def literal_values(block: str, predicate: str) -> list[str]:
+        values: list[str] = []
+        for match in re.finditer(
+            rf"pkm:{predicate}\s+\"((?:[^\"\\]|\\.)*)\"",
+            block,
+        ):
+            values.append(bytes(match.group(1), "utf-8").decode("unicode_escape"))
+        return values
+
+    def curie_object(block: str, predicate: str) -> str | None:
+        match = re.search(rf"pkm:{predicate}\s+(pkm:[A-Za-z0-9_]+)\b", block)
+        return match.group(1) if match else None
+
+    for source in (BUILD_POKEAPI, BUILD_VEEKUN):
+        if not source.exists():
+            continue
+        for block in _iter_ttl_blocks(source):
+            entity_match = ENTITY_BLOCK_RE.search(block)
+            if entity_match is not None:
+                subject_curie = entity_match.group(1)
+                type_name = entity_match.group(2)
+                if type_name in ENTITY_INDEX_TARGET_TYPES:
+                    local_name = subject_curie.removeprefix("pkm:")
+                    names = literal_values(block, "hasName")
+                    identifiers = literal_values(block, "hasIdentifier")
+                    entity = entities_by_curie.setdefault(
+                        subject_curie,
+                        {
+                            "iri": str(PKM[local_name]),
+                            "curie": subject_curie,
+                            "type_iri": str(PKM[type_name]),
+                            "type_curie": f"pkm:{type_name}",
+                            "labels": [],
+                            "identifiers": [],
+                        },
+                    )
+                    entity["labels"] = names
+                    entity["identifiers"] = identifiers
+                    if type_name == "Variant":
+                        species_curie = curie_object(block, "belongsToSpecies")
+                        if species_curie is not None:
+                            variant_species[subject_curie] = species_curie
+
+            context_curie = curie_object(block, "hasContext")
+            if context_curie is None:
+                continue
+            for predicate in (
+                "aboutVariant",
+                "aboutMove",
+                "aboutAbility",
+                "aboutItem",
+                "aboutType",
+            ):
+                target_curie = curie_object(block, predicate)
+                if target_curie is None:
+                    continue
+                contexts_by_curie.setdefault(target_curie, set()).add(context_curie)
+
+    entities: list[dict[str, object]] = []
+    rulesets: list[dict[str, str]] = []
+    for subject_curie, entity in sorted(entities_by_curie.items()):
+        type_curie = str(entity["type_curie"])
+        type_name = type_curie.removeprefix("pkm:")
+        contexts = set(contexts_by_curie.get(subject_curie, set()))
+        if type_name == "Species":
+            for variant_curie, species_curie in variant_species.items():
+                if species_curie == subject_curie:
+                    contexts.update(contexts_by_curie.get(variant_curie, set()))
+        if type_name == "Ruleset":
+            contexts.add(subject_curie)
+        labels = entity.get("labels", [])
+        if not isinstance(labels, list):
+            labels = []
+        identifiers = entity.get("identifiers", [])
+        if not isinstance(identifiers, list):
+            identifiers = []
+        local_name = subject_curie.removeprefix("pkm:")
+        aliases = {
+            _normalize_lookup_text(label)
+            for label in labels
+            if isinstance(label, str)
+        }
+        aliases.add(_normalize_lookup_text(local_name))
+        aliases.add(_normalize_lookup_text(_friendly_local_name(local_name)))
+        if type_name == "Variant":
+            for label in labels:
+                if isinstance(label, str) and label.endswith("-Default"):
+                    aliases.add(_normalize_lookup_text(label.removesuffix("-Default")))
+        context_payloads = []
+        for context_curie in sorted(contexts):
+            context_entity = entities_by_curie.get(context_curie)
+            context_labels = (
+                context_entity.get("labels", [])
+                if isinstance(context_entity, dict)
+                else []
+            )
+            context_payloads.append(
+                {
+                    "iri": str(PKM[context_curie.removeprefix("pkm:")]),
+                    "curie": context_curie,
+                    "label": context_labels[0]
+                    if isinstance(context_labels, list) and context_labels
+                    else context_curie.removeprefix("pkm:"),
+                }
+            )
+        payload = {
+            **entity,
+            "aliases": sorted(alias for alias in aliases if alias),
+            "contexts": context_payloads,
+        }
+        entities.append(payload)
+        if type_name == "Ruleset":
+            rulesets.append(
+                {
+                    "iri": str(entity["iri"]),
+                    "curie": subject_curie,
+                    "label": labels[0] if labels else local_name,
+                }
+            )
+    return {
+        "source": display_repo_path(BUILD_MECHANICS),
+        "entity_count": len(entities),
+        "entities": entities,
+        "rulesets": sorted(rulesets, key=lambda item: (item["label"], item["curie"])),
+    }
 
 
 def _pkm_terms_from_text(text: object) -> set[str]:
@@ -511,7 +742,7 @@ def _render_sparql_reference(
 
 def _merge_mechanics_data() -> None:
     # Use direct file concatenation for performance on large TTL files (~180MB)
-    sources = [BUILD_POKEAPI, BUILD_VEEKUN]
+    sources = [BUILD_POKEAPI, BUILD_VEEKUN, BUILD_SHOWDOWN]
     with BUILD_MECHANICS.open("w", encoding="utf-8") as outfile:
         # Write prefix header once
         outfile.write("@prefix pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#> .\n")
@@ -702,6 +933,7 @@ def write_artifacts(
         json.dumps(schema_pack, indent=2) + "\n",
         encoding="utf-8",
     )
+    write_json_file(BUILD_ENTITY_INDEX, _build_entity_index())
     BUILD_SPARQL_REFERENCE.write_text(sparql_reference + "\n", encoding="utf-8")
     PAGES_SPARQL_REFERENCE.write_text(sparql_reference + "\n", encoding="utf-8")
 
@@ -717,6 +949,7 @@ def main() -> None:
         print(f"wrote {path.relative_to(REPO)}")
     print(f"wrote {PAGES_SITE_DATA.relative_to(REPO)}")
     print(f"wrote {PAGES_SCHEMA_INDEX.relative_to(REPO)}")
+    print(f"wrote {BUILD_ENTITY_INDEX.relative_to(REPO)}")
     print(f"wrote {BUILD_SPARQL_REFERENCE.relative_to(REPO)}")
     print(f"wrote {PAGES_SPARQL_REFERENCE.relative_to(REPO)}")
 

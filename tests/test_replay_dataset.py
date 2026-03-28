@@ -189,3 +189,28 @@ def test_transform_replays_writes_ttl_and_manifest(tmp_path) -> None:
     graph = Graph()
     graph.parse(ttl_path, format="turtle")
     assert any(graph.triples((None, RDF.type, PKM.Battle)))
+
+
+def test_transform_replays_writes_canonical_bundle(tmp_path) -> None:
+    curated_path = tmp_path / "curated.json"
+    write_json(curated_path, {"replay_ids": ["battle-1"]})
+    raw_dir = tmp_path / "raw"
+    raw_dir.mkdir()
+    replay_payload = json.loads(REPLAY_JSON.read_text(encoding="utf-8"))
+    replay_payload["id"] = "battle-1"
+    write_json(raw_dir / "battle-1.json", replay_payload)
+
+    bundle_path = tmp_path / "ingested" / "showdown.ttl"
+    stats = replay_dataset.transform_replays(
+        curated_path,
+        raw_dir,
+        tmp_path / "ttl",
+        bundle_path=bundle_path,
+    )
+
+    assert stats.bundle_written is True
+    assert bundle_path.exists()
+
+    graph = Graph()
+    graph.parse(bundle_path, format="turtle")
+    assert any(graph.triples((None, RDF.type, PKM.Battle)))

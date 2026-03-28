@@ -50,6 +50,44 @@ pkm:MoveLearnRecord_gengar_hex_scarlet_violet a pkm:MoveLearnRecord ;
     pkm:isLearnableInRuleset true .
 """
 
+LOOKUP_INDEX = {
+    "source": "build/mechanics.ttl",
+    "entity_count": 2,
+    "entities": [
+        {
+            "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#Variant_gengar",
+            "curie": "pkm:Variant_gengar",
+            "type_iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#Variant",
+            "type_curie": "pkm:Variant",
+            "type_name": "Variant",
+            "labels": ["Gengar-Default"],
+            "identifiers": ["pokeapi:pokemon:94"],
+            "aliases": ["gengar", "gengar default", "variant gengar"],
+            "contexts": [
+                {"iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#Ruleset_PokeAPI_Default", "curie": "pkm:Ruleset_PokeAPI_Default", "label": "PokeAPI Default"},
+                {"iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#Ruleset_scarlet_violet", "curie": "pkm:Ruleset_scarlet_violet", "label": "Scarlet Violet"},
+            ],
+        },
+        {
+            "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#Species_gengar",
+            "curie": "pkm:Species_gengar",
+            "type_iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#Species",
+            "type_curie": "pkm:Species",
+            "type_name": "Species",
+            "labels": ["Gengar"],
+            "identifiers": [],
+            "aliases": ["gengar", "species gengar"],
+            "contexts": [
+                {"iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#Ruleset_PokeAPI_Default", "curie": "pkm:Ruleset_PokeAPI_Default", "label": "PokeAPI Default"},
+            ],
+        },
+    ],
+    "rulesets": [
+        {"iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#Ruleset_PokeAPI_Default", "curie": "pkm:Ruleset_PokeAPI_Default", "label": "PokeAPI Default"},
+        {"iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#Ruleset_scarlet_violet", "curie": "pkm:Ruleset_scarlet_violet", "label": "Scarlet Violet"},
+    ],
+}
+
 
 def test_parse_replay_command_outputs_json(capsys) -> None:
     exit_code = cli.main(["parse-replay", str(REPLAY_JSON), "--pretty"])
@@ -147,6 +185,46 @@ def test_query_command_defaults_to_build_sources(capsys, monkeypatch: object) ->
     assert captured["query_label"] == "queries/bundled/super_effective_moves.sparql"
 
 
+def test_replay_transform_passes_bundle_output(monkeypatch: object, tmp_path, capsys) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_transform(args) -> None:
+        captured["curated"] = args.curated
+        captured["raw_dir"] = args.raw_dir
+        captured["output_dir"] = args.output_dir
+        captured["bundle_output"] = args.bundle_output
+        print("{}")
+
+    monkeypatch.setattr(cli.replay_dataset, "cmd_transform", fake_transform)
+
+    curated_path = tmp_path / "curated.json"
+    raw_dir = tmp_path / "raw"
+    output_dir = tmp_path / "ttl"
+    bundle_path = tmp_path / "showdown.ttl"
+
+    exit_code = cli.main(
+        [
+            "replay",
+            "transform",
+            "--curated",
+            str(curated_path),
+            "--raw-dir",
+            str(raw_dir),
+            "--output-dir",
+            str(output_dir),
+            "--bundle-output",
+            str(bundle_path),
+        ]
+    )
+
+    assert exit_code == 0
+    assert captured["curated"] == curated_path
+    assert captured["raw_dir"] == raw_dir
+    assert captured["output_dir"] == output_dir
+    assert captured["bundle_output"] == bundle_path
+    assert capsys.readouterr().out.strip() == "{}"
+
+
 def test_schema_index_default_points_to_docs_artifact() -> None:
     assert cli.DEFAULT_SCHEMA_INDEX == REPO / "docs" / "schema-index.json"
 
@@ -207,6 +285,27 @@ def test_rulesets_lists_available_contexts(tmp_path, capsys) -> None:
     assert "pkm:Ruleset_scarlet_violet\tScarlet Violet" in output
 
 
+def test_rulesets_uses_warm_start_index(tmp_path, capsys, monkeypatch: object) -> None:
+    data_path = tmp_path / "lookup.ttl"
+    index_path = tmp_path / "entity-index.json"
+    data_path.write_text(LOOKUP_TTL, encoding="utf-8")
+    index_path.write_text(json.dumps(LOOKUP_INDEX), encoding="utf-8")
+
+    def fail_parse(_paths):
+        raise AssertionError("warm-start rulesets should not parse Turtle")
+
+    monkeypatch.setattr(cli, "_load_turtle_sources", fail_parse)
+
+    exit_code = cli.main(
+        ["rulesets", "--data", str(data_path), "--index", str(index_path)]
+    )
+
+    assert exit_code == 0
+    output = capsys.readouterr().out.splitlines()
+    assert "pkm:Ruleset_PokeAPI_Default\tPokeAPI Default" in output
+    assert "pkm:Ruleset_scarlet_violet\tScarlet Violet" in output
+
+
 def test_lookup_prefers_variant_and_lists_contexts(tmp_path, capsys) -> None:
     data_path = tmp_path / "lookup.ttl"
     data_path.write_text(LOOKUP_TTL, encoding="utf-8")
@@ -222,6 +321,27 @@ def test_lookup_prefers_variant_and_lists_contexts(tmp_path, capsys) -> None:
     assert "- pkm:Ruleset_scarlet_violet (Scarlet Violet)" in output
     assert "Other matches:" in output
     assert "pkm:Species_gengar [pkm:Species]" in output
+
+
+def test_lookup_uses_warm_start_index(tmp_path, capsys, monkeypatch: object) -> None:
+    data_path = tmp_path / "lookup.ttl"
+    index_path = tmp_path / "entity-index.json"
+    data_path.write_text(LOOKUP_TTL, encoding="utf-8")
+    index_path.write_text(json.dumps(LOOKUP_INDEX), encoding="utf-8")
+
+    def fail_parse(_paths):
+        raise AssertionError("warm-start lookup should not parse Turtle")
+
+    monkeypatch.setattr(cli, "_load_turtle_sources", fail_parse)
+
+    exit_code = cli.main(
+        ["lookup", "Gengar", "--data", str(data_path), "--index", str(index_path)]
+    )
+
+    assert exit_code == 0
+    output = capsys.readouterr().out
+    assert "Canonical IRI: pkm:Variant_gengar" in output
+    assert "- pkm:Ruleset_scarlet_violet (Scarlet Violet)" in output
 
 
 def test_lookup_reports_no_matches(tmp_path, capsys) -> None:

@@ -27,7 +27,9 @@ def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(build_ontology, "BUILD_SPARQL_REFERENCE", tmp_path / "build" / "sparql-reference.md")
     monkeypatch.setattr(build_ontology, "BUILD_POKEAPI", tmp_path / "build" / "pokeapi.ttl")
     monkeypatch.setattr(build_ontology, "BUILD_VEEKUN", tmp_path / "build" / "veekun.ttl")
+    monkeypatch.setattr(build_ontology, "BUILD_SHOWDOWN", tmp_path / "build" / "showdown.ttl")
     monkeypatch.setattr(build_ontology, "BUILD_MECHANICS", tmp_path / "build" / "mechanics.ttl")
+    monkeypatch.setattr(build_ontology, "BUILD_ENTITY_INDEX", tmp_path / "build" / "entity-index.json")
     monkeypatch.setattr(build_ontology, "BUNDLED_QUERIES_DIR", queries_dir)
 
     (tmp_path / "build").mkdir()
@@ -38,6 +40,11 @@ def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
     )
     (tmp_path / "build" / "veekun.ttl").write_text(
         "@prefix pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#> .\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "build" / "showdown.ttl").write_text(
+        "@prefix pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#> .\n"
+        "pkm:Battle_test a pkm:Battle .\n",
         encoding="utf-8",
     )
     (queries_dir / "super_effective_moves.sparql").write_text(
@@ -53,6 +60,7 @@ def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
 
     site_data = json.loads((tmp_path / "site-data.json").read_text(encoding="utf-8"))
     schema_index = json.loads((tmp_path / "schema-index.json").read_text(encoding="utf-8"))
+    entity_index = json.loads((tmp_path / "build" / "entity-index.json").read_text(encoding="utf-8"))
     sparql_reference = (tmp_path / "sparql-reference.md").read_text(encoding="utf-8")
     bundled_query = next(
         example
@@ -77,6 +85,12 @@ def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
         "mechanics-learnsets-modern.ttl",
         "mechanics-learnsets-legacy.ttl",
     ]
+    assert "pkm:Battle_test a pkm:Battle ." in (tmp_path / "build" / "mechanics.ttl").read_text(
+        encoding="utf-8"
+    )
+    assert not any(
+        entity["curie"] == "pkm:Battle_test" for entity in entity_index["entities"]
+    )
     assert "build/mechanics.ttl" in bundled_query["query"]
     assert "build/pokeapi.ttl" not in bundled_query["query"]
     assert "build/mechanics.ttl" in bundled_query["command"]
@@ -105,6 +119,10 @@ def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
     assert "build/pokeapi.ttl" not in schema_example["query"]
     assert "species" in schema_index["sparse_index"]
     assert schema_index["item_norms"]
+    assert entity_index["source"].endswith("build/mechanics.ttl")
+    assert isinstance(entity_index["entity_count"], int)
+    assert isinstance(entity_index["entities"], list)
+    assert isinstance(entity_index["rulesets"], list)
     assert "# Pokemontology SPARQL Reference" in sparql_reference
     assert "## Prefixes" in sparql_reference
     assert "`pkm:`" in sparql_reference

@@ -29,6 +29,7 @@ DEFAULT_INDEX_DIR = REPO / "data" / "replays" / "index" / "showdown"
 DEFAULT_RAW_DIR = REPO / "data" / "replays" / "raw" / "showdown"
 DEFAULT_CURATED_PATH = REPO / "data" / "replays" / "curated" / "competitive.json"
 DEFAULT_OUTPUT_DIR = REPO / "build" / "replays"
+DEFAULT_BUNDLE_PATH = REPO / "data" / "ingested" / "showdown.ttl"
 
 SHOWDOWN_SEARCH_URL = "https://replay.pokemonshowdown.com/search.json"
 SHOWDOWN_REPLAY_URL = "https://replay.pokemonshowdown.com/{replay_id}.json"
@@ -56,6 +57,7 @@ class ReplayFetchStats:
 class TransformStats:
     replay_ids_seen: int = 0
     slices_written: int = 0
+    bundle_written: bool = False
 
 
 def fetch_json_url(url: str, timeout: float) -> Any:
@@ -267,11 +269,32 @@ def fetch_replays(
     return stats
 
 
+def _write_bundle_from_slices(bundle_path: Path, slice_paths: list[Path]) -> None:
+    bundle_path.parent.mkdir(parents=True, exist_ok=True)
+    with bundle_path.open("w", encoding="utf-8") as outfile:
+        outfile.write(
+            "@prefix pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#> .\n"
+        )
+        outfile.write("@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n")
+        outfile.write("@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .\n\n")
+        for slice_path in slice_paths:
+            with slice_path.open("r", encoding="utf-8") as infile:
+                for line in infile:
+                    if not line.startswith("@prefix"):
+                        outfile.write(line)
+            outfile.write("\n")
+
+
 def transform_replays(
-    curated_path: Path, raw_dir: Path, output_dir: Path
+    curated_path: Path,
+    raw_dir: Path,
+    output_dir: Path,
+    *,
+    bundle_path: Path | None = None,
 ) -> TransformStats:
     stats = TransformStats()
     manifest: list[dict[str, str]] = []
+    slice_paths: list[Path] = []
     output_dir.mkdir(parents=True, exist_ok=True)
 
     for replay_id in load_curated_replay_ids(curated_path):
@@ -286,6 +309,7 @@ def transform_replays(
         ttl_path = output_dir / f"{replay_id}.ttl"
         serialize_turtle_to_path(replay_to_ttl_builder.build_graph(payload), ttl_path)
         manifest.append({"id": replay_id, "ttl_path": str(ttl_path)})
+        slice_paths.append(ttl_path)
         stats.slices_written += 1
 
     write_json_file(
@@ -296,6 +320,9 @@ def transform_replays(
             "slices": manifest,
         },
     )
+    if bundle_path is not None:
+        _write_bundle_from_slices(bundle_path, slice_paths)
+        stats.bundle_written = True
     return stats
 
 
@@ -435,6 +462,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=DEFAULT_OUTPUT_DIR,
         help="Directory where replay slice TTL files will be written.",
     )
+    transform_parser.add_argument(
+        "--bundle-output",
+        type=Path,
+        default=DEFAULT_BUNDLE_PATH,
+        help="Canonical combined replay Turtle bundle to write.",
+    )
 
     return parser
 
@@ -507,14 +540,21 @@ def cmd_fetch(args: argparse.Namespace) -> None:
 
 
 def cmd_transform(args: argparse.Namespace) -> None:
-    stats = transform_replays(args.curated, args.raw_dir, args.output_dir)
+    stats = transform_replays(
+        args.curated,
+        args.raw_dir,
+        args.output_dir,
+        bundle_path=args.bundle_output,
+    )
     print(
         format_json_text(
             {
                 "curated": str(args.curated),
                 "output_dir": str(args.output_dir),
+                "bundle_output": str(args.bundle_output),
                 "replay_ids_seen": stats.replay_ids_seen,
                 "slices_written": stats.slices_written,
+                "bundle_written": stats.bundle_written,
             },
             pretty=True,
         )
