@@ -1154,6 +1154,10 @@ body:not([data-power-mode="on"]) .qe-results-body {
   display: none;
 }
 
+.graph-controls[hidden] {
+  display: none !important;
+}
+
 .graph-controls.is-collapsed {
   display: inline-grid;
   width: max-content;
