@@ -128,6 +128,8 @@ def test_graph_page_uses_generated_projection_index() -> None:
     assert 'id="graph-canvas"' in html
     assert 'id="graph-hop-depth"' in html
     assert 'id="graph-node-limit"' in html
+    assert 'id="graph-detail"' in html
+    assert 'id="graph-results"' not in html
     assert 'src="./graph.js"' in html
     assert 'import { createGraphApp } from "./js/graph-app.js";' in script
     assert 'fetch("./graph-index.json"' in app

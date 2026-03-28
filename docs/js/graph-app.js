@@ -320,41 +320,6 @@ function renderFocus(projected) {
   }
 }
 
-function renderSearchResults(projected, state) {
-  const target = document.getElementById("graph-results");
-  const badge = document.getElementById("graph-results-badge");
-  if (!target || !badge) return;
-  if (!state.searchText.trim()) {
-    badge.textContent = "0 results";
-    target.innerHTML = `
-      <div class="qe-placeholder">
-        <span class="qe-placeholder-icon">◌</span>
-        <p>Matching nodes will appear here.</p>
-      </div>
-    `;
-    return;
-  }
-  const matches = projected.queryMatches.slice(0, 18);
-  badge.textContent = `${matches.length} results`;
-  target.innerHTML = matches.length
-    ? matches
-        .map(
-          (node) => `
-            <button class="graph-result-card ${state.selectedNodeId === node.id ? "is-active" : ""}" type="button" data-graph-node="${escapeHtml(node.id)}">
-              <strong>${escapeHtml(node.label)}</strong>
-              <span>${escapeHtml(node.type)} · degree ${escapeHtml(node.degree)}</span>
-            </button>
-          `,
-        )
-        .join("")
-    : `
-      <div class="qe-placeholder">
-        <span class="qe-placeholder-icon">∅</span>
-        <p>No visible nodes matched "${escapeHtml(state.searchText)}".</p>
-      </div>
-    `;
-}
-
 function edgeKindBreakdown(nodeId, projected) {
   const counts = new Map();
   projected.edges.forEach((edge) => {
@@ -370,6 +335,35 @@ function renderDetail(projected, state) {
   if (!target || !badge) return;
   const node = projected.nodes.find((entry) => entry.id === state.selectedNodeId);
   if (!node) {
+    const matches = projected.queryMatches.slice(0, 18);
+    if (state.searchText.trim()) {
+      badge.textContent = `${matches.length} matches`;
+      target.innerHTML = matches.length
+        ? `
+          <section class="graph-inspector-section">
+            <p class="panel-kicker">Matches</p>
+            <div class="graph-results">
+              ${matches
+                .map(
+                  (entry) => `
+                    <button class="graph-result-card" type="button" data-graph-node="${escapeHtml(entry.id)}">
+                      <strong>${escapeHtml(entry.label)}</strong>
+                      <span>${escapeHtml(entry.type)} · degree ${escapeHtml(entry.degree)}</span>
+                    </button>
+                  `,
+                )
+                .join("")}
+            </div>
+          </section>
+        `
+        : `
+          <div class="qe-placeholder">
+            <span class="qe-placeholder-icon">∅</span>
+            <p>No visible nodes matched "${escapeHtml(state.searchText)}".</p>
+          </div>
+        `;
+      return;
+    }
     badge.textContent = "No selection";
     target.innerHTML = `
       <div class="qe-placeholder">
@@ -421,7 +415,7 @@ function renderDetail(projected, state) {
       }
       <section class="pokedex-section">
         <p class="panel-kicker">Neighbors</p>
-        <div class="graph-neighbor-list">
+        <div class="graph-neighbor-list graph-results">
           ${
             neighbors.length
               ? neighbors
@@ -641,7 +635,6 @@ export async function createGraphApp() {
     const projected = buildProjectedGraph(state);
     renderStats(projected);
     renderFocus(projected);
-    renderSearchResults(projected, state);
     renderDetail(projected, state);
     drawGraph(canvas, projected, state);
   };

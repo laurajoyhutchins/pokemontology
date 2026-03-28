@@ -1260,6 +1260,11 @@ body:not([data-power-mode="on"]) .qe-results-body {
   min-width: 0;
 }
 
+.graph-inspector-section {
+  display: grid;
+  gap: 0.7rem;
+}
+
 .graph-stage-floating {
   position: fixed;
   left: var(--graph-panel-offset);
