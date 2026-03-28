@@ -1324,12 +1324,31 @@ body:not([data-power-mode="on"]) .qe-results-body {
   min-height: 100vh;
   min-height: 100dvh;
   z-index: 1;
-  background: var(--bg);
+  background:
+    radial-gradient(circle at 50% 45%, rgba(210, 226, 170, 0.32), rgba(136, 160, 104, 0.18) 48%, rgba(83, 105, 69, 0.16) 100%),
+    linear-gradient(180deg, rgba(210, 226, 170, 0.18), rgba(116, 141, 89, 0.14)),
+    linear-gradient(90deg, #c8d8a3, #afc187);
   box-shadow: inset 0 0 0 1px rgba(47, 85, 71, 0.16);
+  overflow: hidden;
 }
 
 :root[data-theme="dark"] .graph-canvas-shell {
-  background: var(--bg);
+  background:
+    radial-gradient(circle at 50% 45%, rgba(137, 168, 104, 0.24), rgba(73, 97, 61, 0.14) 52%, rgba(23, 37, 30, 0.2) 100%),
+    linear-gradient(180deg, rgba(109, 138, 82, 0.16), rgba(49, 70, 41, 0.18)),
+    linear-gradient(90deg, #4d6240, #3b4c32);
+}
+
+.graph-canvas-shell::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(24, 44, 27, 0.035) 0, rgba(24, 44, 27, 0.035) 1px, transparent 1px, transparent 6px),
+    linear-gradient(90deg, rgba(24, 44, 27, 0.03) 0, rgba(24, 44, 27, 0.03) 1px, transparent 1px, transparent 6px);
+  opacity: 0.48;
+  mix-blend-mode: multiply;
 }
 
 .graph-canvas-shell::after {
@@ -1338,7 +1357,9 @@ body:not([data-power-mode="on"]) .qe-results-body {
   inset: var(--graph-gutter);
   pointer-events: none;
   border: 2px solid rgba(47, 85, 71, 0.55);
-  box-shadow: inset 0 0 0 1px rgba(47, 85, 71, 0.22);
+  box-shadow:
+    inset 0 0 0 1px rgba(47, 85, 71, 0.22),
+    inset 0 0 90px rgba(42, 60, 33, 0.12);
 }
 
 .graph-canvas {
