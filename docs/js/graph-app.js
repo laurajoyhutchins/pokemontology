@@ -575,8 +575,15 @@ function clampZoom(value) {
 
 function updateZoomReadout(state) {
   const target = document.getElementById("graph-zoom-level");
-  if (!target) return;
-  target.textContent = `${Math.round(state.zoom * 100)}%`;
+  if (!(target instanceof HTMLInputElement)) return;
+  target.value = `${Math.round(state.zoom * 100)}%`;
+}
+
+function parseZoomValue(value) {
+  const normalized = String(value || "").replace(/%/g, "").trim();
+  const next = Number.parseFloat(normalized);
+  if (!Number.isFinite(next) || next <= 0) return 1;
+  return clampZoom(next / 100);
 }
 
 function homePanOffsetX() {
@@ -718,6 +725,25 @@ function wireControls(state, rerender) {
   document.getElementById("graph-zoom-reset")?.addEventListener("click", () => {
     resetViewport(state);
     rerender();
+  });
+  document.getElementById("graph-zoom-level")?.addEventListener("change", (event) => {
+    state.zoom = parseZoomValue(event.target.value);
+    rerender();
+  });
+  document.getElementById("graph-zoom-level")?.addEventListener("blur", (event) => {
+    state.zoom = parseZoomValue(event.target.value);
+    rerender();
+  });
+  document.getElementById("graph-zoom-level")?.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      event.target.blur();
+      return;
+    }
+    if (event.key === "Escape") {
+      updateZoomReadout(state);
+      event.target.blur();
+    }
   });
   document.querySelectorAll("[data-graph-preset]").forEach((button) => {
     button.addEventListener("click", () => {

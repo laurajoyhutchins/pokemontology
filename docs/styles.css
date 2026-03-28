@@ -1535,6 +1535,14 @@ body:not([data-power-mode="on"]) .qe-results-body {
   flex-wrap: wrap;
 }
 
+.graph-zoom-pill {
+  display: inline-flex;
+  align-items: stretch;
+  border: 2px solid var(--line);
+  background: var(--control-bg);
+  box-shadow: var(--pixel-frame), var(--shadow);
+}
+
 .graph-cap-controls {
   display: inline-flex;
   align-items: stretch;
@@ -1583,19 +1591,37 @@ body:not([data-power-mode="on"]) .qe-results-body {
   align-items: center;
   justify-content: center;
   min-width: 4.9rem;
-  padding: 0.62rem 0.8rem;
+  width: 5.25rem;
+  padding: 0.62rem 0.7rem;
+  border: 0;
+  border-right: 2px solid var(--line);
+  background: transparent;
+  box-shadow: none;
+  font: inherit;
   font-variant-numeric: tabular-nums;
   line-height: 1;
+  text-align: center;
+  text-transform: uppercase;
 }
 
 .graph-zoom-btn {
-  min-width: 2.4rem;
-  padding-inline: 0.7rem;
+  min-width: 3rem;
+  padding-inline: 0.85rem;
+  border: 0;
+  border-left: 2px solid var(--line);
+  box-shadow: none;
+  font-size: 1.15rem;
+  font-weight: 900;
+  line-height: 1;
 }
 
 .graph-zoom-home {
   font-size: 1rem;
   line-height: 1;
+}
+
+.graph-zoom-btn-primary {
+  font-size: 1.45rem;
 }
 
 #graph-detail,

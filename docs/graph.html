@@ -122,10 +122,13 @@
               <button class="qe-action-btn graph-cap-max" id="graph-node-limit-max" type="button" hidden>MAX</button>
               <input id="graph-node-limit" class="qe-select graph-cap-input" type="text" value="240" inputmode="numeric" aria-label="Node cap" spellcheck="false">
             </div>
-            <span class="mini-badge graph-zoom-level" id="graph-zoom-level">100%</span>
-            <button class="qe-action-btn graph-zoom-btn" id="graph-zoom-out" type="button" aria-label="Zoom out">-</button>
-            <button class="qe-action-btn graph-zoom-btn graph-zoom-home" id="graph-zoom-reset" type="button" aria-label="Center graph view">&#8962;</button>
-            <button class="qe-action-btn graph-zoom-btn" id="graph-zoom-in" type="button" aria-label="Zoom in">+</button>
+            <div class="graph-zoom-pill" aria-label="Graph zoom controls">
+              <label class="graph-cap-label" for="graph-zoom-level">Zoom percentage</label>
+              <input id="graph-zoom-level" class="graph-zoom-level" type="text" value="100%" inputmode="numeric" aria-label="Zoom percentage" spellcheck="false">
+              <button class="qe-action-btn graph-zoom-btn graph-zoom-btn-primary" id="graph-zoom-in" type="button" aria-label="Zoom in">+</button>
+              <button class="qe-action-btn graph-zoom-btn graph-zoom-home" id="graph-zoom-reset" type="button" aria-label="Center graph view">&#8962;</button>
+              <button class="qe-action-btn graph-zoom-btn graph-zoom-btn-primary" id="graph-zoom-out" type="button" aria-label="Zoom out">-</button>
+            </div>
           </div>
         </div>
         <div class="graph-canvas-shell">
