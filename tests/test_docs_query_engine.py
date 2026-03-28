@@ -156,7 +156,9 @@ def test_graph_page_uses_generated_projection_index() -> None:
     assert "reopen.hidden = true" in app
     assert "controls.hidden = collapsed" not in app
     assert "syncNodeLimitControls" in app
-    assert 'state.nodeLimit = Number.isFinite(state.nodeLimit) ? Infinity : DEFAULT_NODE_LIMIT;' in app
+    assert "parseNodeLimitValue" in app
+    assert "maxButton.hidden = !state.nodeLimitEditing" in app
+    assert 'commitNodeLimitValue(state, "MAX")' in app
     assert "autoCollapseControls" in app
     assert "updateZoomReadout" in app
     assert "resetViewport" in app

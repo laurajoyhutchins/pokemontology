@@ -119,8 +119,8 @@
           <div class="graph-zoom-controls" aria-label="Graph zoom controls">
             <div class="graph-cap-controls" aria-label="Node cap controls">
               <label class="graph-cap-label" for="graph-node-limit">Node cap</label>
-              <input id="graph-node-limit" class="qe-select graph-cap-input" type="number" min="1" step="1" value="240" inputmode="numeric" aria-label="Node cap">
-              <button class="qe-action-btn graph-cap-max" id="graph-node-limit-max" type="button" aria-pressed="false">MAX</button>
+              <button class="qe-action-btn graph-cap-max" id="graph-node-limit-max" type="button" hidden>MAX</button>
+              <input id="graph-node-limit" class="qe-select graph-cap-input" type="text" value="240" inputmode="numeric" aria-label="Node cap" spellcheck="false">
             </div>
             <span class="mini-badge graph-zoom-level" id="graph-zoom-level">100%</span>
             <button class="qe-action-btn graph-zoom-btn" id="graph-zoom-out" type="button" aria-label="Zoom out">-</button>
