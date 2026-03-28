@@ -1165,6 +1165,16 @@ body:not([data-power-mode="on"]) .qe-results-body {
   flex: 1 1 24rem;
 }
 
+.graph-control-actions {
+  min-width: 10rem;
+}
+
+.graph-action-row {
+  display: flex;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
 .graph-filter-row {
   flex-wrap: wrap;
 }
@@ -1180,6 +1190,28 @@ body:not([data-power-mode="on"]) .qe-results-body {
   flex-wrap: wrap;
   gap: 0.45rem;
   align-items: center;
+}
+
+.graph-query-meta {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 0.7rem;
+}
+
+.graph-query-status {
+  color: var(--ink);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.graph-query-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.graph-query-presets > button {
+  cursor: pointer;
 }
 
 .graph-stage {

@@ -46,6 +46,13 @@
               autocomplete="off"
             >
           </label>
+          <div class="graph-control graph-control-actions">
+            <span class="toolbar-label">Actions</span>
+            <div class="graph-action-row">
+              <button class="qe-action-btn" id="graph-clear-query" type="button">Clear</button>
+              <button class="qe-action-btn" id="graph-reset-query" type="button">Reset</button>
+            </div>
+          </div>
           <label class="graph-control" for="graph-hop-depth">
             <span class="toolbar-label">Depth</span>
             <select id="graph-hop-depth" class="qe-select">
@@ -72,6 +79,16 @@
             <span class="mini-badge" data-graph-status>Loading…</span>
             <span class="mini-badge"><strong data-graph-node-count>0</strong> nodes</span>
             <span class="mini-badge"><strong data-graph-edge-count>0</strong> edges</span>
+          </div>
+        </div>
+        <div class="graph-query-meta">
+          <span class="graph-query-status" id="graph-query-status">Loading query state…</span>
+          <div class="graph-query-presets" id="graph-query-presets">
+            <button class="source-toggle graph-toggle" type="button" data-graph-preset="Pikachu">Pikachu</button>
+            <button class="source-toggle graph-toggle" type="button" data-graph-preset="Charizard">Charizard</button>
+            <button class="source-toggle graph-toggle" type="button" data-graph-preset="Thunderbolt">Thunderbolt</button>
+            <button class="source-toggle graph-toggle" type="button" data-graph-preset="Levitate">Levitate</button>
+            <button class="source-toggle graph-toggle" type="button" data-graph-preset="Scarlet Violet">Scarlet Violet</button>
           </div>
         </div>
         <div class="graph-control-row graph-control-row-compact">

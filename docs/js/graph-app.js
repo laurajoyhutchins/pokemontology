@@ -99,8 +99,22 @@ function findMatches(nodes, query) {
   const norm = normalize(query);
   if (!norm) return [];
   return nodes
-    .filter((node) => normalize(`${node.label} ${node.id} ${(node.identifiers || []).join(" ")}`).includes(norm))
-    .sort((a, b) => (Number(b.degree) || 0) - (Number(a.degree) || 0) || String(a.label).localeCompare(String(b.label)));
+    .map((node) => {
+      const label = normalize(node.label);
+      const curie = normalize(node.id);
+      const identifiers = normalize((node.identifiers || []).join(" "));
+      let score = 0;
+      if (label === norm || curie === norm) score += 1000;
+      if (label.startsWith(norm)) score += 200;
+      if (curie.startsWith(norm)) score += 120;
+      if (identifiers.includes(norm)) score += 60;
+      if (`${label} ${curie} ${identifiers}`.includes(norm)) score += 20;
+      score += Math.min(40, Number(node.degree) || 0);
+      return { node, score };
+    })
+    .filter((entry) => entry.score > 0)
+    .sort((a, b) => b.score - a.score || String(a.node.label).localeCompare(String(b.node.label)))
+    .map((entry) => entry.node);
 }
 
 function bfsNeighborhood(anchorId, state) {
@@ -320,6 +334,25 @@ function renderFocus(projected) {
   }
 }
 
+function renderQueryStatus(projected, state) {
+  const target = document.getElementById("graph-query-status");
+  if (!target) return;
+  const query = state.searchText.trim();
+  if (!query) {
+    target.textContent = `No query text. Showing top-degree overview limited to ${state.nodeLimit} nodes.`;
+    return;
+  }
+  const topMatch = projected.queryMatches[0];
+  if (!topMatch) {
+    target.textContent = `No visible match for "${query}" under the current filters.`;
+    return;
+  }
+  const exact = normalize(topMatch.label) === normalize(query) || normalize(topMatch.id) === normalize(query);
+  target.textContent = exact
+    ? `Exact match: ${topMatch.label}. Rendering a ${state.hopDepth}-hop neighborhood.`
+    : `${projected.queryMatches.length} matches for "${query}". Focused on ${topMatch.label}.`;
+}
+
 function edgeKindBreakdown(nodeId, projected) {
   const counts = new Map();
   projected.edges.forEach((edge) => {
@@ -474,6 +507,22 @@ function renderFilterControls(rawGraph) {
   }
 }
 
+function applyQueryValue(state, value, rerender) {
+  state.searchText = value;
+  const searchInput = document.getElementById("graph-search");
+  if (searchInput instanceof HTMLInputElement) {
+    searchInput.value = value;
+  }
+  const match = findMatches(
+    state.rawGraph.nodes.filter((node) => passesNodeFilters(node, state)),
+    state.searchText,
+  )[0];
+  state.selectedNodeId = match?.id || "";
+  state.panX = 0;
+  state.panY = 0;
+  rerender();
+}
+
 function updateHoverReadout(state, text, locked = false) {
   const target = document.getElementById("graph-hover-readout");
   if (!target) return;
@@ -558,10 +607,18 @@ function bindSelectionHandlers(state, rerender) {
 
 function wireControls(state, rerender) {
   document.getElementById("graph-search")?.addEventListener("input", (event) => {
-    state.searchText = event.target.value;
-    const match = findMatches(state.rawGraph.nodes.filter((node) => passesNodeFilters(node, state)), state.searchText)[0];
-    if (match) state.selectedNodeId = match.id;
-    rerender();
+    applyQueryValue(state, event.target.value, rerender);
+  });
+  document.getElementById("graph-clear-query")?.addEventListener("click", () => {
+    applyQueryValue(state, "", rerender);
+  });
+  document.getElementById("graph-reset-query")?.addEventListener("click", () => {
+    applyQueryValue(state, "Pikachu", rerender);
+  });
+  document.querySelectorAll("[data-graph-preset]").forEach((button) => {
+    button.addEventListener("click", () => {
+      applyQueryValue(state, button.getAttribute("data-graph-preset") || "", rerender);
+    });
   });
   document.getElementById("graph-hop-depth")?.addEventListener("change", (event) => {
     state.hopDepth = Number(event.target.value || 2);
@@ -635,6 +692,7 @@ export async function createGraphApp() {
     const projected = buildProjectedGraph(state);
     renderStats(projected);
     renderFocus(projected);
+    renderQueryStatus(projected, state);
     renderDetail(projected, state);
     drawGraph(canvas, projected, state);
   };
