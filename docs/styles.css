@@ -1069,10 +1069,15 @@ body:not([data-power-mode="on"]) .qe-results-body {
 
 .graph-page {
   min-height: 100vh;
+  overflow: hidden;
 }
 
 .graph-header {
-  position: sticky;
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 40;
+  padding-top: 0.45rem;
+  background: transparent;
 }
 
 .graph-shell {
@@ -1080,15 +1085,34 @@ body:not([data-power-mode="on"]) .qe-results-body {
   margin: 0 auto;
 }
 
+.graph-shell-overlay {
+  position: relative;
+  min-height: 100vh;
+}
+
 .graph-workbench {
-  min-height: calc(100vh - 5.2rem);
-  padding: 0.5rem 0 0.7rem;
+  min-height: 100vh;
+  padding: 0;
 }
 
 .graph-controls,
-.graph-canvas-panel,
 .graph-sidebar {
   padding: 0.9rem;
+}
+
+.graph-controls {
+  position: fixed;
+  top: 5.45rem;
+  left: max(0.5rem, calc((100vw - min(100vw - 1rem, 1600px)) / 2));
+  right: max(0.5rem, calc((100vw - min(100vw - 1rem, 1600px)) / 2) + 22.75rem);
+  z-index: 30;
+  margin-bottom: 0;
+  background: rgba(248, 243, 225, 0.88);
+  backdrop-filter: blur(10px);
+}
+
+:root[data-theme="dark"] .graph-controls {
+  background: rgba(21, 38, 33, 0.82);
 }
 
 .graph-control-row,
@@ -1110,10 +1134,6 @@ body:not([data-power-mode="on"]) .qe-results-body {
 .graph-breakdown-row {
   justify-content: space-between;
   align-items: center;
-}
-
-.graph-controls {
-  margin-bottom: 0.75rem;
 }
 
 .graph-control-row {
@@ -1148,19 +1168,20 @@ body:not([data-power-mode="on"]) .qe-results-body {
 }
 
 .graph-stage {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 22rem;
-  gap: 0.75rem;
-  min-height: calc(100vh - 11rem);
+  position: relative;
+  min-height: 100vh;
 }
 
 .graph-canvas-shell {
-  border: 2px solid var(--line);
+  position: fixed;
+  inset: 0.5rem;
+  top: 0.5rem;
+  z-index: 1;
+  border: 2px solid rgba(47, 85, 71, 0.55);
   background:
     radial-gradient(circle at top, rgba(185, 131, 42, 0.14), transparent 42%),
     linear-gradient(180deg, rgba(248, 243, 225, 0.9), rgba(232, 222, 189, 0.96));
-  min-height: calc(100vh - 15rem);
-  box-shadow: var(--pixel-frame), var(--shadow);
+  box-shadow: inset 0 0 0 1px rgba(47, 85, 71, 0.22);
 }
 
 :root[data-theme="dark"] .graph-canvas-shell {
@@ -1171,7 +1192,7 @@ body:not([data-power-mode="on"]) .qe-results-body {
 
 .graph-canvas {
   width: 100%;
-  height: calc(100vh - 15rem);
+  height: 100%;
   display: block;
   cursor: grab;
 }
@@ -1181,11 +1202,22 @@ body:not([data-power-mode="on"]) .qe-results-body {
 }
 
 .graph-sidebar {
+  position: fixed;
+  top: 12.4rem;
+  right: max(0.5rem, calc((100vw - min(100vw - 1rem, 1600px)) / 2));
+  bottom: 0.75rem;
+  width: 22rem;
+  z-index: 25;
   display: grid;
   gap: 0.8rem;
   align-content: start;
-  min-height: calc(100vh - 15rem);
+  background: rgba(248, 243, 225, 0.88);
+  backdrop-filter: blur(10px);
   overflow: hidden;
+}
+
+:root[data-theme="dark"] .graph-sidebar {
+  background: rgba(21, 38, 33, 0.82);
 }
 
 .graph-sidebar-block {
@@ -1194,10 +1226,27 @@ body:not([data-power-mode="on"]) .qe-results-body {
   min-height: 0;
 }
 
+.graph-stage-floating {
+  position: fixed;
+  left: max(0.75rem, calc((100vw - min(100vw - 1rem, 1600px)) / 2) + 0.25rem);
+  bottom: 0.95rem;
+  z-index: 20;
+  max-width: min(50rem, calc(100vw - 25rem));
+  padding: 0.55rem 0.75rem;
+  border: 2px solid var(--line);
+  background: rgba(248, 243, 225, 0.78);
+  box-shadow: var(--pixel-frame), var(--shadow);
+  backdrop-filter: blur(8px);
+}
+
+:root[data-theme="dark"] .graph-stage-floating {
+  background: rgba(21, 38, 33, 0.74);
+}
+
 .graph-results {
   display: grid;
   gap: 0.7rem;
-  max-height: min(38vh, 28rem);
+  max-height: none;
   overflow: auto;
 }
 
@@ -1348,6 +1397,18 @@ body:not([data-power-mode="on"]) .qe-results-body {
     flex-direction: column;
     align-items: stretch;
   }
+
+  .graph-controls {
+    right: 0.5rem;
+  }
+
+  .graph-sidebar {
+    width: min(20rem, calc(100vw - 1rem));
+  }
+
+  .graph-stage-floating {
+    max-width: calc(100vw - 22rem);
+  }
 }
 
 @media (max-width: 640px) {
@@ -1370,6 +1431,29 @@ body:not([data-power-mode="on"]) .qe-results-body {
 
   .graph-shell {
     width: min(100vw - 0.5rem, 1600px);
+  }
+
+  .graph-controls {
+    top: 4.9rem;
+    left: 0.25rem;
+    right: 0.25rem;
+  }
+
+  .graph-sidebar {
+    top: auto;
+    left: 0.25rem;
+    right: 0.25rem;
+    bottom: 0.25rem;
+    width: auto;
+    min-height: 14rem;
+    max-height: 42vh;
+  }
+
+  .graph-stage-floating {
+    left: 0.25rem;
+    right: 0.25rem;
+    bottom: calc(42vh + 0.5rem);
+    max-width: none;
   }
 
   .graph-canvas,

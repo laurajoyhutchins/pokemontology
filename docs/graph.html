@@ -33,7 +33,7 @@
   </header>
 
   <main class="graph-workbench">
-    <div class="graph-shell">
+    <div class="graph-shell graph-shell-overlay">
       <section class="graph-controls panel fade-up" aria-label="Graph query controls">
         <div class="graph-control-row">
           <label class="graph-control graph-control-search" for="graph-search">
@@ -87,14 +87,12 @@
       </section>
 
       <section class="graph-stage fade-up delay-1">
-        <div class="graph-canvas-panel panel">
-          <div class="graph-stage-head">
-            <span class="mini-badge" id="graph-focus-badge">Top-degree overview</span>
-            <span class="graph-hover-readout" id="graph-hover-readout">No hover</span>
-          </div>
-          <div class="graph-canvas-shell">
-            <canvas id="graph-canvas" class="graph-canvas" aria-label="Pokemontology knowledge graph visualization"></canvas>
-          </div>
+        <div class="graph-stage-head graph-stage-floating">
+          <span class="mini-badge" id="graph-focus-badge">Top-degree overview</span>
+          <span class="graph-hover-readout" id="graph-hover-readout">No hover</span>
+        </div>
+        <div class="graph-canvas-shell">
+          <canvas id="graph-canvas" class="graph-canvas" aria-label="Pokemontology knowledge graph visualization"></canvas>
         </div>
 
         <aside class="graph-sidebar panel" aria-labelledby="graph-detail-heading">
