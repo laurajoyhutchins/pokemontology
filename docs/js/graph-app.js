@@ -589,7 +589,7 @@ function parseZoomValue(value) {
 function homePanOffsetX() {
   const sidebar = document.querySelector(".graph-sidebar");
   if (!(sidebar instanceof HTMLElement) || sidebar.hidden) return 0;
-  return -Math.round(sidebar.getBoundingClientRect().width / 2);
+  return -Math.round(sidebar.getBoundingClientRect().width * 0.62);
 }
 
 function resetViewport(state) {
