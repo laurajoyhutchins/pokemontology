@@ -557,6 +557,7 @@ function setControlsCollapsed(state, collapsed) {
   const toggle = document.getElementById("graph-controls-toggle");
   const reopen = document.getElementById("graph-controls-reopen");
   controls?.classList.toggle("is-collapsed", collapsed);
+  if (controls) controls.hidden = collapsed;
   if (body) body.hidden = collapsed;
   if (toggle) {
     toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");

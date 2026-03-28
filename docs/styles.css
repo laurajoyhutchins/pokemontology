@@ -1159,6 +1159,10 @@ body:not([data-power-mode="on"]) .qe-results-body {
   max-width: min(20rem, calc(100vw - (var(--graph-panel-offset) * 2)));
 }
 
+.graph-controls[hidden] {
+  display: none !important;
+}
+
 .graph-controls.is-collapsed .graph-controls-head {
   margin: 0;
 }
