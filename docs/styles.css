@@ -1697,7 +1697,6 @@ body:not([data-power-mode="on"]) .qe-results-body {
   .footer-shell,
   .section-head,
   .laurel-runbar,
-  .laurel-panel-head,
   .qe-toolbar,
   .qe-editor-header,
   .graph-control-row,
@@ -1706,6 +1705,11 @@ body:not([data-power-mode="on"]) .qe-results-body {
   .graph-stage-head {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .laurel-panel-head {
+    flex-wrap: wrap;
+    align-items: center;
   }
 
   .topbar {
@@ -1908,6 +1912,21 @@ body:not([data-power-mode="on"]) .qe-results-body {
   /* Tighter query results on mobile */
   .qe-results-body {
     min-height: 10rem;
+  }
+
+  /* Shorter textarea to leave room for results */
+  .laurel-textarea {
+    min-height: 5rem;
+  }
+
+  /* Tighter question card padding on small screens */
+  .lab-question {
+    padding: 0.85rem;
+  }
+
+  /* Hide keyboard-shortcut hint — not useful on touch */
+  .qe-hint {
+    display: none;
   }
 
   /* Footer: stack on small screens */

@@ -484,18 +484,23 @@ async function runLaurelPipeline(state) {
 
     setInlineStatus("Running SPARQL…");
     await executeEditorQuery(state, sources, runId);
+  } catch (error) {
+    if (state.activeRunId !== runId) return;
+    setResultsContent(`<div class="qe-error"><strong>Error:</strong> ${error.message}</div>`);
+    setInlineStatus("Query pipeline failed.");
   } finally {
     if (runBtn && state.activeRunId === runId) runBtn.disabled = false;
   }
 }
 
-async function executeEditorQuery(state, sources = buildSources(), runId = state.activeRunId) {
+async function executeEditorQuery(state, sources, runId = state.activeRunId) {
+  const resolvedSources = sources ?? buildSelectedSources(state.siteData);
   const editor = document.getElementById("sparql-editor");
   const status = document.getElementById("qe-status");
   const question = document.getElementById("nl-question")?.value.trim() || "";
   if (!editor) return;
   if (!editor.value.trim()) return;
-  if (!sources.length) {
+  if (!resolvedSources.length) {
     setResultsContent('<div class="qe-error">Select at least one source.</div>');
     return;
   }
@@ -503,8 +508,8 @@ async function executeEditorQuery(state, sources = buildSources(), runId = state
   setResultsContent('<div class="qe-loading"><span class="qe-spinner"></span> Querying…</div>');
   const started = performance.now();
   try {
-    await ensureQueryGraphReady(state, sources);
-    const executionKey = `${editor.value}::${JSON.stringify(sources)}`;
+    await ensureQueryGraphReady(state, resolvedSources);
+    const executionKey = `${editor.value}::${JSON.stringify(resolvedSources)}`;
     let result = state.executionCache.get(executionKey);
     if (!result) {
       result = (
@@ -513,7 +518,7 @@ async function executeEditorQuery(state, sources = buildSources(), runId = state
           {
             action: "execute",
             sparql: editor.value,
-            sources,
+            sources: resolvedSources,
           },
           {
             timeoutMs: 120000,
