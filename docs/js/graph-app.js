@@ -8,7 +8,7 @@ const EDGE_KINDS = [
   { id: "hasAbility", label: "ability", checked: true, color: "rgba(108, 165, 111, 0.40)" },
   { id: "hasMoveType", label: "move type", checked: true, color: "rgba(90, 136, 200, 0.42)" },
   { id: "learnsMove", label: "learnset", checked: false, color: "rgba(232, 184, 80, 0.20)" },
-  { id: "availableIn", label: "ruleset", checked: false, color: "rgba(108, 143, 128, 0.22)" },
+  { id: "availableIn", label: "context edges", checked: false, color: "rgba(108, 143, 128, 0.22)" },
 ];
 const TYPE_COLORS = {
   Species: "#d66d4d",
