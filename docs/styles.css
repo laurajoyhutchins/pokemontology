@@ -1182,6 +1182,10 @@ body:not([data-power-mode="on"]) .qe-results-body {
   white-space: nowrap;
 }
 
+.graph-sidebar-close {
+  display: none;
+}
+
 .graph-controls-reopen {
   top: calc(5.45rem + var(--graph-panel-offset));
   left: var(--graph-panel-offset);
@@ -1788,29 +1792,53 @@ body:not([data-power-mode="on"]) .qe-results-body {
     right: 0.9rem;
     bottom: 0.9rem;
     width: auto;
-    min-height: 14rem;
-    max-height: 42vh;
+    min-height: 10rem;
+    max-height: 38dvh;
+  }
+
+  .graph-sidebar-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.2rem;
+    min-width: 2.2rem;
+    padding: 0.3rem 0.5rem;
+    flex-shrink: 0;
+  }
+
+  .graph-workbench.sidebar-dismissed .graph-sidebar {
+    display: none;
   }
 
   .graph-stage-floating {
     left: 0.9rem;
     right: 0.9rem;
-    bottom: calc(42vh + 1.1rem);
+    bottom: calc(38dvh + 1.1rem);
     max-width: none;
+  }
+
+  .graph-workbench.sidebar-dismissed .graph-stage-floating {
+    bottom: 0.9rem;
   }
 
   .graph-stage-floating-zoom {
     left: 0.9rem;
     right: auto;
-    bottom: calc(42vh + 5.35rem);
+    bottom: calc(38dvh + 5.35rem);
     max-width: calc(100vw - 1.8rem);
   }
 
-  .graph-canvas,
-  .graph-canvas-shell,
-  .graph-sidebar {
-    min-height: 26rem;
-    height: auto;
+  .graph-workbench.sidebar-dismissed .graph-stage-floating-zoom {
+    bottom: 4.6rem;
+  }
+
+  .graph-zoom-btn {
+    min-width: 3.2rem;
+    min-height: 3rem;
+  }
+
+  .graph-cap-input {
+    min-height: 3rem;
   }
 }
 
