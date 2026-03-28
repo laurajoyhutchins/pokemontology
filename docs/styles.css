@@ -1237,15 +1237,16 @@ body:not([data-power-mode="on"]) .qe-results-body {
   width: var(--graph-sidebar-width);
   z-index: 25;
   display: grid;
-  grid-template-rows: minmax(0, 1.15fr) minmax(0, 0.85fr);
   gap: 0.8rem;
+  align-content: start;
   background: rgba(248, 243, 225, 0.88);
   backdrop-filter: blur(10px);
-  overflow: hidden;
+  overflow: auto;
   min-width: 0;
   isolation: isolate;
   contain: layout paint;
   overscroll-behavior: contain;
+  transform: translateZ(0);
 }
 
 :root[data-theme="dark"] .graph-sidebar {
@@ -1254,19 +1255,9 @@ body:not([data-power-mode="on"]) .qe-results-body {
 
 .graph-sidebar-block {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
   gap: 0.55rem;
   min-height: 0;
   min-width: 0;
-  overflow: hidden;
-}
-
-#graph-detail {
-  min-height: 0;
-  min-width: 0;
-  overflow: auto;
-  contain: paint;
-  isolation: isolate;
 }
 
 .graph-stage-floating {
@@ -1291,10 +1282,8 @@ body:not([data-power-mode="on"]) .qe-results-body {
   display: grid;
   gap: 0.7rem;
   max-height: none;
-  overflow: auto;
+  overflow: visible;
   min-width: 0;
-  contain: paint;
-  isolation: isolate;
   transform: translateZ(0);
 }
 
@@ -1359,10 +1348,8 @@ body:not([data-power-mode="on"]) .qe-results-body {
   display: grid;
   gap: 0.55rem;
   max-height: none;
-  overflow: auto;
+  overflow: visible;
   min-width: 0;
-  contain: paint;
-  isolation: isolate;
   transform: translateZ(0);
 }
 
