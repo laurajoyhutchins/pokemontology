@@ -1242,6 +1242,7 @@ body:not([data-power-mode="on"]) .qe-results-body {
   background: rgba(248, 243, 225, 0.88);
   backdrop-filter: blur(10px);
   overflow: auto;
+  min-width: 0;
 }
 
 :root[data-theme="dark"] .graph-sidebar {
@@ -1252,6 +1253,7 @@ body:not([data-power-mode="on"]) .qe-results-body {
   display: grid;
   gap: 0.55rem;
   min-height: 0;
+  min-width: 0;
 }
 
 .graph-stage-floating {
@@ -1277,6 +1279,7 @@ body:not([data-power-mode="on"]) .qe-results-body {
   gap: 0.7rem;
   max-height: none;
   overflow: auto;
+  min-width: 0;
 }
 
 .graph-result-card,
@@ -1311,11 +1314,13 @@ body:not([data-power-mode="on"]) .qe-results-body {
 .graph-detail-card {
   display: grid;
   gap: 0.9rem;
+  min-width: 0;
 }
 
 .graph-detail-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-width: 0;
 }
 
 .graph-detail-metric {
@@ -1335,11 +1340,13 @@ body:not([data-power-mode="on"]) .qe-results-body {
   gap: 0.55rem;
   max-height: min(34vh, 24rem);
   overflow: auto;
+  min-width: 0;
 }
 
 .graph-breakdown-list {
   display: grid;
   gap: 0.5rem;
+  min-width: 0;
 }
 
 .graph-type-pill {
@@ -1367,6 +1374,38 @@ body:not([data-power-mode="on"]) .qe-results-body {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--muted);
+}
+
+#graph-detail,
+#graph-detail > *,
+.graph-detail-head,
+.graph-detail-head > div,
+.graph-detail-metric,
+.graph-breakdown-row,
+.graph-result-card,
+.graph-neighbor-card,
+.graph-result-card strong,
+.graph-neighbor-card strong,
+.graph-result-card span,
+.graph-neighbor-card span,
+.graph-detail-card h3,
+.graph-detail-card p,
+.pokedex-summary,
+.info-chip {
+  min-width: 0;
+}
+
+.graph-detail-card h3,
+.graph-detail-card p,
+.graph-breakdown-row span,
+.graph-result-card strong,
+.graph-neighbor-card strong,
+.graph-result-card span,
+.graph-neighbor-card span,
+.pokedex-summary,
+.info-chip {
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .footer {
