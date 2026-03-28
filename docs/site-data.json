@@ -41,6 +41,12 @@
       "path": "mechanics-learnsets-legacy.ttl",
       "iri": "https://laurajoyhutchins.github.io/pokemontology/mechanics-learnsets-legacy.ttl#",
       "description": "Older learnset archive for pre-3DS generations and side-game rulesets."
+    },
+    {
+      "label": "Graph Projection Index",
+      "path": "graph-index.json",
+      "iri": "https://laurajoyhutchins.github.io/pokemontology/graph-index.json",
+      "description": "Generated JSON projection of the published entity graph for the interactive website visualizer."
     }
   ],
   "query_sources": [

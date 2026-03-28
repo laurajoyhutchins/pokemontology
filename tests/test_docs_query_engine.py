@@ -12,7 +12,9 @@ APP_JS = REPO / "docs" / "app.js"
 SITE_DATA = REPO / "docs" / "site-data.json"
 INDEX_HTML = REPO / "docs" / "index.html"
 POKEDEX_HTML = REPO / "docs" / "pokedex.html"
+GRAPH_HTML = REPO / "docs" / "graph.html"
 SCHEMA_INDEX = REPO / "docs" / "schema-index.json"
+GRAPH_INDEX = REPO / "docs" / "graph-index.json"
 SPARQL_REFERENCE = REPO / "docs" / "sparql-reference.md"
 PKM_PREFIX_TERM_RE = re.compile(r"\bpkm:([A-Za-z_][\w-]*)\b")
 
@@ -91,6 +93,7 @@ def test_professor_laurel_landing_page_is_primary_entry() -> None:
     assert "Generated Query" in text
     assert "Advanced Query View" in text
     assert './pokedex.html' in text
+    assert './graph.html' in text
 
 
 def test_pokedex_page_uses_worker_backed_graph_browser() -> None:
@@ -112,6 +115,26 @@ def test_pokedex_page_uses_worker_backed_graph_browser() -> None:
     assert "pkm:TypingAssignment" in script
     assert "pkm:MoveLearnRecord" in script
     assert "STRENDS(LCASE(STR(?variantName)), \"-default\")" in script
+
+
+def test_graph_page_uses_generated_projection_index() -> None:
+    html = GRAPH_HTML.read_text(encoding="utf-8")
+    script = (REPO / "docs" / "graph.js").read_text(encoding="utf-8")
+    app = (REPO / "docs" / "js" / "graph-app.js").read_text(encoding="utf-8")
+    graph_index = json.loads(GRAPH_INDEX.read_text(encoding="utf-8"))
+
+    assert "Knowledge Graph Atlas" in html
+    assert 'id="graph-search"' in html
+    assert 'id="graph-canvas"' in html
+    assert 'src="./graph.js"' in html
+    assert 'import { createGraphApp } from "./js/graph-app.js";' in script
+    assert 'fetch("./graph-index.json"' in app
+    assert "buildLayout" in app
+    assert "EDGE_KINDS" in app
+    assert graph_index["node_count"] > 0
+    assert graph_index["edge_count"] > 0
+    assert "learnsMove" in graph_index["edge_kinds"]
+    assert any(node["type"] == "Species" for node in graph_index["nodes"])
 
 
 def test_docs_workers_are_present() -> None:

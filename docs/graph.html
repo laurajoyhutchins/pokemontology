@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Knowledge Graph | Pokemontology</title>
+  <meta name="description" content="Explore the published Pokemontology knowledge graph as an interactive clustered network view with search, type filters, and ruleset overlays.">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="site-shell">
+      <div class="topbar fade-up">
+        <a class="brand" href="./index.html">
+          <span class="brand-mark">PK</span>
+          <span class="brand-copy">
+            <strong>Pokemontology</strong>
+            <span>Semantic Knowledge Engine</span>
+          </span>
+        </a>
+        <nav class="nav-links" aria-label="Primary">
+          <a href="./index.html">Query</a>
+          <a href="./pokedex.html">Pokedex</a>
+          <a href="./graph.html" class="nav-active" aria-current="page">Graph</a>
+          <a href="./dev.html">Dev Console</a>
+          <a href="https://github.com/laurajoyhutchins/pokemontology" data-repository-url>Repo</a>
+        </nav>
+        <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false" aria-label="Toggle dark mode">
+          <span data-theme-label>Dark</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="graph-hero section-tight">
+      <div class="site-shell graph-hero-grid">
+        <div class="graph-intro fade-up">
+          <p class="eyebrow">Pokemontology / Whole-Graph View</p>
+          <h1 class="laurel-title">Knowledge Graph Atlas</h1>
+          <p class="laurel-lead">
+            Explore the published Pokemon knowledge graph as a clustered network projection spanning species, variants, moves, abilities, types, items, and rulesets.
+          </p>
+          <div class="graph-searchbar">
+            <label class="toolbar-label" for="graph-search">Find an entity</label>
+            <input
+              id="graph-search"
+              class="pokedex-search"
+              type="search"
+              placeholder="Search Charizard, Levitate, Thunderbolt, Scarlet Violet…"
+              autocomplete="off"
+            >
+          </div>
+          <div class="hero-stats graph-stats">
+            <div class="stat-chip">
+              <strong data-graph-status>Loading…</strong>
+              <span>Projection status</span>
+            </div>
+            <div class="stat-chip">
+              <strong data-graph-node-count>0</strong>
+              <span>Visible nodes</span>
+            </div>
+            <div class="stat-chip">
+              <strong data-graph-edge-count>0</strong>
+              <span>Visible edges</span>
+            </div>
+          </div>
+        </div>
+
+        <aside class="laurel-sidecar fade-up delay-1">
+          <div class="sidecar-card">
+            <p class="panel-kicker">Projection</p>
+            <p>
+              This page uses a generated <code>graph-index.json</code> projection of the published docs dataset. It keeps the whole site-local graph explorable without forcing the browser to draw raw Turtle triples directly.
+            </p>
+          </div>
+          <div class="sidecar-card">
+            <p class="panel-kicker">Controls</p>
+            <div class="pokedex-meta-list">
+              <span>Click node to inspect</span>
+              <span>Drag to pan</span>
+              <span>Scroll to zoom</span>
+              <span>Toggle edge families</span>
+              <span>Filter by ruleset</span>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section-tight">
+      <div class="site-shell graph-layout">
+        <section class="graph-main panel fade-up delay-1" aria-labelledby="graph-canvas-heading">
+          <div class="graph-panel-head">
+            <div>
+              <p class="panel-kicker">Atlas</p>
+              <h2 id="graph-canvas-heading">Published Graph Projection</h2>
+            </div>
+            <span class="mini-badge" id="graph-focus-badge">Whole graph</span>
+          </div>
+
+          <div class="graph-toolbar">
+            <div class="graph-filter-block">
+              <span class="toolbar-label">Node Types</span>
+              <div class="graph-filter-row" id="graph-node-filters"></div>
+            </div>
+            <div class="graph-filter-block">
+              <span class="toolbar-label">Edge Families</span>
+              <div class="graph-filter-row" id="graph-edge-filters"></div>
+            </div>
+            <div class="graph-filter-block">
+              <label class="toolbar-label" for="graph-ruleset">Ruleset Overlay</label>
+              <select id="graph-ruleset" class="qe-select"></select>
+            </div>
+          </div>
+
+          <div class="graph-canvas-shell">
+            <canvas id="graph-canvas" class="graph-canvas" aria-label="Pokemontology knowledge graph visualization"></canvas>
+          </div>
+        </section>
+
+        <aside class="graph-sidebar panel fade-up delay-2" aria-labelledby="graph-detail-heading">
+          <div class="graph-panel-head">
+            <div>
+              <p class="panel-kicker">Inspector</p>
+              <h2 id="graph-detail-heading">Node Detail</h2>
+            </div>
+            <span class="mini-badge" id="graph-selection-badge">No selection</span>
+          </div>
+          <div id="graph-detail">
+            <div class="qe-placeholder">
+              <span class="qe-placeholder-icon">◎</span>
+              <p>Pick a node or search for an entity to inspect its graph neighborhood.</p>
+            </div>
+          </div>
+
+          <div class="graph-panel-head graph-results-head">
+            <div>
+              <p class="panel-kicker">Matches</p>
+              <h2>Search Results</h2>
+            </div>
+            <span class="mini-badge" id="graph-results-badge">0 results</span>
+          </div>
+          <div id="graph-results" class="graph-results">
+            <div class="qe-placeholder">
+              <span class="qe-placeholder-icon">◌</span>
+              <p>Search results will appear here.</p>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="site-shell footer-shell">
+      <div>
+        The same repository defines the ontology, the shapes, the replay tooling, and the ingest pipelines.
+      </div>
+      <div>
+        <a href="https://github.com/laurajoyhutchins/pokemontology">GitHub</a>
+      </div>
+    </div>
+  </footer>
+  <script type="module" src="./graph.js"></script>
+</body>
+</html>

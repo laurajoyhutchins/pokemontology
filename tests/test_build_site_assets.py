@@ -20,6 +20,7 @@ def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(build_ontology, "PAGES_MECHANICS_LEGACY", tmp_path / "mechanics-learnsets-legacy.ttl")
     monkeypatch.setattr(build_ontology, "PAGES_SITE_DATA", tmp_path / "site-data.json")
     monkeypatch.setattr(build_ontology, "PAGES_SCHEMA_INDEX", tmp_path / "schema-index.json")
+    monkeypatch.setattr(build_ontology, "PAGES_GRAPH_INDEX", tmp_path / "graph-index.json")
     monkeypatch.setattr(build_ontology, "PAGES_SPARQL_REFERENCE", tmp_path / "sparql-reference.md")
     monkeypatch.setattr(build_ontology, "BUILD_DIR", tmp_path / "build")
     monkeypatch.setattr(build_ontology, "OUTPUT", tmp_path / "build" / "ontology.ttl")
@@ -35,7 +36,53 @@ def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
     (tmp_path / "build").mkdir()
     queries_dir.mkdir(parents=True)
     (tmp_path / "build" / "pokeapi.ttl").write_text(
-        "@prefix pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#> .\n",
+        "@prefix pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#> .\n"
+        "\n"
+        "pkm:Species_froakie a pkm:Species ;\n"
+        "  pkm:hasName \"Froakie\" ;\n"
+        "  pkm:hasIdentifier \"pokeapi:species:froakie\" .\n"
+        "\n"
+        "pkm:Variant_froakie_default a pkm:Variant ;\n"
+        "  pkm:belongsToSpecies pkm:Species_froakie ;\n"
+        "  pkm:hasName \"Froakie-Default\" ;\n"
+        "  pkm:hasIdentifier \"pokeapi:pokemon:froakie\" .\n"
+        "\n"
+        "pkm:Ruleset_PokeAPI_Default a pkm:Ruleset ;\n"
+        "  pkm:hasName \"PokeAPI Default (Current Generation)\" .\n"
+        "\n"
+        "pkm:Type_water a pkm:Type ;\n"
+        "  pkm:hasName \"Water\" ;\n"
+        "  pkm:hasIdentifier \"pokeapi:type:water\" .\n"
+        "\n"
+        "pkm:Ability_torrent a pkm:Ability ;\n"
+        "  pkm:hasName \"Torrent\" ;\n"
+        "  pkm:hasIdentifier \"pokeapi:ability:torrent\" .\n"
+        "\n"
+        "pkm:Move_bubble a pkm:Move ;\n"
+        "  pkm:hasName \"Bubble\" ;\n"
+        "  pkm:hasIdentifier \"pokeapi:move:bubble\" .\n"
+        "\n"
+        "pkm:TypingAssignment_froakie a pkm:TypingAssignment ;\n"
+        "  pkm:aboutVariant pkm:Variant_froakie_default ;\n"
+        "  pkm:aboutType pkm:Type_water ;\n"
+        "  pkm:hasContext pkm:Ruleset_PokeAPI_Default ;\n"
+        "  pkm:hasTypeSlot 1 .\n"
+        "\n"
+        "pkm:AbilityAssignment_froakie a pkm:AbilityAssignment ;\n"
+        "  pkm:aboutVariant pkm:Variant_froakie_default ;\n"
+        "  pkm:aboutAbility pkm:Ability_torrent ;\n"
+        "  pkm:hasContext pkm:Ruleset_PokeAPI_Default .\n"
+        "\n"
+        "pkm:MovePropertyAssignment_bubble a pkm:MovePropertyAssignment ;\n"
+        "  pkm:aboutMove pkm:Move_bubble ;\n"
+        "  pkm:hasMoveType pkm:Type_water ;\n"
+        "  pkm:hasContext pkm:Ruleset_PokeAPI_Default .\n"
+        "\n"
+        "pkm:MoveLearnRecord_froakie_bubble a pkm:MoveLearnRecord ;\n"
+        "  pkm:aboutVariant pkm:Variant_froakie_default ;\n"
+        "  pkm:learnableMove pkm:Move_bubble ;\n"
+        "  pkm:isLearnableInRuleset true ;\n"
+        "  pkm:hasContext pkm:Ruleset_PokeAPI_Default .\n",
         encoding="utf-8",
     )
     (tmp_path / "build" / "veekun.ttl").write_text(
@@ -60,6 +107,7 @@ def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
 
     site_data = json.loads((tmp_path / "site-data.json").read_text(encoding="utf-8"))
     schema_index = json.loads((tmp_path / "schema-index.json").read_text(encoding="utf-8"))
+    graph_index = json.loads((tmp_path / "graph-index.json").read_text(encoding="utf-8"))
     entity_index = json.loads((tmp_path / "build" / "entity-index.json").read_text(encoding="utf-8"))
     sparql_reference = (tmp_path / "sparql-reference.md").read_text(encoding="utf-8")
     bundled_query = next(
@@ -77,6 +125,7 @@ def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
     assert (tmp_path / "mechanics-learnsets-modern.ttl").exists()
     assert (tmp_path / "mechanics-learnsets-legacy.ttl").exists()
     assert any(artifact["path"] == "mechanics-base.ttl" for artifact in site_data["artifacts"])
+    assert any(artifact["path"] == "graph-index.json" for artifact in site_data["artifacts"])
     assert any(source["id"] == "src-mechanics" for source in site_data["query_sources"])
     mechanics_source = next(source for source in site_data["query_sources"] if source["id"] == "src-mechanics")
     assert mechanics_source["paths"] == [
@@ -129,6 +178,12 @@ def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
     assert "species" in schema_index["sparse_index"]
     assert schema_index["item_norms"]
     assert entity_index["source"].endswith("build/mechanics.ttl")
+    assert graph_index["source"].endswith("build/mechanics.ttl")
+    assert graph_index["node_count"] >= 3
+    assert graph_index["edge_count"] >= 1
+    assert "belongsToSpecies" in graph_index["edge_kinds"]
+    assert any(node["type"] == "Ruleset" for node in graph_index["nodes"])
+    assert any(edge["kind"] == "availableIn" for edge in graph_index["edges"])
     assert isinstance(entity_index["entity_count"], int)
     assert isinstance(entity_index["entities"], list)
     assert isinstance(entity_index["rulesets"], list)

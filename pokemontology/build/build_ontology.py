@@ -46,6 +46,7 @@ PAGES_MECHANICS_MODERN = PAGES_DIR / "mechanics-learnsets-modern.ttl"
 PAGES_MECHANICS_LEGACY = PAGES_DIR / "mechanics-learnsets-legacy.ttl"
 PAGES_SITE_DATA = PAGES_DIR / "site-data.json"
 PAGES_SCHEMA_INDEX = PAGES_DIR / "schema-index.json"
+PAGES_GRAPH_INDEX = PAGES_DIR / "graph-index.json"
 PAGES_SPARQL_REFERENCE = PAGES_DIR / "sparql-reference.md"
 BUILD_SPARQL_REFERENCE = BUILD_DIR / "sparql-reference.md"
 
@@ -459,6 +460,166 @@ def _build_entity_index() -> dict[str, object]:
     }
 
 
+def _build_graph_index() -> dict[str, object]:
+    nodes_by_curie: dict[str, dict[str, object]] = {}
+    edge_map: dict[tuple[str, str, str], dict[str, object]] = {}
+    contexts_by_curie: dict[str, set[str]] = {}
+
+    def literal_values(block: str, predicate: str) -> list[str]:
+        values: list[str] = []
+        for match in re.finditer(
+            rf"pkm:{predicate}\s+\"((?:[^\"\\]|\\.)*)\"",
+            block,
+        ):
+            values.append(bytes(match.group(1), "utf-8").decode("unicode_escape"))
+        return values
+
+    def curie_object(block: str, predicate: str) -> str | None:
+        match = re.search(rf"pkm:{predicate}\s+(pkm:[A-Za-z0-9_]+)\b", block)
+        return match.group(1) if match else None
+
+    def node_payload(subject_curie: str, type_name: str) -> dict[str, object]:
+        local_name = subject_curie.removeprefix("pkm:")
+        return nodes_by_curie.setdefault(
+            subject_curie,
+            {
+                "id": subject_curie,
+                "iri": str(PKM[local_name]),
+                "label": local_name,
+                "type": type_name,
+                "type_curie": f"pkm:{type_name}",
+                "identifiers": [],
+                "contexts": [],
+            },
+        )
+
+    def ensure_edge(source: str, target: str, kind: str, context: str | None = None) -> None:
+        if source == target:
+            return
+        payload = edge_map.setdefault(
+            (source, target, kind),
+            {
+                "source": source,
+                "target": target,
+                "kind": kind,
+                "weight": 0,
+                "contexts": set(),
+            },
+        )
+        payload["weight"] = int(payload["weight"]) + 1
+        if context:
+            contexts = payload.get("contexts")
+            if isinstance(contexts, set):
+                contexts.add(context)
+
+    for source in (BUILD_POKEAPI, BUILD_VEEKUN):
+        if not source.exists():
+            continue
+        for block in _iter_ttl_blocks(source):
+            entity_match = ENTITY_BLOCK_RE.search(block)
+            if entity_match is not None:
+                subject_curie = entity_match.group(1)
+                type_name = entity_match.group(2)
+                if type_name in ENTITY_INDEX_TARGET_TYPES:
+                    node = node_payload(subject_curie, type_name)
+                    labels = literal_values(block, "hasName")
+                    identifiers = literal_values(block, "hasIdentifier")
+                    if labels:
+                        node["label"] = labels[0]
+                    node["identifiers"] = identifiers
+                    if type_name == "Variant":
+                        species_curie = curie_object(block, "belongsToSpecies")
+                        if species_curie:
+                            ensure_edge(subject_curie, species_curie, "belongsToSpecies")
+
+            context_curie = curie_object(block, "hasContext")
+            if context_curie:
+                for predicate in (
+                    "aboutVariant",
+                    "aboutMove",
+                    "aboutAbility",
+                    "aboutItem",
+                    "aboutType",
+                ):
+                    target_curie = curie_object(block, predicate)
+                    if target_curie:
+                        contexts_by_curie.setdefault(target_curie, set()).add(context_curie)
+                        ensure_edge(target_curie, context_curie, "availableIn", context_curie)
+
+            variant_curie = curie_object(block, "aboutVariant")
+            type_curie = curie_object(block, "aboutType")
+            ability_curie = curie_object(block, "aboutAbility")
+            move_curie = curie_object(block, "learnableMove")
+            about_move_curie = curie_object(block, "aboutMove")
+            move_type_curie = curie_object(block, "hasMoveType")
+            learnable_flag = re.search(r"pkm:isLearnableInRuleset\s+true\b", block)
+
+            if variant_curie and type_curie:
+                ensure_edge(variant_curie, type_curie, "hasType", context_curie)
+            if variant_curie and ability_curie:
+                ensure_edge(variant_curie, ability_curie, "hasAbility", context_curie)
+            if variant_curie and move_curie and learnable_flag:
+                ensure_edge(variant_curie, move_curie, "learnsMove", context_curie)
+            if about_move_curie and move_type_curie:
+                ensure_edge(about_move_curie, move_type_curie, "hasMoveType", context_curie)
+
+    degree_by_node: dict[str, int] = {curie: 0 for curie in nodes_by_curie}
+    edges: list[dict[str, object]] = []
+    for payload in sorted(
+        edge_map.values(),
+        key=lambda item: (str(item["kind"]), str(item["source"]), str(item["target"])),
+    ):
+        source = str(payload["source"])
+        target = str(payload["target"])
+        if source not in nodes_by_curie or target not in nodes_by_curie:
+            continue
+        degree_by_node[source] = degree_by_node.get(source, 0) + 1
+        degree_by_node[target] = degree_by_node.get(target, 0) + 1
+        contexts = payload.get("contexts")
+        edges.append(
+            {
+                "source": source,
+                "target": target,
+                "kind": str(payload["kind"]),
+                "weight": int(payload["weight"]),
+                "context_count": len(contexts) if isinstance(contexts, set) else 0,
+            }
+        )
+
+    nodes = [
+        {
+            **{
+                **node,
+                "contexts": sorted(contexts_by_curie.get(subject_curie, set())),
+            },
+            "degree": degree_by_node.get(subject_curie, 0),
+        }
+        for subject_curie, node in sorted(
+            nodes_by_curie.items(),
+            key=lambda item: (
+                LOOKUP_TYPE_PRIORITY.get(str(item[1].get("type", "")), 999),
+                str(item[1].get("label", "")),
+                item[0],
+            ),
+        )
+    ]
+    return {
+        "source": display_repo_path(BUILD_MECHANICS),
+        "node_count": len(nodes),
+        "edge_count": len(edges),
+        "edge_kinds": [
+            "belongsToSpecies",
+            "hasType",
+            "hasAbility",
+            "learnsMove",
+            "hasMoveType",
+            "availableIn",
+        ],
+        "nodes": nodes,
+        "edges": edges,
+    }
+
+
 def _pkm_terms_from_text(text: object) -> set[str]:
     if not isinstance(text, str):
         return set()
@@ -820,6 +981,12 @@ def assemble_artifacts() -> tuple[str, str, dict[str, object]]:
                 }
                 for entry in WEB_MECHANICS_SLICES
             ],
+            {
+                "label": "Graph Projection Index",
+                "path": "graph-index.json",
+                "iri": "https://laurajoyhutchins.github.io/pokemontology/graph-index.json",
+                "description": "Generated JSON projection of the published entity graph for the interactive website visualizer.",
+            },
         ],
         "query_sources": [
             {
@@ -946,6 +1113,10 @@ def write_artifacts(
         json.dumps(schema_pack, indent=2) + "\n",
         encoding="utf-8",
     )
+    PAGES_GRAPH_INDEX.write_text(
+        json.dumps(_build_graph_index(), indent=2) + "\n",
+        encoding="utf-8",
+    )
     write_json_file(BUILD_ENTITY_INDEX, _build_entity_index())
     BUILD_SPARQL_REFERENCE.write_text(sparql_reference + "\n", encoding="utf-8")
     PAGES_SPARQL_REFERENCE.write_text(sparql_reference + "\n", encoding="utf-8")
@@ -962,6 +1133,7 @@ def main() -> None:
         print(f"wrote {path.relative_to(REPO)}")
     print(f"wrote {PAGES_SITE_DATA.relative_to(REPO)}")
     print(f"wrote {PAGES_SCHEMA_INDEX.relative_to(REPO)}")
+    print(f"wrote {PAGES_GRAPH_INDEX.relative_to(REPO)}")
     print(f"wrote {BUILD_ENTITY_INDEX.relative_to(REPO)}")
     print(f"wrote {BUILD_SPARQL_REFERENCE.relative_to(REPO)}")
     print(f"wrote {PAGES_SPARQL_REFERENCE.relative_to(REPO)}")

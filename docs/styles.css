@@ -1067,6 +1067,171 @@ body:not([data-power-mode="on"]) .qe-results-body {
 .type-fairy { background: #f4b7cf; }
 .type-normal { background: #d3c9aa; }
 
+.graph-hero-grid,
+.graph-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) minmax(320px, 0.95fr);
+  gap: 1rem;
+}
+
+.graph-intro,
+.graph-main,
+.graph-sidebar {
+  padding: 1.25rem;
+}
+
+.graph-searchbar {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 1rem;
+}
+
+.graph-stats {
+  margin-top: 1rem;
+}
+
+.graph-panel-head,
+.graph-toolbar,
+.graph-filter-row,
+.graph-detail-head,
+.graph-detail-grid,
+.graph-results-head {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.graph-panel-head,
+.graph-results-head {
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.graph-toolbar {
+  flex-wrap: wrap;
+  margin: 1rem 0 1.2rem;
+}
+
+.graph-filter-block {
+  display: grid;
+  gap: 0.5rem;
+  flex: 1 1 16rem;
+}
+
+.graph-filter-row {
+  flex-wrap: wrap;
+}
+
+.graph-toggle {
+  align-items: center;
+}
+
+.graph-canvas-shell {
+  border: 2px solid var(--line);
+  background:
+    radial-gradient(circle at top, rgba(185, 131, 42, 0.14), transparent 42%),
+    linear-gradient(180deg, rgba(248, 243, 225, 0.9), rgba(232, 222, 189, 0.96));
+  min-height: 68vh;
+  box-shadow: var(--pixel-frame), var(--shadow);
+}
+
+:root[data-theme="dark"] .graph-canvas-shell {
+  background:
+    radial-gradient(circle at top, rgba(239, 192, 106, 0.14), transparent 42%),
+    linear-gradient(180deg, rgba(21, 38, 33, 0.94), rgba(11, 21, 18, 0.98));
+}
+
+.graph-canvas {
+  width: 100%;
+  height: 68vh;
+  display: block;
+  cursor: grab;
+}
+
+.graph-canvas:active {
+  cursor: grabbing;
+}
+
+.graph-sidebar {
+  display: grid;
+  gap: 1rem;
+  align-content: start;
+}
+
+.graph-results {
+  display: grid;
+  gap: 0.7rem;
+  max-height: 22rem;
+  overflow: auto;
+}
+
+.graph-result-card,
+.graph-neighbor-card {
+  width: 100%;
+  text-align: left;
+  border: 2px solid var(--line);
+  background: var(--control-bg);
+  color: var(--ink);
+  padding: 0.75rem 0.85rem;
+  box-shadow: var(--pixel-frame), var(--shadow);
+  cursor: pointer;
+}
+
+.graph-result-card span,
+.graph-neighbor-card span,
+.graph-detail-metric span {
+  display: block;
+  color: var(--muted);
+  margin-top: 0.3rem;
+  font-size: 0.82rem;
+}
+
+.graph-detail-card {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.graph-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.graph-detail-metric {
+  border: 2px solid rgba(47, 85, 71, 0.18);
+  background: rgba(255, 255, 255, 0.18);
+  padding: 0.7rem 0.8rem;
+}
+
+.graph-detail-metric strong {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 1.15rem;
+}
+
+.graph-neighbor-list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.graph-type-pill {
+  align-self: start;
+  border: 2px solid var(--line);
+  padding: 0.45rem 0.65rem;
+  box-shadow: var(--pixel-frame), var(--shadow);
+  font-family: var(--font-ui);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.72rem;
+  color: #172922;
+}
+
+.graph-type-species { background: #d66d4d; }
+.graph-type-variant { background: #e8b850; }
+.graph-type-move { background: #5a88c8; color: #f8f2dd; }
+.graph-type-ability { background: #6ca56f; }
+.graph-type-item { background: #b680d0; }
+.graph-type-type { background: #d85c8c; }
+.graph-type-ruleset { background: #6c8f80; color: #f8f2dd; }
+
 .footer {
   padding: 2rem 0 2.5rem;
 }
@@ -1101,7 +1266,9 @@ body:not([data-power-mode="on"]) .qe-results-body {
   .laurel-board,
   .section-grid,
   .pokedex-hero-grid,
-  .pokedex-layout {
+  .pokedex-layout,
+  .graph-hero-grid,
+  .graph-layout {
     grid-template-columns: 1fr;
   }
 
@@ -1115,7 +1282,10 @@ body:not([data-power-mode="on"]) .qe-results-body {
   .laurel-runbar,
   .laurel-panel-head,
   .qe-toolbar,
-  .qe-editor-header {
+  .qe-editor-header,
+  .graph-toolbar,
+  .graph-panel-head,
+  .graph-results-head {
     flex-direction: column;
     align-items: stretch;
   }
@@ -1134,7 +1304,14 @@ body:not([data-power-mode="on"]) .qe-results-body {
     min-height: 12rem;
   }
 
-  .pokedex-results {
+  .pokedex-results,
+  .graph-results {
     max-height: none;
+  }
+
+  .graph-canvas,
+  .graph-canvas-shell {
+    min-height: 28rem;
+    height: 28rem;
   }
 }
