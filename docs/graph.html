@@ -34,74 +34,88 @@
 
   <main class="graph-workbench">
     <div class="graph-shell graph-shell-overlay">
-      <section class="graph-controls panel fade-up" aria-label="Graph query controls">
-        <div class="graph-control-row">
-          <label class="graph-control graph-control-search" for="graph-search">
-            <span class="toolbar-label">Query</span>
-            <input
-              id="graph-search"
-              class="pokedex-search"
-              type="search"
-              placeholder="Search for a node to focus the graph"
-              autocomplete="off"
-            >
-          </label>
-          <div class="graph-control graph-control-actions">
-            <span class="toolbar-label">Actions</span>
-            <div class="graph-action-row">
-              <button class="qe-action-btn" id="graph-clear-query" type="button">Clear</button>
-              <button class="qe-action-btn" id="graph-reset-query" type="button">Reset</button>
+      <section class="graph-controls panel fade-up" id="graph-controls" aria-label="Graph query controls">
+        <div class="graph-controls-head">
+          <div class="graph-controls-title">
+            <span class="mini-badge">Query Pane</span>
+            <span class="graph-hover-readout">Search, filter, and pivot the local graph</span>
+          </div>
+          <button class="qe-action-btn graph-pane-toggle" id="graph-controls-toggle" type="button" aria-expanded="true" aria-controls="graph-controls-body">
+            Collapse
+          </button>
+        </div>
+        <div class="graph-controls-body" id="graph-controls-body">
+          <div class="graph-control-row">
+            <label class="graph-control graph-control-search" for="graph-search">
+              <span class="toolbar-label">Query</span>
+              <input
+                id="graph-search"
+                class="pokedex-search"
+                type="search"
+                placeholder="Search for a node to focus the graph"
+                autocomplete="off"
+              >
+            </label>
+            <div class="graph-control graph-control-actions">
+              <span class="toolbar-label">Actions</span>
+              <div class="graph-action-row">
+                <button class="qe-action-btn" id="graph-clear-query" type="button">Clear</button>
+                <button class="qe-action-btn" id="graph-reset-query" type="button">Reset</button>
+              </div>
+            </div>
+            <label class="graph-control" for="graph-hop-depth">
+              <span class="toolbar-label">Depth</span>
+              <select id="graph-hop-depth" class="qe-select">
+                <option value="1">1 hop</option>
+                <option value="2" selected>2 hops</option>
+                <option value="3">3 hops</option>
+                <option value="4">4 hops</option>
+              </select>
+            </label>
+            <label class="graph-control" for="graph-node-limit">
+              <span class="toolbar-label">Node Cap</span>
+              <select id="graph-node-limit" class="qe-select">
+                <option value="120">120</option>
+                <option value="240" selected>240</option>
+                <option value="400">400</option>
+                <option value="700">700</option>
+              </select>
+            </label>
+            <label class="graph-control" for="graph-ruleset">
+              <span class="toolbar-label">Ruleset</span>
+              <select id="graph-ruleset" class="qe-select"></select>
+            </label>
+            <div class="graph-stats-inline">
+              <span class="mini-badge" data-graph-status>Loading…</span>
+              <span class="mini-badge"><strong data-graph-node-count>0</strong> nodes</span>
+              <span class="mini-badge"><strong data-graph-edge-count>0</strong> edges</span>
             </div>
           </div>
-          <label class="graph-control" for="graph-hop-depth">
-            <span class="toolbar-label">Depth</span>
-            <select id="graph-hop-depth" class="qe-select">
-              <option value="1">1 hop</option>
-              <option value="2" selected>2 hops</option>
-              <option value="3">3 hops</option>
-              <option value="4">4 hops</option>
-            </select>
-          </label>
-          <label class="graph-control" for="graph-node-limit">
-            <span class="toolbar-label">Node Cap</span>
-            <select id="graph-node-limit" class="qe-select">
-              <option value="120">120</option>
-              <option value="240" selected>240</option>
-              <option value="400">400</option>
-              <option value="700">700</option>
-            </select>
-          </label>
-          <label class="graph-control" for="graph-ruleset">
-            <span class="toolbar-label">Ruleset</span>
-            <select id="graph-ruleset" class="qe-select"></select>
-          </label>
-          <div class="graph-stats-inline">
-            <span class="mini-badge" data-graph-status>Loading…</span>
-            <span class="mini-badge"><strong data-graph-node-count>0</strong> nodes</span>
-            <span class="mini-badge"><strong data-graph-edge-count>0</strong> edges</span>
+          <div class="graph-query-meta">
+            <span class="graph-query-status" id="graph-query-status">Loading query state…</span>
+            <div class="graph-query-presets" id="graph-query-presets">
+              <button class="source-toggle graph-toggle" type="button" data-graph-preset="Pikachu">Pikachu</button>
+              <button class="source-toggle graph-toggle" type="button" data-graph-preset="Charizard">Charizard</button>
+              <button class="source-toggle graph-toggle" type="button" data-graph-preset="Thunderbolt">Thunderbolt</button>
+              <button class="source-toggle graph-toggle" type="button" data-graph-preset="Levitate">Levitate</button>
+              <button class="source-toggle graph-toggle" type="button" data-graph-preset="Scarlet Violet">Scarlet Violet</button>
+            </div>
           </div>
-        </div>
-        <div class="graph-query-meta">
-          <span class="graph-query-status" id="graph-query-status">Loading query state…</span>
-          <div class="graph-query-presets" id="graph-query-presets">
-            <button class="source-toggle graph-toggle" type="button" data-graph-preset="Pikachu">Pikachu</button>
-            <button class="source-toggle graph-toggle" type="button" data-graph-preset="Charizard">Charizard</button>
-            <button class="source-toggle graph-toggle" type="button" data-graph-preset="Thunderbolt">Thunderbolt</button>
-            <button class="source-toggle graph-toggle" type="button" data-graph-preset="Levitate">Levitate</button>
-            <button class="source-toggle graph-toggle" type="button" data-graph-preset="Scarlet Violet">Scarlet Violet</button>
-          </div>
-        </div>
-        <div class="graph-control-row graph-control-row-compact">
-          <div class="graph-filter-pack">
-            <span class="toolbar-label">Types</span>
-            <div class="graph-filter-row" id="graph-node-filters"></div>
-          </div>
-          <div class="graph-filter-pack">
-            <span class="toolbar-label">Edges</span>
-            <div class="graph-filter-row" id="graph-edge-filters"></div>
+          <div class="graph-control-row graph-control-row-compact">
+            <div class="graph-filter-pack">
+              <span class="toolbar-label">Types</span>
+              <div class="graph-filter-row" id="graph-node-filters"></div>
+            </div>
+            <div class="graph-filter-pack">
+              <span class="toolbar-label">Edges</span>
+              <div class="graph-filter-row" id="graph-edge-filters"></div>
+            </div>
           </div>
         </div>
       </section>
+      <button class="graph-controls-reopen graph-stage-floating qe-action-btn" id="graph-controls-reopen" type="button" aria-controls="graph-controls-body" aria-expanded="false" hidden>
+        Query Pane
+      </button>
 
       <section class="graph-stage fade-up delay-1">
         <div class="graph-stage-head graph-stage-floating">

@@ -1130,6 +1130,55 @@ body:not([data-power-mode="on"]) .qe-results-body {
   background: rgba(21, 38, 33, 0.82);
 }
 
+.graph-controls-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.graph-controls-title {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.graph-controls-body {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.graph-controls.is-collapsed {
+  width: fit-content;
+  max-width: min(20rem, calc(100vw - (var(--graph-panel-offset) * 2)));
+}
+
+.graph-controls.is-collapsed .graph-controls-head {
+  margin: 0;
+}
+
+.graph-pane-toggle {
+  white-space: nowrap;
+}
+
+.graph-controls-reopen {
+  top: calc(5.45rem + var(--graph-panel-offset));
+  left: var(--graph-panel-offset);
+  bottom: auto;
+  z-index: 31;
+  display: none;
+}
+
+.graph-controls-reopen[hidden] {
+  display: none !important;
+}
+
+.graph-controls.is-collapsed + .graph-controls-reopen:not([hidden]) {
+  display: inline-flex;
+  align-items: center;
+}
+
 .graph-control-row,
 .graph-filter-row,
 .graph-panel-head,
@@ -1552,6 +1601,11 @@ body:not([data-power-mode="on"]) .qe-results-body {
     max-width: calc(100vw - (var(--graph-panel-offset) * 2));
   }
 
+  .graph-controls-reopen {
+    top: 5.2rem;
+    left: var(--graph-panel-offset);
+  }
+
   .graph-sidebar {
     right: var(--graph-panel-offset);
     bottom: var(--graph-panel-offset);
@@ -1598,6 +1652,15 @@ body:not([data-power-mode="on"]) .qe-results-body {
     left: 0.9rem;
     width: calc(100vw - 1.8rem);
     max-width: calc(100vw - 1.8rem);
+  }
+
+  .graph-controls.is-collapsed {
+    max-width: calc(100vw - 1.8rem);
+  }
+
+  .graph-controls-reopen {
+    top: 4.9rem;
+    left: 0.9rem;
   }
 
   .graph-sidebar {

@@ -125,6 +125,10 @@ def test_graph_page_uses_generated_projection_index() -> None:
 
     assert "Knowledge Graph" in html
     assert 'id="graph-search"' in html
+    assert 'id="graph-controls"' in html
+    assert 'id="graph-controls-body"' in html
+    assert 'id="graph-controls-toggle"' in html
+    assert 'id="graph-controls-reopen"' in html
     assert 'id="graph-canvas"' in html
     assert 'id="graph-hop-depth"' in html
     assert 'id="graph-node-limit"' in html
@@ -145,6 +149,8 @@ def test_graph_page_uses_generated_projection_index() -> None:
     assert "bfsNeighborhood" in app
     assert "renderQueryStatus" in app
     assert "applyQueryValue" in app
+    assert "setControlsCollapsed" in app
+    assert "autoCollapseControls" in app
     assert "updateZoomReadout" in app
     assert "resetViewport" in app
     assert "EDGE_KINDS" in app

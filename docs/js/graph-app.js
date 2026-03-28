@@ -550,12 +550,37 @@ function resetViewport(state) {
   state.zoom = 1;
 }
 
+function setControlsCollapsed(state, collapsed) {
+  state.controlsCollapsed = collapsed;
+  const controls = document.getElementById("graph-controls");
+  const body = document.getElementById("graph-controls-body");
+  const toggle = document.getElementById("graph-controls-toggle");
+  const reopen = document.getElementById("graph-controls-reopen");
+  controls?.classList.toggle("is-collapsed", collapsed);
+  if (body) body.hidden = collapsed;
+  if (toggle) {
+    toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
+    toggle.textContent = collapsed ? "Expand" : "Collapse";
+  }
+  if (reopen) {
+    reopen.hidden = !collapsed;
+    reopen.setAttribute("aria-expanded", collapsed ? "false" : "true");
+  }
+}
+
+function autoCollapseControls(state) {
+  if (!state.controlsCollapsed) {
+    setControlsCollapsed(state, true);
+  }
+}
+
 function setupCanvasInteractions(canvas, state, rerender) {
   let dragging = false;
   let lastX = 0;
   let lastY = 0;
 
   canvas.addEventListener("pointerdown", (event) => {
+    autoCollapseControls(state);
     dragging = true;
     lastX = event.clientX;
     lastY = event.clientY;
@@ -600,6 +625,7 @@ function setupCanvasInteractions(canvas, state, rerender) {
     "wheel",
     (event) => {
       event.preventDefault();
+      autoCollapseControls(state);
       const next = state.zoom * (event.deltaY < 0 ? 1.08 : 0.92);
       state.zoom = clampZoom(next);
       rerender();
@@ -607,6 +633,7 @@ function setupCanvasInteractions(canvas, state, rerender) {
     { passive: false },
   );
   canvas.addEventListener("dblclick", () => {
+    autoCollapseControls(state);
     resetViewport(state);
     rerender();
   });
@@ -624,6 +651,12 @@ function bindSelectionHandlers(state, rerender) {
 }
 
 function wireControls(state, rerender) {
+  document.getElementById("graph-controls-toggle")?.addEventListener("click", () => {
+    setControlsCollapsed(state, !state.controlsCollapsed);
+  });
+  document.getElementById("graph-controls-reopen")?.addEventListener("click", () => {
+    setControlsCollapsed(state, false);
+  });
   document.getElementById("graph-search")?.addEventListener("input", (event) => {
     applyQueryValue(state, event.target.value, rerender);
   });
@@ -700,6 +733,7 @@ export async function createGraphApp() {
     panX: 0,
     panY: 0,
     zoom: 1,
+    controlsCollapsed: false,
     hitMap: [],
     get enabledTypes() {
       return selectedNodeTypes();
@@ -731,8 +765,10 @@ export async function createGraphApp() {
   setupCanvasInteractions(canvas, state, rerender);
   bindSelectionHandlers(state, rerender);
   wireControls(state, rerender);
+  setControlsCollapsed(state, false);
 
   canvas.addEventListener("click", (event) => {
+    autoCollapseControls(state);
     const rect = canvas.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
