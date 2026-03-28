@@ -27,7 +27,7 @@ from .laurel import summarize_results
 from .turn_order import resolve_action_order
 
 from pokemontology.build import build_ontology, check_ttl_parse
-from pokemontology.ingest import pokeapi_ingest, veekun_ingest
+from pokemontology.ingest import meta_ingest, pokeapi_ingest, veekun_ingest
 from pokemontology.replay import (
     parse_showdown_replay,
     replay_dataset,
@@ -561,6 +561,11 @@ def cmd_resolve_order(args: argparse.Namespace) -> int:
     payload = _load_json_object(args.state_json, label="turn-order state JSON")
     resolved = resolve_action_order(payload)
     _print_json(resolved, pretty=args.pretty)
+    return 0
+
+
+def cmd_meta_snapshot(args: argparse.Namespace) -> int:
+    meta_ingest.cmd_meta_snapshot(args)
     return 0
 
 
@@ -1459,6 +1464,41 @@ def build_parser() -> argparse.ArgumentParser:
         help="Directory to serve. Defaults to the repository docs/ folder.",
     )
     serve_parser.set_defaults(func=cmd_serve_docs)
+
+    meta_parser = subparsers.add_parser(
+        "meta-snapshot",
+        help="Aggregate a competitive usage MetaSnapshot from Showdown replay JSON files.",
+    )
+    meta_parser.add_argument(
+        "replay_json",
+        nargs="*",
+        type=Path,
+        help="One or more Showdown replay JSON paths. If omitted, reads from --curated list.",
+    )
+    meta_parser.add_argument(
+        "--curated",
+        type=Path,
+        default=None,
+        help="Path to curated replay list JSON. Defaults to data/replays/curated/competitive.json.",
+    )
+    meta_parser.add_argument(
+        "--raw-dir",
+        type=Path,
+        default=None,
+        help="Directory containing cached replay JSON. Defaults to data/replays/raw/showdown.",
+    )
+    meta_parser.add_argument(
+        "--output",
+        type=Path,
+        default=None,
+        help="Output TTL path. Defaults to build/meta-snapshot.ttl.",
+    )
+    meta_parser.add_argument(
+        "--date",
+        default=None,
+        help="Snapshot date as YYYY-MM-DD. Defaults to today.",
+    )
+    meta_parser.set_defaults(func=cmd_meta_snapshot)
 
     add_replay_dataset_subcommands(subparsers)
     add_pokeapi_subcommands(subparsers)

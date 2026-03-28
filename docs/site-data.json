@@ -124,6 +124,10 @@
     {
       "name": "80-materialized-state",
       "source_path": "ontology/modules/80-materialized-state.ttl"
+    },
+    {
+      "name": "85-meta-snapshot",
+      "source_path": "ontology/modules/85-meta-snapshot.ttl"
     }
   ],
   "pipelines": [
