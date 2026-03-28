@@ -1089,6 +1089,11 @@ body:not([data-power-mode="on"]) .qe-results-body {
   margin: 0 auto;
 }
 
+.graph-header .graph-shell {
+  width: calc(100vw - (var(--graph-gutter) * 2));
+  max-width: none;
+}
+
 .graph-shell-overlay {
   position: relative;
   min-height: 100vh;
