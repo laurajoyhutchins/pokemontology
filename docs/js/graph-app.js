@@ -650,8 +650,7 @@ function bindSelectionHandlers(state, rerender) {
     const button = event.target.closest("[data-graph-node]");
     if (!button) return;
     state.selectedNodeId = button.getAttribute("data-graph-node") || "";
-    state.panX = 0;
-    state.panY = 0;
+    resetViewport(state);
     rerender();
   });
 }
@@ -788,8 +787,7 @@ export async function createGraphApp() {
       });
     if (!hit) return;
     state.selectedNodeId = hit.id;
-    state.panX = 0;
-    state.panY = 0;
+    resetViewport(state);
     rerender();
   });
 
