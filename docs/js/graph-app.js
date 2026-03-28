@@ -522,8 +522,7 @@ function applyQueryValue(state, value, rerender) {
     state.searchText,
   )[0];
   state.selectedNodeId = match?.id || "";
-  state.panX = 0;
-  state.panY = 0;
+  resetViewport(state);
   rerender();
 }
 
@@ -758,6 +757,7 @@ export async function createGraphApp() {
   if (searchInput instanceof HTMLInputElement) {
     searchInput.value = state.searchText;
   }
+  resetViewport(state);
 
   const rerender = () => {
     const projected = buildProjectedGraph(state);
