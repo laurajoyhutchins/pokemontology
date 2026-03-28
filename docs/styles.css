@@ -1155,12 +1155,23 @@ body:not([data-power-mode="on"]) .qe-results-body {
 }
 
 .graph-controls.is-collapsed {
-  width: fit-content;
-  max-width: min(20rem, calc(100vw - (var(--graph-panel-offset) * 2)));
+  display: inline-grid;
+  width: max-content;
+  max-width: min(24rem, calc(100vw - (var(--graph-panel-offset) * 2)));
+  min-width: 0;
+  justify-items: start;
 }
 
 .graph-controls.is-collapsed .graph-controls-head {
   margin: 0;
+  justify-content: flex-start;
+  align-items: center;
+  width: auto;
+  flex-direction: row;
+}
+
+.graph-controls.is-collapsed .graph-controls-title {
+  flex: 0 1 auto;
 }
 
 .graph-pane-toggle {
