@@ -1178,13 +1178,12 @@ body:not([data-power-mode="on"]) .qe-results-body {
 
 .graph-canvas-shell {
   position: fixed;
-  inset: var(--graph-gutter);
+  inset: 0;
   z-index: 1;
-  border: 2px solid rgba(47, 85, 71, 0.55);
   background:
     radial-gradient(circle at top, rgba(185, 131, 42, 0.14), transparent 42%),
     linear-gradient(180deg, rgba(248, 243, 225, 0.9), rgba(232, 222, 189, 0.96));
-  box-shadow: inset 0 0 0 1px rgba(47, 85, 71, 0.22);
+  box-shadow: inset 0 0 0 1px rgba(47, 85, 71, 0.16);
 }
 
 :root[data-theme="dark"] .graph-canvas-shell {
@@ -1193,9 +1192,18 @@ body:not([data-power-mode="on"]) .qe-results-body {
     linear-gradient(180deg, rgba(21, 38, 33, 0.94), rgba(11, 21, 18, 0.98));
 }
 
+.graph-canvas-shell::after {
+  content: "";
+  position: fixed;
+  inset: var(--graph-gutter);
+  pointer-events: none;
+  border: 2px solid rgba(47, 85, 71, 0.55);
+  box-shadow: inset 0 0 0 1px rgba(47, 85, 71, 0.22);
+}
+
 .graph-canvas {
   width: 100%;
-  height: 100%;
+  height: 100vh;
   display: block;
   cursor: grab;
 }
