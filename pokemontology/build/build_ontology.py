@@ -103,6 +103,7 @@ MODULE_ORDER = [
     "60-actions-events.ttl",
     "70-provenance.ttl",
     "80-materialized-state.ttl",
+    "85-meta-snapshot.ttl",
 ]
 
 

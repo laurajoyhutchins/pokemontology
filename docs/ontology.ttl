@@ -2312,3 +2312,107 @@ pkm:SideCondition_Tailwind
 [ a owl:AllDisjointClasses ;
   owl:members ( pkm:VolatileCondition pkm:WeatherCondition pkm:TerrainCondition pkm:SideCondition )
 ] .
+
+# =============================================================================
+# MODULE 6: META SNAPSHOT — Competitive Usage Statistics
+# =============================================================================
+
+pkm:MetaSnapshot
+    a owl:Class ;
+    rdfs:label "MetaSnapshot" ;
+    rdfs:subClassOf pkm:MetadataEntity ;
+    rdfs:comment "An aggregate statistical snapshot of competitive usage derived from a corpus of Pokémon Showdown replay data for a specific format." .
+
+pkm:SpeciesUsageStat
+    a owl:Class ;
+    rdfs:label "SpeciesUsageStat" ;
+    rdfs:subClassOf pkm:MetadataEntity ;
+    rdfs:comment "The observed usage rate of a species across battles in a MetaSnapshot." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:inSnapshot ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:MetaSnapshot
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:aboutSpecies ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Species
+    ] .
+
+pkm:MoveUsageStat
+    a owl:Class ;
+    rdfs:label "MoveUsageStat" ;
+    rdfs:subClassOf pkm:MetadataEntity ;
+    rdfs:comment "The observed usage count of a move across battles in a MetaSnapshot." ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:inSnapshot ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:MetaSnapshot
+    ] ;
+    rdfs:subClassOf [
+        a owl:Restriction ;
+        owl:onProperty pkm:aboutMove ;
+        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+        owl:onClass pkm:Move
+    ] .
+
+
+# =============================================================================
+# MODULE 6: META SNAPSHOT — Properties
+# =============================================================================
+
+pkm:forFormat
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "forFormat" ;
+    rdfs:domain pkm:MetaSnapshot ;
+    rdfs:range pkm:Ruleset ;
+    rdfs:comment "Links a MetaSnapshot to the competitive Ruleset it covers." .
+
+pkm:snapshotDate
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "snapshotDate" ;
+    rdfs:domain pkm:MetaSnapshot ;
+    rdfs:range xsd:date ;
+    rdfs:comment "The calendar date on which this MetaSnapshot was generated." .
+
+pkm:replayCount
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "replayCount" ;
+    rdfs:domain pkm:MetaSnapshot ;
+    rdfs:range xsd:integer ;
+    rdfs:comment "The number of replays included in this MetaSnapshot." .
+
+pkm:inSnapshot
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "inSnapshot" ;
+    rdfs:range pkm:MetaSnapshot ;
+    rdfs:comment "Links a usage stat to its parent MetaSnapshot." .
+
+pkm:usageCount
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "usageCount" ;
+    rdfs:range xsd:integer ;
+    rdfs:comment "The raw count of appearances observed in the replay corpus." .
+
+pkm:usageRate
+    a owl:DatatypeProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "usageRate" ;
+    rdfs:range xsd:decimal ;
+    rdfs:comment "The usage rate as a proportion of battles (0.0–1.0). For species: fraction of battles where the species appeared on at least one team. For moves: fraction of battles where the move was used at least once." .
+
+pkm:aboutSpecies
+    a owl:ObjectProperty ;
+    a owl:FunctionalProperty ;
+    rdfs:label "aboutSpecies" ;
+    rdfs:domain pkm:SpeciesUsageStat ;
+    rdfs:range pkm:Species ;
+    rdfs:comment "The species this usage stat describes." .
