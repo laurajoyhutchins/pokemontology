@@ -123,13 +123,16 @@ def test_graph_page_uses_generated_projection_index() -> None:
     app = (REPO / "docs" / "js" / "graph-app.js").read_text(encoding="utf-8")
     graph_index = json.loads(GRAPH_INDEX.read_text(encoding="utf-8"))
 
-    assert "Knowledge Graph Atlas" in html
+    assert "Knowledge Graph" in html
     assert 'id="graph-search"' in html
     assert 'id="graph-canvas"' in html
+    assert 'id="graph-hop-depth"' in html
+    assert 'id="graph-node-limit"' in html
     assert 'src="./graph.js"' in html
     assert 'import { createGraphApp } from "./js/graph-app.js";' in script
     assert 'fetch("./graph-index.json"' in app
     assert "buildLayout" in app
+    assert "bfsNeighborhood" in app
     assert "EDGE_KINDS" in app
     assert graph_index["node_count"] > 0
     assert graph_index["edge_count"] > 0

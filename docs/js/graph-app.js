@@ -3,12 +3,12 @@ import { loadSiteData } from "./site-render.js";
 
 const TYPE_ORDER = ["Species", "Variant", "Move", "Ability", "Item", "Type", "Ruleset"];
 const EDGE_KINDS = [
-  { id: "belongsToSpecies", label: "species links", checked: true },
-  { id: "hasType", label: "typing", checked: true },
-  { id: "hasAbility", label: "abilities", checked: true },
-  { id: "hasMoveType", label: "move typing", checked: true },
-  { id: "learnsMove", label: "learnsets", checked: false },
-  { id: "availableIn", label: "rulesets", checked: false },
+  { id: "belongsToSpecies", label: "species", checked: true, color: "rgba(214, 109, 77, 0.44)" },
+  { id: "hasType", label: "typing", checked: true, color: "rgba(216, 92, 140, 0.42)" },
+  { id: "hasAbility", label: "ability", checked: true, color: "rgba(108, 165, 111, 0.40)" },
+  { id: "hasMoveType", label: "move type", checked: true, color: "rgba(90, 136, 200, 0.42)" },
+  { id: "learnsMove", label: "learnset", checked: false, color: "rgba(232, 184, 80, 0.20)" },
+  { id: "availableIn", label: "ruleset", checked: false, color: "rgba(108, 143, 128, 0.22)" },
 ];
 const TYPE_COLORS = {
   Species: "#d66d4d",
@@ -50,60 +50,35 @@ async function loadGraphIndex() {
   return response.json();
 }
 
-function buildAdjacency(edges) {
-  const neighbors = new Map();
-  edges.forEach((edge) => {
-    if (!neighbors.has(edge.source)) neighbors.set(edge.source, new Set());
-    if (!neighbors.has(edge.target)) neighbors.set(edge.target, new Set());
-    neighbors.get(edge.source).add(edge.target);
-    neighbors.get(edge.target).add(edge.source);
-  });
-  return neighbors;
-}
-
-function buildLayout(nodes, width, height) {
-  const types = TYPE_ORDER.filter((type) => nodes.some((node) => node.type === type));
-  const clusterCenters = new Map();
-  const radiusX = Math.max(width * 0.34, 260);
-  const radiusY = Math.max(height * 0.26, 190);
-  types.forEach((type, index) => {
-    const angle = (Math.PI * 2 * index) / Math.max(types.length, 1) - Math.PI / 2;
-    clusterCenters.set(type, {
-      x: width / 2 + Math.cos(angle) * radiusX,
-      y: height / 2 + Math.sin(angle) * radiusY,
-    });
-  });
-
-  const positions = new Map();
-  types.forEach((type) => {
-    const center = clusterCenters.get(type) || { x: width / 2, y: height / 2 };
-    const group = nodes
-      .filter((node) => node.type === type)
-      .sort((a, b) => String(a.label).localeCompare(String(b.label)));
-    let ring = 0;
-    let indexInRing = 0;
-    let capacity = 1;
-    group.forEach((node) => {
-      if (indexInRing >= capacity) {
-        ring += 1;
-        indexInRing = 0;
-      }
-      const ringRadius = ring * 22;
-      capacity = ring === 0 ? 1 : Math.max(10, Math.floor((Math.PI * 2 * ringRadius) / 18));
-      const angle = ring === 0 ? 0 : (Math.PI * 2 * indexInRing) / capacity;
-      positions.set(node.id, {
-        x: center.x + Math.cos(angle) * ringRadius,
-        y: center.y + Math.sin(angle) * ringRadius,
-      });
-      indexInRing += 1;
-    });
-  });
-  return positions;
-}
-
 function nodeRadius(node) {
-  const base = node.type === "Ruleset" ? 5.5 : node.type === "Species" ? 5 : 3.4;
-  return Math.min(11, base + Math.log2((Number(node.degree) || 0) + 1) * 0.9);
+  const base = node.type === "Ruleset" ? 7 : node.type === "Species" ? 6 : 4.5;
+  return Math.min(13, base + Math.log2((Number(node.degree) || 0) + 1) * 0.85);
+}
+
+function buildIndexes(rawGraph) {
+  const nodesById = new Map(rawGraph.nodes.map((node) => [node.id, node]));
+  const adjacency = new Map();
+  rawGraph.edges.forEach((edge) => {
+    if (!adjacency.has(edge.source)) adjacency.set(edge.source, []);
+    if (!adjacency.has(edge.target)) adjacency.set(edge.target, []);
+    adjacency.get(edge.source).push(edge);
+    adjacency.get(edge.target).push(edge);
+  });
+  return { nodesById, adjacency };
+}
+
+function selectedNodeTypes() {
+  return new Set(
+    TYPE_ORDER.filter((type) => document.getElementById(`graph-type-${slugify(type)}`)?.checked),
+  );
+}
+
+function selectedEdgeKinds() {
+  return new Set(
+    EDGE_KINDS.filter((kind) => document.getElementById(`graph-edge-${slugify(kind.id)}`)?.checked).map(
+      (kind) => kind.id,
+    ),
+  );
 }
 
 function matchesRuleset(node, ruleset) {
@@ -112,104 +87,294 @@ function matchesRuleset(node, ruleset) {
   return Array.isArray(node.contexts) && node.contexts.includes(ruleset);
 }
 
-function projectGraph(rawGraph, state) {
-  const enabledTypes = new Set(
-    TYPE_ORDER.filter((type) => document.getElementById(`graph-type-${slugify(type)}`)?.checked),
-  );
-  const enabledEdgeKinds = new Set(
-    EDGE_KINDS.filter((kind) => document.getElementById(`graph-edge-${slugify(kind.id)}`)?.checked).map(
-      (kind) => kind.id,
-    ),
-  );
-  const ruleset = state.selectedRuleset;
-  const nodeMap = new Map();
-  rawGraph.nodes.forEach((node) => {
-    if (!enabledTypes.has(node.type)) return;
-    if (!matchesRuleset(node, ruleset)) return;
-    nodeMap.set(node.id, node);
-  });
+function passesNodeFilters(node, state) {
+  return state.enabledTypes.has(node.type) && matchesRuleset(node, state.selectedRuleset);
+}
 
-  const edges = rawGraph.edges.filter((edge) => {
-    if (!enabledEdgeKinds.has(edge.kind)) return false;
-    if (!nodeMap.has(edge.source) || !nodeMap.has(edge.target)) return false;
-    return true;
-  });
+function passesEdgeFilters(edge, state) {
+  return state.enabledEdgeKinds.has(edge.kind);
+}
 
-  const connectedNodeIds = new Set(edges.flatMap((edge) => [edge.source, edge.target]));
-  const nodes = [...nodeMap.values()].filter((node) => {
-    if (node.type === "Ruleset" && state.selectedRuleset && node.id === state.selectedRuleset) return true;
-    return connectedNodeIds.has(node.id) || enabledEdgeKinds.size === 0;
+function findMatches(nodes, query) {
+  const norm = normalize(query);
+  if (!norm) return [];
+  return nodes
+    .filter((node) => normalize(`${node.label} ${node.id} ${(node.identifiers || []).join(" ")}`).includes(norm))
+    .sort((a, b) => (Number(b.degree) || 0) - (Number(a.degree) || 0) || String(a.label).localeCompare(String(b.label)));
+}
+
+function bfsNeighborhood(anchorId, state) {
+  const included = new Set();
+  const queue = [{ id: anchorId, depth: 0 }];
+  while (queue.length && included.size < state.nodeLimit) {
+    const current = queue.shift();
+    if (included.has(current.id)) continue;
+    const node = state.nodesById.get(current.id);
+    if (!node || !passesNodeFilters(node, state)) continue;
+    included.add(current.id);
+    if (current.depth >= state.hopDepth) continue;
+
+    const candidates = (state.adjacency.get(current.id) || [])
+      .filter((edge) => passesEdgeFilters(edge, state))
+      .map((edge) => (edge.source === current.id ? edge.target : edge.source))
+      .map((id) => state.nodesById.get(id))
+      .filter((node) => node && passesNodeFilters(node, state))
+      .sort((a, b) => (Number(b.degree) || 0) - (Number(a.degree) || 0));
+
+    for (const node of candidates) {
+      if (included.has(node.id)) continue;
+      if (queue.some((entry) => entry.id === node.id)) continue;
+      queue.push({ id: node.id, depth: current.depth + 1 });
+      if (queue.length + included.size >= state.nodeLimit) break;
+    }
+  }
+  return included;
+}
+
+function overviewNodes(state) {
+  return new Set(
+    state.rawGraph.nodes
+      .filter((node) => passesNodeFilters(node, state))
+      .sort((a, b) => (Number(b.degree) || 0) - (Number(a.degree) || 0))
+      .slice(0, state.nodeLimit)
+      .map((node) => node.id),
+  );
+}
+
+function buildProjectedGraph(state) {
+  const queryMatches = findMatches(state.rawGraph.nodes.filter((node) => passesNodeFilters(node, state)), state.searchText);
+  const anchorId = state.selectedNodeId || queryMatches[0]?.id || "";
+  const visibleIds = anchorId ? bfsNeighborhood(anchorId, state) : overviewNodes(state);
+  const nodes = [...visibleIds]
+    .map((id) => state.nodesById.get(id))
+    .filter(Boolean)
+    .sort((a, b) => String(a.label).localeCompare(String(b.label)));
+  const edges = state.rawGraph.edges.filter(
+    (edge) => visibleIds.has(edge.source) && visibleIds.has(edge.target) && passesEdgeFilters(edge, state),
+  );
+  const adjacency = new Map();
+  edges.forEach((edge) => {
+    if (!adjacency.has(edge.source)) adjacency.set(edge.source, new Set());
+    if (!adjacency.has(edge.target)) adjacency.set(edge.target, new Set());
+    adjacency.get(edge.source).add(edge.target);
+    adjacency.get(edge.target).add(edge.source);
   });
   return {
+    anchorId,
     nodes,
     edges,
-    adjacency: buildAdjacency(edges),
+    adjacency,
+    queryMatches,
   };
 }
 
-function updateStats(projected) {
+function buildLayout(nodes, anchorId, width, height) {
+  const positions = new Map();
+  if (!nodes.length) return positions;
+  const types = TYPE_ORDER.filter((type) => nodes.some((node) => node.type === type));
+  const orbitX = Math.max(width * 0.34, 250);
+  const orbitY = Math.max(height * 0.28, 180);
+  const centers = new Map();
+  types.forEach((type, index) => {
+    const angle = (Math.PI * 2 * index) / Math.max(types.length, 1) - Math.PI / 2;
+    centers.set(type, {
+      x: width / 2 + Math.cos(angle) * orbitX,
+      y: height / 2 + Math.sin(angle) * orbitY,
+    });
+  });
+
+  const anchor = nodes.find((node) => node.id === anchorId);
+  if (anchor) {
+    positions.set(anchor.id, { x: width / 2, y: height / 2 });
+  }
+
+  types.forEach((type) => {
+    const group = nodes
+      .filter((node) => node.type === type && node.id !== anchorId)
+      .sort((a, b) => (Number(b.degree) || 0) - (Number(a.degree) || 0));
+    const center = centers.get(type) || { x: width / 2, y: height / 2 };
+    let ring = 0;
+    let indexInRing = 0;
+    let ringCapacity = 1;
+    group.forEach((node) => {
+      if (indexInRing >= ringCapacity) {
+        ring += 1;
+        indexInRing = 0;
+      }
+      const radius = 42 + ring * 28 + (anchorId ? 26 : 0);
+      ringCapacity = Math.max(8, Math.floor((Math.PI * 2 * radius) / 28));
+      const angle = (Math.PI * 2 * indexInRing) / ringCapacity + ring * 0.17;
+      positions.set(node.id, {
+        x: center.x + Math.cos(angle) * radius,
+        y: center.y + Math.sin(angle) * radius,
+      });
+      indexInRing += 1;
+    });
+  });
+  return positions;
+}
+
+function drawGraph(canvas, projected, state) {
+  const context = canvas.getContext("2d");
+  if (!context) return;
+  const rect = canvas.getBoundingClientRect();
+  const scale = window.devicePixelRatio || 1;
+  canvas.width = Math.max(1, Math.floor(rect.width * scale));
+  canvas.height = Math.max(1, Math.floor(rect.height * scale));
+  context.setTransform(scale, 0, 0, scale, 0, 0);
+  context.clearRect(0, 0, rect.width, rect.height);
+
+  const positions = buildLayout(projected.nodes, projected.anchorId, rect.width, rect.height);
+  const selectedNeighbors = projected.adjacency.get(state.selectedNodeId) || new Set();
+  const toScreen = (point) => ({
+    x: (point.x - rect.width / 2) * state.zoom + rect.width / 2 + state.panX,
+    y: (point.y - rect.height / 2) * state.zoom + rect.height / 2 + state.panY,
+  });
+
+  context.save();
+  context.fillStyle = "rgba(47, 85, 71, 0.035)";
+  for (let x = 0; x < rect.width; x += 28) context.fillRect(x, 0, 1, rect.height);
+  for (let y = 0; y < rect.height; y += 28) context.fillRect(0, y, rect.width, 1);
+  context.restore();
+
+  projected.edges.forEach((edge) => {
+    const source = positions.get(edge.source);
+    const target = positions.get(edge.target);
+    if (!source || !target) return;
+    const a = toScreen(source);
+    const b = toScreen(target);
+    const active =
+      state.selectedNodeId &&
+      (edge.source === state.selectedNodeId ||
+        edge.target === state.selectedNodeId ||
+        (selectedNeighbors.has(edge.source) && selectedNeighbors.has(edge.target)));
+    context.beginPath();
+    context.moveTo(a.x, a.y);
+    context.lineTo(b.x, b.y);
+    context.strokeStyle = active
+      ? "rgba(185, 131, 42, 0.82)"
+      : EDGE_KINDS.find((kind) => kind.id === edge.kind)?.color || "rgba(47, 85, 71, 0.14)";
+    context.lineWidth = active ? 2 : 1;
+    context.stroke();
+  });
+
+  projected.nodes.forEach((node) => {
+    const point = positions.get(node.id);
+    if (!point) return;
+    const screen = toScreen(point);
+    const radius = Math.max(2.2, nodeRadius(node) * state.zoom);
+    const active = node.id === state.selectedNodeId || selectedNeighbors.has(node.id) || node.id === projected.anchorId;
+    context.beginPath();
+    context.arc(screen.x, screen.y, radius, 0, Math.PI * 2);
+    context.fillStyle = TYPE_COLORS[node.type] || "#54795c";
+    context.globalAlpha = active || !state.selectedNodeId ? 0.96 : 0.46;
+    context.fill();
+    context.globalAlpha = 1;
+    context.lineWidth = active ? 2.6 : 1.1;
+    context.strokeStyle = active ? "#17322b" : "rgba(23, 50, 43, 0.4)";
+    context.stroke();
+  });
+
+  const labelNode = projected.nodes.find((node) => node.id === (state.hoverNodeId || state.selectedNodeId || projected.anchorId));
+  if (labelNode) {
+    const point = positions.get(labelNode.id);
+    if (point) {
+      const screen = toScreen(point);
+      context.fillStyle = "#17322b";
+      context.font = '700 12px "IBM Plex Mono", monospace';
+      context.fillText(String(labelNode.label || ""), screen.x + 12, screen.y - 12);
+    }
+  }
+
+  state.hitMap = projected.nodes
+    .map((node) => {
+      const point = positions.get(node.id);
+      if (!point) return null;
+      const screen = toScreen(point);
+      return {
+        id: node.id,
+        x: screen.x,
+        y: screen.y,
+        radius: Math.max(10, nodeRadius(node) * state.zoom + 4),
+      };
+    })
+    .filter(Boolean);
+}
+
+function renderStats(projected) {
   const nodeCount = document.querySelector("[data-graph-node-count]");
   const edgeCount = document.querySelector("[data-graph-edge-count]");
   if (nodeCount) nodeCount.textContent = String(projected.nodes.length);
   if (edgeCount) edgeCount.textContent = String(projected.edges.length);
 }
 
-function renderSearchResults(state, nodes) {
+function renderFocus(projected) {
+  const focusBadge = document.getElementById("graph-focus-badge");
+  const hoverReadout = document.getElementById("graph-hover-readout");
+  if (focusBadge) {
+    const anchor = projected.nodes.find((node) => node.id === projected.anchorId);
+    focusBadge.textContent = anchor ? `${anchor.label} · ${projected.nodes.length} node query` : "Top-degree overview";
+  }
+  if (hoverReadout && !hoverReadout.dataset.locked) {
+    hoverReadout.textContent = projected.anchorId ? "Click nodes to repivot the local graph" : "Search or click a node to query locally";
+  }
+}
+
+function renderSearchResults(projected, state) {
   const target = document.getElementById("graph-results");
   const badge = document.getElementById("graph-results-badge");
   if (!target || !badge) return;
-  const query = normalize(state.searchText);
-  if (!query) {
+  if (!state.searchText.trim()) {
     badge.textContent = "0 results";
     target.innerHTML = `
       <div class="qe-placeholder">
         <span class="qe-placeholder-icon">◌</span>
-        <p>Search results will appear here.</p>
+        <p>Matching nodes will appear here.</p>
       </div>
     `;
     return;
   }
-  const matches = nodes
-    .filter((node) => {
-      const haystack = normalize(`${node.label} ${node.id} ${node.identifiers.join(" ")}`);
-      return haystack.includes(query);
-    })
-    .slice(0, 14);
+  const matches = projected.queryMatches.slice(0, 18);
   badge.textContent = `${matches.length} results`;
-  if (!matches.length) {
-    target.innerHTML = `
+  target.innerHTML = matches.length
+    ? matches
+        .map(
+          (node) => `
+            <button class="graph-result-card ${state.selectedNodeId === node.id ? "is-active" : ""}" type="button" data-graph-node="${escapeHtml(node.id)}">
+              <strong>${escapeHtml(node.label)}</strong>
+              <span>${escapeHtml(node.type)} · degree ${escapeHtml(node.degree)}</span>
+            </button>
+          `,
+        )
+        .join("")
+    : `
       <div class="qe-placeholder">
         <span class="qe-placeholder-icon">∅</span>
-        <p>No nodes matched "${escapeHtml(state.searchText)}".</p>
+        <p>No visible nodes matched "${escapeHtml(state.searchText)}".</p>
       </div>
     `;
-    return;
-  }
-  target.innerHTML = matches
-    .map(
-      (node) => `
-        <button class="graph-result-card" type="button" data-graph-node="${escapeHtml(node.id)}">
-          <strong>${escapeHtml(node.label)}</strong>
-          <span>${escapeHtml(node.type)} · degree ${escapeHtml(node.degree)}</span>
-        </button>
-      `,
-    )
-    .join("");
 }
 
-function renderDetail(state, projected) {
+function edgeKindBreakdown(nodeId, projected) {
+  const counts = new Map();
+  projected.edges.forEach((edge) => {
+    if (edge.source !== nodeId && edge.target !== nodeId) return;
+    counts.set(edge.kind, (counts.get(edge.kind) || 0) + 1);
+  });
+  return [...counts.entries()].sort((a, b) => b[1] - a[1]);
+}
+
+function renderDetail(projected, state) {
   const target = document.getElementById("graph-detail");
   const badge = document.getElementById("graph-selection-badge");
-  const focusBadge = document.getElementById("graph-focus-badge");
-  if (!target || !badge || !focusBadge) return;
+  if (!target || !badge) return;
   const node = projected.nodes.find((entry) => entry.id === state.selectedNodeId);
   if (!node) {
     badge.textContent = "No selection";
-    focusBadge.textContent = state.selectedRuleset ? "Ruleset filtered" : "Whole graph";
     target.innerHTML = `
       <div class="qe-placeholder">
         <span class="qe-placeholder-icon">◎</span>
-        <p>Pick a node or search for an entity to inspect its graph neighborhood.</p>
+        <p>Select a node or search to inspect its local graph.</p>
       </div>
     `;
     return;
@@ -217,15 +382,14 @@ function renderDetail(state, projected) {
   const neighbors = [...(projected.adjacency.get(node.id) || new Set())]
     .map((id) => projected.nodes.find((entry) => entry.id === id))
     .filter(Boolean)
-    .sort((a, b) => String(a.label).localeCompare(String(b.label)))
-    .slice(0, 12);
+    .sort((a, b) => (Number(b.degree) || 0) - (Number(a.degree) || 0))
+    .slice(0, 18);
+  const breakdown = edgeKindBreakdown(node.id, projected);
   badge.textContent = node.type;
-  focusBadge.textContent = node.label;
   target.innerHTML = `
     <article class="graph-detail-card">
       <div class="graph-detail-head">
         <div>
-          <p class="panel-kicker">Selected Node</p>
           <h3>${escapeHtml(node.label)}</h3>
           <p class="pokedex-summary">${escapeHtml(node.id)}</p>
         </div>
@@ -242,23 +406,22 @@ function renderDetail(state, projected) {
         </div>
       </div>
       ${
-        node.identifiers.length
-          ? `<section class="pokedex-section"><p class="panel-kicker">Identifiers</p><div class="pokedex-chip-row">${node.identifiers
-              .slice(0, 8)
-              .map((value) => `<span class="info-chip">${escapeHtml(value)}</span>`)
+        breakdown.length
+          ? `<section class="pokedex-section"><p class="panel-kicker">Incident Edges</p><div class="graph-breakdown-list">${breakdown
+              .map(([kind, count]) => `<div class="graph-breakdown-row"><span>${escapeHtml(kind)}</span><strong>${escapeHtml(count)}</strong></div>`)
               .join("")}</div></section>`
           : ""
       }
       ${
-        node.contexts.length
-          ? `<section class="pokedex-section"><p class="panel-kicker">Ruleset Contexts</p><div class="pokedex-chip-row">${node.contexts
-              .slice(0, 10)
-              .map((value) => `<span class="info-chip">${escapeHtml(value.replace(/^pkm:/, ""))}</span>`)
+        node.identifiers.length
+          ? `<section class="pokedex-section"><p class="panel-kicker">Identifiers</p><div class="pokedex-chip-row">${node.identifiers
+              .slice(0, 6)
+              .map((value) => `<span class="info-chip">${escapeHtml(value)}</span>`)
               .join("")}</div></section>`
           : ""
       }
       <section class="pokedex-section">
-        <p class="panel-kicker">Neighborhood Preview</p>
+        <p class="panel-kicker">Neighbors</p>
         <div class="graph-neighbor-list">
           ${
             neighbors.length
@@ -267,12 +430,12 @@ function renderDetail(state, projected) {
                     (entry) => `
                       <button class="graph-neighbor-card" type="button" data-graph-node="${escapeHtml(entry.id)}">
                         <strong>${escapeHtml(entry.label)}</strong>
-                        <span>${escapeHtml(entry.type)}</span>
+                        <span>${escapeHtml(entry.type)} · degree ${escapeHtml(entry.degree)}</span>
                       </button>
                     `,
                   )
                   .join("")
-              : `<p class="pokedex-summary">No visible neighbors under the current filters.</p>`
+              : `<p class="pokedex-summary">No visible neighbors under the current query.</p>`
           }
         </div>
       </section>
@@ -284,6 +447,7 @@ function renderFilterControls(rawGraph) {
   const nodeTarget = document.getElementById("graph-node-filters");
   const edgeTarget = document.getElementById("graph-edge-filters");
   const rulesetSelect = document.getElementById("graph-ruleset");
+
   if (nodeTarget) {
     nodeTarget.innerHTML = TYPE_ORDER.filter((type) => rawGraph.nodes.some((node) => node.type === type))
       .map(
@@ -311,10 +475,17 @@ function renderFilterControls(rawGraph) {
       .filter((node) => node.type === "Ruleset")
       .sort((a, b) => String(a.label).localeCompare(String(b.label)));
     rulesetSelect.innerHTML = [
-      `<option value="">All published rulesets</option>`,
+      `<option value="">All rulesets</option>`,
       ...rulesets.map((node) => `<option value="${escapeHtml(node.id)}">${escapeHtml(node.label)}</option>`),
     ].join("");
   }
+}
+
+function updateHoverReadout(state, text, locked = false) {
+  const target = document.getElementById("graph-hover-readout");
+  if (!target) return;
+  target.dataset.locked = locked ? "true" : "";
+  target.textContent = text;
 }
 
 function setupCanvasInteractions(canvas, state, rerender) {
@@ -329,6 +500,24 @@ function setupCanvasInteractions(canvas, state, rerender) {
     canvas.setPointerCapture(event.pointerId);
   });
   canvas.addEventListener("pointermove", (event) => {
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    const hit = [...state.hitMap]
+      .reverse()
+      .find((entry) => {
+        const dx = x - entry.x;
+        const dy = y - entry.y;
+        return dx * dx + dy * dy <= entry.radius * entry.radius;
+      });
+    state.hoverNodeId = hit?.id || "";
+    if (hit) {
+      const node = state.nodesById.get(hit.id);
+      updateHoverReadout(state, `${node?.label || hit.id} · ${node?.type || ""}`);
+    } else if (!dragging) {
+      updateHoverReadout(state, state.selectedNodeId ? "Click nodes to repivot the local graph" : "Search or click a node to query locally");
+    }
+
     if (!dragging) return;
     state.panX += event.clientX - lastX;
     state.panY += event.clientY - lastY;
@@ -342,93 +531,25 @@ function setupCanvasInteractions(canvas, state, rerender) {
   });
   canvas.addEventListener("pointerleave", () => {
     dragging = false;
+    state.hoverNodeId = "";
+    updateHoverReadout(state, state.selectedNodeId ? "Click nodes to repivot the local graph" : "Search or click a node to query locally");
   });
   canvas.addEventListener(
     "wheel",
     (event) => {
       event.preventDefault();
       const next = state.zoom * (event.deltaY < 0 ? 1.08 : 0.92);
-      state.zoom = Math.max(0.35, Math.min(2.6, next));
+      state.zoom = Math.max(0.3, Math.min(2.8, next));
       rerender();
     },
     { passive: false },
   );
-}
-
-function drawGraph(canvas, projected, state) {
-  const context = canvas.getContext("2d");
-  if (!context) return;
-  const rect = canvas.getBoundingClientRect();
-  const scale = window.devicePixelRatio || 1;
-  canvas.width = Math.max(1, Math.floor(rect.width * scale));
-  canvas.height = Math.max(1, Math.floor(rect.height * scale));
-  context.setTransform(scale, 0, 0, scale, 0, 0);
-  context.clearRect(0, 0, rect.width, rect.height);
-
-  const positions = buildLayout(projected.nodes, rect.width, rect.height);
-  const selectedNodeId = state.selectedNodeId;
-  const selectedNeighbors = projected.adjacency.get(selectedNodeId) || new Set();
-
-  const toScreen = (point) => ({
-    x: (point.x - rect.width / 2) * state.zoom + rect.width / 2 + state.panX,
-    y: (point.y - rect.height / 2) * state.zoom + rect.height / 2 + state.panY,
+  canvas.addEventListener("dblclick", () => {
+    state.panX = 0;
+    state.panY = 0;
+    state.zoom = 1;
+    rerender();
   });
-
-  projected.edges.forEach((edge) => {
-    const source = positions.get(edge.source);
-    const target = positions.get(edge.target);
-    if (!source || !target) return;
-    const a = toScreen(source);
-    const b = toScreen(target);
-    const emphasized =
-      selectedNodeId &&
-      (edge.source === selectedNodeId ||
-        edge.target === selectedNodeId ||
-        (selectedNeighbors.has(edge.source) && selectedNeighbors.has(edge.target)));
-    context.beginPath();
-    context.moveTo(a.x, a.y);
-    context.lineTo(b.x, b.y);
-    context.strokeStyle = emphasized ? "rgba(185, 131, 42, 0.8)" : "rgba(47, 85, 71, 0.12)";
-    context.lineWidth = emphasized ? 1.8 : 1;
-    context.stroke();
-  });
-
-  projected.nodes.forEach((node) => {
-    const point = positions.get(node.id);
-    if (!point) return;
-    const screen = toScreen(point);
-    const radius = nodeRadius(node) * state.zoom;
-    const active = node.id === selectedNodeId || selectedNeighbors.has(node.id);
-    context.beginPath();
-    context.arc(screen.x, screen.y, radius, 0, Math.PI * 2);
-    context.fillStyle = TYPE_COLORS[node.type] || "#54795c";
-    context.globalAlpha = active || !selectedNodeId ? 0.94 : 0.38;
-    context.fill();
-    context.globalAlpha = 1;
-    context.lineWidth = active ? 2.5 : 1.2;
-    context.strokeStyle = active ? "#17322b" : "rgba(23, 50, 43, 0.45)";
-    context.stroke();
-  });
-
-  if (selectedNodeId && positions.has(selectedNodeId)) {
-    const node = projected.nodes.find((entry) => entry.id === selectedNodeId);
-    const point = toScreen(positions.get(selectedNodeId));
-    context.fillStyle = "#17322b";
-    context.font = '700 12px "IBM Plex Mono", monospace';
-    context.fillText(String(node?.label || ""), point.x + 12, point.y - 12);
-  }
-
-  state.hitMap = projected.nodes.map((node) => {
-    const point = positions.get(node.id);
-    if (!point) return null;
-    const screen = toScreen(point);
-    return {
-      id: node.id,
-      x: screen.x,
-      y: screen.y,
-      radius: nodeRadius(node) * state.zoom + 3,
-    };
-  }).filter(Boolean);
 }
 
 function bindSelectionHandlers(state, rerender) {
@@ -436,7 +557,42 @@ function bindSelectionHandlers(state, rerender) {
     const button = event.target.closest("[data-graph-node]");
     if (!button) return;
     state.selectedNodeId = button.getAttribute("data-graph-node") || "";
+    state.panX = 0;
+    state.panY = 0;
     rerender();
+  });
+}
+
+function wireControls(state, rerender) {
+  document.getElementById("graph-search")?.addEventListener("input", (event) => {
+    state.searchText = event.target.value;
+    const match = findMatches(state.rawGraph.nodes.filter((node) => passesNodeFilters(node, state)), state.searchText)[0];
+    if (match) state.selectedNodeId = match.id;
+    rerender();
+  });
+  document.getElementById("graph-hop-depth")?.addEventListener("change", (event) => {
+    state.hopDepth = Number(event.target.value || 2);
+    rerender();
+  });
+  document.getElementById("graph-node-limit")?.addEventListener("change", (event) => {
+    state.nodeLimit = Number(event.target.value || 240);
+    rerender();
+  });
+  document.getElementById("graph-ruleset")?.addEventListener("change", (event) => {
+    state.selectedRuleset = event.target.value;
+    rerender();
+  });
+  TYPE_ORDER.forEach((type) => {
+    document.getElementById(`graph-type-${slugify(type)}`)?.addEventListener("change", rerender);
+  });
+  EDGE_KINDS.forEach((kind) => {
+    document.getElementById(`graph-edge-${slugify(kind.id)}`)?.addEventListener("change", rerender);
+  });
+  window.addEventListener("keydown", (event) => {
+    if (event.key === "/") {
+      event.preventDefault();
+      document.getElementById("graph-search")?.focus();
+    }
   });
 }
 
@@ -450,31 +606,46 @@ export async function createGraphApp() {
 
   renderFilterControls(rawGraph);
 
+  const { nodesById, adjacency } = buildIndexes(rawGraph);
   const state = {
     rawGraph,
+    nodesById,
+    adjacency,
     selectedRuleset: "",
     searchText: "",
     selectedNodeId: "",
+    hoverNodeId: "",
+    hopDepth: 2,
+    nodeLimit: 240,
     panX: 0,
     panY: 0,
     zoom: 1,
     hitMap: [],
+    get enabledTypes() {
+      return selectedNodeTypes();
+    },
+    get enabledEdgeKinds() {
+      return selectedEdgeKinds();
+    },
   };
+
   const canvas = document.getElementById("graph-canvas");
   if (!(canvas instanceof HTMLCanvasElement)) {
     throw new Error("Graph canvas missing.");
   }
 
   const rerender = () => {
-    const projected = projectGraph(state.rawGraph, state);
-    updateStats(projected);
-    renderDetail(state, projected);
-    renderSearchResults(state, projected.nodes);
+    const projected = buildProjectedGraph(state);
+    renderStats(projected);
+    renderFocus(projected);
+    renderSearchResults(projected, state);
+    renderDetail(projected, state);
     drawGraph(canvas, projected, state);
   };
 
   setupCanvasInteractions(canvas, state, rerender);
   bindSelectionHandlers(state, rerender);
+  wireControls(state, rerender);
 
   canvas.addEventListener("click", (event) => {
     const rect = canvas.getBoundingClientRect();
@@ -489,31 +660,9 @@ export async function createGraphApp() {
       });
     if (!hit) return;
     state.selectedNodeId = hit.id;
+    state.panX = 0;
+    state.panY = 0;
     rerender();
-  });
-
-  document.getElementById("graph-search")?.addEventListener("input", (event) => {
-    state.searchText = event.target.value;
-    const query = normalize(state.searchText);
-    if (query) {
-      const match = state.rawGraph.nodes.find((node) =>
-        normalize(`${node.label} ${node.id} ${node.identifiers.join(" ")}`).includes(query),
-      );
-      if (match) state.selectedNodeId = match.id;
-    }
-    rerender();
-  });
-
-  document.getElementById("graph-ruleset")?.addEventListener("change", (event) => {
-    state.selectedRuleset = event.target.value;
-    rerender();
-  });
-
-  TYPE_ORDER.forEach((type) => {
-    document.getElementById(`graph-type-${slugify(type)}`)?.addEventListener("change", rerender);
-  });
-  EDGE_KINDS.forEach((kind) => {
-    document.getElementById(`graph-edge-${slugify(kind.id)}`)?.addEventListener("change", rerender);
   });
 
   window.addEventListener("resize", rerender);
