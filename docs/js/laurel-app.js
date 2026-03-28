@@ -1,5 +1,5 @@
 import { createState } from "./state.js";
-import { createWorkerRpc, readStorage, setupThemeToggle, writeStorage } from "./browser-runtime.js";
+import { createWorkerRpc, readStorage, setupMobileNav, setupThemeToggle, writeStorage } from "./browser-runtime.js";
 import {
   buildSelectedSources,
   renderQueryArtifactLinks,
@@ -32,6 +32,7 @@ const askWorker = createWorkerRpc("req");
 export async function createLaurelApp() {
   const state = createState();
   setupThemeToggle();
+  setupMobileNav();
   setupPowerToggle();
   setupNavHighlight();
   bindStaticActions(state);
