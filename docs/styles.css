@@ -1070,6 +1070,9 @@ body:not([data-power-mode="on"]) .qe-results-body {
 .graph-page {
   min-height: 100vh;
   overflow: hidden;
+  --graph-gutter: 0.75rem;
+  --graph-sidebar-width: clamp(19rem, 24vw, 24rem);
+  --graph-controls-width: min(64rem, calc(100vw - var(--graph-sidebar-width) - (var(--graph-gutter) * 3)));
 }
 
 .graph-header {
@@ -1103,8 +1106,9 @@ body:not([data-power-mode="on"]) .qe-results-body {
 .graph-controls {
   position: fixed;
   top: 5.45rem;
-  left: max(0.5rem, calc((100vw - min(100vw - 1rem, 1600px)) / 2));
-  right: max(0.5rem, calc((100vw - min(100vw - 1rem, 1600px)) / 2) + 22.75rem);
+  left: var(--graph-gutter);
+  width: max(20rem, var(--graph-controls-width));
+  max-width: calc(100vw - var(--graph-sidebar-width) - (var(--graph-gutter) * 3));
   z-index: 30;
   margin-bottom: 0;
   background: rgba(248, 243, 225, 0.88);
@@ -1174,8 +1178,7 @@ body:not([data-power-mode="on"]) .qe-results-body {
 
 .graph-canvas-shell {
   position: fixed;
-  inset: 0.5rem;
-  top: 0.5rem;
+  inset: var(--graph-gutter);
   z-index: 1;
   border: 2px solid rgba(47, 85, 71, 0.55);
   background:
@@ -1203,17 +1206,17 @@ body:not([data-power-mode="on"]) .qe-results-body {
 
 .graph-sidebar {
   position: fixed;
-  top: 12.4rem;
-  right: max(0.5rem, calc((100vw - min(100vw - 1rem, 1600px)) / 2));
-  bottom: 0.75rem;
-  width: 22rem;
+  top: 5.45rem;
+  right: var(--graph-gutter);
+  bottom: var(--graph-gutter);
+  width: var(--graph-sidebar-width);
   z-index: 25;
   display: grid;
   gap: 0.8rem;
   align-content: start;
   background: rgba(248, 243, 225, 0.88);
   backdrop-filter: blur(10px);
-  overflow: hidden;
+  overflow: auto;
 }
 
 :root[data-theme="dark"] .graph-sidebar {
@@ -1228,10 +1231,11 @@ body:not([data-power-mode="on"]) .qe-results-body {
 
 .graph-stage-floating {
   position: fixed;
-  left: max(0.75rem, calc((100vw - min(100vw - 1rem, 1600px)) / 2) + 0.25rem);
-  bottom: 0.95rem;
+  left: var(--graph-gutter);
+  bottom: var(--graph-gutter);
   z-index: 20;
-  max-width: min(50rem, calc(100vw - 25rem));
+  width: fit-content;
+  max-width: calc(100vw - var(--graph-sidebar-width) - (var(--graph-gutter) * 3));
   padding: 0.55rem 0.75rem;
   border: 2px solid var(--line);
   background: rgba(248, 243, 225, 0.78);
@@ -1399,15 +1403,17 @@ body:not([data-power-mode="on"]) .qe-results-body {
   }
 
   .graph-controls {
-    right: 0.5rem;
+    top: 5.2rem;
+    width: min(42rem, calc(100vw - (var(--graph-gutter) * 2)));
+    max-width: calc(100vw - (var(--graph-gutter) * 2));
   }
 
   .graph-sidebar {
-    width: min(20rem, calc(100vw - 1rem));
+    width: min(20rem, calc(100vw - (var(--graph-gutter) * 2)));
   }
 
   .graph-stage-floating {
-    max-width: calc(100vw - 22rem);
+    max-width: calc(100vw - var(--graph-sidebar-width) - (var(--graph-gutter) * 3));
   }
 }
 
@@ -1436,7 +1442,8 @@ body:not([data-power-mode="on"]) .qe-results-body {
   .graph-controls {
     top: 4.9rem;
     left: 0.25rem;
-    right: 0.25rem;
+    width: calc(100vw - 0.5rem);
+    max-width: calc(100vw - 0.5rem);
   }
 
   .graph-sidebar {
