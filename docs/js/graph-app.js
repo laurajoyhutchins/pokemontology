@@ -368,19 +368,42 @@ function averageNeighborPosition(nodeId, adjacency, positions) {
   };
 }
 
-function graphLayoutFrame(width, height) {
+function graphChromeMetrics() {
   const header = document.querySelector(".site-header .topbar");
+  const sidebar = document.querySelector(".graph-sidebar");
   const headerBottom = header instanceof HTMLElement ? header.getBoundingClientRect().bottom : 0;
+  const sidebarRect =
+    sidebar instanceof HTMLElement && !sidebar.hidden ? sidebar.getBoundingClientRect() : null;
+  return {
+    headerBottom,
+    sidebarLeft: sidebarRect ? sidebarRect.left : window.innerWidth - GRAPH_PADDING,
+    sidebarWidth: sidebarRect ? sidebarRect.width : 0,
+  };
+}
+
+function syncGraphViewportVars() {
+  const root = document.documentElement;
+  const { headerBottom, sidebarLeft } = graphChromeMetrics();
+  root.style.setProperty("--graph-frame-top", `${Math.round(headerBottom + GRAPH_PADDING * 0.5)}px`);
+  root.style.setProperty("--graph-frame-right", `${Math.max(GRAPH_PADDING, Math.round(window.innerWidth - sidebarLeft + GRAPH_PADDING * 0.5))}px`);
+  root.style.setProperty("--graph-frame-bottom", `${GRAPH_PADDING}px`);
+  root.style.setProperty("--graph-frame-left", `${GRAPH_PADDING}px`);
+}
+
+function graphLayoutFrame(width, height) {
+  const { headerBottom, sidebarWidth } = graphChromeMetrics();
   const top = clamp(headerBottom + GRAPH_PADDING * 0.8, GRAPH_PADDING, height * 0.38);
+  const rightInset = Math.max(GRAPH_PADDING, sidebarWidth + GRAPH_PADDING * 1.5);
+  const leftInset = GRAPH_PADDING;
   const bottom = Math.max(top + 120, height - GRAPH_PADDING);
   return {
-    left: GRAPH_PADDING,
-    right: width - GRAPH_PADDING,
+    left: leftInset,
+    right: width - rightInset,
     top,
     bottom,
-    width: Math.max(120, width - GRAPH_PADDING * 2),
+    width: Math.max(120, width - leftInset - rightInset),
     height: Math.max(120, bottom - top),
-    centerX: width / 2,
+    centerX: leftInset + Math.max(120, width - leftInset - rightInset) / 2,
     centerY: top + Math.max(120, bottom - top) / 2,
   };
 }
@@ -631,9 +654,7 @@ function buildLayout(projected, state, width, height) {
 }
 
 function homePanOffsetX() {
-  const sidebar = document.querySelector(".graph-sidebar");
-  if (!(sidebar instanceof HTMLElement) || sidebar.hidden) return 0;
-  return -Math.round(sidebar.getBoundingClientRect().width * 0.62);
+  return 0;
 }
 
 function resetViewport(state) {
@@ -1186,6 +1207,7 @@ function recordRenderState(state) {
 
 function rerenderFactory(state, canvas) {
   return (options = {}) => {
+    syncGraphViewportVars();
     const projected = buildProjectedGraph(state);
     state.lastProjected = projected;
     renderStats(projected);

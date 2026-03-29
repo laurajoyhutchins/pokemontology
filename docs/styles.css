@@ -1069,7 +1069,7 @@ body:not([data-power-mode="on"]) .qe-results-body {
   --graph-gutter: 0.75rem;
   --graph-panel-offset: 1.4rem;
   --graph-sidebar-width: clamp(19rem, 24vw, 24rem);
-  --graph-controls-width: min(68rem, calc(100vw - (var(--graph-gutter) * 2)));
+  --graph-controls-width: min(68rem, calc(100vw - var(--graph-sidebar-width) - (var(--graph-panel-offset) * 3)));
   font-size: 1.125rem;
 }
 
@@ -1144,7 +1144,11 @@ body:not([data-power-mode="on"]) .qe-results-body {
   width: min(24rem, calc(100vw - (var(--graph-panel-offset) * 2)));
   max-width: calc(100vw - (var(--graph-panel-offset) * 2));
   min-width: 0;
-  padding: 0.55rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
 }
 
 .graph-controls.is-collapsed .graph-controls-head {
@@ -1179,6 +1183,8 @@ body:not([data-power-mode="on"]) .qe-results-body {
 
 .graph-controls.is-collapsed .graph-control-search .pokedex-search {
   width: 100%;
+  border-width: 2px;
+  box-shadow: var(--pixel-frame), var(--shadow);
 }
 
 .graph-pane-toggle {
@@ -1333,7 +1339,10 @@ body:not([data-power-mode="on"]) .qe-results-body {
 .graph-canvas-shell::after {
   content: "";
   position: fixed;
-  inset: var(--graph-gutter);
+  top: var(--graph-frame-top, var(--graph-gutter));
+  right: var(--graph-frame-right, var(--graph-gutter));
+  bottom: var(--graph-frame-bottom, var(--graph-gutter));
+  left: var(--graph-frame-left, var(--graph-gutter));
   pointer-events: none;
   border: 2px solid rgba(47, 85, 71, 0.55);
   box-shadow: inset 0 0 0 1px rgba(47, 85, 71, 0.22);
