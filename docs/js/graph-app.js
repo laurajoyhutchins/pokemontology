@@ -368,15 +368,33 @@ function averageNeighborPosition(nodeId, adjacency, positions) {
   };
 }
 
+function graphLayoutFrame(width, height) {
+  const header = document.querySelector(".site-header .topbar");
+  const headerBottom = header instanceof HTMLElement ? header.getBoundingClientRect().bottom : 0;
+  const top = clamp(headerBottom + GRAPH_PADDING * 0.8, GRAPH_PADDING, height * 0.38);
+  const bottom = Math.max(top + 120, height - GRAPH_PADDING);
+  return {
+    left: GRAPH_PADDING,
+    right: width - GRAPH_PADDING,
+    top,
+    bottom,
+    width: Math.max(120, width - GRAPH_PADDING * 2),
+    height: Math.max(120, bottom - top),
+    centerX: width / 2,
+    centerY: top + Math.max(120, bottom - top) / 2,
+  };
+}
+
 function typeCenter(type, width, height, nodes) {
+  const frame = graphLayoutFrame(width, height);
   const types = TYPE_ORDER.filter((entry) => nodes.some((node) => node.type === entry));
   const index = Math.max(0, types.indexOf(type));
-  const orbitX = Math.max(width * 0.34, 250);
-  const orbitY = Math.max(height * 0.28, 180);
+  const orbitX = Math.max(frame.width * 0.34, 250);
+  const orbitY = Math.max(frame.height * 0.28, 160);
   const angle = (Math.PI * 2 * index) / Math.max(types.length, 1) - Math.PI / 2;
   return {
-    x: width / 2 + Math.cos(angle) * orbitX,
-    y: height / 2 + Math.sin(angle) * orbitY,
+    x: frame.centerX + Math.cos(angle) * orbitX,
+    y: frame.centerY + Math.sin(angle) * orbitY,
   };
 }
 
@@ -411,20 +429,21 @@ function preservePositions(targets, previous, adjacency, nodes, width, height, m
 function buildOrbitTargets(nodes, anchorId, width, height) {
   const positions = new Map();
   if (!nodes.length) return positions;
+  const frame = graphLayoutFrame(width, height);
   const types = TYPE_ORDER.filter((type) => nodes.some((node) => node.type === type));
-  const orbitX = Math.max(width * 0.34, 250);
-  const orbitY = Math.max(height * 0.28, 180);
+  const orbitX = Math.max(frame.width * 0.34, 250);
+  const orbitY = Math.max(frame.height * 0.28, 160);
   const centers = new Map();
   types.forEach((type, index) => {
     const angle = (Math.PI * 2 * index) / Math.max(types.length, 1) - Math.PI / 2;
     centers.set(type, {
-      x: width / 2 + Math.cos(angle) * orbitX,
-      y: height / 2 + Math.sin(angle) * orbitY,
+      x: frame.centerX + Math.cos(angle) * orbitX,
+      y: frame.centerY + Math.sin(angle) * orbitY,
     });
   });
 
   if (anchorId && nodes.some((node) => node.id === anchorId)) {
-    positions.set(anchorId, { x: width / 2, y: height / 2 });
+    positions.set(anchorId, { x: frame.centerX, y: frame.centerY });
   }
 
   types.forEach((type) => {
@@ -474,7 +493,8 @@ function buildRadialTargets(nodes, adjacency, anchorId, width, height) {
   if (!anchorId || !nodes.some((node) => node.id === anchorId)) {
     return buildOrbitTargets(nodes, anchorId, width, height);
   }
-  const positions = new Map([[anchorId, { x: width / 2, y: height / 2 }]]);
+  const frame = graphLayoutFrame(width, height);
+  const positions = new Map([[anchorId, { x: frame.centerX, y: frame.centerY }]]);
   const distances = computeDistances(anchorId, adjacency);
   const grouped = new Map();
   nodes.forEach((node) => {
@@ -495,8 +515,8 @@ function buildRadialTargets(nodes, adjacency, anchorId, width, height) {
       sorted.forEach((node, index) => {
         const angle = (Math.PI * 2 * index) / Math.max(sorted.length, 1) - Math.PI / 2;
         positions.set(node.id, {
-          x: width / 2 + Math.cos(angle) * ringRadius,
-          y: height / 2 + Math.sin(angle) * ringRadius,
+          x: frame.centerX + Math.cos(angle) * ringRadius,
+          y: frame.centerY + Math.sin(angle) * ringRadius,
         });
       });
     });
@@ -505,17 +525,17 @@ function buildRadialTargets(nodes, adjacency, anchorId, width, height) {
 
 function buildHierarchicalTargets(nodes, anchorId, width, height) {
   const positions = new Map();
+  const frame = graphLayoutFrame(width, height);
   const types = TYPE_ORDER.filter((type) => nodes.some((node) => node.type === type));
-  const columnWidth = width / Math.max(types.length, 1);
+  const columnWidth = frame.width / Math.max(types.length, 1);
   types.forEach((type, typeIndex) => {
     const columnNodes = nodes
       .filter((node) => node.type === type)
       .sort((a, b) => (a.id === anchorId ? -1 : b.id === anchorId ? 1 : String(a.label).localeCompare(String(b.label))));
-    const rowHeight = height / (columnNodes.length + 1);
     columnNodes.forEach((node, rowIndex) => {
       positions.set(node.id, {
-        x: columnWidth * typeIndex + columnWidth / 2,
-        y: rowHeight * (rowIndex + 1),
+        x: frame.left + columnWidth * typeIndex + columnWidth / 2,
+        y: frame.top + (frame.height / (columnNodes.length + 1)) * (rowIndex + 1),
       });
     });
   });
@@ -684,20 +704,15 @@ function fitNodeIds(state, nodeIds) {
 function setControlsCollapsed(state, collapsed) {
   state.controlsCollapsed = collapsed;
   const controls = document.getElementById("graph-controls");
-  const body = document.getElementById("graph-controls-body");
   const toggle = document.getElementById("graph-controls-toggle");
   const reopen = document.getElementById("graph-controls-reopen");
   controls?.classList.toggle("is-collapsed", collapsed);
   if (controls) controls.hidden = false;
-  if (body) body.hidden = collapsed;
   if (toggle) {
     toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
-    toggle.textContent = collapsed ? "Expand" : "Collapse";
+    toggle.textContent = "Collapse";
   }
-  if (reopen) {
-    reopen.hidden = true;
-    reopen.setAttribute("aria-expanded", collapsed ? "false" : "true");
-  }
+  if (reopen) reopen.hidden = true;
 }
 
 function autoCollapseControls(state) {
@@ -1511,8 +1526,8 @@ function wireControls(state, rerender) {
   document.getElementById("graph-controls-toggle")?.addEventListener("click", () => {
     setControlsCollapsed(state, !state.controlsCollapsed);
   });
-  document.getElementById("graph-controls-reopen")?.addEventListener("click", () => {
-    setControlsCollapsed(state, false);
+  document.getElementById("graph-search")?.addEventListener("focus", () => {
+    if (state.controlsCollapsed) setControlsCollapsed(state, false);
   });
   document.getElementById("graph-search")?.addEventListener("input", (event) => {
     applyQueryValue(state, event.target.value);

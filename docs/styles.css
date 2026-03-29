@@ -1073,22 +1073,9 @@ body:not([data-power-mode="on"]) .qe-results-body {
   font-size: 1.125rem;
 }
 
-.graph-header {
-  position: fixed;
-  inset: 0 0 auto 0;
-  z-index: 40;
-  padding-top: var(--graph-panel-offset);
-  background: transparent;
-}
-
 .graph-shell {
   width: min(100vw - 1rem, 1600px);
   margin: 0 auto;
-}
-
-.graph-header .graph-shell {
-  width: calc(100vw - (var(--graph-panel-offset) * 2));
-  max-width: none;
 }
 
 .graph-shell-overlay {
@@ -1154,28 +1141,44 @@ body:not([data-power-mode="on"]) .qe-results-body {
 }
 
 .graph-controls.is-collapsed {
-  display: inline-grid;
-  width: max-content;
-  max-width: fit-content;
+  width: min(24rem, calc(100vw - (var(--graph-panel-offset) * 2)));
+  max-width: calc(100vw - (var(--graph-panel-offset) * 2));
   min-width: 0;
-  justify-items: start;
-  padding: 0.6rem 0.7rem;
+  padding: 0.55rem;
 }
 
 .graph-controls.is-collapsed .graph-controls-head {
-  margin: 0;
-  justify-content: flex-start;
-  align-items: center;
-  width: auto;
-  flex-direction: row;
-}
-
-.graph-controls.is-collapsed .graph-controls-title {
-  flex: 0 1 auto;
-}
-
-.graph-controls.is-collapsed .graph-controls-subtitle {
   display: none;
+}
+
+.graph-controls.is-collapsed .graph-controls-body {
+  margin-top: 0;
+  gap: 0;
+}
+
+.graph-controls.is-collapsed .graph-controls-body > :not(.graph-control-row:first-child) {
+  display: none;
+}
+
+.graph-controls.is-collapsed .graph-control-row:first-child > :not(.graph-control-search) {
+  display: none;
+}
+
+.graph-controls.is-collapsed .graph-control-row:first-child {
+  display: block;
+}
+
+.graph-controls.is-collapsed .graph-control-search {
+  display: block;
+  min-width: 0;
+}
+
+.graph-controls.is-collapsed .graph-control-search .toolbar-label {
+  display: none;
+}
+
+.graph-controls.is-collapsed .graph-control-search .pokedex-search {
+  width: 100%;
 }
 
 .graph-pane-toggle {
@@ -1184,29 +1187,6 @@ body:not([data-power-mode="on"]) .qe-results-body {
 
 .graph-sidebar-close {
   display: none;
-}
-
-.graph-controls-reopen {
-  top: calc(5.45rem + var(--graph-panel-offset));
-  left: var(--graph-panel-offset);
-  bottom: auto;
-  z-index: 31;
-  display: none;
-  min-height: 0;
-  height: auto;
-  line-height: 1.1;
-  padding: 0.55rem 0.75rem;
-  align-items: center;
-  justify-content: center;
-}
-
-.graph-controls-reopen[hidden] {
-  display: none !important;
-}
-
-.graph-controls.is-collapsed + .graph-controls-reopen:not([hidden]) {
-  display: inline-flex;
-  align-items: center;
 }
 
 .graph-control-row,
@@ -1763,11 +1743,6 @@ body:not([data-power-mode="on"]) .qe-results-body {
     max-width: calc(100vw - (var(--graph-panel-offset) * 2));
   }
 
-  .graph-controls-reopen {
-    top: 5.2rem;
-    left: var(--graph-panel-offset);
-  }
-
   .graph-sidebar {
     right: var(--graph-panel-offset);
     bottom: var(--graph-panel-offset);
@@ -1818,11 +1793,6 @@ body:not([data-power-mode="on"]) .qe-results-body {
 
   .graph-controls.is-collapsed {
     max-width: calc(100vw - 1.8rem);
-  }
-
-  .graph-controls-reopen {
-    top: 4.9rem;
-    left: 0.9rem;
   }
 
   .graph-sidebar {

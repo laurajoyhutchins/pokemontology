@@ -8,8 +8,8 @@
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body class="graph-page">
-  <header class="site-header graph-header">
-    <div class="site-shell graph-shell">
+  <header class="site-header">
+    <div class="site-shell">
       <div class="topbar fade-up">
         <a class="brand" href="./index.html">
           <span class="brand-mark">PK</span>
@@ -38,7 +38,6 @@
       <section class="graph-controls panel fade-up" id="graph-controls" aria-label="Graph query controls">
         <div class="graph-controls-head">
           <div class="graph-controls-title">
-            <span class="mini-badge">Query Pane</span>
             <span class="graph-hover-readout graph-controls-subtitle">Search, filter, and pivot the local graph</span>
           </div>
           <button class="qe-action-btn graph-pane-toggle" id="graph-controls-toggle" type="button" aria-expanded="true" aria-controls="graph-controls-body">
@@ -150,9 +149,7 @@
           </div>
         </div>
       </section>
-      <button class="graph-controls-reopen graph-stage-floating qe-action-btn" id="graph-controls-reopen" type="button" aria-controls="graph-controls-body" aria-expanded="false" hidden>
-        Query Pane
-      </button>
+      <button class="graph-controls-reopen" id="graph-controls-reopen" type="button" hidden aria-hidden="true" tabindex="-1"></button>
 
       <section class="graph-stage fade-up delay-1">
         <div class="graph-stage-head graph-stage-floating">
