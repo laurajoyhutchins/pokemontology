@@ -1358,6 +1358,17 @@ function drawGraph(canvas, projected, state) {
     x: (point.x - rect.width / 2) * state.zoom + rect.width / 2 + state.panX,
     y: (point.y - rect.height / 2) * state.zoom + rect.height / 2 + state.panY,
   });
+  const visibleNodeIds = new Set(
+    projected.nodes
+      .map((node) => {
+        const point = positions.get(node.id);
+        if (!point) return null;
+        const screen = toScreen(point);
+        const radius = Math.max(2.2, nodeRadius(node, state) * state.zoom);
+        return nodeFitsFrame(screen, radius, frame) ? node.id : null;
+      })
+      .filter(Boolean),
+  );
 
   context.save();
   context.fillStyle = "rgba(47, 85, 71, 0.035)";
@@ -1369,6 +1380,7 @@ function drawGraph(canvas, projected, state) {
     const source = positions.get(edge.source);
     const target = positions.get(edge.target);
     if (!source || !target) return;
+    if (!visibleNodeIds.has(edge.source) || !visibleNodeIds.has(edge.target)) return;
     const a = toScreen(source);
     const b = toScreen(target);
     const active =
@@ -1390,7 +1402,7 @@ function drawGraph(canvas, projected, state) {
     if (!point) return;
     const screen = toScreen(point);
     const radius = Math.max(2.2, nodeRadius(node, state) * state.zoom);
-    if (!nodeFitsFrame(screen, radius, frame)) return;
+    if (!visibleNodeIds.has(node.id)) return;
     const active =
       node.id === state.selectedNodeId ||
       selectedNeighbors.has(node.id) ||
@@ -1419,8 +1431,7 @@ function drawGraph(canvas, projected, state) {
     const point = positions.get(labelNode.id);
     if (point) {
       const screen = toScreen(point);
-      const radius = Math.max(2.2, nodeRadius(labelNode, state) * state.zoom);
-      if (nodeFitsFrame(screen, radius, frame)) {
+      if (visibleNodeIds.has(labelNode.id)) {
         context.fillStyle = "#17322b";
         context.font = '700 12px "IBM Plex Mono", monospace';
         context.fillText(String(labelNode.label || ""), screen.x + 12, screen.y - 12);
@@ -1440,7 +1451,7 @@ function drawGraph(canvas, projected, state) {
         radius: Math.max(10, nodeRadius(node, state) * state.zoom + 4),
       };
     })
-    .filter((entry) => entry && nodeFitsFrame(entry, entry.radius, frame, 0));
+    .filter((entry) => entry && visibleNodeIds.has(entry.id));
 }
 
 function setupCanvasInteractions(canvas, state, rerender) {
