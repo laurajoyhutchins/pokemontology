@@ -6,7 +6,7 @@
   <title>Dev Console | Pokemontology</title>
   <link rel="stylesheet" href="./styles.css">
 </head>
-<body>
+<body class="dev-page">
   <header class="site-header">
     <div class="site-shell">
       <div class="topbar fade-up">
@@ -32,57 +32,109 @@
     </div>
   </header>
 
-  <main>
-    <section class="section">
-      <div class="site-shell">
-        <div class="section-head">
-          <h1>Dev Console</h1>
-          <p class="lede">Technical resources and internal manifests for Pokemontology contributors.</p>
+  <main class="dev-main">
+    <section class="dev-hero section-tight">
+      <div class="site-shell dev-hero-grid">
+        <div class="dev-hero-copy fade-up">
+          <p class="eyebrow">Pokemontology / Maintainer Surface</p>
+          <h1 class="laurel-title">Dev Console</h1>
+          <p class="laurel-lead">
+            A control deck for contributors: published artifacts, source structure, sample fixtures, ingestion routes, and exploration surfaces for ontology debugging.
+          </p>
+          <div class="hero-stats dev-stats">
+            <div class="stat-chip">
+              <strong>7</strong>
+              <span>Core resources</span>
+            </div>
+            <div class="stat-chip">
+              <strong>3</strong>
+              <span>Primary workflows</span>
+            </div>
+            <div class="stat-chip">
+              <strong>1</strong>
+              <span>Project surface</span>
+            </div>
+          </div>
         </div>
-        
-        <div class="dev-grid">
-          <a href="./artifacts.html" class="dev-card">
-            <span class="dev-card-kicker">Published</span>
-            <h2>Artifacts</h2>
-            <p>Direct links to ontology.ttl, shapes.ttl, and schema-index.json.</p>
-          </a>
 
-          <a href="./pokedex.html" class="dev-card">
-            <span class="dev-card-kicker">Explore</span>
-            <h2>Pokedex</h2>
-            <p>Species browsing against the published ontology and canonical mechanics graph.</p>
-          </a>
+        <aside class="dev-hero-sidecar fade-up delay-1">
+          <div class="dev-note-card">
+            <p class="panel-kicker">Best Starting Points</p>
+            <div class="dev-pill-row">
+              <span>Artifacts</span>
+              <span>Knowledge Graph</span>
+              <span>Pokedex</span>
+              <span>Data Routes</span>
+            </div>
+          </div>
+          <div class="dev-note-card">
+            <p class="panel-kicker">Use This Page For</p>
+            <p>Quick orientation when debugging docs output, validating published bundles, or tracing how ontology modules become browser-facing assets.</p>
+          </div>
+        </aside>
+      </div>
+    </section>
 
-          <a href="./graph.html" class="dev-card">
-            <span class="dev-card-kicker">Visualize</span>
-            <h2>Knowledge Graph</h2>
-            <p>Interactive clustered view of the published entity graph and its ruleset overlays.</p>
-          </a>
-          
-          <a href="./modules.html" class="dev-card">
-            <span class="dev-card-kicker">Structure</span>
-            <h2>Source Modules</h2>
-            <p>The individual Turtle fragments that compose the master ontology.</p>
-          </a>
-          
-          <a href="./examples.html" class="dev-card">
-            <span class="dev-card-kicker">Fixtures</span>
-            <h2>Sample Files</h2>
-            <p>Replay inputs, test cases, and generated battle slices.</p>
-          </a>
-          
-          <a href="./pipelines.html" class="dev-card">
-            <span class="dev-card-kicker">Workflow</span>
-            <h2>Data Routes</h2>
-            <p>Documentation on how Showdown and PokeAPI data is ingested.</p>
-          </a>
+    <section class="section-tight">
+      <div class="site-shell dev-stack">
+        <section class="dev-section panel fade-up delay-1" aria-labelledby="dev-surface-heading">
+          <div class="dev-section-head">
+            <div>
+              <p class="panel-kicker">Surface</p>
+              <h2 id="dev-surface-heading">Published Interfaces</h2>
+            </div>
+            <span class="mini-badge">Operator View</span>
+          </div>
+          <div class="dev-grid dev-grid-primary">
+            <a href="./artifacts.html" class="dev-card dev-card-primary">
+              <span class="dev-card-kicker">Published</span>
+              <h2>Artifacts</h2>
+              <p>Direct access to the shipped ontology, shapes, schema pack, and related docs bundles.</p>
+            </a>
+            <a href="./graph.html" class="dev-card dev-card-primary">
+              <span class="dev-card-kicker">Visualize</span>
+              <h2>Knowledge Graph</h2>
+              <p>Explore the published entity graph with ruleset-aware filters, inspector pivots, and scene history.</p>
+            </a>
+            <a href="./pokedex.html" class="dev-card dev-card-primary">
+              <span class="dev-card-kicker">Explore</span>
+              <h2>Pokedex</h2>
+              <p>Inspect species-level mechanics, typing, abilities, stats, and move previews from the docs dataset.</p>
+            </a>
+          </div>
+        </section>
 
-          <a href="./repo-structure.md" class="dev-card">
-            <span class="dev-card-kicker">Overview</span>
-            <h2>Repository</h2>
-            <p>Internal project layout and file-system organization.</p>
-          </a>
-        </div>
+        <section class="dev-section panel fade-up delay-2" aria-labelledby="dev-structure-heading">
+          <div class="dev-section-head">
+            <div>
+              <p class="panel-kicker">Internals</p>
+              <h2 id="dev-structure-heading">Source And Build Map</h2>
+            </div>
+            <span class="mini-badge">Repository View</span>
+          </div>
+          <div class="dev-grid">
+            <a href="./modules.html" class="dev-card">
+              <span class="dev-card-kicker">Structure</span>
+              <h2>Source Modules</h2>
+              <p>The Turtle fragments that compose the ontology and the conceptual seams they represent.</p>
+            </a>
+            <a href="./pipelines.html" class="dev-card">
+              <span class="dev-card-kicker">Workflow</span>
+              <h2>Data Routes</h2>
+              <p>How replay, PokeAPI, and derived mechanics data move from ingest to published docs assets.</p>
+            </a>
+            <a href="./repo-structure.md" class="dev-card">
+              <span class="dev-card-kicker">Overview</span>
+              <h2>Repository</h2>
+              <p>Project layout, package boundaries, generated outputs, and where to start when tracing ownership.</p>
+            </a>
+            <a href="./examples.html" class="dev-card">
+              <span class="dev-card-kicker">Fixtures</span>
+              <h2>Sample Files</h2>
+              <p>Reference inputs, replay slices, and example assets for testing and contributor orientation.</p>
+            </a>
+          </div>
+        </section>
       </div>
     </section>
   </main>

@@ -475,32 +475,157 @@ body:not([data-power-mode="on"]) .qe-results-body {
   gap: 1.25rem;
 }
 
+.dev-page {
+  --dev-surface: rgba(247, 240, 220, 0.9);
+  --dev-surface-strong: rgba(250, 245, 228, 0.95);
+  --dev-surface-soft: rgba(255, 255, 255, 0.16);
+  --dev-surface-muted: rgba(255, 255, 255, 0.08);
+  --dev-border-soft: rgba(47, 85, 71, 0.18);
+  --dev-border-strong: rgba(47, 85, 71, 0.38);
+  --dev-shadow: 0 14px 30px rgba(23, 50, 43, 0.08);
+  --dev-shadow-soft: 0 10px 20px rgba(23, 50, 43, 0.06);
+}
+
+:root[data-theme="dark"] .dev-page {
+  --dev-surface: rgba(23, 39, 34, 0.88);
+  --dev-surface-strong: rgba(28, 47, 41, 0.94);
+  --dev-surface-soft: rgba(255, 255, 255, 0.08);
+  --dev-surface-muted: rgba(255, 255, 255, 0.05);
+  --dev-border-soft: rgba(162, 185, 127, 0.18);
+  --dev-border-strong: rgba(162, 185, 127, 0.34);
+  --dev-shadow: 0 18px 36px rgba(0, 0, 0, 0.24);
+  --dev-shadow-soft: 0 12px 24px rgba(0, 0, 0, 0.18);
+}
+
+.dev-main {
+  padding-bottom: 1rem;
+}
+
+.dev-hero-grid,
+.dev-stack {
+  display: grid;
+  gap: 1rem;
+}
+
+.dev-hero-grid {
+  grid-template-columns: minmax(0, 1.55fr) minmax(18rem, 0.85fr);
+  align-items: stretch;
+}
+
+.dev-hero-copy,
+.dev-section,
+.dev-note-card {
+  background: var(--dev-surface);
+  box-shadow: var(--dev-shadow);
+}
+
+.dev-hero-copy {
+  position: relative;
+  overflow: hidden;
+  padding: 1.3rem;
+  border: 2px solid var(--line);
+  background:
+    radial-gradient(circle at top right, rgba(155, 90, 52, 0.18), transparent 34%),
+    linear-gradient(180deg, var(--dev-surface-strong), var(--dev-surface));
+}
+
+.dev-hero-copy::after {
+  content: "";
+  position: absolute;
+  right: -3rem;
+  bottom: -3rem;
+  width: 11rem;
+  height: 11rem;
+  border-radius: 50%;
+  background: rgba(84, 121, 92, 0.08);
+  pointer-events: none;
+}
+
+.dev-hero-sidecar {
+  display: grid;
+  gap: 1rem;
+}
+
+.dev-note-card {
+  border: 2px solid var(--line);
+  padding: 1rem;
+}
+
+.dev-pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.dev-pill-row span {
+  border: 1px solid var(--dev-border-strong);
+  background: var(--dev-surface-soft);
+  padding: 0.42rem 0.65rem;
+  font-family: var(--font-ui);
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.dev-stats {
+  margin-top: 1.15rem;
+}
+
+.dev-section {
+  padding: 1.25rem;
+}
+
+.dev-section-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: end;
+  padding-bottom: 0.45rem;
+  border-bottom: 1px solid var(--dev-border-soft);
+}
+
+.dev-page .mini-badge {
+  background: var(--dev-surface-muted);
+  box-shadow: none;
+}
+
 .dev-grid {
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  margin-top: 2rem;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  margin-top: 1rem;
+}
+
+.dev-grid-primary {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .dev-card {
   display: block;
   text-decoration: none;
   color: inherit;
-  border: 3px solid var(--line);
-  border-radius: var(--radius-lg);
-  background: var(--paper);
-  padding: 1.5rem;
-  box-shadow: var(--shadow);
-  transition: transform 0.2s ease, border-color 0.2s ease;
+  border: 1px solid var(--dev-border-strong);
+  background: linear-gradient(180deg, var(--dev-surface-strong), var(--dev-surface));
+  padding: 1.1rem;
+  box-shadow: var(--dev-shadow-soft);
+  transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease;
 }
 
 .dev-card:hover {
-  transform: translate(-4px, -4px);
-  border-color: var(--clay);
+  transform: translateY(-2px);
+  border-color: rgba(155, 90, 52, 0.55);
+  background:
+    linear-gradient(180deg, rgba(155, 90, 52, 0.12), transparent 26%),
+    linear-gradient(180deg, var(--dev-surface-strong), var(--dev-surface));
+}
+
+.dev-card-primary {
+  padding: 1.2rem;
 }
 
 .dev-card h2 {
-  margin: 0.25rem 0 0.5rem;
+  margin: 0.3rem 0 0.55rem;
   font-family: var(--font-ui);
   text-transform: uppercase;
+  line-height: 1.08;
 }
 
 .dev-card-kicker {
@@ -510,7 +635,8 @@ body:not([data-power-mode="on"]) .qe-results-body {
   text-transform: uppercase;
   color: var(--clay);
   font-weight: 700;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.45rem;
+  letter-spacing: 0.08em;
 }
 
 .dev-card p {
@@ -2149,12 +2275,17 @@ body:not([data-power-mode="on"]) .qe-results-body {
   .laurel-board,
   .section-grid,
   .pokedex-hero-grid,
+  .dev-hero-grid,
   .pokedex-layout,
   .graph-stage {
     grid-template-columns: 1fr;
   }
 
   .hero-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .dev-grid-primary {
     grid-template-columns: 1fr;
   }
 
