@@ -389,22 +389,26 @@ function graphChromeMetrics() {
   const header = document.querySelector(".site-header .topbar");
   const siteShell = document.querySelector(".site-header .site-shell");
   const sidebar = document.querySelector(".graph-sidebar");
+  const controls = document.getElementById("graph-controls");
   const headerBottom = header instanceof HTMLElement ? header.getBoundingClientRect().bottom : 0;
   const shellRect = siteShell instanceof HTMLElement ? siteShell.getBoundingClientRect() : null;
   const sidebarRect =
     sidebar instanceof HTMLElement && !sidebar.hidden ? sidebar.getBoundingClientRect() : null;
+  const controlsRect =
+    controls instanceof HTMLElement && !controls.hidden ? controls.getBoundingClientRect() : null;
   return {
     headerBottom,
     shellLeft: shellRect ? shellRect.left : GRAPH_PADDING,
     shellWidth: shellRect ? shellRect.width : 0,
     sidebarLeft: sidebarRect ? sidebarRect.left : window.innerWidth - GRAPH_PADDING,
     sidebarWidth: sidebarRect ? sidebarRect.width : 0,
+    controlsBottom: controlsRect ? controlsRect.bottom : headerBottom,
   };
 }
 
 function syncGraphViewportVars() {
   const root = document.documentElement;
-  const { headerBottom, shellLeft, shellWidth, sidebarLeft } = graphChromeMetrics();
+  const { headerBottom, shellLeft, shellWidth, sidebarLeft, controlsBottom } = graphChromeMetrics();
   const shellIsFluid = shellWidth > 0 && shellWidth < 1239;
   root.style.setProperty("--graph-frame-top", `${Math.round(headerBottom + GRAPH_PADDING * 0.5)}px`);
   root.style.setProperty("--graph-frame-right", `${Math.max(GRAPH_PADDING, Math.round(window.innerWidth - sidebarLeft + GRAPH_PADDING * 0.5))}px`);
@@ -412,6 +416,10 @@ function syncGraphViewportVars() {
   root.style.setProperty(
     "--graph-frame-left",
     `${shellIsFluid ? Math.max(16, Math.round(shellLeft)) : GRAPH_PADDING}px`,
+  );
+  root.style.setProperty(
+    "--graph-facet-top",
+    `${Math.max(headerBottom + GRAPH_PADDING * 0.5 + 10, Math.round(controlsBottom + 10))}px`,
   );
 }
 

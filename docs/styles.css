@@ -1462,8 +1462,8 @@ body:not([data-power-mode="on"]) .qe-results-body {
 
 .graph-facet-strip {
   position: fixed;
-  top: calc(var(--graph-frame-top, var(--graph-panel-offset)) + 0.65rem);
-  left: calc(var(--graph-frame-left, var(--graph-panel-offset)) + 22.75rem);
+  top: var(--graph-facet-top, calc(var(--graph-frame-top, var(--graph-panel-offset)) + 4.75rem));
+  left: calc(var(--graph-frame-left, var(--graph-panel-offset)) + 0.55rem);
   right: calc(var(--graph-frame-right, var(--graph-panel-offset)) + 0.55rem);
   z-index: 22;
   display: grid;
@@ -1916,7 +1916,7 @@ body:not([data-power-mode="on"]) .qe-results-body {
   }
 
   .graph-facet-strip {
-    left: calc(var(--graph-panel-offset) + 20.75rem);
+    left: var(--graph-panel-offset);
     right: calc(20rem + (var(--graph-panel-offset) * 2));
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
