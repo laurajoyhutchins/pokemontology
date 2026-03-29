@@ -1242,6 +1242,10 @@ body:not([data-power-mode="on"]) .qe-results-body {
   justify-content: space-between;
 }
 
+.graph-stage-actions {
+  justify-content: flex-end;
+}
+
 .graph-control-row {
   flex-wrap: wrap;
 }
@@ -1303,6 +1307,13 @@ body:not([data-power-mode="on"]) .qe-results-body {
 
 .graph-query-presets > button {
   cursor: pointer;
+}
+
+.graph-perspective-row > button.is-active,
+.graph-action-grid > .qe-action-btn.is-active {
+  background: var(--moss);
+  color: #f8f2dd;
+  border-color: #385f4d;
 }
 
 .graph-stage {
@@ -1466,6 +1477,16 @@ body:not([data-power-mode="on"]) .qe-results-body {
   min-width: 0;
 }
 
+.graph-action-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.graph-action-grid > .qe-action-btn {
+  width: 100%;
+}
+
 .graph-detail-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1621,6 +1642,12 @@ body:not([data-power-mode="on"]) .qe-results-body {
 
 .graph-zoom-btn-primary {
   font-size: 1.45rem;
+}
+
+#graph-fit-selection,
+#graph-fit-graph {
+  font-size: 0.84rem;
+  letter-spacing: 0.04em;
 }
 
 #graph-detail,

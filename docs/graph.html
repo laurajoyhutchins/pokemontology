@@ -92,6 +92,13 @@
               <button class="source-toggle graph-toggle" type="button" data-graph-preset="Levitate">Levitate</button>
               <button class="source-toggle graph-toggle" type="button" data-graph-preset="Scarlet Violet">Scarlet Violet</button>
             </div>
+            <div class="graph-query-presets graph-perspective-row" id="graph-perspectives" aria-label="Graph perspectives">
+              <button class="source-toggle graph-toggle" type="button" data-graph-perspective="typing">Typing</button>
+              <button class="source-toggle graph-toggle" type="button" data-graph-perspective="abilities">Abilities</button>
+              <button class="source-toggle graph-toggle" type="button" data-graph-perspective="moves">Moves</button>
+              <button class="source-toggle graph-toggle" type="button" data-graph-perspective="rulesets">Rulesets</button>
+              <button class="source-toggle graph-toggle" type="button" data-graph-perspective="learnsets">Learnsets</button>
+            </div>
           </div>
           <div class="graph-control-row graph-control-row-compact">
             <div class="graph-filter-pack">
@@ -115,9 +122,19 @@
             <span class="mini-badge" id="graph-focus-badge">Top-degree overview</span>
             <span class="graph-hover-readout" id="graph-hover-readout">No hover</span>
           </div>
+          <div class="graph-stage-meta graph-stage-actions">
+            <span class="mini-badge" id="graph-history-badge">History 1 / 1</span>
+            <button class="qe-action-btn" id="graph-reset-view" type="button">Reset View</button>
+          </div>
         </div>
         <div class="graph-stage-floating graph-stage-floating-zoom">
           <div class="graph-zoom-controls" aria-label="Graph zoom controls">
+            <div class="graph-zoom-pill" aria-label="Graph history controls">
+              <button class="qe-action-btn graph-zoom-btn" id="graph-history-back" type="button" aria-label="Back to previous graph state">&larr;</button>
+              <button class="qe-action-btn graph-zoom-btn" id="graph-history-forward" type="button" aria-label="Forward to next graph state">&rarr;</button>
+              <button class="qe-action-btn graph-zoom-btn" id="graph-fit-selection" type="button" aria-label="Fit current selection">Fit</button>
+              <button class="qe-action-btn graph-zoom-btn" id="graph-fit-graph" type="button" aria-label="Fit visible graph">All</button>
+            </div>
             <div class="graph-cap-controls" aria-label="Node cap controls">
               <label class="graph-cap-label" for="graph-node-limit">Node cap</label>
               <button class="qe-action-btn graph-cap-max" id="graph-node-limit-max" type="button" hidden>MAX</button>
