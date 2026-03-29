@@ -3,8 +3,12 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 from pokemontology.build import build_ontology
+
+
+REPO = Path(__file__).resolve().parents[1]
 
 
 def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
@@ -190,3 +194,15 @@ def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
     assert "`pkm:`" in sparql_reference
     assert "### TypingAssignment pattern" in sparql_reference
     assert "queries/bundled/super_effective_moves.sparql" in sparql_reference
+
+
+def test_published_graph_index_uses_current_entity_ids() -> None:
+    graph_index = json.loads((REPO / "docs" / "graph-index.json").read_text(encoding="utf-8"))
+    node_ids = {node["id"] for node in graph_index["nodes"]}
+
+    assert graph_index["source"].endswith("build/mechanics.ttl")
+    assert node_ids
+    assert all(node_id.startswith("pkmi:") for node_id in node_ids)
+    assert not any(node_id.startswith("pkm:") for node_id in node_ids)
+    assert all(edge["source"] in node_ids for edge in graph_index["edges"])
+    assert all(edge["target"] in node_ids for edge in graph_index["edges"])
