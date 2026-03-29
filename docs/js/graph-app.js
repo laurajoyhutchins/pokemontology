@@ -412,7 +412,7 @@ function graphChromeMetrics() {
 
 function syncGraphViewportVars() {
   const root = document.documentElement;
-  const { headerBottom, shellLeft, shellWidth, sidebarLeft, controlsBottom } = graphChromeMetrics();
+  const { headerBottom, shellLeft, shellWidth, sidebarLeft } = graphChromeMetrics();
   const shellIsFluid = shellWidth > 0 && shellWidth < 1239;
   root.style.setProperty("--graph-frame-top", `${Math.round(headerBottom + GRAPH_PADDING * 0.5)}px`);
   root.style.setProperty("--graph-frame-right", `${Math.max(GRAPH_PADDING, Math.round(window.innerWidth - sidebarLeft + GRAPH_PADDING * 0.5))}px`);
@@ -420,10 +420,6 @@ function syncGraphViewportVars() {
   root.style.setProperty(
     "--graph-frame-left",
     `${shellIsFluid ? Math.max(16, Math.round(shellLeft)) : GRAPH_PADDING}px`,
-  );
-  root.style.setProperty(
-    "--graph-facet-top",
-    `${Math.max(headerBottom + GRAPH_PADDING * 0.5 + 10, Math.round(controlsBottom + 10))}px`,
   );
 }
 
@@ -1295,7 +1291,7 @@ function renderDetail(projected, state) {
                     (group) => `
                       <section class="graph-neighbor-group">
                         <div class="graph-neighbor-group-head">
-                          <span class="graph-type-pill graph-type-${slugify(group.type)}">${escapeHtml(group.type)}</span>
+                          <span class="graph-neighbor-group-type">${escapeHtml(group.type)}</span>
                           <strong>${escapeHtml(group.neighbors.length)}</strong>
                         </div>
                         <div class="graph-neighbor-list graph-results">
