@@ -72,9 +72,9 @@ pkm:StochasticResolution
     ] ;
     rdfs:subClassOf [
         a owl:Restriction ;
-        owl:onProperty pkm:realizedInInstantaneous ;
+        owl:onProperty pkm:realizedInInstant ;
         owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
-        owl:onClass pkm:Instantaneous
+        owl:onClass pkm:Instant
     ] ;
     rdfs:subClassOf [
         a owl:Restriction ;
@@ -131,12 +131,12 @@ pkm:stochasticOccursInBattle
     rdfs:domain pkm:StochasticResolution ;
     rdfs:range pkm:Battle .
 
-pkm:realizedInInstantaneous
+pkm:realizedInInstant
     a owl:ObjectProperty ;
     a owl:FunctionalProperty ;
-    rdfs:label "realizedInInstantaneous" ;
+    rdfs:label "realizedInInstant" ;
     rdfs:domain pkm:StochasticResolution ;
-    rdfs:range pkm:Instantaneous .
+    rdfs:range pkm:Instant .
 
 pkm:hasPossibleBranch
     a owl:ObjectProperty ;

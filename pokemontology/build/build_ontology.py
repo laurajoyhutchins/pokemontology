@@ -42,9 +42,6 @@ PAGES_SHAPES = PAGES_DIR / "shapes.ttl"
 PAGES_POKEAPI = PAGES_DIR / "pokeapi.ttl"
 PAGES_MECHANICS = PAGES_DIR / "mechanics.ttl"
 PAGES_MECHANICS_BASE = PAGES_DIR / "mechanics-base.ttl"
-PAGES_MECHANICS_CURRENT = PAGES_DIR / "mechanics-learnsets-current.ttl"
-PAGES_MECHANICS_MODERN = PAGES_DIR / "mechanics-learnsets-modern.ttl"
-PAGES_MECHANICS_LEGACY = PAGES_DIR / "mechanics-learnsets-legacy.ttl"
 PAGES_SITE_DATA = PAGES_DIR / "site-data.json"
 PAGES_SCHEMA_INDEX = PAGES_DIR / "schema-index.json"
 PAGES_GRAPH_INDEX = PAGES_DIR / "graph-index.json"
@@ -60,43 +57,6 @@ TTL_PREFIX_HEADER = """@prefix pkm: <https://laurajoyhutchins.github.io/pokemont
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
 """
-WEB_MECHANICS_SLICES = (
-    {
-        "key": "base",
-        "label": "Mechanics Base",
-        "path": "mechanics-base.ttl",
-        "description": "Canonical entities, variants, typings, move properties, type chart data, and ruleset-scoped assignments excluding learnset archives.",
-    },
-    {
-        "key": "current",
-        "label": "Current Learnsets",
-        "path": "mechanics-learnsets-current.ttl",
-        "description": "Current-generation learnset coverage from the canonical mechanics graph, including the PokeAPI default ruleset and Scarlet/Violet-era records.",
-    },
-    {
-        "key": "modern",
-        "label": "Modern Learnsets",
-        "path": "mechanics-learnsets-modern.ttl",
-        "description": "Historical learnset archive for 3DS and Switch-era games prior to the current generation.",
-    },
-    {
-        "key": "legacy",
-        "label": "Legacy Learnsets",
-        "path": "mechanics-learnsets-legacy.ttl",
-        "description": "Older learnset archive for pre-3DS generations and side-game rulesets.",
-    },
-)
-CURRENT_RULESET_TOKENS = ("pokeapi-default", "scarlet-violet")
-MODERN_RULESET_TOKENS = (
-    "black-2-white-2",
-    "omega-ruby-alpha-sapphire",
-    "sun-moon",
-    "ultra-sun-ultra-moon",
-    "lets_go",
-    "sword-shield",
-    "brilliant-diamond-shining-pearl",
-    "legends-arceus",
-)
 LOOKUP_TYPE_PRIORITY = {
     "Variant": 0,
     "Species": 1,
@@ -115,7 +75,7 @@ MODULE_ORDER = [
     "30-save-state.ttl",
     "40-battle.ttl",
     "45-battle-resolution.ttl",
-    "50-instantaneous-state.ttl",
+    "50-instant-state.ttl",
     "60-actions-events.ttl",
     "70-provenance.ttl",
     "80-materialized-state.ttl",
@@ -191,15 +151,6 @@ def _preferred_schema_example_query(query_examples: list[dict[str, object]]) -> 
     return query if isinstance(query, str) else ""
 
 
-def _web_mechanics_slice_paths() -> dict[str, object]:
-    return {
-        "base": PAGES_MECHANICS_BASE,
-        "current": PAGES_MECHANICS_CURRENT,
-        "modern": PAGES_MECHANICS_MODERN,
-        "legacy": PAGES_MECHANICS_LEGACY,
-    }
-
-
 def _iter_ttl_blocks(path) -> Iterator[str]:
     block_lines: list[str] = []
     with path.open("r", encoding="utf-8") as infile:
@@ -214,31 +165,6 @@ def _iter_ttl_blocks(path) -> Iterator[str]:
             block_lines.append(line)
     if block_lines:
         yield "".join(block_lines).rstrip() + "\n\n"
-
-
-def _classify_mechanics_block(block: str) -> str:
-    if " a pkm:MoveLearnRecord" not in block:
-        return "base"
-    match = re.search(r"pkm:hasContext\s+<https://laurajoyhutchins.github.io/pokemontology/id/ruleset/([^>]+)>", block)
-    if match is None:
-        pkmi_match = re.search(r"pkm:hasContext\s+pkmi:([A-Za-z0-9_\\/-]+)\s*;", block)
-        if pkmi_match is not None:
-            ruleset_slug = (
-                pkmi_match.group(1)
-                .replace("\\/", "/")
-                .removeprefix("ruleset/")
-                .lower()
-            )
-        else:
-            legacy_match = re.search(r"pkm:hasContext pkm:Ruleset_([A-Za-z0-9_]+)\s*;", block)
-            ruleset_slug = legacy_match.group(1).lower().replace("_", "-") if legacy_match else ""
-    else:
-        ruleset_slug = match.group(1).lower()
-    if any(token in ruleset_slug for token in CURRENT_RULESET_TOKENS):
-        return "current"
-    if any(token in ruleset_slug for token in MODERN_RULESET_TOKENS):
-        return "modern"
-    return "legacy"
 
 
 def _tokenize(text: str) -> list[str]:
@@ -981,24 +907,80 @@ def _merge_mechanics_data() -> None:
                 outfile.write("\n")
 
 
-def _write_mechanics_web_slices() -> None:
+def _ruleset_slug_from_block(block: str) -> str:
+    """Return a normalised, filesystem-safe ruleset slug for a MoveLearnRecord block.
+
+    Tries each IRI encoding that appears in the ingested data in order:
+    full angle-bracket IRI, pkmi: CURIE, and legacy pkm:Ruleset_Foo form.
+    Falls back to "unknown" if none match.
+    """
+    m = re.search(
+        r"pkm:hasContext\s+<https://laurajoyhutchins\.github\.io/pokemontology/id/ruleset/([^>]+)>",
+        block,
+    )
+    if m:
+        slug = m.group(1)
+    else:
+        m = re.search(r"pkm:hasContext\s+pkmi:([A-Za-z0-9_\\/-]+)\s*;", block)
+        if m:
+            slug = m.group(1).replace("\\/", "/").removeprefix("ruleset/")
+        else:
+            m = re.search(r"pkm:hasContext pkm:Ruleset_([A-Za-z0-9_]+)\s*;", block)
+            slug = m.group(1).replace("_", "-") if m else "unknown"
+    # Normalise to a safe file-name component: lower-case, replace anything
+    # that is not alphanumeric or hyphen with a hyphen.
+    safe = re.sub(r"[^a-z0-9-]", "-", slug.lower()).strip("-")
+    return safe or "unknown"
+
+
+def _write_mechanics_web_slices() -> list[Path]:
+    """Write mechanics-base.ttl and one learnset shard per ruleset.
+
+    Each MoveLearnRecord block is routed to mechanics-learnsets-{ruleset}.ttl
+    where ``{ruleset}`` is the normalised slug extracted directly from the
+    block's pkm:hasContext value.  No token lists are needed; new rulesets
+    are discovered automatically from the data.
+
+    On a data-less build (CI, fresh checkout) the existing committed shard
+    files are left untouched and returned as-is.  When data sources are
+    present, stale shard files from any previous naming scheme are removed
+    before new ones are written.
+
+    Returns the sorted list of learnset shard paths written (or preserved).
+    """
     sources = [s for s in (BUILD_POKEAPI, BUILD_VEEKUN) if s.exists()]
     if not sources:
-        return
-    slice_paths = _web_mechanics_slice_paths()
-    handles = {}
-    try:
-        for key, path in slice_paths.items():
-            handle = path.open("w", encoding="utf-8")
-            handle.write(TTL_PREFIX_HEADER)
-            handles[key] = handle
+        # No data: leave committed artifacts intact.
+        return sorted(PAGES_DIR.glob("mechanics-learnsets-*.ttl"))
 
-        for source in sources:
-            for block in _iter_ttl_blocks(source):
-                handles[_classify_mechanics_block(block)].write(block)
+    # Remove stale shards from any previous build or naming scheme.
+    for stale in PAGES_DIR.glob("mechanics-learnsets-*.ttl"):
+        stale.unlink()
+
+    handles: dict[str, object] = {}   # slug -> open file handle
+    shard_paths: dict[str, Path] = {}
+
+    try:
+        with PAGES_MECHANICS_BASE.open("w", encoding="utf-8") as base_fh:
+            base_fh.write(TTL_PREFIX_HEADER)
+            for source in sources:
+                for block in _iter_ttl_blocks(source):
+                    if " a pkm:MoveLearnRecord" not in block:
+                        base_fh.write(block)
+                    else:
+                        slug = _ruleset_slug_from_block(block)
+                        if slug not in handles:
+                            path = PAGES_DIR / f"mechanics-learnsets-{slug}.ttl"
+                            fh = path.open("w", encoding="utf-8")
+                            fh.write(TTL_PREFIX_HEADER)
+                            handles[slug] = fh
+                            shard_paths[slug] = path
+                        handles[slug].write(block)  # type: ignore[union-attr]
     finally:
-        for handle in handles.values():
-            handle.close()
+        for fh in handles.values():
+            fh.close()  # type: ignore[union-attr]
+
+    return sorted(shard_paths.values())
 
 
 def assemble_artifacts() -> tuple[str, str, dict[str, object]]:
@@ -1033,15 +1015,8 @@ def assemble_artifacts() -> tuple[str, str, dict[str, object]]:
                 "iri": "https://laurajoyhutchins.github.io/pokemontology/shapes.ttl#",
                 "description": "Validation shapes used for replay slices, save-state data, and ingestion outputs.",
             },
-            *[
-                {
-                    "label": entry["label"],
-                    "path": entry["path"],
-                    "iri": f"https://laurajoyhutchins.github.io/pokemontology/{entry['path']}#",
-                    "description": entry["description"],
-                }
-                for entry in WEB_MECHANICS_SLICES
-            ],
+            # mechanics artifacts are spliced in by write_artifacts() once shard
+            # paths are known
             {
                 "label": "Graph Projection Index",
                 "path": "graph-index.json",
@@ -1057,26 +1032,8 @@ def assemble_artifacts() -> tuple[str, str, dict[str, object]]:
                 "checked": True,
                 "role": "ontology",
             },
-            {
-                "id": "src-mechanics",
-                "label": "canonical mechanics core",
-                "paths": [
-                    PAGES_MECHANICS_BASE.name,
-                    PAGES_MECHANICS_CURRENT.name,
-                ],
-                "checked": True,
-                "role": "mechanics",
-            },
-            {
-                "id": "src-mechanics-archive",
-                "label": "historical learnset archive",
-                "paths": [
-                    PAGES_MECHANICS_MODERN.name,
-                    PAGES_MECHANICS_LEGACY.name,
-                ],
-                "checked": False,
-                "role": "archive",
-            },
+            # mechanics query sources are spliced in by write_artifacts() once
+            # shard paths are known
             {
                 "id": "src-pokeapi-demo",
                 "label": "pokeapi-demo.ttl (debug)",
@@ -1151,6 +1108,61 @@ def assemble_artifacts() -> tuple[str, str, dict[str, object]]:
     return ontology_text, shapes_text, site_data
 
 
+def _patch_site_data_mechanics(
+    site_data: dict[str, object], learnset_paths: list[Path]
+) -> None:
+    """Splice mechanics artifacts and query sources into site_data in place.
+
+    Called after _write_mechanics_web_slices() so the actual shard file names
+    are known.  Inserts the base artifact and each learnset shard artifact
+    immediately before the graph-index artifact, and inserts two query sources
+    (mechanics core and learnset archive) immediately after src-ontology.
+    """
+    artifacts: list[dict[str, object]] = site_data["artifacts"]  # type: ignore[assignment]
+    graph_idx = next(i for i, a in enumerate(artifacts) if a.get("path") == "graph-index.json")
+    mechanics_artifacts: list[dict[str, object]] = [
+        {
+            "label": "Mechanics Base",
+            "path": PAGES_MECHANICS_BASE.name,
+            "iri": f"https://laurajoyhutchins.github.io/pokemontology/{PAGES_MECHANICS_BASE.name}#",
+            "description": "Canonical entities, variants, typings, move properties, type chart data, and ruleset-scoped assignments excluding learnset records.",
+        },
+        *[
+            {
+                "label": f"Learnsets {path.stem.split('-')[-1].upper()}",
+                "path": path.name,
+                "iri": f"https://laurajoyhutchins.github.io/pokemontology/{path.name}#",
+                "description": f"Auto-generated learnset shard {path.name}.",
+            }
+            for path in learnset_paths
+        ],
+    ]
+    artifacts[graph_idx:graph_idx] = mechanics_artifacts
+
+    sources: list[dict[str, object]] = site_data["query_sources"]  # type: ignore[assignment]
+    ontology_idx = next(i for i, s in enumerate(sources) if s["id"] == "src-ontology")
+    mechanics_sources: list[dict[str, object]] = [
+        {
+            "id": "src-mechanics",
+            "label": "canonical mechanics core",
+            "paths": [PAGES_MECHANICS_BASE.name],
+            "checked": True,
+            "role": "mechanics",
+        },
+    ]
+    if learnset_paths:
+        mechanics_sources.append(
+            {
+                "id": "src-mechanics-learnsets",
+                "label": "learnset archive",
+                "paths": [p.name for p in learnset_paths],
+                "checked": False,
+                "role": "archive",
+            }
+        )
+    sources[ontology_idx + 1 : ontology_idx + 1] = mechanics_sources
+
+
 def write_artifacts(
     ontology_text: str, shapes_text: str, site_data: dict[str, object]
 ) -> None:
@@ -1162,9 +1174,11 @@ def write_artifacts(
     PAGES_ONTOLOGY.write_text(ontology_text, encoding="utf-8")
     PAGES_SHAPES.write_text(shapes_text, encoding="utf-8")
 
-    _write_mechanics_web_slices()
+    learnset_paths = _write_mechanics_web_slices()
     if PAGES_MECHANICS.exists():
         PAGES_MECHANICS.unlink()
+
+    _patch_site_data_mechanics(site_data, learnset_paths)
 
     schema_pack = _schema_pack(ontology_text, site_data["query_examples"])
     sparql_reference = _render_sparql_reference(schema_pack, site_data)
@@ -1190,8 +1204,10 @@ def main() -> None:
     print(f"wrote {BUILD_SHAPES.relative_to(REPO)}")
     print(f"wrote {PAGES_ONTOLOGY.relative_to(REPO)}")
     print(f"wrote {PAGES_SHAPES.relative_to(REPO)}")
-    for path in _web_mechanics_slice_paths().values():
-        print(f"wrote {path.relative_to(REPO)}")
+    for src in site_data["query_sources"]:
+        if src.get("role") in ("mechanics", "archive"):
+            for path_name in src["paths"]:
+                print(f"wrote {(PAGES_DIR / path_name).relative_to(REPO)}")
     print(f"wrote {PAGES_SITE_DATA.relative_to(REPO)}")
     print(f"wrote {PAGES_SCHEMA_INDEX.relative_to(REPO)}")
     print(f"wrote {PAGES_GRAPH_INDEX.relative_to(REPO)}")

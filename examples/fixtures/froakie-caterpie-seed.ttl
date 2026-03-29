@@ -240,10 +240,10 @@ pkm:Combatant_Caterpie
     pkm:onSide               pkm:Side_Wild ;
     pkm:hasTeamPosition      1 .
 
-# --- Instantaneous layer ---
+# --- Instant layer ---
 
 pkm:Instantaneous_1_0
-    a pkm:Instantaneous ;
+    a pkm:Instant ;
     pkm:occursInBattle pkm:Battle_1 ;
     pkm:hasTurnIndex  1 ;
     pkm:hasStepIndex  0 .
@@ -282,14 +282,14 @@ pkm:PP_MoveSlot_1_3
 
 pkm:Transition_1_0_to_1_1
     a pkm:StateTransition ;
-    pkm:fromInstantaneous       pkm:Instantaneous_1_0 ;
-    pkm:toInstantaneous         pkm:Instantaneous_1_1 ;
+    pkm:fromInstant       pkm:Instantaneous_1_0 ;
+    pkm:toInstant         pkm:Instantaneous_1_1 ;
     pkm:transitionOccursInBattle pkm:Battle_1 .
 
 pkm:Instantaneous_1_1
-    a pkm:Instantaneous ;
+    a pkm:Instant ;
     pkm:occursInBattle         pkm:Battle_1 ;
     pkm:resultsFromTransition  pkm:Transition_1_0_to_1_1 ;
-    pkm:hasPreviousInstantaneous pkm:Instantaneous_1_0 ;
+    pkm:hasPreviousInstant pkm:Instantaneous_1_0 ;
     pkm:hasTurnIndex  1 ;
     pkm:hasStepIndex  1 .

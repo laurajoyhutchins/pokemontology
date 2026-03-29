@@ -150,11 +150,11 @@ pkm:Battle
         owl:onClass pkm:Ruleset
     ] .
 
-pkm:Instantaneous
+pkm:Instant
     a owl:Class ;
-    rdfs:label "Instantaneous" ;
+    rdfs:label "Instant" ;
     rdfs:subClassOf pkm:Context ;
-    rdfs:comment "An instantaneous state snapshot during battle execution." .
+    rdfs:comment "An instant state snapshot during battle execution." .
 
 
 # =============================================================================
@@ -184,7 +184,7 @@ pkm:Context owl:disjointWith pkm:ContextualFact .
 
 [ a owl:AllDisjointClasses ;
   owl:members (
-    pkm:Ruleset pkm:VersionGroup pkm:SaveFile pkm:Battle pkm:Instantaneous
+    pkm:Ruleset pkm:VersionGroup pkm:SaveFile pkm:Battle pkm:Instant
   )
 ] .
 
@@ -229,35 +229,35 @@ pkm:hasVersionGroup
     rdfs:domain pkm:Ruleset ;
     rdfs:range pkm:VersionGroup .
 
-pkm:hasPreviousInstantaneous
+pkm:hasPreviousInstant
     a owl:ObjectProperty ;
     a owl:FunctionalProperty ;
     a owl:InverseFunctionalProperty ;
-    rdfs:label "hasPreviousInstantaneous" ;
-    rdfs:domain pkm:Instantaneous ;
-    rdfs:range pkm:Instantaneous .
+    rdfs:label "hasPreviousInstant" ;
+    rdfs:domain pkm:Instant ;
+    rdfs:range pkm:Instant .
 
-pkm:hasNextInstantaneous
+pkm:hasNextInstant
     a owl:ObjectProperty ;
     a owl:FunctionalProperty ;
     a owl:InverseFunctionalProperty ;
-    rdfs:label "hasNextInstantaneous" ;
-    rdfs:domain pkm:Instantaneous ;
-    rdfs:range pkm:Instantaneous ;
-    owl:inverseOf pkm:hasPreviousInstantaneous .
+    rdfs:label "hasNextInstant" ;
+    rdfs:domain pkm:Instant ;
+    rdfs:range pkm:Instant ;
+    owl:inverseOf pkm:hasPreviousInstant .
 
 pkm:occursInBattle
     a owl:ObjectProperty ;
     a owl:FunctionalProperty ;
     rdfs:label "occursInBattle" ;
-    rdfs:domain pkm:Instantaneous ;
+    rdfs:domain pkm:Instant ;
     rdfs:range pkm:Battle .
 
 pkm:resultsFromTransition
     a owl:ObjectProperty ;
     a owl:FunctionalProperty ;
     rdfs:label "resultsFromTransition" ;
-    rdfs:domain pkm:Instantaneous ;
+    rdfs:domain pkm:Instant ;
     rdfs:range pkm:StateTransition .
 
 
@@ -298,34 +298,34 @@ pkm:hasProjectionProfile
     a owl:ObjectProperty ;
     a owl:FunctionalProperty ;
     rdfs:label "hasProjectionProfile" ;
-    rdfs:domain pkm:Instantaneous ;
+    rdfs:domain pkm:Instant ;
     rdfs:range pkm:ProjectionProfile ;
-    rdfs:comment "Declares which projection policy is intended for the materialized state attached to an Instantaneous." .
+    rdfs:comment "Declares which projection policy is intended for the materialized state attached to an Instant." .
 
-pkm:materializedFromPreviousInstantaneous
+pkm:materializedFromPreviousInstant
     a owl:ObjectProperty ;
     a owl:FunctionalProperty ;
-    rdfs:label "materializedFromPreviousInstantaneous" ;
+    rdfs:label "materializedFromPreviousInstant" ;
     rdfs:domain pkm:MaterializedStateAssignment ;
-    rdfs:range pkm:Instantaneous ;
-    rdfs:comment "Indicates that a materialized assignment was forward-projected from the immediately preceding Instantaneous." .
+    rdfs:range pkm:Instant ;
+    rdfs:comment "Indicates that a materialized assignment was forward-projected from the immediately preceding Instant." .
 
 pkm:materializedFromEvent
     a owl:ObjectProperty ;
     rdfs:label "materializedFromEvent" ;
     rdfs:domain pkm:MaterializedStateAssignment ;
     rdfs:range pkm:Event ;
-    rdfs:comment "Indicates that a materialized assignment is justified directly by an event resolved at or before the assignment's Instantaneous." .
+    rdfs:comment "Indicates that a materialized assignment is justified directly by an event resolved at or before the assignment's Instant." .
 
 pkm:ProjectionProfile_ReplayObservedOnly
     a pkm:ProjectionProfile ;
     rdfs:label "ReplayObservedOnly" ;
-    rdfs:comment "Only directly observed state is attached to each Instantaneous; consumers must reconstruct omitted dimensions by replaying events." .
+    rdfs:comment "Only directly observed state is attached to each Instant; consumers must reconstruct omitted dimensions by replaying events." .
 
 pkm:ProjectionProfile_PartialMaterializedStages
     a pkm:ProjectionProfile ;
     rdfs:label "PartialMaterializedStages" ;
-    rdfs:comment "Selected stat-stage assignments are forward-projected on each Instantaneous for query convenience, but the stage layer is not claimed to be exhaustive for every combatant and stat." .
+    rdfs:comment "Selected stat-stage assignments are forward-projected on each Instant for query convenience, but the stage layer is not claimed to be exhaustive for every combatant and stat." .
 
 pkm:hasDexNumber
     a owl:DatatypeProperty ;

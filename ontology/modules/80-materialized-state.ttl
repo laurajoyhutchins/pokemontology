@@ -31,7 +31,7 @@ pkm:CurrentWeatherAssignment
     a owl:Class ;
     rdfs:label "CurrentWeatherAssignment" ;
     rdfs:subClassOf pkm:FieldStateAssignment ;
-    rdfs:comment "Materialized weather state for a battle field at an instantaneous snapshot." ;
+    rdfs:comment "Materialized weather state for a battle field at an instant snapshot." ;
     rdfs:subClassOf [
         a owl:Restriction ;
         owl:onProperty pkm:hasWeatherCondition ;
@@ -43,7 +43,7 @@ pkm:CurrentTerrainAssignment
     a owl:Class ;
     rdfs:label "CurrentTerrainAssignment" ;
     rdfs:subClassOf pkm:FieldStateAssignment ;
-    rdfs:comment "Materialized terrain state for a battle field at an instantaneous snapshot." ;
+    rdfs:comment "Materialized terrain state for a battle field at an instant snapshot." ;
     rdfs:subClassOf [
         a owl:Restriction ;
         owl:onProperty pkm:hasTerrainCondition ;
@@ -55,7 +55,7 @@ pkm:SideConditionAssignment
     a owl:Class ;
     rdfs:label "SideConditionAssignment" ;
     rdfs:subClassOf pkm:SideStateAssignment ;
-    rdfs:comment "Materialized side-condition state for one battle side at an instantaneous snapshot." ;
+    rdfs:comment "Materialized side-condition state for one battle side at an instant snapshot." ;
     rdfs:subClassOf [
         a owl:Restriction ;
         owl:onProperty pkm:hasSideCondition ;
@@ -67,7 +67,7 @@ pkm:CurrentItemAssignment
     a owl:Class ;
     rdfs:label "CurrentItemAssignment" ;
     rdfs:subClassOf pkm:ParticipantStateAssignment ;
-    rdfs:comment "Materialized held-item state for a battle participant at an instantaneous snapshot. Only emitted when item state is observed in the replay log; absence does not imply no item." ;
+    rdfs:comment "Materialized held-item state for a battle participant at an instant snapshot. Only emitted when item state is observed in the replay log; absence does not imply no item." ;
     rdfs:subClassOf [
         a owl:Restriction ;
         owl:onProperty pkm:hasCurrentItem ;
@@ -79,7 +79,7 @@ pkm:CurrentAbilityAssignment
     a owl:Class ;
     rdfs:label "CurrentAbilityAssignment" ;
     rdfs:subClassOf pkm:ParticipantStateAssignment ;
-    rdfs:comment "Materialized ability state for a battle participant at an instantaneous snapshot. Only emitted when ability state is observed in the replay log; absence does not imply a default ability." ;
+    rdfs:comment "Materialized ability state for a battle participant at an instant snapshot. Only emitted when ability state is observed in the replay log; absence does not imply a default ability." ;
     rdfs:subClassOf [
         a owl:Restriction ;
         owl:onProperty pkm:hasCurrentAbility ;
@@ -91,7 +91,7 @@ pkm:ActiveSlotAssignment
     a owl:Class ;
     rdfs:label "ActiveSlotAssignment" ;
     rdfs:subClassOf pkm:ParticipantStateAssignment ;
-    rdfs:comment "Materializes which battle participant occupies a specific active slot on a specific side at an instantaneous snapshot." ;
+    rdfs:comment "Materializes which battle participant occupies a specific active slot on a specific side at an instant snapshot." ;
     rdfs:subClassOf [
         a owl:Restriction ;
         owl:onProperty pkm:aboutSide ;

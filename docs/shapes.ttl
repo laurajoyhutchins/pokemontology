@@ -11,15 +11,15 @@
     rdfs:label "Pokémon Mechanics SHACL Shapes" ;
     rdfs:comment "Operational validation shapes for the Pokémon Mechanics Ontology. Focused on battle-state consistency, uniqueness, and action/transition coherence." .
 
-pkmsh:InstantaneousShape
+pkmsh:InstantShape
     a sh:NodeShape ;
-    sh:targetClass pkm:Instantaneous ;
+    sh:targetClass pkm:Instant ;
     sh:property [
         sh:path pkm:occursInBattle ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
         sh:class pkm:Battle ;
-        sh:message "Every Instantaneous must occur in exactly one Battle."
+        sh:message "Every Instant must occur in exactly one Battle."
     ] ;
     sh:property [
         sh:path pkm:hasTurnIndex ;
@@ -27,7 +27,7 @@ pkmsh:InstantaneousShape
         sh:maxCount 1 ;
         sh:datatype xsd:integer ;
         sh:minInclusive 0 ;
-        sh:message "Every Instantaneous must have exactly one non-negative turn index."
+        sh:message "Every Instant must have exactly one non-negative turn index."
     ] ;
     sh:property [
         sh:path pkm:hasStepIndex ;
@@ -35,14 +35,14 @@ pkmsh:InstantaneousShape
         sh:maxCount 1 ;
         sh:datatype xsd:integer ;
         sh:minInclusive 0 ;
-        sh:message "Every Instantaneous must have exactly one non-negative step index."
+        sh:message "Every Instant must have exactly one non-negative step index."
     ] ;
     sh:sparql [
-        sh:message "If an Instantaneous has a previous Instantaneous, both must occur in the same Battle." ;
+        sh:message "If an Instant has a previous Instant, both must occur in the same Battle." ;
         sh:select """
             SELECT $this
             WHERE {
-              $this pkm:hasPreviousInstantaneous ?prev ;
+              $this pkm:hasPreviousInstant ?prev ;
                     pkm:occursInBattle ?battle .
               ?prev pkm:occursInBattle ?prevBattle .
               FILTER (?battle != ?prevBattle)
@@ -51,14 +51,14 @@ pkmsh:InstantaneousShape
     ] .
 
 
-pkmsh:InstantaneousProjectionProfileShape
+pkmsh:InstantProjectionProfileShape
     a sh:NodeShape ;
-    sh:targetClass pkm:Instantaneous ;
+    sh:targetClass pkm:Instant ;
     sh:property [
         sh:path pkm:hasProjectionProfile ;
         sh:maxCount 1 ;
         sh:class pkm:ProjectionProfile ;
-        sh:message "If present, an Instantaneous must reference at most one ProjectionProfile."
+        sh:message "If present, an Instant must reference at most one ProjectionProfile."
     ] .
 
 pkmsh:DeclaredPokemonPredicateShape
@@ -99,8 +99,8 @@ pkmsh:ParticipantStateAssignmentShape
         sh:path pkm:hasContext ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
-        sh:class pkm:Instantaneous ;
-        sh:message "A ParticipantStateAssignment must be scoped to exactly one Instantaneous."
+        sh:class pkm:Instant ;
+        sh:message "A ParticipantStateAssignment must be scoped to exactly one Instant."
     ] .
 
 pkmsh:IVAssignmentShape
@@ -201,8 +201,8 @@ pkmsh:FieldStateAssignmentShape
         sh:path pkm:hasContext ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
-        sh:class pkm:Instantaneous ;
-        sh:message "A FieldStateAssignment must be scoped to exactly one Instantaneous."
+        sh:class pkm:Instant ;
+        sh:message "A FieldStateAssignment must be scoped to exactly one Instant."
     ] .
 
 pkmsh:SideStateAssignmentShape
@@ -219,8 +219,8 @@ pkmsh:SideStateAssignmentShape
         sh:path pkm:hasContext ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
-        sh:class pkm:Instantaneous ;
-        sh:message "A SideStateAssignment must be scoped to exactly one Instantaneous."
+        sh:class pkm:Instant ;
+        sh:message "A SideStateAssignment must be scoped to exactly one Instant."
     ] .
 
 pkmsh:MaterializedStateAssignmentShape
@@ -230,36 +230,36 @@ pkmsh:MaterializedStateAssignmentShape
         sh:path pkm:hasContext ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
-        sh:class pkm:Instantaneous ;
-        sh:message "A MaterializedStateAssignment must be scoped to exactly one Instantaneous."
+        sh:class pkm:Instant ;
+        sh:message "A MaterializedStateAssignment must be scoped to exactly one Instant."
     ] ;
     sh:property [
-        sh:path pkm:materializedFromPreviousInstantaneous ;
+        sh:path pkm:materializedFromPreviousInstant ;
         sh:maxCount 1 ;
-        sh:class pkm:Instantaneous ;
-        sh:message "If present, materializedFromPreviousInstantaneous must point to one Instantaneous."
+        sh:class pkm:Instant ;
+        sh:message "If present, materializedFromPreviousInstant must point to one Instant."
     ] ;
     sh:sparql [
-        sh:message "If a MaterializedStateAssignment is forward-projected from a previous Instantaneous, it must use the immediate predecessor of its own Instantaneous context." ;
+        sh:message "If a MaterializedStateAssignment is forward-projected from a previous Instant, it must use the immediate predecessor of its own Instant context." ;
         sh:select """
             SELECT $this
             WHERE {
               $this pkm:hasContext ?ctx ;
-                    pkm:materializedFromPreviousInstantaneous ?src .
-              ?ctx pkm:hasPreviousInstantaneous ?expected .
+                    pkm:materializedFromPreviousInstant ?src .
+              ?ctx pkm:hasPreviousInstant ?expected .
               FILTER (?src != ?expected)
             }
         """
     ] ;
     sh:sparql [
-        sh:message "A MaterializedStateAssignment cannot cite both materializedFromPreviousInstantaneous and materializedFromEvent when there is no Instantaneous context predecessor to project from." ;
+        sh:message "A MaterializedStateAssignment cannot cite both materializedFromPreviousInstant and materializedFromEvent when there is no Instant context predecessor to project from." ;
         sh:select """
             SELECT $this
             WHERE {
-              $this pkm:materializedFromPreviousInstantaneous ?src ;
+              $this pkm:materializedFromPreviousInstant ?src ;
                     pkm:materializedFromEvent ?event ;
                     pkm:hasContext ?ctx .
-              FILTER NOT EXISTS { ?ctx pkm:hasPreviousInstantaneous ?anyPrev . }
+              FILTER NOT EXISTS { ?ctx pkm:hasPreviousInstant ?anyPrev . }
             }
         """
     ] .
@@ -268,18 +268,18 @@ pkmsh:StateTransitionShape
     a sh:NodeShape ;
     sh:targetClass pkm:StateTransition ;
     sh:property [
-        sh:path pkm:fromInstantaneous ;
+        sh:path pkm:fromInstant ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
-        sh:class pkm:Instantaneous ;
-        sh:message "Every StateTransition must have exactly one fromInstantaneous."
+        sh:class pkm:Instant ;
+        sh:message "Every StateTransition must have exactly one fromInstant."
     ] ;
     sh:property [
-        sh:path pkm:toInstantaneous ;
+        sh:path pkm:toInstant ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
-        sh:class pkm:Instantaneous ;
-        sh:message "Every StateTransition must have exactly one toInstantaneous."
+        sh:class pkm:Instant ;
+        sh:message "Every StateTransition must have exactly one toInstant."
     ] ;
     sh:property [
         sh:path pkm:transitionOccursInBattle ;
@@ -289,12 +289,12 @@ pkmsh:StateTransitionShape
         sh:message "Every StateTransition must be anchored to exactly one Battle."
     ] ;
     sh:sparql [
-        sh:message "The fromInstantaneous and toInstantaneous of a StateTransition must both occur in the same Battle as the transition itself." ;
+        sh:message "The fromInstant and toInstant of a StateTransition must both occur in the same Battle as the transition itself." ;
         sh:select """
             SELECT $this
             WHERE {
-              $this pkm:fromInstantaneous ?from ;
-                    pkm:toInstantaneous ?to ;
+              $this pkm:fromInstant ?from ;
+                    pkm:toInstant ?to ;
                     pkm:transitionOccursInBattle ?battle .
               ?from pkm:occursInBattle ?fromBattle .
               ?to pkm:occursInBattle ?toBattle .
@@ -303,12 +303,12 @@ pkmsh:StateTransitionShape
         """
     ] ;
     sh:sparql [
-        sh:message "A StateTransition cannot point from an Instantaneous to itself." ;
+        sh:message "A StateTransition cannot point from an Instant to itself." ;
         sh:select """
             SELECT $this
             WHERE {
-              $this pkm:fromInstantaneous ?i ;
-                    pkm:toInstantaneous ?i .
+              $this pkm:fromInstant ?i ;
+                    pkm:toInstant ?i .
             }
         """
     ] .
@@ -345,8 +345,8 @@ pkmsh:CurrentHPAssignmentShape
         sh:path pkm:hasContext ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
-        sh:class pkm:Instantaneous ;
-        sh:message "A CurrentHPAssignment must be scoped to exactly one Instantaneous."
+        sh:class pkm:Instant ;
+        sh:message "A CurrentHPAssignment must be scoped to exactly one Instant."
     ] ;
     sh:property [
         sh:path pkm:hasCurrentHPValue ;
@@ -357,7 +357,7 @@ pkmsh:CurrentHPAssignmentShape
         sh:message "A CurrentHPAssignment must have exactly one non-negative integer HP value."
     ] ;
     sh:sparql [
-        sh:message "There must be at most one CurrentHPAssignment per combatant per Instantaneous."
+        sh:message "There must be at most one CurrentHPAssignment per combatant per Instant."
         ; sh:select """
             SELECT $this
             WHERE {
@@ -390,7 +390,7 @@ pkmsh:StatStageAssignmentShape
         sh:path pkm:hasContext ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
-        sh:class pkm:Instantaneous
+        sh:class pkm:Instant
     ] ;
     sh:property [
         sh:path pkm:hasStageValue ;
@@ -402,7 +402,7 @@ pkmsh:StatStageAssignmentShape
         sh:message "A StatStageAssignment must be an integer in [-6, 6]."
     ] ;
     sh:sparql [
-        sh:message "There must be at most one StatStageAssignment per combatant/stat per Instantaneous." ;
+        sh:message "There must be at most one StatStageAssignment per combatant/stat per Instant." ;
         sh:select """
             SELECT $this
             WHERE {
@@ -437,10 +437,10 @@ pkmsh:CurrentStatusAssignmentShape
         sh:path pkm:hasContext ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
-        sh:class pkm:Instantaneous
+        sh:class pkm:Instant
     ] ;
     sh:sparql [
-        sh:message "A combatant may have at most one non-volatile status assignment in a given Instantaneous." ;
+        sh:message "A combatant may have at most one non-volatile status assignment in a given Instant." ;
         sh:select """
             SELECT $this
             WHERE {
@@ -473,10 +473,10 @@ pkmsh:CurrentTransformationAssignmentShape
         sh:path pkm:hasContext ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
-        sh:class pkm:Instantaneous
+        sh:class pkm:Instant
     ] ;
     sh:sparql [
-        sh:message "A combatant may have at most one active transformation assignment in a given Instantaneous." ;
+        sh:message "A combatant may have at most one active transformation assignment in a given Instant." ;
         sh:select """
             SELECT $this
             WHERE {
@@ -504,8 +504,8 @@ pkmsh:CurrentItemAssignmentShape
         sh:path pkm:hasContext ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
-        sh:class pkm:Instantaneous ;
-        sh:message "A CurrentItemAssignment must be scoped to exactly one Instantaneous."
+        sh:class pkm:Instant ;
+        sh:message "A CurrentItemAssignment must be scoped to exactly one Instant."
     ] ;
     sh:property [
         sh:path pkm:hasCurrentItem ;
@@ -529,8 +529,8 @@ pkmsh:CurrentAbilityAssignmentShape
         sh:path pkm:hasContext ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
-        sh:class pkm:Instantaneous ;
-        sh:message "A CurrentAbilityAssignment must be scoped to exactly one Instantaneous."
+        sh:class pkm:Instant ;
+        sh:message "A CurrentAbilityAssignment must be scoped to exactly one Instant."
     ] ;
     sh:property [
         sh:path pkm:hasCurrentAbility ;
@@ -554,8 +554,8 @@ pkmsh:FieldStateShape
         sh:path pkm:hasContext ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
-        sh:class pkm:Instantaneous ;
-        sh:message "A FieldState must be scoped to exactly one Instantaneous."
+        sh:class pkm:Instant ;
+        sh:message "A FieldState must be scoped to exactly one Instant."
     ] .
 
 pkmsh:SideStateShape
@@ -572,8 +572,8 @@ pkmsh:SideStateShape
         sh:path pkm:hasContext ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
-        sh:class pkm:Instantaneous ;
-        sh:message "A SideState must be scoped to exactly one Instantaneous."
+        sh:class pkm:Instant ;
+        sh:message "A SideState must be scoped to exactly one Instant."
     ] .
 
 pkmsh:BattleActionShape
@@ -587,25 +587,25 @@ pkmsh:BattleActionShape
         sh:message "A BattleAction must have exactly one actor."
     ] ;
     sh:property [
-        sh:path pkm:declaredInInstantaneous ;
+        sh:path pkm:declaredInInstant ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
-        sh:class pkm:Instantaneous ;
-        sh:message "A BattleAction must be declared in exactly one Instantaneous."
+        sh:class pkm:Instant ;
+        sh:message "A BattleAction must be declared in exactly one Instant."
     ] ;
     sh:property [
-        sh:path pkm:initiatedInInstantaneous ;
+        sh:path pkm:initiatedInInstant ;
         sh:maxCount 1 ;
-        sh:class pkm:Instantaneous ;
-        sh:message "A BattleAction may be initiated in at most one Instantaneous."
+        sh:class pkm:Instant ;
+        sh:message "A BattleAction may be initiated in at most one Instant."
     ] ;
     sh:sparql [
-        sh:message "If declaredInInstantaneous and initiatedInInstantaneous are both present, they must occur in the same Battle." ;
+        sh:message "If declaredInInstant and initiatedInInstant are both present, they must occur in the same Battle." ;
         sh:select """
             SELECT $this
             WHERE {
-              $this pkm:declaredInInstantaneous ?decl ;
-                    pkm:initiatedInInstantaneous ?init .
+              $this pkm:declaredInInstant ?decl ;
+                    pkm:initiatedInInstant ?init .
               ?decl pkm:occursInBattle ?battle1 .
               ?init pkm:occursInBattle ?battle2 .
               FILTER (?battle1 != ?battle2)
@@ -696,8 +696,8 @@ pkmsh:TargetResolutionStateShape
         sh:path pkm:hasContext ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
-        sh:class pkm:Instantaneous ;
-        sh:message "A TargetResolutionState must be scoped to exactly one Instantaneous."
+        sh:class pkm:Instant ;
+        sh:message "A TargetResolutionState must be scoped to exactly one Instant."
     ] ;
     sh:property [
         sh:path pkm:hasResolutionOutcome ;
@@ -712,11 +712,11 @@ pkmsh:EventShape
     a sh:NodeShape ;
     sh:targetClass pkm:Event ;
     sh:property [
-        sh:path pkm:occursInInstantaneous ;
+        sh:path pkm:occursInInstant ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
-        sh:class pkm:Instantaneous ;
-        sh:message "An Event must occur in exactly one Instantaneous."
+        sh:class pkm:Instant ;
+        sh:message "An Event must occur in exactly one Instant."
     ] ;
     sh:property [
         sh:path pkm:causedByAction ;
@@ -786,10 +786,10 @@ pkmsh:StochasticResolutionShape
         sh:class pkm:Battle
     ] ;
     sh:property [
-        sh:path pkm:realizedInInstantaneous ;
+        sh:path pkm:realizedInInstant ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
-        sh:class pkm:Instantaneous
+        sh:class pkm:Instant
     ] ;
     sh:property [
         sh:path pkm:associatedWithAction ;
@@ -819,12 +819,12 @@ pkmsh:StochasticResolutionShape
         """
     ] ;
     sh:sparql [
-        sh:message "The realized instantaneous and the battle on a stochastic resolution must agree." ;
+        sh:message "The realized instant and the battle on a stochastic resolution must agree." ;
         sh:select """
             SELECT $this
             WHERE {
               $this pkm:stochasticOccursInBattle ?battle ;
-                    pkm:realizedInInstantaneous ?instant .
+                    pkm:realizedInInstant ?instant .
               ?instant pkm:occursInBattle ?instantBattle .
               FILTER (?battle != ?instantBattle)
             }
@@ -981,11 +981,11 @@ pkmsh:StatStageChangeEventShape
     a sh:NodeShape ;
     sh:targetClass pkm:StatStageChangeEvent ;
     sh:property [
-        sh:path pkm:occursInInstantaneous ;
+        sh:path pkm:occursInInstant ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
-        sh:class pkm:Instantaneous ;
-        sh:message "A StatStageChangeEvent must occur in exactly one Instantaneous."
+        sh:class pkm:Instant ;
+        sh:message "A StatStageChangeEvent must occur in exactly one Instant."
     ] ;
     sh:property [
         sh:path pkm:affectsCombatant ;
@@ -1025,11 +1025,11 @@ pkmsh:FaintEventPostHPShape
     a sh:NodeShape ;
     sh:targetClass pkm:FaintEvent ;
     sh:sparql [
-        sh:message "A FaintEvent must be accompanied by a CurrentHPAssignment of 0 for the affected BattleParticipant at the same Instantaneous." ;
+        sh:message "A FaintEvent must be accompanied by a CurrentHPAssignment of 0 for the affected BattleParticipant at the same Instant." ;
         sh:select """
             SELECT $this
             WHERE {
-              $this pkm:occursInInstantaneous ?instant ;
+              $this pkm:occursInInstant ?instant ;
                     pkm:affectsCombatant ?participant .
               FILTER NOT EXISTS {
                 ?hp a pkm:CurrentHPAssignment ;
@@ -1061,8 +1061,8 @@ pkmsh:CurrentWeatherAssignmentShape
         sh:path pkm:hasContext ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
-        sh:class pkm:Instantaneous ;
-        sh:message "A CurrentWeatherAssignment must be scoped to exactly one Instantaneous." 
+        sh:class pkm:Instant ;
+        sh:message "A CurrentWeatherAssignment must be scoped to exactly one Instant." 
     ] ;
     sh:property [
         sh:path pkm:hasWeatherCondition ;
@@ -1072,7 +1072,7 @@ pkmsh:CurrentWeatherAssignmentShape
         sh:message "A CurrentWeatherAssignment must reference exactly one WeatherCondition." 
     ] ;
     sh:sparql [
-        sh:message "There must be at most one CurrentWeatherAssignment per Battle per Instantaneous." ;
+        sh:message "There must be at most one CurrentWeatherAssignment per Battle per Instant." ;
         sh:select """
           SELECT $this
           WHERE {
@@ -1100,8 +1100,8 @@ pkmsh:CurrentTerrainAssignmentShape
         sh:path pkm:hasContext ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
-        sh:class pkm:Instantaneous ;
-        sh:message "A CurrentTerrainAssignment must be scoped to exactly one Instantaneous." 
+        sh:class pkm:Instant ;
+        sh:message "A CurrentTerrainAssignment must be scoped to exactly one Instant." 
     ] ;
     sh:property [
         sh:path pkm:hasTerrainCondition ;
@@ -1111,7 +1111,7 @@ pkmsh:CurrentTerrainAssignmentShape
         sh:message "A CurrentTerrainAssignment must reference exactly one TerrainCondition." 
     ] ;
     sh:sparql [
-        sh:message "There must be at most one CurrentTerrainAssignment per Battle per Instantaneous." ;
+        sh:message "There must be at most one CurrentTerrainAssignment per Battle per Instant." ;
         sh:select """
           SELECT $this
           WHERE {
@@ -1139,8 +1139,8 @@ pkmsh:SideConditionAssignmentShape
         sh:path pkm:hasContext ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
-        sh:class pkm:Instantaneous ;
-        sh:message "A SideConditionAssignment must be scoped to exactly one Instantaneous." 
+        sh:class pkm:Instant ;
+        sh:message "A SideConditionAssignment must be scoped to exactly one Instant." 
     ] ;
     sh:property [
         sh:path pkm:hasSideCondition ;
@@ -1150,7 +1150,7 @@ pkmsh:SideConditionAssignmentShape
         sh:message "A SideConditionAssignment must reference exactly one SideCondition." 
     ] ;
     sh:sparql [
-        sh:message "There must be at most one SideConditionAssignment per side/condition per Instantaneous." ;
+        sh:message "There must be at most one SideConditionAssignment per side/condition per Instant." ;
         sh:select """
           SELECT $this
           WHERE {
@@ -1177,7 +1177,7 @@ pkmsh:VolatileStatusAssignmentShapeV2
         sh:message "A VolatileStatusAssignment must reference exactly one VolatileCondition." 
     ] ;
     sh:sparql [
-        sh:message "There must be at most one VolatileStatusAssignment per combatant/condition per Instantaneous." ;
+        sh:message "There must be at most one VolatileStatusAssignment per combatant/condition per Instant." ;
         sh:select """
           SELECT $this
           WHERE {
@@ -1214,8 +1214,8 @@ pkmsh:ActiveSlotAssignmentShape
         sh:path pkm:hasContext ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
-        sh:class pkm:Instantaneous ;
-        sh:message "An ActiveSlotAssignment must be scoped to exactly one Instantaneous." 
+        sh:class pkm:Instant ;
+        sh:message "An ActiveSlotAssignment must be scoped to exactly one Instant." 
     ] ;
     sh:property [
         sh:path pkm:hasActiveSlotIndex ;
@@ -1227,7 +1227,7 @@ pkmsh:ActiveSlotAssignmentShape
         sh:message "An ActiveSlotAssignment must have an active slot index in {1,2}." 
     ] ;
     sh:sparql [
-        sh:message "There must be at most one ActiveSlotAssignment per side/slot per Instantaneous." ;
+        sh:message "There must be at most one ActiveSlotAssignment per side/slot per Instant." ;
         sh:select """
           SELECT $this
           WHERE {

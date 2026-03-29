@@ -6,7 +6,7 @@ Scope:
 - battle + two sides
 - battle participants observed in the log
 - minimal move vocabulary observed in the log
-- Instantaneous checkpoints around observed switch/move/faint events
+- Instant checkpoints around observed switch/move/faint events
 - MoveUseAction and FaintEvent individuals
 - simple StateTransition chain between checkpoints
 
@@ -307,7 +307,7 @@ def add_materialization_provenance(
         g.add(
             (
                 assignment_iri,
-                PKM.materializedFromPreviousInstantaneous,
+                PKM.materializedFromPreviousInstant,
                 previous_instant,
             )
         )
@@ -986,7 +986,7 @@ def build_graph(payload: dict) -> Graph:
     previous_instant = None
     for idx, ev in enumerate(events):
         instant = _battle_iri(f"I_{idx}")
-        g.add((instant, RDF.type, PKM.Instantaneous))
+        g.add((instant, RDF.type, PKM.Instant))
         g.add(
             (
                 instant,
@@ -996,7 +996,7 @@ def build_graph(payload: dict) -> Graph:
         )
         g.add((instant, PKM.occursInBattle, battle_iri))
         if previous_instant is not None:
-            g.add((instant, PKM.hasPreviousInstantaneous, previous_instant))
+            g.add((instant, PKM.hasPreviousInstant, previous_instant))
         g.add((instant, PKM.hasTurnIndex, Literal(ev.turn, datatype=XSD.integer)))
         g.add((instant, PKM.hasStepIndex, Literal(ev.order, datatype=XSD.integer)))
         g.add((instant, PKM.hasReplayTurnIndex, Literal(ev.turn, datatype=XSD.integer)))
@@ -1100,7 +1100,7 @@ def build_graph(payload: dict) -> Graph:
 
             g.add((event_iri, RDF.type, PKM.SwitchEvent))
             g.add((event_iri, PKM.affectsCombatant, combatant_iri))
-            g.add((event_iri, PKM.occursInInstantaneous, instant))
+            g.add((event_iri, PKM.occursInInstant, instant))
             g.add(
                 (
                     event_iri,
@@ -1156,8 +1156,8 @@ def build_graph(payload: dict) -> Graph:
             g.add((action_iri, RDF.type, PKM.MoveUseAction))
             g.add((action_iri, PKM.actor, actor_iri))
             g.add((action_iri, PKM.usesMove, move_iri_node))
-            g.add((action_iri, PKM.declaredInInstantaneous, instant))
-            g.add((action_iri, PKM.initiatedInInstantaneous, instant))
+            g.add((action_iri, PKM.declaredInInstant, instant))
+            g.add((action_iri, PKM.initiatedInInstant, instant))
             g.add(
                 (action_iri, PKM.hasPriorityBracket, Literal(0, datatype=XSD.integer))
             )
@@ -1220,8 +1220,8 @@ def build_graph(payload: dict) -> Graph:
                 transition = _battle_iri(f"Transition_{transition_count}")
                 next_instant = _battle_iri(f"I_{idx + 1}")
                 g.add((transition, RDF.type, PKM.StateTransition))
-                g.add((transition, PKM.fromInstantaneous, instant))
-                g.add((transition, PKM.toInstantaneous, next_instant))
+                g.add((transition, PKM.fromInstant, instant))
+                g.add((transition, PKM.toInstant, next_instant))
                 g.add((transition, PKM.triggeredByAction, action_iri))
                 g.add((transition, PKM.transitionOccursInBattle, battle_iri))
                 transition_count += 1
@@ -1253,7 +1253,7 @@ def build_graph(payload: dict) -> Graph:
 
                 g.add((event_iri, RDF.type, event_type))
                 g.add((event_iri, PKM.affectsCombatant, combatant_iri))
-                g.add((event_iri, PKM.occursInInstantaneous, instant))
+                g.add((event_iri, PKM.occursInInstant, instant))
                 g.add(
                     (
                         event_iri,
@@ -1317,7 +1317,7 @@ def build_graph(payload: dict) -> Graph:
                         )
                         g.add((partner_event_iri, RDF.type, PKM.Event))
                         g.add((partner_event_iri, PKM.affectsCombatant, partner_iri))
-                        g.add((partner_event_iri, PKM.occursInInstantaneous, instant))
+                        g.add((partner_event_iri, PKM.occursInInstant, instant))
                         g.add(
                             (
                                 partner_event_iri,
@@ -1380,7 +1380,7 @@ def build_graph(payload: dict) -> Graph:
 
                 g.add((event_iri, RDF.type, PKM.StatusInflictionEvent))
                 g.add((event_iri, PKM.affectsCombatant, combatant_iri))
-                g.add((event_iri, PKM.occursInInstantaneous, instant))
+                g.add((event_iri, PKM.occursInInstant, instant))
                 g.add(
                     (
                         event_iri,
@@ -1471,7 +1471,7 @@ def build_graph(payload: dict) -> Graph:
                     Literal(stage_delta, datatype=XSD.integer),
                 )
             )
-            g.add((event_iri, PKM.occursInInstantaneous, instant))
+            g.add((event_iri, PKM.occursInInstant, instant))
             g.add((event_iri, PKM.supportedByArtifact, artifact_iri))
             g.add(
                 (
@@ -1532,7 +1532,7 @@ def build_graph(payload: dict) -> Graph:
                             Literal(-prior_stage, datatype=XSD.integer),
                         )
                     )
-                    g.add((event_iri, PKM.occursInInstantaneous, instant))
+                    g.add((event_iri, PKM.occursInInstant, instant))
                     g.add((event_iri, PKM.supportedByArtifact, artifact_iri))
                     g.add(
                         (
@@ -1569,7 +1569,7 @@ def build_graph(payload: dict) -> Graph:
                 g.add(
                     (
                         event_sources["weather"]["battle"],
-                        PKM.occursInInstantaneous,
+                        PKM.occursInInstant,
                         instant,
                     )
                 )
@@ -1612,7 +1612,7 @@ def build_graph(payload: dict) -> Graph:
                     f"WeatherEvent_T{ev.turn}_{ev.order}_{sanitize_identifier(weather_name)}"
                 )
                 g.add((event_iri, RDF.type, PKM.Event))
-                g.add((event_iri, PKM.occursInInstantaneous, instant))
+                g.add((event_iri, PKM.occursInInstant, instant))
                 g.add((event_iri, PKM.supportedByArtifact, artifact_iri))
                 g.add(
                     (
@@ -1649,7 +1649,7 @@ def build_graph(payload: dict) -> Graph:
                     f"TerrainEvent_T{ev.turn}_{ev.order}_{sanitize_identifier(terrain_name)}"
                 )
                 g.add((event_iri, RDF.type, PKM.Event))
-                g.add((event_iri, PKM.occursInInstantaneous, instant))
+                g.add((event_iri, PKM.occursInInstant, instant))
                 g.add((event_iri, PKM.supportedByArtifact, artifact_iri))
                 g.add(
                     (
@@ -1692,7 +1692,7 @@ def build_graph(payload: dict) -> Graph:
                     f"SideConditionEvent_T{ev.turn}_{ev.order}_{sanitize_identifier(condition_name)}"
                 )
                 g.add((event_iri, RDF.type, PKM.Event))
-                g.add((event_iri, PKM.occursInInstantaneous, instant))
+                g.add((event_iri, PKM.occursInInstant, instant))
                 g.add((event_iri, PKM.supportedByArtifact, artifact_iri))
                 g.add(
                     (
@@ -1751,7 +1751,7 @@ def build_graph(payload: dict) -> Graph:
             g.add(
                 (
                     event_sources["transformation"][combatant_iri],
-                    PKM.occursInInstantaneous,
+                    PKM.occursInInstant,
                     instant,
                 )
             )
@@ -1795,7 +1795,7 @@ def build_graph(payload: dict) -> Graph:
                     f"VolatileEvent_T{ev.turn}_{ev.order}_{sanitize_identifier(actor_display_name(ev.fields[0]))}_{_iri_token(volatile_iri)}"
                 )
                 g.add((event_iri, RDF.type, PKM.Event))
-                g.add((event_iri, PKM.occursInInstantaneous, instant))
+                g.add((event_iri, PKM.occursInInstant, instant))
                 g.add((event_iri, PKM.supportedByArtifact, artifact_iri))
                 g.add(
                     (
@@ -1844,7 +1844,7 @@ def build_graph(payload: dict) -> Graph:
             )
             g.add((event_iri, RDF.type, PKM.Event))
             g.add((event_iri, PKM.affectsCombatant, combatant_iri))
-            g.add((event_iri, PKM.occursInInstantaneous, instant))
+            g.add((event_iri, PKM.occursInInstant, instant))
             g.add((event_iri, PKM.supportedByArtifact, artifact_iri))
             g.add(
                 (
@@ -1890,7 +1890,7 @@ def build_graph(payload: dict) -> Graph:
             )
             g.add((event_iri, RDF.type, PKM.Event))
             g.add((event_iri, PKM.affectsCombatant, combatant_iri))
-            g.add((event_iri, PKM.occursInInstantaneous, instant))
+            g.add((event_iri, PKM.occursInInstant, instant))
             g.add((event_iri, PKM.supportedByArtifact, artifact_iri))
             g.add(
                 (
@@ -1936,7 +1936,7 @@ def build_graph(payload: dict) -> Graph:
                     f"VolatileEvent_T{ev.turn}_{ev.order}_{sanitize_identifier(actor_display_name(ev.fields[0]))}_{_iri_token(volatile_iri)}"
                 )
                 g.add((event_iri, RDF.type, PKM.Event))
-                g.add((event_iri, PKM.occursInInstantaneous, instant))
+                g.add((event_iri, PKM.occursInInstant, instant))
                 g.add((event_iri, PKM.supportedByArtifact, artifact_iri))
                 g.add(
                     (
@@ -1975,7 +1975,7 @@ def build_graph(payload: dict) -> Graph:
                     f"VolatileEvent_T{ev.turn}_{ev.order}_{sanitize_identifier(actor_display_name(ev.fields[0]))}_{_iri_token(volatile_iri)}"
                 )
                 g.add((event_iri, RDF.type, PKM.Event))
-                g.add((event_iri, PKM.occursInInstantaneous, instant))
+                g.add((event_iri, PKM.occursInInstant, instant))
                 g.add((event_iri, PKM.supportedByArtifact, artifact_iri))
                 g.add(
                     (
@@ -2038,7 +2038,7 @@ def build_graph(payload: dict) -> Graph:
                     f"FormChangeEvent_T{ev.turn}_{ev.order}_{sanitize_identifier(actor_display_name(ev.fields[0]))}"
                 )
                 g.add((event_iri, RDF.type, PKM.Event))
-                g.add((event_iri, PKM.occursInInstantaneous, instant))
+                g.add((event_iri, PKM.occursInInstant, instant))
                 g.add((event_iri, PKM.supportedByArtifact, artifact_iri))
                 g.add(
                     (
@@ -2085,7 +2085,7 @@ def build_graph(payload: dict) -> Graph:
             g.add((event_iri, PKM.affectsCombatant, combatant_iri))
             g.add((event_iri, PKM.aboutStat, stat_iri))
             g.add((event_iri, PKM.hasStageDelta, Literal(delta, datatype=XSD.integer)))
-            g.add((event_iri, PKM.occursInInstantaneous, instant))
+            g.add((event_iri, PKM.occursInInstant, instant))
             g.add((event_iri, PKM.supportedByArtifact, artifact_iri))
             g.add(
                 (
@@ -2170,7 +2170,7 @@ def build_graph(payload: dict) -> Graph:
                                 Literal(stage_delta, datatype=XSD.integer),
                             )
                         )
-                        g.add((ev_iri, PKM.occursInInstantaneous, instant))
+                        g.add((ev_iri, PKM.occursInInstant, instant))
                         g.add((ev_iri, PKM.supportedByArtifact, artifact_iri))
                         g.add(
                             (
@@ -2222,7 +2222,7 @@ def build_graph(payload: dict) -> Graph:
                         Literal(-2 * prior_stage, datatype=XSD.integer),
                     )
                 )
-                g.add((ev_iri, PKM.occursInInstantaneous, instant))
+                g.add((ev_iri, PKM.occursInInstant, instant))
                 g.add((ev_iri, PKM.supportedByArtifact, artifact_iri))
                 g.add(
                     (
@@ -2290,7 +2290,7 @@ def build_graph(payload: dict) -> Graph:
                             Literal(delta, datatype=XSD.integer),
                         )
                     )
-                    g.add((ev_iri, PKM.occursInInstantaneous, instant))
+                    g.add((ev_iri, PKM.occursInInstant, instant))
                     g.add((ev_iri, PKM.supportedByArtifact, artifact_iri))
                     g.add(
                         (
@@ -2352,7 +2352,7 @@ def build_graph(payload: dict) -> Graph:
                             Literal(-prior_stage, datatype=XSD.integer),
                         )
                     )
-                    g.add((ev_iri, PKM.occursInInstantaneous, instant))
+                    g.add((ev_iri, PKM.occursInInstant, instant))
                     g.add((ev_iri, PKM.supportedByArtifact, artifact_iri))
                     g.add(
                         (
@@ -2462,7 +2462,7 @@ def build_graph(payload: dict) -> Graph:
                 f"Event_{sanitize_identifier(tag_label)}_T{ev.turn}_{ev.order}"
             )
             g.add((event_iri, RDF.type, PKM.Event))
-            g.add((event_iri, PKM.occursInInstantaneous, instant))
+            g.add((event_iri, PKM.occursInInstant, instant))
             g.add((event_iri, PKM.supportedByArtifact, artifact_iri))
             g.add(
                 (
@@ -2587,7 +2587,7 @@ def build_graph(payload: dict) -> Graph:
             )
             g.add((event_iri, RDF.type, PKM.FaintEvent))
             g.add((event_iri, PKM.affectsCombatant, fainted_iri))
-            g.add((event_iri, PKM.occursInInstantaneous, instant))
+            g.add((event_iri, PKM.occursInInstant, instant))
             g.add(
                 (
                     event_iri,
