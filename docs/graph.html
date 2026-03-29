@@ -153,22 +153,19 @@
 
       <section class="graph-stage fade-up delay-1">
         <div class="graph-stage-head graph-stage-floating">
-          <div class="graph-stage-meta">
-            <span class="mini-badge" id="graph-focus-badge">Top-degree overview</span>
+          <div class="graph-stage-status" aria-live="polite">
+            <span class="graph-stage-label" id="graph-focus-badge">Top-degree overview</span>
             <span class="graph-hover-readout" id="graph-hover-readout">No hover</span>
+            <span class="graph-stage-separator" aria-hidden="true"></span>
+            <span class="graph-stage-label graph-stage-label-muted" id="graph-history-badge">History 1 / 1</span>
           </div>
-          <div class="graph-stage-meta graph-stage-actions">
-            <span class="mini-badge" id="graph-history-badge">History 1 / 1</span>
-            <button class="qe-action-btn" id="graph-reset-view" type="button">Reset View</button>
-          </div>
-        </div>
-        <div class="graph-stage-floating graph-stage-floating-zoom">
           <div class="graph-zoom-controls" aria-label="Graph zoom controls">
             <div class="graph-zoom-pill" aria-label="Graph history controls">
               <button class="qe-action-btn graph-zoom-btn" id="graph-history-back" type="button" aria-label="Back to previous graph state">&larr;</button>
               <button class="qe-action-btn graph-zoom-btn" id="graph-history-forward" type="button" aria-label="Forward to next graph state">&rarr;</button>
               <button class="qe-action-btn graph-zoom-btn" id="graph-fit-selection" type="button" aria-label="Fit current selection">Fit</button>
               <button class="qe-action-btn graph-zoom-btn" id="graph-fit-graph" type="button" aria-label="Fit visible graph">All</button>
+              <button class="qe-action-btn graph-zoom-btn graph-zoom-reset-view" id="graph-reset-view" type="button">Reset</button>
             </div>
             <div class="graph-cap-controls" aria-label="Node cap controls">
               <label class="graph-cap-label" for="graph-node-limit">Node cap</label>
