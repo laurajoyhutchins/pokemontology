@@ -115,7 +115,7 @@ MODULE_ORDER = [
     "30-save-state.ttl",
     "40-battle.ttl",
     "45-battle-resolution.ttl",
-    "50-instantaneous-state.ttl",
+    "50-instant-state.ttl",
     "60-actions-events.ttl",
     "70-provenance.ttl",
     "80-materialized-state.ttl",

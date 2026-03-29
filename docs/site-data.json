@@ -124,8 +124,8 @@
       "source_path": "ontology/modules/45-battle-resolution.ttl"
     },
     {
-      "name": "50-instantaneous-state",
-      "source_path": "ontology/modules/50-instantaneous-state.ttl"
+      "name": "50-instant-state",
+      "source_path": "ontology/modules/50-instant-state.ttl"
     },
     {
       "name": "60-actions-events",

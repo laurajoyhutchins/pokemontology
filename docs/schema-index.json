@@ -107,7 +107,7 @@
       "FieldStateAssignment",
       "HealingEvent",
       "IVAssignment",
-      "Instantaneous",
+      "Instant",
       "InventoryEntry",
       "Item",
       "ItemPropertyAssignment",
@@ -195,12 +195,12 @@
       "branchOfResolution",
       "causedByAction",
       "composedOf",
-      "declaredInInstantaneous",
+      "declaredInInstant",
       "declaresAction",
       "defenderType",
       "describedByArtifact",
       "forFormat",
-      "fromInstantaneous",
+      "fromInstant",
       "hasAccuracy",
       "hasActiveCombatant",
       "hasActiveSlotIndex",
@@ -229,11 +229,11 @@
       "hasMoveType",
       "hasName",
       "hasNature",
-      "hasNextInstantaneous",
+      "hasNextInstant",
       "hasPP",
       "hasPartySlot",
       "hasPossibleBranch",
-      "hasPreviousInstantaneous",
+      "hasPreviousInstant",
       "hasPriority",
       "hasPriorityBracket",
       "hasProjectionProfile",
@@ -269,7 +269,7 @@
       "hasWeatherCondition",
       "holdsItem",
       "inSnapshot",
-      "initiatedInInstantaneous",
+      "initiatedInInstant",
       "instantiatesOwnedPokemon",
       "inventoryItem",
       "isCaught",
@@ -279,16 +279,16 @@
       "knowsMove",
       "learnableMove",
       "materializedFromEvent",
-      "materializedFromPreviousInstantaneous",
+      "materializedFromPreviousInstant",
       "occursInBattle",
-      "occursInInstantaneous",
+      "occursInInstant",
       "onSide",
       "operatesUnderRuleset",
       "originatesFromVersionGroup",
       "ownedBy",
       "ownedByTrainer",
       "participatesInBattle",
-      "realizedInInstantaneous",
+      "realizedInInstant",
       "refersToEntity",
       "replayCount",
       "representsSpecies",
@@ -301,7 +301,7 @@
       "stochasticOccursInBattle",
       "storedInSaveFile",
       "supportedByArtifact",
-      "toInstantaneous",
+      "toInstant",
       "transitionOccursInBattle",
       "triggeredByAction",
       "usageCount",
@@ -345,7 +345,7 @@
       "kind": "class",
       "label": "ActiveSlotAssignment",
       "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#ActiveSlotAssignment",
-      "summary": "Materializes which battle participant occupies a specific active slot on a specific side at an instantaneous snapshot.",
+      "summary": "Materializes which battle participant occupies a specific active slot on a specific side at an instant snapshot.",
       "snippet": "Ontology term `ActiveSlotAssignment` from the published pkm namespace."
     },
     {
@@ -387,7 +387,7 @@
       "kind": "class",
       "label": "CombatantState",
       "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#CombatantState",
-      "summary": "Aggregate state container for a combatant at an instantaneous snapshot. Optional convenience class.",
+      "summary": "Aggregate state container for a combatant at an instant snapshot. Optional convenience class.",
       "snippet": "Ontology term `CombatantState` from the published pkm namespace."
     },
     {
@@ -408,56 +408,56 @@
       "kind": "class",
       "label": "CurrentAbilityAssignment",
       "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#CurrentAbilityAssignment",
-      "summary": "Materialized ability state for a battle participant at an instantaneous snapshot. Only emitted when ability state is observed in the replay log; absence does not imply a default ability.",
+      "summary": "Materialized ability state for a battle participant at an instant snapshot. Only emitted when ability state is observed in the replay log; absence does not imply a default ability.",
       "snippet": "Ontology term `CurrentAbilityAssignment` from the published pkm namespace."
     },
     {
       "kind": "class",
       "label": "CurrentHPAssignment",
       "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#CurrentHPAssignment",
-      "summary": "Records the current HP of a battle participant at an instantaneous state.",
+      "summary": "Records the current HP of a battle participant at an instant state.",
       "snippet": "Ontology term `CurrentHPAssignment` from the published pkm namespace."
     },
     {
       "kind": "class",
       "label": "CurrentItemAssignment",
       "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#CurrentItemAssignment",
-      "summary": "Materialized held-item state for a battle participant at an instantaneous snapshot. Only emitted when item state is observed in the replay log; absence does not imply no item.",
+      "summary": "Materialized held-item state for a battle participant at an instant snapshot. Only emitted when item state is observed in the replay log; absence does not imply no item.",
       "snippet": "Ontology term `CurrentItemAssignment` from the published pkm namespace."
     },
     {
       "kind": "class",
       "label": "CurrentPPAssignment",
       "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#CurrentPPAssignment",
-      "summary": "Records the current PP of a move slot at an instantaneous state. This targets the shared MoveSlot abstraction so replay-time battle-local slots can coexist with save-file OwnedMoveSlot records.",
+      "summary": "Records the current PP of a move slot at an instant state. This targets the shared MoveSlot abstraction so replay-time battle-local slots can coexist with save-file OwnedMoveSlot records.",
       "snippet": "Ontology term `CurrentPPAssignment` from the published pkm namespace."
     },
     {
       "kind": "class",
       "label": "CurrentStatusAssignment",
       "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#CurrentStatusAssignment",
-      "summary": "Records a non-volatile status condition on a battle participant at an instantaneous state.",
+      "summary": "Records a non-volatile status condition on a battle participant at an instant state.",
       "snippet": "Ontology term `CurrentStatusAssignment` from the published pkm namespace."
     },
     {
       "kind": "class",
       "label": "CurrentTerrainAssignment",
       "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#CurrentTerrainAssignment",
-      "summary": "Materialized terrain state for a battle field at an instantaneous snapshot.",
+      "summary": "Materialized terrain state for a battle field at an instant snapshot.",
       "snippet": "Ontology term `CurrentTerrainAssignment` from the published pkm namespace."
     },
     {
       "kind": "class",
       "label": "CurrentTransformationAssignment",
       "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#CurrentTransformationAssignment",
-      "summary": "Assigns a temporary transformation state to a battle participant at one instantaneous state. This captures battle-only overlays without mutating the underlying OwnedPokemon or base Variant.",
+      "summary": "Assigns a temporary transformation state to a battle participant at one instant state. This captures battle-only overlays without mutating the underlying OwnedPokemon or base Variant.",
       "snippet": "Ontology term `CurrentTransformationAssignment` from the published pkm namespace."
     },
     {
       "kind": "class",
       "label": "CurrentWeatherAssignment",
       "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#CurrentWeatherAssignment",
-      "summary": "Materialized weather state for a battle field at an instantaneous snapshot.",
+      "summary": "Materialized weather state for a battle field at an instant snapshot.",
       "snippet": "Ontology term `CurrentWeatherAssignment` from the published pkm namespace."
     },
     {
@@ -548,14 +548,14 @@
       "kind": "class",
       "label": "FieldState",
       "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#FieldState",
-      "summary": "Aggregate field-state record at an instantaneous snapshot. Concrete field assignments should usually subclass FieldStateAssignment directly.",
+      "summary": "Aggregate field-state record at an instant snapshot. Concrete field assignments should usually subclass FieldStateAssignment directly.",
       "snippet": "Ontology term `FieldState` from the published pkm namespace."
     },
     {
       "kind": "class",
       "label": "FieldStateAssignment",
       "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#FieldStateAssignment",
-      "summary": "Abstract superclass for materialized instantaneous assignments whose subject is the battle field as a whole.",
+      "summary": "Abstract superclass for materialized instant assignments whose subject is the battle field as a whole.",
       "snippet": "Ontology term `FieldStateAssignment` from the published pkm namespace."
     },
     {
@@ -574,10 +574,10 @@
     },
     {
       "kind": "class",
-      "label": "Instantaneous",
-      "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#Instantaneous",
-      "summary": "An instantaneous state snapshot during battle execution.",
-      "snippet": "Ontology term `Instantaneous` from the published pkm namespace."
+      "label": "Instant",
+      "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#Instant",
+      "summary": "An instant state snapshot during battle execution.",
+      "snippet": "Ontology term `Instant` from the published pkm namespace."
     },
     {
       "kind": "class",
@@ -639,7 +639,7 @@
       "kind": "class",
       "label": "MaterializedStateAssignment",
       "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#MaterializedStateAssignment",
-      "summary": "A forward-projected or directly observed state assignment attached to an Instantaneous so queries can read current state without replaying the full event history.",
+      "summary": "A forward-projected or directly observed state assignment attached to an Instant so queries can read current state without replaying the full event history.",
       "snippet": "Ontology term `MaterializedStateAssignment` from the published pkm namespace."
     },
     {
@@ -737,21 +737,21 @@
       "kind": "class",
       "label": "ParticipantStateAssignment",
       "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#ParticipantStateAssignment",
-      "summary": "Abstract superclass for materialized instantaneous assignments whose subject is a BattleParticipant.",
+      "summary": "Abstract superclass for materialized instant assignments whose subject is a BattleParticipant.",
       "snippet": "Ontology term `ParticipantStateAssignment` from the published pkm namespace."
     },
     {
       "kind": "class",
       "label": "PendingAction",
       "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#PendingAction",
-      "summary": "Records a declared but not yet resolved action at an instantaneous state.",
+      "summary": "Records a declared but not yet resolved action at an instant state.",
       "snippet": "Ontology term `PendingAction` from the published pkm namespace."
     },
     {
       "kind": "class",
       "label": "ProjectionProfile",
       "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#ProjectionProfile",
-      "summary": "A named profile describing which state dimensions are intended to be materialized on an Instantaneous and whether the projection is sparse, partial, or complete for those dimensions.",
+      "summary": "A named profile describing which state dimensions are intended to be materialized on an Instant and whether the projection is sparse, partial, or complete for those dimensions.",
       "snippet": "Ontology term `ProjectionProfile` from the published pkm namespace."
     },
     {
@@ -765,14 +765,14 @@
       "kind": "term",
       "label": "PartialMaterializedStages",
       "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#ProjectionProfile_PartialMaterializedStages",
-      "summary": "Selected stat-stage assignments are forward-projected on each Instantaneous for query convenience, but the stage layer is not claimed to be exhaustive for every combatant and stat.",
+      "summary": "Selected stat-stage assignments are forward-projected on each Instant for query convenience, but the stage layer is not claimed to be exhaustive for every combatant and stat.",
       "snippet": "Ontology term `ProjectionProfile_PartialMaterializedStages` from the published pkm namespace."
     },
     {
       "kind": "term",
       "label": "ReplayObservedOnly",
       "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#ProjectionProfile_ReplayObservedOnly",
-      "summary": "Only directly observed state is attached to each Instantaneous; consumers must reconstruct omitted dimensions by replaying events.",
+      "summary": "Only directly observed state is attached to each Instant; consumers must reconstruct omitted dimensions by replaying events.",
       "snippet": "Ontology term `ProjectionProfile_ReplayObservedOnly` from the published pkm namespace."
     },
     {
@@ -828,7 +828,7 @@
       "kind": "class",
       "label": "SideConditionAssignment",
       "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#SideConditionAssignment",
-      "summary": "Materialized side-condition state for one battle side at an instantaneous snapshot.",
+      "summary": "Materialized side-condition state for one battle side at an instant snapshot.",
       "snippet": "Ontology term `SideConditionAssignment` from the published pkm namespace."
     },
     {
@@ -842,14 +842,14 @@
       "kind": "class",
       "label": "SideState",
       "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#SideState",
-      "summary": "Aggregate side-state record at an instantaneous snapshot. Concrete side assignments should usually subclass SideStateAssignment directly.",
+      "summary": "Aggregate side-state record at an instant snapshot. Concrete side assignments should usually subclass SideStateAssignment directly.",
       "snippet": "Ontology term `SideState` from the published pkm namespace."
     },
     {
       "kind": "class",
       "label": "SideStateAssignment",
       "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#SideStateAssignment",
-      "summary": "Abstract superclass for materialized instantaneous assignments whose subject is a single BattleSide.",
+      "summary": "Abstract superclass for materialized instant assignments whose subject is a single BattleSide.",
       "snippet": "Ontology term `SideStateAssignment` from the published pkm namespace."
     },
     {
@@ -884,7 +884,7 @@
       "kind": "class",
       "label": "StatStageAssignment",
       "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#StatStageAssignment",
-      "summary": "Records the current stat stage modifier for one stat of one battle participant at an instantaneous state.",
+      "summary": "Records the current stat stage modifier for one stat of one battle participant at an instant state.",
       "snippet": "Ontology term `StatStageAssignment` from the published pkm namespace."
     },
     {
@@ -898,7 +898,7 @@
       "kind": "class",
       "label": "StateTransition",
       "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#StateTransition",
-      "summary": "A directed transition from one instantaneous battle state to the next, optionally triggered by an action.",
+      "summary": "A directed transition from one instant battle state to the next, optionally triggered by an action.",
       "snippet": "Ontology term `StateTransition` from the published pkm namespace."
     },
     {
@@ -940,7 +940,7 @@
       "kind": "class",
       "label": "TargetResolutionState",
       "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#TargetResolutionState",
-      "summary": "Records the execution outcome of a BattleAction against one specific target at one Instantaneous step. Enables per-target resolution modeling for spread moves and multi-hit sequences.",
+      "summary": "Records the execution outcome of a BattleAction against one specific target at one Instant step. Enables per-target resolution modeling for spread moves and multi-hit sequences.",
       "snippet": "Ontology term `TargetResolutionState` from the published pkm namespace."
     },
     {
@@ -1017,7 +1017,7 @@
       "kind": "class",
       "label": "VolatileStatusAssignment",
       "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#VolatileStatusAssignment",
-      "summary": "Records a volatile status condition on a battle participant at an instantaneous state.",
+      "summary": "Records a volatile status condition on a battle participant at an instant state.",
       "snippet": "Ontology term `VolatileStatusAssignment` from the published pkm namespace."
     },
     {
@@ -1190,10 +1190,10 @@
     },
     {
       "kind": "property",
-      "label": "declaredInInstantaneous",
-      "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#declaredInInstantaneous",
-      "summary": "Pokemontology term declaredInInstantaneous.",
-      "snippet": "Ontology term `declaredInInstantaneous` from the published pkm namespace."
+      "label": "declaredInInstant",
+      "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#declaredInInstant",
+      "summary": "Pokemontology term declaredInInstant.",
+      "snippet": "Ontology term `declaredInInstant` from the published pkm namespace."
     },
     {
       "kind": "property",
@@ -1225,10 +1225,10 @@
     },
     {
       "kind": "property",
-      "label": "fromInstantaneous",
-      "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#fromInstantaneous",
-      "summary": "Pokemontology term fromInstantaneous.",
-      "snippet": "Ontology term `fromInstantaneous` from the published pkm namespace."
+      "label": "fromInstant",
+      "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#fromInstant",
+      "summary": "Pokemontology term fromInstant.",
+      "snippet": "Ontology term `fromInstant` from the published pkm namespace."
     },
     {
       "kind": "property",
@@ -1428,10 +1428,10 @@
     },
     {
       "kind": "property",
-      "label": "hasNextInstantaneous",
-      "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#hasNextInstantaneous",
-      "summary": "Pokemontology term hasNextInstantaneous.",
-      "snippet": "Ontology term `hasNextInstantaneous` from the published pkm namespace."
+      "label": "hasNextInstant",
+      "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#hasNextInstant",
+      "summary": "Pokemontology term hasNextInstant.",
+      "snippet": "Ontology term `hasNextInstant` from the published pkm namespace."
     },
     {
       "kind": "property",
@@ -1456,10 +1456,10 @@
     },
     {
       "kind": "property",
-      "label": "hasPreviousInstantaneous",
-      "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#hasPreviousInstantaneous",
-      "summary": "Pokemontology term hasPreviousInstantaneous.",
-      "snippet": "Ontology term `hasPreviousInstantaneous` from the published pkm namespace."
+      "label": "hasPreviousInstant",
+      "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#hasPreviousInstant",
+      "summary": "Pokemontology term hasPreviousInstant.",
+      "snippet": "Ontology term `hasPreviousInstant` from the published pkm namespace."
     },
     {
       "kind": "property",
@@ -1479,7 +1479,7 @@
       "kind": "property",
       "label": "hasProjectionProfile",
       "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#hasProjectionProfile",
-      "summary": "Declares which projection policy is intended for the materialized state attached to an Instantaneous.",
+      "summary": "Declares which projection policy is intended for the materialized state attached to an Instant.",
       "snippet": "Ontology term `hasProjectionProfile` from the published pkm namespace."
     },
     {
@@ -1647,7 +1647,7 @@
       "kind": "property",
       "label": "hasTransformationState",
       "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#hasTransformationState",
-      "summary": "The active temporary transformation applied to a battle participant at a given instantaneous state.",
+      "summary": "The active temporary transformation applied to a battle participant at a given instant state.",
       "snippet": "Ontology term `hasTransformationState` from the published pkm namespace."
     },
     {
@@ -1708,10 +1708,10 @@
     },
     {
       "kind": "property",
-      "label": "initiatedInInstantaneous",
-      "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#initiatedInInstantaneous",
-      "summary": "The Instantaneous state at which this action began execution. Use the event log at subsequent hasStepIndex values to determine completion vs. mid-execution abort.",
-      "snippet": "Ontology term `initiatedInInstantaneous` from the published pkm namespace."
+      "label": "initiatedInInstant",
+      "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#initiatedInInstant",
+      "summary": "The Instant state at which this action began execution. Use the event log at subsequent hasStepIndex values to determine completion vs. mid-execution abort.",
+      "snippet": "Ontology term `initiatedInInstant` from the published pkm namespace."
     },
     {
       "kind": "property",
@@ -1773,15 +1773,15 @@
       "kind": "property",
       "label": "materializedFromEvent",
       "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#materializedFromEvent",
-      "summary": "Indicates that a materialized assignment is justified directly by an event resolved at or before the assignment's Instantaneous.",
+      "summary": "Indicates that a materialized assignment is justified directly by an event resolved at or before the assignment's Instant.",
       "snippet": "Ontology term `materializedFromEvent` from the published pkm namespace."
     },
     {
       "kind": "property",
-      "label": "materializedFromPreviousInstantaneous",
-      "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#materializedFromPreviousInstantaneous",
-      "summary": "Indicates that a materialized assignment was forward-projected from the immediately preceding Instantaneous.",
-      "snippet": "Ontology term `materializedFromPreviousInstantaneous` from the published pkm namespace."
+      "label": "materializedFromPreviousInstant",
+      "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#materializedFromPreviousInstant",
+      "summary": "Indicates that a materialized assignment was forward-projected from the immediately preceding Instant.",
+      "snippet": "Ontology term `materializedFromPreviousInstant` from the published pkm namespace."
     },
     {
       "kind": "property",
@@ -1792,10 +1792,10 @@
     },
     {
       "kind": "property",
-      "label": "occursInInstantaneous",
-      "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#occursInInstantaneous",
-      "summary": "Pokemontology term occursInInstantaneous.",
-      "snippet": "Ontology term `occursInInstantaneous` from the published pkm namespace."
+      "label": "occursInInstant",
+      "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#occursInInstant",
+      "summary": "Pokemontology term occursInInstant.",
+      "snippet": "Ontology term `occursInInstant` from the published pkm namespace."
     },
     {
       "kind": "property",
@@ -1841,10 +1841,10 @@
     },
     {
       "kind": "property",
-      "label": "realizedInInstantaneous",
-      "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#realizedInInstantaneous",
-      "summary": "Pokemontology term realizedInInstantaneous.",
-      "snippet": "Ontology term `realizedInInstantaneous` from the published pkm namespace."
+      "label": "realizedInInstant",
+      "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#realizedInInstant",
+      "summary": "Pokemontology term realizedInInstant.",
+      "snippet": "Ontology term `realizedInInstant` from the published pkm namespace."
     },
     {
       "kind": "property",
@@ -1932,10 +1932,10 @@
     },
     {
       "kind": "property",
-      "label": "toInstantaneous",
-      "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#toInstantaneous",
-      "summary": "Pokemontology term toInstantaneous.",
-      "snippet": "Ontology term `toInstantaneous` from the published pkm namespace."
+      "label": "toInstant",
+      "iri": "https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#toInstant",
+      "summary": "Pokemontology term toInstant.",
+      "snippet": "Ontology term `toInstant` from the published pkm namespace."
     },
     {
       "kind": "property",
@@ -10637,7 +10637,7 @@
         2
       ]
     ],
-    "instantaneous": [
+    "instant": [
       [
         3,
         1
@@ -17977,7 +17977,7 @@
         1
       ]
     ],
-    "declaredininstantaneous": [
+    "declaredininstant": [
       [
         124,
         3
@@ -18027,7 +18027,7 @@
         2
       ]
     ],
-    "frominstantaneous": [
+    "frominstant": [
       [
         129,
         3
@@ -18413,7 +18413,7 @@
         3
       ]
     ],
-    "hasnextinstantaneous": [
+    "hasnextinstant": [
       [
         158,
         3
@@ -18437,7 +18437,7 @@
         3
       ]
     ],
-    "haspreviousinstantaneous": [
+    "haspreviousinstant": [
       [
         162,
         3
@@ -19037,7 +19037,7 @@
         1
       ]
     ],
-    "initiatedininstantaneous": [
+    "initiatedininstant": [
       [
         198,
         2
@@ -19177,7 +19177,7 @@
         1
       ]
     ],
-    "materializedfrompreviousinstantaneous": [
+    "materializedfrompreviousinstant": [
       [
         208,
         2
@@ -19215,7 +19215,7 @@
         3
       ]
     ],
-    "occursininstantaneous": [
+    "occursininstant": [
       [
         210,
         3
@@ -19321,7 +19321,7 @@
         3
       ]
     ],
-    "realizedininstantaneous": [
+    "realizedininstant": [
       [
         217,
         3
@@ -19453,7 +19453,7 @@
         1
       ]
     ],
-    "toinstantaneous": [
+    "toinstant": [
       [
         230,
         3

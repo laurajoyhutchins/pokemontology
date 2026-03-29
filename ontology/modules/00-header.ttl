@@ -7,11 +7,11 @@
 # =============================================================================
 # Pokémon Mechanics Ontology
 # Version 1.1
-# Scope: Ontology → Ruleset → SaveFile → Battle → Instantaneous
+# Scope: Ontology → Ruleset → SaveFile → Battle → Instant
 # =============================================================================
 
 <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl>
     a owl:Ontology ;
     rdfs:label "Pokémon Mechanics Ontology" ;
-    rdfs:comment "Context-sensitive mechanics ontology for Pokémon. Models identity, ruleset truth, save state, battle state, and instantaneous state as distinct scopes, with explicit battle participants, replay provenance, and state transitions." ;
+    rdfs:comment "Context-sensitive mechanics ontology for Pokémon. Models identity, ruleset truth, save state, battle state, and instant state as distinct scopes, with explicit battle participants, replay provenance, and state transitions." ;
     owl:versionInfo "1.1" .

@@ -14,14 +14,14 @@ PKM = Namespace("https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#"
 
 def test_faint_events_have_hp_zero_assignment(combined_graph: Graph) -> None:
     """Every FaintEvent must have a corresponding CurrentHPAssignment of 0
-    for the affected combatant at the same Instantaneous."""
+    for the affected combatant at the same Instant."""
     query = """
     PREFIX pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#>
 
     SELECT ?faintEvent ?combatant ?instant WHERE {
         ?faintEvent a pkm:FaintEvent ;
                     pkm:affectsCombatant ?combatant ;
-                    pkm:occursInInstantaneous ?instant .
+                    pkm:occursInInstant ?instant .
 
         FILTER NOT EXISTS {
             ?hp a pkm:CurrentHPAssignment ;
@@ -33,7 +33,7 @@ def test_faint_events_have_hp_zero_assignment(combined_graph: Graph) -> None:
     """
     missing = list(combined_graph.query(query))
     assert missing == [], (
-        "FaintEvent(s) missing a HP=0 CurrentHPAssignment at their instantaneous:\n"
+        "FaintEvent(s) missing a HP=0 CurrentHPAssignment at their instant:\n"
         + "\n".join(
             f"  {row.faintEvent} → {row.combatant} @ {row.instant}" for row in missing
         )
@@ -41,7 +41,7 @@ def test_faint_events_have_hp_zero_assignment(combined_graph: Graph) -> None:
 
 
 def test_faint_hp_assignments_are_zero(combined_graph: Graph) -> None:
-    """All CurrentHPAssignments at a FaintEvent instantaneous for the fainted
+    """All CurrentHPAssignments at a FaintEvent instant for the fainted
     combatant must have value 0 (no non-zero HP recorded at faint)."""
     query = """
     PREFIX pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#>
@@ -49,7 +49,7 @@ def test_faint_hp_assignments_are_zero(combined_graph: Graph) -> None:
     SELECT ?hp ?combatant ?instant ?value WHERE {
         ?faintEvent a pkm:FaintEvent ;
                     pkm:affectsCombatant ?combatant ;
-                    pkm:occursInInstantaneous ?instant .
+                    pkm:occursInInstant ?instant .
         ?hp a pkm:CurrentHPAssignment ;
             pkm:aboutCombatant ?combatant ;
             pkm:hasContext ?instant ;
@@ -58,7 +58,7 @@ def test_faint_hp_assignments_are_zero(combined_graph: Graph) -> None:
     }
     """
     bad = list(combined_graph.query(query))
-    assert bad == [], "Non-zero HP recorded at faint instantaneous:\n" + "\n".join(
+    assert bad == [], "Non-zero HP recorded at faint instant:\n" + "\n".join(
         f"  {row.hp} = {row.value} for {row.combatant} @ {row.instant}" for row in bad
     )
 
@@ -69,7 +69,7 @@ def test_faint_hp_assignments_are_zero(combined_graph: Graph) -> None:
 
 
 def test_stat_stage_uniqueness(combined_graph: Graph) -> None:
-    """At most one StatStageAssignment per (combatant, stat, instantaneous)."""
+    """At most one StatStageAssignment per (combatant, stat, instant)."""
     query = """
     PREFIX pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#>
 
@@ -93,40 +93,40 @@ def test_stat_stage_uniqueness(combined_graph: Graph) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Instantaneous chain integrity
+# Instant chain integrity
 # ---------------------------------------------------------------------------
 
 
-def test_instantaneous_chain_is_acyclic(combined_graph: Graph) -> None:
-    """hasPreviousInstantaneous must form a DAG (no cycles)."""
+def test_instant_chain_is_acyclic(combined_graph: Graph) -> None:
+    """hasPreviousInstant must form a DAG (no cycles)."""
     query = """
     PREFIX pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#>
 
     SELECT ?instant WHERE {
-        ?instant pkm:hasPreviousInstantaneous+ ?instant .
+        ?instant pkm:hasPreviousInstant+ ?instant .
     }
     """
     cycles = list(combined_graph.query(query))
     assert cycles == [], (
-        "Cycles detected in hasPreviousInstantaneous chain:\n"
+        "Cycles detected in hasPreviousInstant chain:\n"
         + "\n".join(f"  {row.instant}" for row in cycles)
     )
 
 
-def test_each_instantaneous_has_at_most_one_predecessor(combined_graph: Graph) -> None:
-    """Each Instantaneous must have at most one hasPreviousInstantaneous."""
+def test_each_instant_has_at_most_one_predecessor(combined_graph: Graph) -> None:
+    """Each Instant must have at most one hasPreviousInstant."""
     query = """
     PREFIX pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#>
 
     SELECT ?instant (COUNT(?prev) AS ?count) WHERE {
-        ?instant a pkm:Instantaneous ;
-                 pkm:hasPreviousInstantaneous ?prev .
+        ?instant a pkm:Instant ;
+                 pkm:hasPreviousInstant ?prev .
     }
     GROUP BY ?instant
     HAVING (COUNT(?prev) > 1)
     """
     bad = list(combined_graph.query(query))
-    assert bad == [], "Instantaneous nodes with multiple predecessors:\n" + "\n".join(
+    assert bad == [], "Instant nodes with multiple predecessors:\n" + "\n".join(
         f"  {row.instant} has {row['count']} predecessors" for row in bad
     )
 
