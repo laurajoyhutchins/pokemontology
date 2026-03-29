@@ -11,9 +11,10 @@ import urllib.error
 import urllib.request
 from collections import defaultdict
 from pathlib import Path
+from typing import TextIO
 
 from rdflib import Graph, Literal, URIRef
-from rdflib.namespace import RDF, XSD
+from rdflib.namespace import RDF, RDFS, XSD
 
 from pokemontology.ingest_common import (
     PKM,
@@ -25,7 +26,6 @@ from pokemontology.ingest_common import (
     bind_namespaces,
     entity_iri,
     instance_iri,
-    serialize_turtle_to_path,
 )
 
 
@@ -36,6 +36,9 @@ DEFAULT_SOURCE_DIR = REPO / "data" / "veekun" / "export"
 DEFAULT_OUTPUT = REPO / "data" / "ingested" / "veekun.ttl"
 ENGLISH_LANGUAGE_ID = "9"
 VEEKUN_URN_BASE = "urn:veekun"
+VEEKUN_DATASET_IRI = URIRef(
+    "https://laurajoyhutchins.github.io/pokemontology/data/veekun.ttl"
+)
 
 ENTITY_FILES: dict[str, tuple[str, URIRef]] = {
     "species.csv": ("Species", PKM.Species),
@@ -227,10 +230,422 @@ def add_optional_int(g: Graph, subject: URIRef, predicate: URIRef, value: str) -
         g.add((subject, predicate, Literal(int(value), datatype=XSD.integer)))
 
 
-def build_graph_from_csv(source_dir: Path) -> Graph:
+def _require_source_files(source_dir: Path) -> None:
     missing = [name for name in REQUIRED_FILES if not (source_dir / name).exists()]
     if missing:
         raise SystemExit(f"missing Veekun export file(s): {', '.join(missing)}")
+
+
+def _term_text(term: URIRef | Literal) -> str:
+    if isinstance(term, Literal):
+        return term.n3()
+    text = str(term)
+    if text.startswith(str(PKM)):
+        return f"pkm:{text.removeprefix(str(PKM))}"
+    if text.startswith(str(instance_iri())):
+        local = text.removeprefix(str(instance_iri())).replace("/", "\\/")
+        return f"pkmi:{local}"
+    if text.startswith(str(RDF)):
+        local = text.removeprefix(str(RDF))
+        return "a" if local == "type" else f"rdf:{local}"
+    if text.startswith(str(RDFS)):
+        return f"rdfs:{text.removeprefix(str(RDFS))}"
+    if text.startswith(str(XSD)):
+        return f"xsd:{text.removeprefix(str(XSD))}"
+    return f"<{text}>"
+
+
+def _write_block(
+    handle: TextIO,
+    subject: URIRef,
+    predicate_objects: list[tuple[URIRef, URIRef | Literal]],
+) -> None:
+    if not predicate_objects:
+        return
+    subject_text = _term_text(subject)
+    parts = [
+        f"{_term_text(predicate)} {_term_text(obj)}"
+        for predicate, obj in predicate_objects
+    ]
+    handle.write(f"{subject_text} " + " ; ".join(parts) + " .\n\n")
+
+
+def _dataset_header_predicates() -> list[tuple[URIRef, URIRef | Literal]]:
+    return [
+        (RDFS.label, Literal("Veekun ingestion dataset")),
+        (
+            RDFS.comment,
+            Literal(
+                "Auto-generated TTL dataset built from a normalized Veekun export. "
+                "This transform emits version-group-scoped mechanics facts where the source export "
+                "provides explicit context, plus lightweight external references back to Veekun."
+            ),
+        ),
+    ]
+
+
+def _artifact_predicates(name: str, source_url: str) -> list[tuple[URIRef, URIRef | Literal]]:
+    return [
+        (RDF.type, PKM.EvidenceArtifact),
+        (PKM.hasName, Literal(name)),
+        (PKM.hasSourceURL, Literal(source_url, datatype=XSD.anyURI)),
+    ]
+
+
+def _external_reference_predicates(
+    resource: str,
+    identifier: str,
+    entity: URIRef,
+) -> list[tuple[URIRef, URIRef | Literal]]:
+    return [
+        (RDF.type, PKM.ExternalEntityReference),
+        (PKM.refersToEntity, entity),
+        (PKM.describedByArtifact, instance_iri("artifact", "veekun")),
+        (
+            PKM.hasExternalIRI,
+            Literal(veekun_external_iri(resource, identifier), datatype=XSD.anyURI),
+        ),
+    ]
+
+
+def _entity_predicates(
+    rdf_class: URIRef,
+    name: str,
+    identifier: str,
+) -> list[tuple[URIRef, URIRef | Literal]]:
+    return [
+        (RDF.type, rdf_class),
+        (PKM.hasName, Literal(name)),
+        (PKM.hasIdentifier, Literal(identifier)),
+    ]
+
+
+def _stream_turtle_from_csv(source_dir: Path, handle: TextIO) -> None:
+    _require_source_files(source_dir)
+    handle.write("@prefix pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#> .\n")
+    handle.write("@prefix pkmi: <https://laurajoyhutchins.github.io/pokemontology/id/> .\n")
+    handle.write("@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n")
+    handle.write("@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .\n\n")
+
+    _write_block(
+        handle,
+        VEEKUN_DATASET_IRI,
+        _dataset_header_predicates(),
+    )
+    _write_block(
+        handle,
+        instance_iri("artifact", "veekun"),
+        _artifact_predicates("Veekun", "https://github.com/veekun/pokedex"),
+    )
+
+    for filename, (class_name, rdf_class) in ENTITY_FILES.items():
+        path = source_dir / filename
+        fieldnames = None
+        for row in iter_rows(path):
+            if fieldnames is None:
+                fieldnames = ("identifier", "name")
+                require_fieldnames(path, list(row.keys()), fieldnames)
+            identifier = row["identifier"]
+            iri = entity_iri(class_name, identifier)
+            resource = filename.removesuffix(".csv")
+            _write_block(
+                handle,
+                iri,
+                _entity_predicates(
+                    rdf_class,
+                    row["name"],
+                    f"veekun:{resource}:{identifier}",
+                ),
+            )
+            _write_block(
+                handle,
+                instance_iri("reference", "Veekun", resource, identifier),
+                _external_reference_predicates(resource, identifier, iri),
+            )
+
+    variant_path = source_dir / "variants.csv"
+    variant_fieldnames = None
+    for row in iter_rows(variant_path):
+        if variant_fieldnames is None:
+            variant_fieldnames = ("identifier", "name", "species_identifier")
+            require_fieldnames(variant_path, list(row.keys()), variant_fieldnames)
+        _write_block(
+            handle,
+            entity_iri("Variant", row["identifier"]),
+            [(PKM.belongsToSpecies, entity_iri("Species", row["species_identifier"]))],
+        )
+
+    version_group_path = source_dir / "version_groups.csv"
+    version_group_fieldnames = None
+    for row in iter_rows(version_group_path):
+        if version_group_fieldnames is None:
+            version_group_fieldnames = ("identifier", "name")
+            require_fieldnames(version_group_path, list(row.keys()), version_group_fieldnames)
+        identifier = row["identifier"]
+        version_group_iri = entity_iri("VersionGroup", identifier)
+        ruleset_iri = entity_iri("Ruleset", identifier)
+        _write_block(
+            handle,
+            version_group_iri,
+            _entity_predicates(
+                PKM.VersionGroup,
+                row["name"],
+                f"veekun:version-group:{identifier}",
+            ),
+        )
+        _write_block(
+            handle,
+            instance_iri("reference", "Veekun", "version-group", identifier),
+            _external_reference_predicates("version-group", identifier, version_group_iri),
+        )
+        _write_block(
+            handle,
+            ruleset_iri,
+            [
+                (RDF.type, PKM.Ruleset),
+                (PKM.hasName, Literal(row["name"])),
+                (PKM.hasIdentifier, Literal(f"veekun:ruleset:{identifier}")),
+                (PKM.hasVersionGroup, version_group_iri),
+            ],
+        )
+        _write_block(
+            handle,
+            instance_iri("reference", "Veekun", "ruleset", identifier),
+            _external_reference_predicates("ruleset", identifier, ruleset_iri),
+        )
+
+    def write_optional_rows(
+        filename: str,
+        required_columns: tuple[str, ...],
+        builder,
+    ) -> None:
+        path = source_dir / filename
+        if not path.exists():
+            return
+        fieldnames = None
+        for row in iter_rows(path):
+            if fieldnames is None:
+                fieldnames = required_columns
+                require_fieldnames(path, list(row.keys()), fieldnames)
+            subject, predicate_objects = builder(row)
+            _write_block(handle, subject, predicate_objects)
+
+    write_optional_rows(
+        "typing_assignments.csv",
+        (
+            "pokemon_kind",
+            "pokemon_identifier",
+            "type_identifier",
+            "version_group_identifier",
+            "type_slot",
+        ),
+        lambda row: (
+            assignment_iri(
+                "TypingAssignment",
+                row["pokemon_kind"],
+                row["pokemon_identifier"],
+                "type",
+                row["type_identifier"],
+                "ruleset",
+                row["version_group_identifier"],
+                "slot",
+                row["type_slot"],
+            ),
+            [
+                (RDF.type, PKM.TypingAssignment),
+                (
+                    PKM.aboutPokemon,
+                    mechanics_subject_iri(row["pokemon_kind"], row["pokemon_identifier"]),
+                ),
+                (PKM.aboutType, entity_iri("Type", row["type_identifier"])),
+                (PKM.hasContext, entity_iri("Ruleset", row["version_group_identifier"])),
+                (PKM.hasTypeSlot, Literal(int(row["type_slot"]), datatype=XSD.integer)),
+            ],
+        ),
+    )
+    write_optional_rows(
+        "ability_assignments.csv",
+        (
+            "pokemon_kind",
+            "pokemon_identifier",
+            "ability_identifier",
+            "version_group_identifier",
+            "is_hidden_ability",
+        ),
+        lambda row: (
+            assignment_iri(
+                "AbilityAssignment",
+                row["pokemon_kind"],
+                row["pokemon_identifier"],
+                "ability",
+                row["ability_identifier"],
+                "ruleset",
+                row["version_group_identifier"],
+            ),
+            [
+                (RDF.type, PKM.AbilityAssignment),
+                (
+                    PKM.aboutPokemon,
+                    mechanics_subject_iri(row["pokemon_kind"], row["pokemon_identifier"]),
+                ),
+                (PKM.aboutAbility, entity_iri("Ability", row["ability_identifier"])),
+                (PKM.hasContext, entity_iri("Ruleset", row["version_group_identifier"])),
+                (
+                    PKM.isHiddenAbility,
+                    Literal(
+                        row["is_hidden_ability"].lower() == "true",
+                        datatype=XSD.boolean,
+                    ),
+                ),
+            ],
+        ),
+    )
+    write_optional_rows(
+        "stat_assignments.csv",
+        (
+            "pokemon_kind",
+            "pokemon_identifier",
+            "stat_identifier",
+            "version_group_identifier",
+            "value",
+        ),
+        lambda row: (
+            assignment_iri(
+                "StatAssignment",
+                row["pokemon_kind"],
+                row["pokemon_identifier"],
+                "stat",
+                row["stat_identifier"],
+                "ruleset",
+                row["version_group_identifier"],
+            ),
+            [
+                (RDF.type, PKM.StatAssignment),
+                (
+                    PKM.aboutPokemon,
+                    mechanics_subject_iri(row["pokemon_kind"], row["pokemon_identifier"]),
+                ),
+                (PKM.aboutStat, entity_iri("Stat", row["stat_identifier"])),
+                (PKM.hasContext, entity_iri("Ruleset", row["version_group_identifier"])),
+                (PKM.hasValue, Literal(int(row["value"]), datatype=XSD.integer)),
+            ],
+        ),
+    )
+    write_optional_rows(
+        "move_property_assignments.csv",
+        (
+            "move_identifier",
+            "version_group_identifier",
+            "move_type_identifier",
+            "base_power",
+            "accuracy",
+            "pp",
+            "priority",
+        ),
+        lambda row: (
+            assignment_iri(
+                "MovePropertyAssignment",
+                row["move_identifier"],
+                "ruleset",
+                row["version_group_identifier"],
+            ),
+            [
+                (RDF.type, PKM.MovePropertyAssignment),
+                (PKM.aboutMove, entity_iri("Move", row["move_identifier"])),
+                (PKM.hasContext, entity_iri("Ruleset", row["version_group_identifier"])),
+                (PKM.hasMoveType, entity_iri("Type", row["move_type_identifier"])),
+                *(
+                    [(PKM.hasBasePower, Literal(int(row["base_power"]), datatype=XSD.integer))]
+                    if row["base_power"].strip()
+                    else []
+                ),
+                *(
+                    [(PKM.hasAccuracy, Literal(int(row["accuracy"]), datatype=XSD.integer))]
+                    if row["accuracy"].strip()
+                    else []
+                ),
+                *(
+                    [(PKM.hasPP, Literal(int(row["pp"]), datatype=XSD.integer))]
+                    if row["pp"].strip()
+                    else []
+                ),
+                *(
+                    [(PKM.hasPriority, Literal(int(row["priority"]), datatype=XSD.integer))]
+                    if row["priority"].strip()
+                    else []
+                ),
+            ],
+        ),
+    )
+    write_optional_rows(
+        "move_learn_records.csv",
+        (
+            "pokemon_kind",
+            "pokemon_identifier",
+            "move_identifier",
+            "version_group_identifier",
+            "is_learnable",
+        ),
+        lambda row: (
+            assignment_iri(
+                "MoveLearnRecord",
+                row["pokemon_kind"],
+                row["pokemon_identifier"],
+                "move",
+                row["move_identifier"],
+                "ruleset",
+                row["version_group_identifier"],
+            ),
+            [
+                (RDF.type, PKM.MoveLearnRecord),
+                (
+                    PKM.aboutPokemon,
+                    mechanics_subject_iri(row["pokemon_kind"], row["pokemon_identifier"]),
+                ),
+                (PKM.learnableMove, entity_iri("Move", row["move_identifier"])),
+                (PKM.hasContext, entity_iri("Ruleset", row["version_group_identifier"])),
+                (
+                    PKM.isLearnableInRuleset,
+                    Literal(row["is_learnable"].lower() == "true", datatype=XSD.boolean),
+                ),
+            ],
+        ),
+    )
+    write_optional_rows(
+        "type_effectiveness_assignments.csv",
+        (
+            "attacker_type_identifier",
+            "defender_type_identifier",
+            "version_group_identifier",
+            "damage_factor",
+        ),
+        lambda row: (
+            assignment_iri(
+                "TypeEffectivenessAssignment",
+                row["attacker_type_identifier"],
+                row["defender_type_identifier"],
+                "ruleset",
+                row["version_group_identifier"],
+            ),
+            [
+                (RDF.type, PKM.TypeEffectivenessAssignment),
+                (PKM.attackerType, entity_iri("Type", row["attacker_type_identifier"])),
+                (PKM.defenderType, entity_iri("Type", row["defender_type_identifier"])),
+                (PKM.hasContext, entity_iri("Ruleset", row["version_group_identifier"])),
+                (PKM.hasDamageFactor, Literal(row["damage_factor"], datatype=XSD.decimal)),
+            ],
+        ),
+    )
+
+
+def write_turtle_from_csv(source_dir: Path, output_path: Path) -> None:
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with output_path.open("w", encoding="utf-8") as handle:
+        _stream_turtle_from_csv(source_dir, handle)
+
+
+def build_graph_from_csv(source_dir: Path) -> Graph:
+    _require_source_files(source_dir)
 
     g = Graph()
     bind_namespaces(g)
@@ -579,7 +994,9 @@ def build_graph_from_csv(source_dir: Path) -> Graph:
 
 
 def build_ttl_from_csv(source_dir: Path) -> str:
-    return build_graph_from_csv(source_dir).serialize(format="turtle")
+    buffer = io.StringIO()
+    _stream_turtle_from_csv(source_dir, buffer)
+    return buffer.getvalue()
 
 
 def fetch_upstream_archive(archive_url: str, timeout: float) -> bytes:
@@ -1161,7 +1578,7 @@ def cmd_normalize(args: argparse.Namespace) -> None:
 
 
 def cmd_transform(args: argparse.Namespace) -> None:
-    serialize_turtle_to_path(build_graph_from_csv(args.source_dir), args.output)
+    write_turtle_from_csv(args.source_dir, args.output)
     print(args.output)
 
 
@@ -1174,7 +1591,7 @@ def cmd_ingest(args: argparse.Namespace) -> None:
         include_learnsets=args.include_learnsets,
         version_group_identifiers=tuple(args.version_group),
     )
-    serialize_turtle_to_path(build_graph_from_csv(args.source_dir), args.output)
+    write_turtle_from_csv(args.source_dir, args.output)
     print(args.output)
 
 

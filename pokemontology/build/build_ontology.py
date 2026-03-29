@@ -88,7 +88,7 @@ WEB_MECHANICS_SLICES = (
 )
 CURRENT_RULESET_TOKENS = ("pokeapi-default", "scarlet-violet")
 MODERN_RULESET_TOKENS = (
-    "x-y",
+    "black-2-white-2",
     "omega-ruby-alpha-sapphire",
     "sun-moon",
     "ultra-sun-ultra-moon",
@@ -107,7 +107,7 @@ LOOKUP_TYPE_PRIORITY = {
     "Ruleset": 6,
 }
 ENTITY_INDEX_TARGET_TYPES = frozenset(LOOKUP_TYPE_PRIORITY)
-INSTANCE_TERM_RE = r"(?:pkm:[A-Za-z0-9_]+|<https://laurajoyhutchins\.github\.io/pokemontology/id/[^>]+>)"
+INSTANCE_TERM_RE = r"(?:pkm:[A-Za-z0-9_]+|pkmi:[A-Za-z0-9_\\/-]+|<https://laurajoyhutchins\.github\.io/pokemontology/id/[^>]+>)"
 MODULE_ORDER = [
     "00-header.ttl",
     "10-core.ttl",
@@ -221,8 +221,17 @@ def _classify_mechanics_block(block: str) -> str:
         return "base"
     match = re.search(r"pkm:hasContext\s+<https://laurajoyhutchins.github.io/pokemontology/id/ruleset/([^>]+)>", block)
     if match is None:
-        legacy_match = re.search(r"pkm:hasContext pkm:Ruleset_([A-Za-z0-9_]+)\s*;", block)
-        ruleset_slug = legacy_match.group(1).lower().replace("_", "-") if legacy_match else ""
+        pkmi_match = re.search(r"pkm:hasContext\s+pkmi:([A-Za-z0-9_\\/-]+)\s*;", block)
+        if pkmi_match is not None:
+            ruleset_slug = (
+                pkmi_match.group(1)
+                .replace("\\/", "/")
+                .removeprefix("ruleset/")
+                .lower()
+            )
+        else:
+            legacy_match = re.search(r"pkm:hasContext pkm:Ruleset_([A-Za-z0-9_]+)\s*;", block)
+            ruleset_slug = legacy_match.group(1).lower().replace("_", "-") if legacy_match else ""
     else:
         ruleset_slug = match.group(1).lower()
     if any(token in ruleset_slug for token in CURRENT_RULESET_TOKENS):
@@ -272,6 +281,8 @@ def _iri_for_curie(curie: str) -> str:
 def _curie_from_term(term: str) -> str:
     if term.startswith("<") and term.endswith(">"):
         return _curie_for_iri(term[1:-1])
+    if term.startswith("pkmi:"):
+        return term.replace("\\/", "/")
     return term
 
 
