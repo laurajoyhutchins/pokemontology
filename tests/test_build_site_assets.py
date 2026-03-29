@@ -19,9 +19,6 @@ def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(build_ontology, "PAGES_POKEAPI", tmp_path / "pokeapi.ttl")
     monkeypatch.setattr(build_ontology, "PAGES_MECHANICS", tmp_path / "mechanics.ttl")
     monkeypatch.setattr(build_ontology, "PAGES_MECHANICS_BASE", tmp_path / "mechanics-base.ttl")
-    monkeypatch.setattr(build_ontology, "PAGES_MECHANICS_CURRENT", tmp_path / "mechanics-learnsets-current.ttl")
-    monkeypatch.setattr(build_ontology, "PAGES_MECHANICS_MODERN", tmp_path / "mechanics-learnsets-modern.ttl")
-    monkeypatch.setattr(build_ontology, "PAGES_MECHANICS_LEGACY", tmp_path / "mechanics-learnsets-legacy.ttl")
     monkeypatch.setattr(build_ontology, "PAGES_SITE_DATA", tmp_path / "site-data.json")
     monkeypatch.setattr(build_ontology, "PAGES_SCHEMA_INDEX", tmp_path / "schema-index.json")
     monkeypatch.setattr(build_ontology, "PAGES_GRAPH_INDEX", tmp_path / "graph-index.json")
@@ -119,28 +116,22 @@ def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
         for example in schema_index["examples"]
         if example["id"] == "super-effective-moves"
     )
+    learnset_shards = sorted(tmp_path.glob("mechanics-learnsets-*.ttl"))
     assert (tmp_path / "mechanics-base.ttl").exists()
-    assert (tmp_path / "mechanics-learnsets-current.ttl").exists()
-    assert (tmp_path / "mechanics-learnsets-modern.ttl").exists()
-    assert (tmp_path / "mechanics-learnsets-legacy.ttl").exists()
+    assert learnset_shards, "expected at least one auto-generated learnset shard"
+    assert all(p.name.startswith("mechanics-learnsets-") for p in learnset_shards)
     assert any(artifact["path"] == "mechanics-base.ttl" for artifact in site_data["artifacts"])
     assert any(artifact["path"] == "graph-index.json" for artifact in site_data["artifacts"])
     assert any(source["id"] == "src-mechanics" for source in site_data["query_sources"])
     mechanics_source = next(source for source in site_data["query_sources"] if source["id"] == "src-mechanics")
-    assert mechanics_source["paths"] == [
-        "mechanics-base.ttl",
-        "mechanics-learnsets-current.ttl",
-    ]
+    assert mechanics_source["paths"] == ["mechanics-base.ttl"]
     assert mechanics_source["checked"] is True
     archive_source = next(
         source
         for source in site_data["query_sources"]
-        if source["id"] == "src-mechanics-archive"
+        if source["id"] == "src-mechanics-learnsets"
     )
-    assert archive_source["paths"] == [
-        "mechanics-learnsets-modern.ttl",
-        "mechanics-learnsets-legacy.ttl",
-    ]
+    assert archive_source["paths"] == [p.name for p in learnset_shards]
     assert archive_source["checked"] is False
     assert "pkm:Battle_test a pkm:Battle ." not in (tmp_path / "build" / "mechanics.ttl").read_text(
         encoding="utf-8"

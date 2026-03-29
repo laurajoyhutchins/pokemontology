@@ -22,25 +22,25 @@
       "label": "Mechanics Base",
       "path": "mechanics-base.ttl",
       "iri": "https://laurajoyhutchins.github.io/pokemontology/mechanics-base.ttl#",
-      "description": "Canonical entities, variants, typings, move properties, type chart data, and ruleset-scoped assignments excluding learnset archives."
+      "description": "Canonical entities, variants, typings, move properties, type chart data, and ruleset-scoped assignments excluding learnset records."
     },
     {
-      "label": "Current Learnsets",
+      "label": "Learnsets CURRENT",
       "path": "mechanics-learnsets-current.ttl",
       "iri": "https://laurajoyhutchins.github.io/pokemontology/mechanics-learnsets-current.ttl#",
-      "description": "Current-generation learnset coverage from the canonical mechanics graph, including the PokeAPI default ruleset and Scarlet/Violet-era records."
+      "description": "Auto-generated learnset shard mechanics-learnsets-current.ttl."
     },
     {
-      "label": "Modern Learnsets",
-      "path": "mechanics-learnsets-modern.ttl",
-      "iri": "https://laurajoyhutchins.github.io/pokemontology/mechanics-learnsets-modern.ttl#",
-      "description": "Historical learnset archive for 3DS and Switch-era games prior to the current generation."
-    },
-    {
-      "label": "Legacy Learnsets",
+      "label": "Learnsets LEGACY",
       "path": "mechanics-learnsets-legacy.ttl",
       "iri": "https://laurajoyhutchins.github.io/pokemontology/mechanics-learnsets-legacy.ttl#",
-      "description": "Older learnset archive for pre-3DS generations and side-game rulesets."
+      "description": "Auto-generated learnset shard mechanics-learnsets-legacy.ttl."
+    },
+    {
+      "label": "Learnsets MODERN",
+      "path": "mechanics-learnsets-modern.ttl",
+      "iri": "https://laurajoyhutchins.github.io/pokemontology/mechanics-learnsets-modern.ttl#",
+      "description": "Auto-generated learnset shard mechanics-learnsets-modern.ttl."
     },
     {
       "label": "Graph Projection Index",
@@ -63,18 +63,18 @@
       "id": "src-mechanics",
       "label": "canonical mechanics core",
       "paths": [
-        "mechanics-base.ttl",
-        "mechanics-learnsets-current.ttl"
+        "mechanics-base.ttl"
       ],
       "checked": true,
       "role": "mechanics"
     },
     {
-      "id": "src-mechanics-archive",
-      "label": "historical learnset archive",
+      "id": "src-mechanics-learnsets",
+      "label": "learnset archive",
       "paths": [
-        "mechanics-learnsets-modern.ttl",
-        "mechanics-learnsets-legacy.ttl"
+        "mechanics-learnsets-current.ttl",
+        "mechanics-learnsets-legacy.ttl",
+        "mechanics-learnsets-modern.ttl"
       ],
       "checked": false,
       "role": "archive"
