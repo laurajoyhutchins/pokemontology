@@ -267,8 +267,7 @@ function filterEdgesByDensity(edges, state, focusIds) {
   });
 }
 
-function removeIsolatedNodes(nodes, edges, state, anchorId) {
-  if (!state.hideIsolated) return { nodes, edges };
+function buildAdjacency(edges) {
   const adjacency = new Map();
   edges.forEach((edge) => {
     if (!adjacency.has(edge.source)) adjacency.set(edge.source, new Set());
@@ -276,6 +275,12 @@ function removeIsolatedNodes(nodes, edges, state, anchorId) {
     adjacency.get(edge.source).add(edge.target);
     adjacency.get(edge.target).add(edge.source);
   });
+  return adjacency;
+}
+
+function removeIsolatedNodes(nodes, edges, state, anchorId) {
+  if (!state.hideIsolated) return { nodes, edges };
+  const adjacency = buildAdjacency(edges);
   const retainedIds = new Set(
     nodes
       .filter(
@@ -287,6 +292,21 @@ function removeIsolatedNodes(nodes, edges, state, anchorId) {
       )
       .map((node) => node.id),
   );
+  return {
+    nodes: nodes.filter((node) => retainedIds.has(node.id)),
+    edges: edges.filter((edge) => retainedIds.has(edge.source) && retainedIds.has(edge.target)),
+  };
+}
+
+function filterToSelectedNeighborhood(nodes, edges, state, anchorId) {
+  if (!state.selectedNeighborhoodOnly || !state.selectedNodeId) return { nodes, edges };
+  const adjacency = buildAdjacency(edges);
+  const retainedIds = new Set([
+    state.selectedNodeId,
+    ...(adjacency.get(state.selectedNodeId) || []),
+    anchorId,
+    ...state.pinnedNodeIds,
+  ].filter(Boolean));
   return {
     nodes: nodes.filter((node) => retainedIds.has(node.id)),
     edges: edges.filter((edge) => retainedIds.has(edge.source) && retainedIds.has(edge.target)),
@@ -339,14 +359,11 @@ function buildProjectedGraph(state) {
   const isolatedResult = removeIsolatedNodes(nodes, edges, state, anchorId);
   nodes = isolatedResult.nodes;
   edges = isolatedResult.edges;
+  const selectionResult = filterToSelectedNeighborhood(nodes, edges, state, anchorId);
+  nodes = selectionResult.nodes;
+  edges = selectionResult.edges;
 
-  const adjacency = new Map();
-  edges.forEach((edge) => {
-    if (!adjacency.has(edge.source)) adjacency.set(edge.source, new Set());
-    if (!adjacency.has(edge.target)) adjacency.set(edge.target, new Set());
-    adjacency.get(edge.source).add(edge.target);
-    adjacency.get(edge.target).add(edge.source);
-  });
+  const adjacency = buildAdjacency(edges);
 
   return {
     anchorId,
@@ -767,6 +784,7 @@ function serializeState(state) {
     color: state.colorMode,
     density: state.edgeDensityMode,
     isolates: state.hideIsolated ? "1" : "",
+    neighborhood: state.selectedNeighborhoodOnly ? "1" : "",
   };
   return JSON.stringify(payload);
 }
@@ -805,6 +823,7 @@ function decodeUrlState() {
       DEFAULT_EDGE_DENSITY,
     ),
     hideIsolated: parseBooleanParam(params.get("isolates") || ""),
+    selectedNeighborhoodOnly: parseBooleanParam(params.get("neighborhood") || ""),
   };
 }
 
@@ -826,6 +845,7 @@ function writeUrlState(state) {
   if (state.colorMode !== DEFAULT_COLOR_MODE) params.set("color", state.colorMode);
   if (state.edgeDensityMode !== DEFAULT_EDGE_DENSITY) params.set("density", state.edgeDensityMode);
   if (state.hideIsolated) params.set("isolates", "1");
+  if (state.selectedNeighborhoodOnly) params.set("neighborhood", "1");
   const next = params.toString();
   const url = next ? `${window.location.pathname}?${next}` : window.location.pathname;
   window.history.replaceState(null, "", url);
@@ -857,6 +877,7 @@ function applySnapshotToUi(state, snapshot) {
   state.colorMode = parseChoice(snapshot.color || DEFAULT_COLOR_MODE, COLOR_OPTIONS, DEFAULT_COLOR_MODE);
   state.edgeDensityMode = parseChoice(snapshot.density || DEFAULT_EDGE_DENSITY, DENSITY_OPTIONS, DEFAULT_EDGE_DENSITY);
   state.hideIsolated = parseBooleanParam(snapshot.isolates || "");
+  state.selectedNeighborhoodOnly = parseBooleanParam(snapshot.neighborhood || "");
   state.layoutCache = new Map();
   syncUiFromState(state);
   replaceCheckboxSet("graph-type-", TYPE_ORDER, parseListParam(snapshot.types || encodeSet(new Set(TYPE_ORDER))));
@@ -917,14 +938,20 @@ function renderQueryStatus(projected, state) {
   if (!target) return;
   const query = state.searchText.trim();
   const isolateLabel = state.hideIsolated ? " Hidden isolates enabled." : "";
+  const neighborhoodLabel =
+    state.selectedNeighborhoodOnly && state.selectedNodeId
+      ? " Selected-neighborhood mode active."
+      : state.selectedNeighborhoodOnly
+        ? " Selection-only mode is waiting for a node."
+        : "";
   if (state.manualVisibleIds.size) {
-    target.textContent = `Custom scene with ${projected.nodes.length} visible nodes. ${state.edgeDensityMode} edge density active.${isolateLabel}`;
+    target.textContent = `Custom scene with ${projected.nodes.length} visible nodes. ${state.edgeDensityMode} edge density active.${isolateLabel}${neighborhoodLabel}`;
     return;
   }
   if (!query) {
     target.textContent = Number.isFinite(state.nodeLimit)
-      ? `No query text. Showing top-degree overview limited to ${state.nodeLimit} nodes.${isolateLabel}`
-      : `No query text. Showing the full top-degree overview.${isolateLabel}`;
+      ? `No query text. Showing top-degree overview limited to ${state.nodeLimit} nodes.${isolateLabel}${neighborhoodLabel}`
+      : `No query text. Showing the full top-degree overview.${isolateLabel}${neighborhoodLabel}`;
     return;
   }
   const topMatch = projected.queryMatches[0];
@@ -934,8 +961,8 @@ function renderQueryStatus(projected, state) {
   }
   const exact = normalize(topMatch.label) === normalize(query) || normalize(topMatch.id) === normalize(query);
   target.textContent = exact
-    ? `Exact match: ${topMatch.label}. Rendering a ${state.hopDepth}-hop neighborhood with ${state.layoutMode} layout.${isolateLabel}`
-    : `${projected.queryMatches.length} matches for "${query}". Focused on ${topMatch.label}.${isolateLabel}`;
+    ? `Exact match: ${topMatch.label}. Rendering a ${state.hopDepth}-hop neighborhood with ${state.layoutMode} layout.${isolateLabel}${neighborhoodLabel}`
+    : `${projected.queryMatches.length} matches for "${query}". Focused on ${topMatch.label}.${isolateLabel}${neighborhoodLabel}`;
 }
 
 function syncNodeLimitControls(state) {
@@ -972,6 +999,142 @@ function edgeKindBreakdown(nodeId, projected) {
     counts.set(edge.kind, (counts.get(edge.kind) || 0) + 1);
   });
   return [...counts.entries()].sort((a, b) => b[1] - a[1]);
+}
+
+function incidentEdges(nodeId, projected) {
+  return projected.edges.filter((edge) => edge.source === nodeId || edge.target === nodeId);
+}
+
+function summarizeNodeContexts(node, state) {
+  const contexts = Array.isArray(node.contexts) ? node.contexts : [];
+  return contexts
+    .map((id) => state.nodesById.get(id))
+    .filter(Boolean)
+    .sort((a, b) => String(a.label).localeCompare(String(b.label)))
+    .slice(0, 10);
+}
+
+function neighborGroupsByType(nodeId, projected) {
+  const groups = new Map();
+  [...(projected.adjacency.get(nodeId) || new Set())]
+    .map((id) => projected.nodes.find((entry) => entry.id === id))
+    .filter(Boolean)
+    .sort((a, b) => (Number(b.degree) || 0) - (Number(a.degree) || 0))
+    .forEach((neighbor) => {
+      if (!groups.has(neighbor.type)) groups.set(neighbor.type, []);
+      groups.get(neighbor.type).push(neighbor);
+    });
+  return TYPE_ORDER.filter((type) => groups.has(type)).map((type) => ({
+    type,
+    neighbors: groups.get(type),
+  }));
+}
+
+function degreeBucketLabel(value) {
+  const degree = Number(value) || 0;
+  if (degree <= 1) return "0-1";
+  if (degree <= 4) return "2-4";
+  if (degree <= 9) return "5-9";
+  return "10+";
+}
+
+function degreeBucketSortKey(label) {
+  return ["0-1", "2-4", "5-9", "10+"].indexOf(label);
+}
+
+function collectFacetCounts(projected) {
+  const typeCounts = new Map();
+  projected.nodes.forEach((node) => typeCounts.set(node.type, (typeCounts.get(node.type) || 0) + 1));
+
+  const edgeCounts = new Map();
+  projected.edges.forEach((edge) => edgeCounts.set(edge.kind, (edgeCounts.get(edge.kind) || 0) + 1));
+
+  const rulesetCounts = new Map();
+  projected.nodes.forEach((node) => {
+    if (node.type === "Ruleset") rulesetCounts.set(node.id, (rulesetCounts.get(node.id) || 0) + 1);
+    (node.contexts || []).forEach((contextId) => {
+      rulesetCounts.set(contextId, (rulesetCounts.get(contextId) || 0) + 1);
+    });
+  });
+
+  const degreeCounts = new Map();
+  projected.nodes.forEach((node) => {
+    const bucket = degreeBucketLabel(node.degree);
+    degreeCounts.set(bucket, (degreeCounts.get(bucket) || 0) + 1);
+  });
+
+  return {
+    typeCounts,
+    edgeCounts,
+    rulesetCounts,
+    degreeCounts,
+  };
+}
+
+function renderFacetButtons(entries, kind, state, options = {}) {
+  const limit = options.limit || 6;
+  const emptyLabel = options.emptyLabel || "None";
+  const activeSet = options.activeSet || null;
+  const selectedValue = options.selectedValue || "";
+  const getLabel = options.getLabel || ((entry) => entry.label);
+  const items = entries.slice(0, limit);
+  if (!items.length) return `<span class="graph-facet-empty">${escapeHtml(emptyLabel)}</span>`;
+  return items
+    .map((entry) => {
+      const active =
+        kind === "ruleset"
+          ? selectedValue === entry.id
+          : activeSet instanceof Set && activeSet.has(entry.id);
+      return `<button class="graph-facet-chip ${active ? "is-active" : ""}" type="button" data-graph-facet="${escapeHtml(kind)}" data-graph-facet-value="${escapeHtml(entry.id)}"><span>${escapeHtml(getLabel(entry))}</span><strong>${escapeHtml(entry.count)}</strong></button>`;
+    })
+    .join("");
+}
+
+function renderFacets(projected, state) {
+  const target = document.getElementById("graph-facets");
+  if (!target) return;
+  const counts = collectFacetCounts(projected);
+  const typeEntries = TYPE_ORDER.map((type) => ({ id: type, label: type, count: counts.typeCounts.get(type) || 0 }))
+    .filter((entry) => entry.count > 0);
+  const edgeEntries = EDGE_KINDS.map((kind) => ({ id: kind.id, label: kind.label, count: counts.edgeCounts.get(kind.id) || 0 }))
+    .filter((entry) => entry.count > 0)
+    .sort((a, b) => b.count - a.count);
+  const rulesetEntries = [...counts.rulesetCounts.entries()]
+    .map(([id, count]) => ({ id, count, label: state.nodesById.get(id)?.label || id }))
+    .sort((a, b) => b.count - a.count || String(a.label).localeCompare(String(b.label)))
+    .slice(0, 6);
+  const degreeEntries = [...counts.degreeCounts.entries()]
+    .map(([label, count]) => ({ id: label, label, count }))
+    .sort((a, b) => degreeBucketSortKey(a.label) - degreeBucketSortKey(b.label));
+
+  target.innerHTML = `
+    <section class="graph-facet-group">
+      <span class="graph-facet-label">Types</span>
+      <div class="graph-facet-row">
+        ${renderFacetButtons(typeEntries, "type", state, { activeSet: state.enabledTypes, emptyLabel: "No visible types" })}
+      </div>
+    </section>
+    <section class="graph-facet-group">
+      <span class="graph-facet-label">Edges</span>
+      <div class="graph-facet-row">
+        ${renderFacetButtons(edgeEntries, "edge", state, { activeSet: state.enabledEdgeKinds, emptyLabel: "No visible edges" })}
+      </div>
+    </section>
+    <section class="graph-facet-group">
+      <span class="graph-facet-label">Rulesets</span>
+      <div class="graph-facet-row">
+        ${renderFacetButtons(rulesetEntries, "ruleset", state, { selectedValue: state.selectedRuleset, emptyLabel: "No visible rulesets" })}
+      </div>
+    </section>
+    <section class="graph-facet-group">
+      <span class="graph-facet-label">Degree</span>
+      <div class="graph-facet-row graph-facet-row-static">
+        ${degreeEntries.length
+          ? degreeEntries.map((entry) => `<span class="graph-facet-chip graph-facet-chip-static"><span>${escapeHtml(entry.label)}</span><strong>${escapeHtml(entry.count)}</strong></span>`).join("")
+          : `<span class="graph-facet-empty">No visible nodes</span>`}
+      </div>
+    </section>
+  `;
 }
 
 function renderDetail(projected, state) {
@@ -1024,7 +1187,11 @@ function renderDetail(projected, state) {
     .sort((a, b) => (Number(b.degree) || 0) - (Number(a.degree) || 0))
     .slice(0, 18);
   const breakdown = edgeKindBreakdown(node.id, projected);
+  const incident = incidentEdges(node.id, projected);
+  const groupedNeighbors = neighborGroupsByType(node.id, projected);
+  const contexts = summarizeNodeContexts(node, state);
   const pinned = state.pinnedNodeIds.has(node.id);
+  const neighborhoodOnly = state.selectedNeighborhoodOnly && state.selectedNodeId === node.id;
   badge.textContent = node.type;
   target.innerHTML = `
     <article class="graph-detail-card">
@@ -1041,6 +1208,7 @@ function renderDetail(projected, state) {
         <button class="qe-action-btn" type="button" data-graph-action="expand-2">Expand 2 hops</button>
         <button class="qe-action-btn" type="button" data-graph-action="hide">Hide</button>
         <button class="qe-action-btn ${pinned ? "is-active" : ""}" type="button" data-graph-action="pin">${pinned ? "Unpin" : "Pin"}</button>
+        <button class="qe-action-btn ${neighborhoodOnly ? "is-active" : ""}" type="button" data-graph-action="toggle-neighborhood">${neighborhoodOnly ? "Show full scene" : "Show neighborhood"}</button>
       </div>
       <div class="graph-detail-grid">
         <div class="graph-detail-metric">
@@ -1060,9 +1228,22 @@ function renderDetail(projected, state) {
           <strong>${escapeHtml(state.colorMode)}</strong>
         </div>
       </div>
+      <section class="pokedex-section">
+        <p class="panel-kicker">Node Summary</p>
+        <div class="graph-summary-stack">
+          <p class="pokedex-summary">Visible in ${escapeHtml(incident.length)} incident edges and ${escapeHtml(groupedNeighbors.length)} neighbor groups under the current scene.</p>
+          ${
+            contexts.length
+              ? `<div class="graph-context-badges">${contexts
+                  .map((entry) => `<button class="info-chip graph-context-chip ${state.selectedRuleset === entry.id ? "is-active" : ""}" type="button" data-graph-facet="ruleset" data-graph-facet-value="${escapeHtml(entry.id)}">${escapeHtml(entry.label)}</button>`)
+                  .join("")}</div>`
+              : `<p class="pokedex-summary">No visible ruleset contexts on this node.</p>`
+          }
+        </div>
+      </section>
       ${
         breakdown.length
-          ? `<section class="pokedex-section"><p class="panel-kicker">Incident Edges</p><div class="graph-breakdown-list">${breakdown
+          ? `<section class="pokedex-section"><p class="panel-kicker">Top Predicates</p><div class="graph-breakdown-list">${breakdown
               .map(([kind, count]) => `<div class="graph-breakdown-row"><span>${escapeHtml(kind)}</span><strong>${escapeHtml(count)}</strong></div>`)
               .join("")}</div></section>`
           : ""
@@ -1076,11 +1257,46 @@ function renderDetail(projected, state) {
           : ""
       }
       <section class="pokedex-section">
-        <p class="panel-kicker">Neighbors</p>
+        <p class="panel-kicker">Neighbors By Type</p>
+        <div class="graph-neighbor-groups">
+          ${
+            groupedNeighbors.length
+              ? groupedNeighbors
+                  .map(
+                    (group) => `
+                      <section class="graph-neighbor-group">
+                        <div class="graph-neighbor-group-head">
+                          <span class="graph-type-pill graph-type-${slugify(group.type)}">${escapeHtml(group.type)}</span>
+                          <strong>${escapeHtml(group.neighbors.length)}</strong>
+                        </div>
+                        <div class="graph-neighbor-list graph-results">
+                          ${group.neighbors
+                            .slice(0, 4)
+                            .map(
+                              (entry) => `
+                                <button class="graph-neighbor-card" type="button" data-graph-node="${escapeHtml(entry.id)}">
+                                  <strong>${escapeHtml(entry.label)}</strong>
+                                  <span>${escapeHtml(entry.type)} · degree ${escapeHtml(entry.degree)}</span>
+                                </button>
+                              `,
+                            )
+                            .join("")}
+                        </div>
+                      </section>
+                    `,
+                  )
+                  .join("")
+              : `<p class="pokedex-summary">No visible neighbors under the current query.</p>`
+          }
+        </div>
+      </section>
+      <section class="pokedex-section">
+        <p class="panel-kicker">Immediate Pivots</p>
         <div class="graph-neighbor-list graph-results">
           ${
             neighbors.length
               ? neighbors
+                  .slice(0, 8)
                   .map(
                     (entry) => `
                       <button class="graph-neighbor-card" type="button" data-graph-node="${escapeHtml(entry.id)}">
@@ -1090,7 +1306,7 @@ function renderDetail(projected, state) {
                     `,
                   )
                   .join("")
-              : `<p class="pokedex-summary">No visible neighbors under the current query.</p>`
+              : `<p class="pokedex-summary">No visible pivot candidates under the current query.</p>`
           }
         </div>
       </section>
@@ -1202,6 +1418,10 @@ function syncUiFromState(state) {
   if (density instanceof HTMLSelectElement) density.value = state.edgeDensityMode;
   const hideIsolated = document.getElementById("graph-hide-isolated");
   if (hideIsolated instanceof HTMLInputElement) hideIsolated.checked = state.hideIsolated;
+  const selectedNeighborhoodOnly = document.getElementById("graph-selected-neighborhood-only");
+  if (selectedNeighborhoodOnly instanceof HTMLInputElement) {
+    selectedNeighborhoodOnly.checked = state.selectedNeighborhoodOnly;
+  }
   syncNodeLimitControls(state);
   syncPerspectiveButtons(state);
 }
@@ -1221,6 +1441,7 @@ function rerenderFactory(state, canvas) {
     renderStats(projected);
     renderFocus(projected, state);
     renderQueryStatus(projected, state);
+    renderFacets(projected, state);
     renderDetail(projected, state);
     updateZoomReadout(state);
     drawGraph(canvas, projected, state);
@@ -1569,6 +1790,9 @@ function bindSelectionHandlers(state, rerender) {
       case "pin":
         togglePinNode(state, nodeId);
         break;
+      case "toggle-neighborhood":
+        state.selectedNeighborhoodOnly = !state.selectedNeighborhoodOnly;
+        break;
       default:
         return;
     }
@@ -1606,6 +1830,7 @@ function wireControls(state, rerender) {
     state.colorMode = DEFAULT_COLOR_MODE;
     state.edgeDensityMode = DEFAULT_EDGE_DENSITY;
     state.hideIsolated = false;
+    state.selectedNeighborhoodOnly = false;
     resetLayoutCache(state);
     rerender();
   });
@@ -1656,6 +1881,11 @@ function wireControls(state, rerender) {
   });
   document.getElementById("graph-hide-isolated")?.addEventListener("change", (event) => {
     state.hideIsolated = Boolean(event.target.checked);
+    resetLayoutCache(state);
+    rerender();
+  });
+  document.getElementById("graph-selected-neighborhood-only")?.addEventListener("change", (event) => {
+    state.selectedNeighborhoodOnly = Boolean(event.target.checked);
     resetLayoutCache(state);
     rerender();
   });
@@ -1789,6 +2019,29 @@ function wireControls(state, rerender) {
     }
     if (event.key === "]") document.getElementById("graph-history-forward")?.click();
   });
+  document.addEventListener("click", (event) => {
+    const facet = event.target.closest("[data-graph-facet]");
+    if (!facet) return;
+    const kind = facet.getAttribute("data-graph-facet");
+    const value = facet.getAttribute("data-graph-facet-value") || "";
+    if (!kind || !value) return;
+    if (kind === "type") {
+      const next = state.enabledTypes.size === 1 && state.enabledTypes.has(value) ? new Set(TYPE_ORDER) : new Set([value]);
+      replaceCheckboxSet("graph-type-", TYPE_ORDER, next);
+      updateFilterDerivedState(state);
+    } else if (kind === "edge") {
+      const allEdges = EDGE_KINDS.map((entry) => entry.id);
+      const next = state.enabledEdgeKinds.size === 1 && state.enabledEdgeKinds.has(value) ? new Set(allEdges) : new Set([value]);
+      replaceCheckboxSet("graph-edge-", allEdges, next);
+      updateFilterDerivedState(state);
+    } else if (kind === "ruleset") {
+      state.selectedRuleset = state.selectedRuleset === value ? "" : value;
+    } else {
+      return;
+    }
+    resetLayoutCache(state);
+    rerender();
+  });
 }
 
 export async function createGraphApp() {
@@ -1834,6 +2087,7 @@ export async function createGraphApp() {
     colorMode: urlState.colorMode,
     edgeDensityMode: urlState.edgeDensityMode,
     hideIsolated: urlState.hideIsolated,
+    selectedNeighborhoodOnly: urlState.selectedNeighborhoodOnly,
     layoutCache: new Map(),
     history: [],
     historyIndex: -1,

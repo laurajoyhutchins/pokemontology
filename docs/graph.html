@@ -136,6 +136,10 @@
               <input type="checkbox" id="graph-hide-isolated">
               <span>Hide isolated</span>
             </label>
+            <label class="source-toggle graph-toggle graph-toggle-inline">
+              <input type="checkbox" id="graph-selected-neighborhood-only">
+              <span>Selection only</span>
+            </label>
           </div>
           <div class="graph-control-row graph-control-row-compact">
             <div class="graph-filter-pack">
@@ -180,6 +184,9 @@
               <button class="qe-action-btn graph-zoom-btn graph-zoom-btn-primary" id="graph-zoom-out" type="button" aria-label="Zoom out">-</button>
             </div>
           </div>
+        </div>
+        <div class="graph-facet-strip panel" id="graph-facets" aria-label="Graph facets">
+          <div class="graph-facet-empty">Loading scene facets…</div>
         </div>
         <div class="graph-canvas-shell">
           <canvas id="graph-canvas" class="graph-canvas" aria-label="Pokemontology knowledge graph visualization"></canvas>
