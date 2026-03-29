@@ -1256,6 +1256,10 @@ body:not([data-power-mode="on"]) .qe-results-body {
   min-width: 9rem;
 }
 
+.graph-control-row-compact > .graph-control {
+  flex: 0 1 10rem;
+}
+
 .graph-control-search {
   flex: 1 1 24rem;
 }
@@ -1307,6 +1311,10 @@ body:not([data-power-mode="on"]) .qe-results-body {
 
 .graph-query-presets > button {
   cursor: pointer;
+}
+
+.graph-toggle-inline {
+  align-self: end;
 }
 
 .graph-perspective-row > button.is-active,

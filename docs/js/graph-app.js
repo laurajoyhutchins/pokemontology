@@ -19,14 +19,23 @@ const TYPE_COLORS = {
   Type: "#d85c8c",
   Ruleset: "#6c8f80",
 };
+const LAYOUT_OPTIONS = ["orbit", "radial", "hierarchical", "force-lite"];
+const SIZE_OPTIONS = ["degree", "contexts", "uniform"];
+const COLOR_OPTIONS = ["type", "contexts"];
+const DENSITY_OPTIONS = ["smart", "full", "focused"];
 const MIN_ZOOM = 0.3;
 const MAX_ZOOM = 2.8;
 const ZOOM_STEP_IN = 1.12;
 const ZOOM_STEP_OUT = 0.88;
 const DEFAULT_NODE_LIMIT = 240;
 const DEFAULT_SEARCH = "Pikachu";
-const URL_STATE_VERSION = "1";
+const DEFAULT_LAYOUT_MODE = "orbit";
+const DEFAULT_SIZE_MODE = "degree";
+const DEFAULT_COLOR_MODE = "type";
+const DEFAULT_EDGE_DENSITY = "smart";
+const URL_STATE_VERSION = "2";
 const GRAPH_PADDING = 36;
+const CONTEXT_COLOR_STOPS = ["#d9d381", "#e8b850", "#d66d4d", "#5a88c8"];
 const PERSPECTIVES = {
   typing: {
     label: "Typing",
@@ -81,6 +90,14 @@ function clampZoom(value) {
   return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, value));
 }
 
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function readCheckedIds(prefix, ids) {
+  return new Set(ids.filter((id) => document.getElementById(`${prefix}${slugify(id)}`)?.checked));
+}
+
 function parseListParam(value) {
   return new Set(
     String(value || "")
@@ -94,8 +111,40 @@ function encodeSet(set) {
   return [...set].sort().join(",");
 }
 
-function readCheckedIds(prefix, ids) {
-  return new Set(ids.filter((id) => document.getElementById(`${prefix}${slugify(id)}`)?.checked));
+function parseBooleanParam(value) {
+  return value === "1" || value === "true";
+}
+
+function parseChoice(value, options, fallback) {
+  return options.includes(value) ? value : fallback;
+}
+
+function lerp(a, b, t) {
+  return a + (b - a) * t;
+}
+
+function hexToRgb(hex) {
+  const normalized = hex.replace("#", "");
+  const size = normalized.length === 3 ? 1 : 2;
+  const values = normalized.length === 3
+    ? normalized.split("").map((part) => Number.parseInt(part.repeat(2), 16))
+    : [0, 1, 2].map((index) => Number.parseInt(normalized.slice(index * size, index * size + size), 16));
+  return { r: values[0], g: values[1], b: values[2] };
+}
+
+function interpolateColor(start, end, t) {
+  const a = hexToRgb(start);
+  const b = hexToRgb(end);
+  return `rgb(${Math.round(lerp(a.r, b.r, t))}, ${Math.round(lerp(a.g, b.g, t))}, ${Math.round(lerp(a.b, b.b, t))})`;
+}
+
+function gradientColor(stops, ratio) {
+  if (ratio <= 0) return stops[0];
+  if (ratio >= 1) return stops[stops.length - 1];
+  const scaled = ratio * (stops.length - 1);
+  const index = Math.floor(scaled);
+  const t = scaled - index;
+  return interpolateColor(stops[index], stops[index + 1], t);
 }
 
 function selectedNodeTypes() {
@@ -115,11 +164,6 @@ async function loadGraphIndex() {
     throw new Error(`Failed to load graph-index.json: ${response.status}`);
   }
   return response.json();
-}
-
-function nodeRadius(node) {
-  const base = node.type === "Ruleset" ? 7 : node.type === "Species" ? 6 : 4.5;
-  return Math.min(13, base + Math.log2((Number(node.degree) || 0) + 1) * 0.85);
 }
 
 function buildIndexes(rawGraph) {
@@ -212,6 +256,43 @@ function overviewNodes(state) {
   );
 }
 
+function filterEdgesByDensity(edges, state, focusIds) {
+  if (state.edgeDensityMode === "full") return edges;
+  return edges.filter((edge) => {
+    if (edge.kind !== "learnsMove") return true;
+    const touchesFocus = focusIds.has(edge.source) || focusIds.has(edge.target);
+    if (touchesFocus) return true;
+    if (state.edgeDensityMode === "focused") return false;
+    return (Number(edge.context_count) || 0) >= 2;
+  });
+}
+
+function removeIsolatedNodes(nodes, edges, state, anchorId) {
+  if (!state.hideIsolated) return { nodes, edges };
+  const adjacency = new Map();
+  edges.forEach((edge) => {
+    if (!adjacency.has(edge.source)) adjacency.set(edge.source, new Set());
+    if (!adjacency.has(edge.target)) adjacency.set(edge.target, new Set());
+    adjacency.get(edge.source).add(edge.target);
+    adjacency.get(edge.target).add(edge.source);
+  });
+  const retainedIds = new Set(
+    nodes
+      .filter(
+        (node) =>
+          adjacency.has(node.id) ||
+          node.id === state.selectedNodeId ||
+          node.id === anchorId ||
+          state.pinnedNodeIds.has(node.id),
+      )
+      .map((node) => node.id),
+  );
+  return {
+    nodes: nodes.filter((node) => retainedIds.has(node.id)),
+    edges: edges.filter((edge) => retainedIds.has(edge.source) && retainedIds.has(edge.target)),
+  };
+}
+
 function buildProjectedGraph(state) {
   const filteredNodes = state.rawGraph.nodes.filter((node) => passesNodeFilters(node, state));
   const queryMatches = findMatches(filteredNodes, state.searchText);
@@ -231,6 +312,7 @@ function buildProjectedGraph(state) {
       if (node && passesNodeFilters(node, state)) visibleIds.add(id);
     });
   }
+
   const limitedIds =
     Number.isFinite(state.nodeLimit) && visibleIds.size > state.nodeLimit
       ? new Set(
@@ -242,13 +324,22 @@ function buildProjectedGraph(state) {
             .map((node) => node.id),
         )
       : visibleIds;
-  const nodes = [...limitedIds]
+
+  let nodes = [...limitedIds]
     .map((id) => state.nodesById.get(id))
     .filter(Boolean)
     .sort((a, b) => String(a.label).localeCompare(String(b.label)));
-  const edges = state.rawGraph.edges.filter(
+
+  const focusIds = new Set([anchorId, state.selectedNodeId, ...state.pinnedNodeIds].filter(Boolean));
+  let edges = state.rawGraph.edges.filter(
     (edge) => limitedIds.has(edge.source) && limitedIds.has(edge.target) && passesEdgeFilters(edge, state),
   );
+  edges = filterEdgesByDensity(edges, state, focusIds);
+
+  const isolatedResult = removeIsolatedNodes(nodes, edges, state, anchorId);
+  nodes = isolatedResult.nodes;
+  edges = isolatedResult.edges;
+
   const adjacency = new Map();
   edges.forEach((edge) => {
     if (!adjacency.has(edge.source)) adjacency.set(edge.source, new Set());
@@ -256,6 +347,7 @@ function buildProjectedGraph(state) {
     adjacency.get(edge.source).add(edge.target);
     adjacency.get(edge.target).add(edge.source);
   });
+
   return {
     anchorId,
     nodes,
@@ -265,7 +357,58 @@ function buildProjectedGraph(state) {
   };
 }
 
-function buildLayout(nodes, anchorId, width, height) {
+function averageNeighborPosition(nodeId, adjacency, positions) {
+  const neighbors = [...(adjacency.get(nodeId) || [])]
+    .map((id) => positions.get(id))
+    .filter(Boolean);
+  if (!neighbors.length) return null;
+  return {
+    x: neighbors.reduce((sum, point) => sum + point.x, 0) / neighbors.length,
+    y: neighbors.reduce((sum, point) => sum + point.y, 0) / neighbors.length,
+  };
+}
+
+function typeCenter(type, width, height, nodes) {
+  const types = TYPE_ORDER.filter((entry) => nodes.some((node) => node.type === entry));
+  const index = Math.max(0, types.indexOf(type));
+  const orbitX = Math.max(width * 0.34, 250);
+  const orbitY = Math.max(height * 0.28, 180);
+  const angle = (Math.PI * 2 * index) / Math.max(types.length, 1) - Math.PI / 2;
+  return {
+    x: width / 2 + Math.cos(angle) * orbitX,
+    y: height / 2 + Math.sin(angle) * orbitY,
+  };
+}
+
+function preservePositions(targets, previous, adjacency, nodes, width, height, mix = 0.28) {
+  const positions = new Map();
+  const nodeSet = new Set(nodes.map((node) => node.id));
+  nodes.forEach((node) => {
+    const target = targets.get(node.id) || { x: width / 2, y: height / 2 };
+    const prev = previous?.get(node.id);
+    if (prev) {
+      positions.set(node.id, {
+        x: lerp(prev.x, target.x, mix),
+        y: lerp(prev.y, target.y, mix),
+      });
+      return;
+    }
+    const neighborAverage = averageNeighborPosition(node.id, adjacency, previous || new Map());
+    if (neighborAverage) {
+      positions.set(node.id, {
+        x: lerp(neighborAverage.x, target.x, 0.45),
+        y: lerp(neighborAverage.y, target.y, 0.45),
+      });
+      return;
+    }
+    positions.set(node.id, target);
+  });
+  return new Map(
+    [...positions.entries()].filter(([id]) => nodeSet.has(id)),
+  );
+}
+
+function buildOrbitTargets(nodes, anchorId, width, height) {
   const positions = new Map();
   if (!nodes.length) return positions;
   const types = TYPE_ORDER.filter((type) => nodes.some((node) => node.type === type));
@@ -280,9 +423,8 @@ function buildLayout(nodes, anchorId, width, height) {
     });
   });
 
-  const anchor = nodes.find((node) => node.id === anchorId);
-  if (anchor) {
-    positions.set(anchor.id, { x: width / 2, y: height / 2 });
+  if (anchorId && nodes.some((node) => node.id === anchorId)) {
+    positions.set(anchorId, { x: width / 2, y: height / 2 });
   }
 
   types.forEach((type) => {
@@ -311,6 +453,163 @@ function buildLayout(nodes, anchorId, width, height) {
   return positions;
 }
 
+function computeDistances(anchorId, adjacency) {
+  const distances = new Map();
+  if (!anchorId) return distances;
+  const queue = [anchorId];
+  distances.set(anchorId, 0);
+  while (queue.length) {
+    const current = queue.shift();
+    const depth = distances.get(current) || 0;
+    for (const neighbor of adjacency.get(current) || []) {
+      if (distances.has(neighbor)) continue;
+      distances.set(neighbor, depth + 1);
+      queue.push(neighbor);
+    }
+  }
+  return distances;
+}
+
+function buildRadialTargets(nodes, adjacency, anchorId, width, height) {
+  if (!anchorId || !nodes.some((node) => node.id === anchorId)) {
+    return buildOrbitTargets(nodes, anchorId, width, height);
+  }
+  const positions = new Map([[anchorId, { x: width / 2, y: height / 2 }]]);
+  const distances = computeDistances(anchorId, adjacency);
+  const grouped = new Map();
+  nodes.forEach((node) => {
+    if (node.id === anchorId) return;
+    const depth = distances.get(node.id) ?? 99;
+    if (!grouped.has(depth)) grouped.set(depth, []);
+    grouped.get(depth).push(node);
+  });
+  [...grouped.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .forEach(([depth, group], depthIndex) => {
+      const ringRadius = 92 + depthIndex * 86;
+      const sorted = group.sort((a, b) => {
+        const typeIndex = TYPE_ORDER.indexOf(a.type) - TYPE_ORDER.indexOf(b.type);
+        if (typeIndex) return typeIndex;
+        return String(a.label).localeCompare(String(b.label));
+      });
+      sorted.forEach((node, index) => {
+        const angle = (Math.PI * 2 * index) / Math.max(sorted.length, 1) - Math.PI / 2;
+        positions.set(node.id, {
+          x: width / 2 + Math.cos(angle) * ringRadius,
+          y: height / 2 + Math.sin(angle) * ringRadius,
+        });
+      });
+    });
+  return positions;
+}
+
+function buildHierarchicalTargets(nodes, anchorId, width, height) {
+  const positions = new Map();
+  const types = TYPE_ORDER.filter((type) => nodes.some((node) => node.type === type));
+  const columnWidth = width / Math.max(types.length, 1);
+  types.forEach((type, typeIndex) => {
+    const columnNodes = nodes
+      .filter((node) => node.type === type)
+      .sort((a, b) => (a.id === anchorId ? -1 : b.id === anchorId ? 1 : String(a.label).localeCompare(String(b.label))));
+    const rowHeight = height / (columnNodes.length + 1);
+    columnNodes.forEach((node, rowIndex) => {
+      positions.set(node.id, {
+        x: columnWidth * typeIndex + columnWidth / 2,
+        y: rowHeight * (rowIndex + 1),
+      });
+    });
+  });
+  return positions;
+}
+
+function initializeForceSeeds(nodes, targets, adjacency, previous, width, height) {
+  const positions = new Map();
+  nodes.forEach((node) => {
+    const prev = previous?.get(node.id);
+    if (prev) {
+      positions.set(node.id, { x: prev.x, y: prev.y });
+      return;
+    }
+    const neighborAverage = averageNeighborPosition(node.id, adjacency, positions) || averageNeighborPosition(node.id, adjacency, previous || new Map());
+    const fallback = targets.get(node.id) || typeCenter(node.type, width, height, nodes);
+    const seed = neighborAverage
+      ? {
+          x: lerp(neighborAverage.x, fallback.x, 0.42),
+          y: lerp(neighborAverage.y, fallback.y, 0.42),
+        }
+      : fallback;
+    positions.set(node.id, seed);
+  });
+  return positions;
+}
+
+function buildForceLiteTargets(nodes, adjacency, anchorId, width, height, previous) {
+  const targets = buildRadialTargets(nodes, adjacency, anchorId, width, height);
+  const positions = initializeForceSeeds(nodes, targets, adjacency, previous, width, height);
+  const velocities = new Map(nodes.map((node) => [node.id, { x: 0, y: 0 }]));
+
+  for (let step = 0; step < 42; step += 1) {
+    nodes.forEach((node) => {
+      const point = positions.get(node.id);
+      const velocity = velocities.get(node.id);
+      let forceX = 0;
+      let forceY = 0;
+
+      nodes.forEach((other) => {
+        if (other.id === node.id) return;
+        const otherPoint = positions.get(other.id);
+        const dx = point.x - otherPoint.x;
+        const dy = point.y - otherPoint.y;
+        const distanceSq = Math.max(36, dx * dx + dy * dy);
+        const repulsion = 2800 / distanceSq;
+        forceX += (dx / Math.sqrt(distanceSq)) * repulsion;
+        forceY += (dy / Math.sqrt(distanceSq)) * repulsion;
+      });
+
+      (adjacency.get(node.id) || new Set()).forEach((neighborId) => {
+        const otherPoint = positions.get(neighborId);
+        if (!otherPoint) return;
+        forceX += (otherPoint.x - point.x) * 0.016;
+        forceY += (otherPoint.y - point.y) * 0.016;
+      });
+
+      const target = targets.get(node.id) || { x: width / 2, y: height / 2 };
+      forceX += (target.x - point.x) * 0.022;
+      forceY += (target.y - point.y) * 0.022;
+
+      velocity.x = (velocity.x + forceX) * 0.72;
+      velocity.y = (velocity.y + forceY) * 0.72;
+      point.x = clamp(point.x + velocity.x, GRAPH_PADDING, width - GRAPH_PADDING);
+      point.y = clamp(point.y + velocity.y, GRAPH_PADDING, height - GRAPH_PADDING);
+    });
+  }
+
+  return positions;
+}
+
+function resolveLayout(projected, state, width, height) {
+  const previous = state.layoutCache.get(state.layoutMode) || new Map();
+  let positions;
+  if (state.layoutMode === "radial") {
+    const targets = buildRadialTargets(projected.nodes, projected.adjacency, projected.anchorId, width, height);
+    positions = preservePositions(targets, previous, projected.adjacency, projected.nodes, width, height, 0.24);
+  } else if (state.layoutMode === "hierarchical") {
+    const targets = buildHierarchicalTargets(projected.nodes, projected.anchorId, width, height);
+    positions = preservePositions(targets, previous, projected.adjacency, projected.nodes, width, height, 0.3);
+  } else if (state.layoutMode === "force-lite") {
+    positions = buildForceLiteTargets(projected.nodes, projected.adjacency, projected.anchorId, width, height, previous);
+  } else {
+    const targets = buildOrbitTargets(projected.nodes, projected.anchorId, width, height);
+    positions = preservePositions(targets, previous, projected.adjacency, projected.nodes, width, height, 0.22);
+  }
+  state.layoutCache.set(state.layoutMode, new Map(positions));
+  return positions;
+}
+
+function buildLayout(projected, state, width, height) {
+  return resolveLayout(projected, state, width, height);
+}
+
 function homePanOffsetX() {
   const sidebar = document.querySelector(".graph-sidebar");
   if (!(sidebar instanceof HTMLElement) || sidebar.hidden) return 0;
@@ -323,6 +622,28 @@ function resetViewport(state) {
   state.zoom = 1;
 }
 
+function baseNodeRadius(node) {
+  const base = node.type === "Ruleset" ? 7 : node.type === "Species" ? 6 : 4.5;
+  return Math.min(13, base + Math.log2((Number(node.degree) || 0) + 1) * 0.85);
+}
+
+function nodeRadius(node, state) {
+  if (state.sizeMode === "uniform") return 6;
+  if (state.sizeMode === "contexts") {
+    return Math.min(13, 4.6 + Math.log2((node.contexts?.length || 0) + 1) * 1.3);
+  }
+  return baseNodeRadius(node);
+}
+
+function nodeColor(node, state) {
+  if (state.colorMode === "contexts") {
+    const maxContexts = Math.max(1, ...state.lastProjected.nodes.map((entry) => entry.contexts?.length || 0));
+    const ratio = (node.contexts?.length || 0) / maxContexts;
+    return gradientColor(CONTEXT_COLOR_STOPS, ratio);
+  }
+  return TYPE_COLORS[node.type] || "#54795c";
+}
+
 function fitNodeIds(state, nodeIds) {
   if (!state.lastLayout || !state.lastRect || !nodeIds.size) return;
   const points = [...nodeIds]
@@ -330,7 +651,7 @@ function fitNodeIds(state, nodeIds) {
       const point = state.lastLayout.get(id);
       const node = state.nodesById.get(id);
       if (!point || !node) return null;
-      const radius = nodeRadius(node) + GRAPH_PADDING;
+      const radius = nodeRadius(node, state) + GRAPH_PADDING;
       return {
         left: point.x - radius,
         right: point.x + radius,
@@ -380,9 +701,7 @@ function setControlsCollapsed(state, collapsed) {
 }
 
 function autoCollapseControls(state) {
-  if (!state.controlsCollapsed) {
-    setControlsCollapsed(state, true);
-  }
+  if (!state.controlsCollapsed) setControlsCollapsed(state, true);
 }
 
 function serializeState(state) {
@@ -399,6 +718,11 @@ function serializeState(state) {
     hidden: encodeSet(state.hiddenNodeIds),
     pinned: encodeSet(state.pinnedNodeIds),
     perspective: state.activePerspective || "",
+    layout: state.layoutMode,
+    size: state.sizeMode,
+    color: state.colorMode,
+    density: state.edgeDensityMode,
+    isolates: state.hideIsolated ? "1" : "",
   };
   return JSON.stringify(payload);
 }
@@ -407,19 +731,10 @@ function snapshotState(state) {
   return JSON.parse(serializeState(state));
 }
 
-function applyCheckboxSet(prefix, values) {
-  values.forEach((value) => {
-    const input = document.getElementById(`${prefix}${slugify(value)}`);
-    if (input instanceof HTMLInputElement) input.checked = true;
-  });
-}
-
 function replaceCheckboxSet(prefix, allValues, selectedValues) {
   allValues.forEach((value) => {
     const input = document.getElementById(`${prefix}${slugify(value)}`);
-    if (input instanceof HTMLInputElement) {
-      input.checked = selectedValues.has(value);
-    }
+    if (input instanceof HTMLInputElement) input.checked = selectedValues.has(value);
   });
 }
 
@@ -437,6 +752,15 @@ function decodeUrlState() {
     hiddenNodeIds: parseListParam(params.get("hidden")),
     pinnedNodeIds: parseListParam(params.get("pinned")),
     activePerspective: params.get("perspective") || "",
+    layoutMode: parseChoice(params.get("layout") || DEFAULT_LAYOUT_MODE, LAYOUT_OPTIONS, DEFAULT_LAYOUT_MODE),
+    sizeMode: parseChoice(params.get("size") || DEFAULT_SIZE_MODE, SIZE_OPTIONS, DEFAULT_SIZE_MODE),
+    colorMode: parseChoice(params.get("color") || DEFAULT_COLOR_MODE, COLOR_OPTIONS, DEFAULT_COLOR_MODE),
+    edgeDensityMode: parseChoice(
+      params.get("density") || DEFAULT_EDGE_DENSITY,
+      DENSITY_OPTIONS,
+      DEFAULT_EDGE_DENSITY,
+    ),
+    hideIsolated: parseBooleanParam(params.get("isolates") || ""),
   };
 }
 
@@ -453,6 +777,11 @@ function writeUrlState(state) {
   if (state.hiddenNodeIds.size) params.set("hidden", encodeSet(state.hiddenNodeIds));
   if (state.pinnedNodeIds.size) params.set("pinned", encodeSet(state.pinnedNodeIds));
   if (state.activePerspective) params.set("perspective", state.activePerspective);
+  if (state.layoutMode !== DEFAULT_LAYOUT_MODE) params.set("layout", state.layoutMode);
+  if (state.sizeMode !== DEFAULT_SIZE_MODE) params.set("size", state.sizeMode);
+  if (state.colorMode !== DEFAULT_COLOR_MODE) params.set("color", state.colorMode);
+  if (state.edgeDensityMode !== DEFAULT_EDGE_DENSITY) params.set("density", state.edgeDensityMode);
+  if (state.hideIsolated) params.set("isolates", "1");
   const next = params.toString();
   const url = next ? `${window.location.pathname}?${next}` : window.location.pathname;
   window.history.replaceState(null, "", url);
@@ -479,20 +808,19 @@ function applySnapshotToUi(state, snapshot) {
   state.hiddenNodeIds = parseListParam(snapshot.hidden);
   state.pinnedNodeIds = parseListParam(snapshot.pinned);
   state.activePerspective = snapshot.perspective || "";
-
-  const searchInput = document.getElementById("graph-search");
-  if (searchInput instanceof HTMLInputElement) searchInput.value = state.searchText;
-  const hopDepth = document.getElementById("graph-hop-depth");
-  if (hopDepth instanceof HTMLSelectElement) hopDepth.value = String(state.hopDepth);
-  const ruleset = document.getElementById("graph-ruleset");
-  if (ruleset instanceof HTMLSelectElement) ruleset.value = state.selectedRuleset;
+  state.layoutMode = parseChoice(snapshot.layout || DEFAULT_LAYOUT_MODE, LAYOUT_OPTIONS, DEFAULT_LAYOUT_MODE);
+  state.sizeMode = parseChoice(snapshot.size || DEFAULT_SIZE_MODE, SIZE_OPTIONS, DEFAULT_SIZE_MODE);
+  state.colorMode = parseChoice(snapshot.color || DEFAULT_COLOR_MODE, COLOR_OPTIONS, DEFAULT_COLOR_MODE);
+  state.edgeDensityMode = parseChoice(snapshot.density || DEFAULT_EDGE_DENSITY, DENSITY_OPTIONS, DEFAULT_EDGE_DENSITY);
+  state.hideIsolated = parseBooleanParam(snapshot.isolates || "");
+  state.layoutCache = new Map();
+  syncUiFromState(state);
   replaceCheckboxSet("graph-type-", TYPE_ORDER, parseListParam(snapshot.types || encodeSet(new Set(TYPE_ORDER))));
   replaceCheckboxSet(
     "graph-edge-",
     EDGE_KINDS.map((kind) => kind.id),
     parseListParam(snapshot.edges || encodeSet(new Set(EDGE_KINDS.map((kind) => kind.id)))),
   );
-  syncNodeLimitControls(state);
 }
 
 function syncPerspectiveButtons(state) {
@@ -526,12 +854,13 @@ function renderFocus(projected, state) {
   const hoverReadout = document.getElementById("graph-hover-readout");
   if (focusBadge) {
     const anchor = projected.nodes.find((node) => node.id === projected.anchorId);
+    const layoutLabel = state.layoutMode === "force-lite" ? "Force" : state.layoutMode[0].toUpperCase() + state.layoutMode.slice(1);
     if (state.manualVisibleIds.size) {
       focusBadge.textContent = anchor
-        ? `${anchor.label} · custom scene`
-        : `Custom scene · ${projected.nodes.length} nodes`;
+        ? `${anchor.label} · ${layoutLabel} scene`
+        : `Custom scene · ${layoutLabel}`;
     } else {
-      focusBadge.textContent = anchor ? `${anchor.label} · ${projected.nodes.length} node query` : "Top-degree overview";
+      focusBadge.textContent = anchor ? `${anchor.label} · ${layoutLabel} query` : `Top-degree overview · ${layoutLabel}`;
     }
   }
   if (hoverReadout && !hoverReadout.dataset.locked) {
@@ -543,14 +872,15 @@ function renderQueryStatus(projected, state) {
   const target = document.getElementById("graph-query-status");
   if (!target) return;
   const query = state.searchText.trim();
+  const isolateLabel = state.hideIsolated ? " Hidden isolates enabled." : "";
   if (state.manualVisibleIds.size) {
-    target.textContent = `Custom scene with ${projected.nodes.length} visible nodes. Shareable URL and history are active.`;
+    target.textContent = `Custom scene with ${projected.nodes.length} visible nodes. ${state.edgeDensityMode} edge density active.${isolateLabel}`;
     return;
   }
   if (!query) {
     target.textContent = Number.isFinite(state.nodeLimit)
-      ? `No query text. Showing top-degree overview limited to ${state.nodeLimit} nodes.`
-      : "No query text. Showing the full top-degree overview.";
+      ? `No query text. Showing top-degree overview limited to ${state.nodeLimit} nodes.${isolateLabel}`
+      : `No query text. Showing the full top-degree overview.${isolateLabel}`;
     return;
   }
   const topMatch = projected.queryMatches[0];
@@ -560,19 +890,15 @@ function renderQueryStatus(projected, state) {
   }
   const exact = normalize(topMatch.label) === normalize(query) || normalize(topMatch.id) === normalize(query);
   target.textContent = exact
-    ? `Exact match: ${topMatch.label}. Rendering a ${state.hopDepth}-hop neighborhood.`
-    : `${projected.queryMatches.length} matches for "${query}". Focused on ${topMatch.label}.`;
+    ? `Exact match: ${topMatch.label}. Rendering a ${state.hopDepth}-hop neighborhood with ${state.layoutMode} layout.${isolateLabel}`
+    : `${projected.queryMatches.length} matches for "${query}". Focused on ${topMatch.label}.${isolateLabel}`;
 }
 
 function syncNodeLimitControls(state) {
   const input = document.getElementById("graph-node-limit");
   const maxButton = document.getElementById("graph-node-limit-max");
-  if (input instanceof HTMLInputElement) {
-    input.value = Number.isFinite(state.nodeLimit) ? String(state.nodeLimit) : "MAX";
-  }
-  if (maxButton instanceof HTMLButtonElement) {
-    maxButton.hidden = !state.nodeLimitEditing;
-  }
+  if (input instanceof HTMLInputElement) input.value = Number.isFinite(state.nodeLimit) ? String(state.nodeLimit) : "MAX";
+  if (maxButton instanceof HTMLButtonElement) maxButton.hidden = !state.nodeLimitEditing;
 }
 
 function parseNodeLimitValue(value) {
@@ -589,9 +915,7 @@ function activateNodeLimitEditor(state) {
 
 function commitNodeLimitValue(state, value) {
   state.nodeLimit = parseNodeLimitValue(value);
-  if (Number.isFinite(state.nodeLimit)) {
-    state.lastFiniteNodeLimit = state.nodeLimit;
-  }
+  if (Number.isFinite(state.nodeLimit)) state.lastFiniteNodeLimit = state.nodeLimit;
   state.nodeLimitEditing = false;
   state.nodeLimitMaxPending = false;
   syncNodeLimitControls(state);
@@ -683,6 +1007,14 @@ function renderDetail(projected, state) {
           <span>Contexts</span>
           <strong>${escapeHtml(node.contexts.length)}</strong>
         </div>
+        <div class="graph-detail-metric">
+          <span>Layout</span>
+          <strong>${escapeHtml(state.layoutMode)}</strong>
+        </div>
+        <div class="graph-detail-metric">
+          <span>Color Mode</span>
+          <strong>${escapeHtml(state.colorMode)}</strong>
+        </div>
       </div>
       ${
         breakdown.length
@@ -770,12 +1102,14 @@ function setNodeSelection(state, nodeId) {
   state.selectedNodeId = nodeId || "";
 }
 
+function resetLayoutCache(state) {
+  state.layoutCache = new Map();
+}
+
 function applyQueryValue(state, value) {
   state.searchText = value;
   const searchInput = document.getElementById("graph-search");
-  if (searchInput instanceof HTMLInputElement) {
-    searchInput.value = value;
-  }
+  if (searchInput instanceof HTMLInputElement) searchInput.value = value;
   const match = findMatches(
     state.rawGraph.nodes.filter((node) => passesNodeFilters(node, state)),
     state.searchText,
@@ -783,6 +1117,7 @@ function applyQueryValue(state, value) {
   clearSceneState(state);
   state.activePerspective = "";
   setNodeSelection(state, match?.id || "");
+  resetLayoutCache(state);
   resetViewport(state);
 }
 
@@ -813,6 +1148,16 @@ function syncUiFromState(state) {
   if (hopDepth instanceof HTMLSelectElement) hopDepth.value = String(state.hopDepth);
   const ruleset = document.getElementById("graph-ruleset");
   if (ruleset instanceof HTMLSelectElement) ruleset.value = state.selectedRuleset;
+  const layout = document.getElementById("graph-layout-mode");
+  if (layout instanceof HTMLSelectElement) layout.value = state.layoutMode;
+  const size = document.getElementById("graph-size-mode");
+  if (size instanceof HTMLSelectElement) size.value = state.sizeMode;
+  const color = document.getElementById("graph-color-mode");
+  if (color instanceof HTMLSelectElement) color.value = state.colorMode;
+  const density = document.getElementById("graph-edge-density");
+  if (density instanceof HTMLSelectElement) density.value = state.edgeDensityMode;
+  const hideIsolated = document.getElementById("graph-hide-isolated");
+  if (hideIsolated instanceof HTMLInputElement) hideIsolated.checked = state.hideIsolated;
   syncNodeLimitControls(state);
   syncPerspectiveButtons(state);
 }
@@ -827,13 +1172,13 @@ function recordRenderState(state) {
 function rerenderFactory(state, canvas) {
   return (options = {}) => {
     const projected = buildProjectedGraph(state);
+    state.lastProjected = projected;
     renderStats(projected);
     renderFocus(projected, state);
     renderQueryStatus(projected, state);
     renderDetail(projected, state);
     updateZoomReadout(state);
     drawGraph(canvas, projected, state);
-    state.lastProjected = projected;
     syncUiFromState(state);
     if (!options.skipRecord) recordRenderState(state);
     if (window.innerWidth <= 640 && state.selectedNodeId) {
@@ -886,6 +1231,7 @@ function focusNode(state, nodeId) {
   state.selectedNodeId = nodeId;
   state.searchText = node.label || node.id;
   clearSceneState(state);
+  resetLayoutCache(state);
   resetViewport(state);
 }
 
@@ -900,6 +1246,7 @@ function applyPerspective(state, perspectiveId) {
     new Set(perspective.enabledEdgeKinds),
   );
   clearSceneState(state);
+  resetLayoutCache(state);
   resetViewport(state);
 }
 
@@ -914,12 +1261,28 @@ function applySnapshot(state, snapshot, rerender) {
 function updateFilterDerivedState(state) {
   if (state.activePerspective) {
     const perspective = PERSPECTIVES[state.activePerspective];
-    const typesMatch = perspective.enabledTypes.every((type) => state.enabledTypes.has(type)) && state.enabledTypes.size === perspective.enabledTypes.length;
+    const typesMatch =
+      perspective.enabledTypes.every((type) => state.enabledTypes.has(type)) &&
+      state.enabledTypes.size === perspective.enabledTypes.length;
     const edgesMatch =
       perspective.enabledEdgeKinds.every((kind) => state.enabledEdgeKinds.has(kind)) &&
       state.enabledEdgeKinds.size === perspective.enabledEdgeKinds.length;
     if (!typesMatch || !edgesMatch) state.activePerspective = "";
   }
+}
+
+function edgeStyle(edge, active, state) {
+  const baseColor = EDGE_KINDS.find((kind) => kind.id === edge.kind)?.color || "rgba(47, 85, 71, 0.14)";
+  if (active) {
+    return { strokeStyle: "rgba(185, 131, 42, 0.82)", lineWidth: 2.2 };
+  }
+  if (state.edgeDensityMode === "focused" && edge.kind === "learnsMove") {
+    return { strokeStyle: "rgba(232, 184, 80, 0.10)", lineWidth: 0.8 };
+  }
+  if (state.edgeDensityMode === "smart" && edge.kind === "learnsMove") {
+    return { strokeStyle: "rgba(232, 184, 80, 0.16)", lineWidth: 0.9 };
+  }
+  return { strokeStyle: baseColor, lineWidth: edge.kind === "learnsMove" ? 0.95 : 1.1 };
 }
 
 function drawGraph(canvas, projected, state) {
@@ -932,7 +1295,7 @@ function drawGraph(canvas, projected, state) {
   context.setTransform(scale, 0, 0, scale, 0, 0);
   context.clearRect(0, 0, rect.width, rect.height);
 
-  const positions = buildLayout(projected.nodes, projected.anchorId, rect.width, rect.height);
+  const positions = buildLayout(projected, state, rect.width, rect.height);
   state.lastLayout = positions;
   state.lastRect = { width: rect.width, height: rect.height };
   const selectedNeighbors = projected.adjacency.get(state.selectedNodeId) || new Set();
@@ -958,13 +1321,12 @@ function drawGraph(canvas, projected, state) {
       (edge.source === state.selectedNodeId ||
         edge.target === state.selectedNodeId ||
         (selectedNeighbors.has(edge.source) && selectedNeighbors.has(edge.target)));
+    const style = edgeStyle(edge, active, state);
     context.beginPath();
     context.moveTo(a.x, a.y);
     context.lineTo(b.x, b.y);
-    context.strokeStyle = active
-      ? "rgba(185, 131, 42, 0.82)"
-      : EDGE_KINDS.find((kind) => kind.id === edge.kind)?.color || "rgba(47, 85, 71, 0.14)";
-    context.lineWidth = active ? 2 : 1;
+    context.strokeStyle = style.strokeStyle;
+    context.lineWidth = style.lineWidth;
     context.stroke();
   });
 
@@ -972,7 +1334,7 @@ function drawGraph(canvas, projected, state) {
     const point = positions.get(node.id);
     if (!point) return;
     const screen = toScreen(point);
-    const radius = Math.max(2.2, nodeRadius(node) * state.zoom);
+    const radius = Math.max(2.2, nodeRadius(node, state) * state.zoom);
     const active =
       node.id === state.selectedNodeId ||
       selectedNeighbors.has(node.id) ||
@@ -980,7 +1342,7 @@ function drawGraph(canvas, projected, state) {
       state.pinnedNodeIds.has(node.id);
     context.beginPath();
     context.arc(screen.x, screen.y, radius, 0, Math.PI * 2);
-    context.fillStyle = TYPE_COLORS[node.type] || "#54795c";
+    context.fillStyle = nodeColor(node, state);
     context.globalAlpha = active || !state.selectedNodeId ? 0.96 : 0.46;
     context.fill();
     context.globalAlpha = 1;
@@ -1016,7 +1378,7 @@ function drawGraph(canvas, projected, state) {
         id: node.id,
         x: screen.x,
         y: screen.y,
-        radius: Math.max(10, nodeRadius(node) * state.zoom + 4),
+        radius: Math.max(10, nodeRadius(node, state) * state.zoom + 4),
       };
     })
     .filter(Boolean);
@@ -1065,9 +1427,7 @@ function setupCanvasInteractions(canvas, state, rerender) {
 
     if (activePointers.size >= 2) {
       const dist = getPinchDist();
-      if (dist && lastPinchDist) {
-        state.zoom = clampZoom(state.zoom * (dist / lastPinchDist));
-      }
+      if (dist && lastPinchDist) state.zoom = clampZoom(state.zoom * (dist / lastPinchDist));
       lastPinchDist = dist;
       rerender();
     } else {
@@ -1115,6 +1475,7 @@ function bindSelectionHandlers(state, rerender) {
     const button = event.target.closest("[data-graph-node]");
     if (button) {
       state.selectedNodeId = button.getAttribute("data-graph-node") || "";
+      resetLayoutCache(state);
       resetViewport(state);
       rerender();
       return;
@@ -1170,10 +1531,17 @@ function wireControls(state, rerender) {
       new Set(EDGE_KINDS.filter((kind) => kind.checked).map((kind) => kind.id)),
     );
     state.selectedRuleset = "";
+    state.layoutMode = DEFAULT_LAYOUT_MODE;
+    state.sizeMode = DEFAULT_SIZE_MODE;
+    state.colorMode = DEFAULT_COLOR_MODE;
+    state.edgeDensityMode = DEFAULT_EDGE_DENSITY;
+    state.hideIsolated = false;
+    resetLayoutCache(state);
     rerender();
   });
   document.getElementById("graph-reset-view")?.addEventListener("click", () => {
     clearSceneState(state);
+    resetLayoutCache(state);
     resetViewport(state);
     rerender();
   });
@@ -1188,13 +1556,37 @@ function wireControls(state, rerender) {
     applySnapshot(state, state.history[state.historyIndex], rerender);
   });
   document.getElementById("graph-fit-selection")?.addEventListener("click", () => {
-    const ids = state.selectedNodeId ? new Set([state.selectedNodeId, ...(state.lastProjected?.adjacency.get(state.selectedNodeId) || [])]) : new Set();
+    const ids = state.selectedNodeId
+      ? new Set([state.selectedNodeId, ...(state.lastProjected?.adjacency.get(state.selectedNodeId) || [])])
+      : new Set();
     if (ids.size) fitNodeIds(state, ids);
     rerender();
   });
   document.getElementById("graph-fit-graph")?.addEventListener("click", () => {
-    const ids = new Set((state.lastProjected?.nodes || []).map((node) => node.id));
-    fitNodeIds(state, ids);
+    fitNodeIds(state, new Set((state.lastProjected?.nodes || []).map((node) => node.id)));
+    rerender();
+  });
+  document.getElementById("graph-layout-mode")?.addEventListener("change", (event) => {
+    state.layoutMode = parseChoice(event.target.value, LAYOUT_OPTIONS, DEFAULT_LAYOUT_MODE);
+    resetLayoutCache(state);
+    rerender();
+  });
+  document.getElementById("graph-size-mode")?.addEventListener("change", (event) => {
+    state.sizeMode = parseChoice(event.target.value, SIZE_OPTIONS, DEFAULT_SIZE_MODE);
+    rerender();
+  });
+  document.getElementById("graph-color-mode")?.addEventListener("change", (event) => {
+    state.colorMode = parseChoice(event.target.value, COLOR_OPTIONS, DEFAULT_COLOR_MODE);
+    rerender();
+  });
+  document.getElementById("graph-edge-density")?.addEventListener("change", (event) => {
+    state.edgeDensityMode = parseChoice(event.target.value, DENSITY_OPTIONS, DEFAULT_EDGE_DENSITY);
+    resetLayoutCache(state);
+    rerender();
+  });
+  document.getElementById("graph-hide-isolated")?.addEventListener("change", (event) => {
+    state.hideIsolated = Boolean(event.target.checked);
+    resetLayoutCache(state);
     rerender();
   });
   document.getElementById("graph-zoom-out")?.addEventListener("click", () => {
@@ -1247,22 +1639,21 @@ function wireControls(state, rerender) {
           EDGE_KINDS.map((kind) => kind.id),
           new Set(EDGE_KINDS.filter((kind) => kind.checked).map((kind) => kind.id)),
         );
+        resetLayoutCache(state);
       }
       rerender();
     });
   });
   document.getElementById("graph-hop-depth")?.addEventListener("change", (event) => {
     state.hopDepth = Number(event.target.value || 2);
+    resetLayoutCache(state);
     rerender();
   });
-  document.getElementById("graph-node-limit")?.addEventListener("focus", () => {
-    activateNodeLimitEditor(state);
-  });
-  document.getElementById("graph-node-limit")?.addEventListener("click", () => {
-    activateNodeLimitEditor(state);
-  });
+  document.getElementById("graph-node-limit")?.addEventListener("focus", () => activateNodeLimitEditor(state));
+  document.getElementById("graph-node-limit")?.addEventListener("click", () => activateNodeLimitEditor(state));
   document.getElementById("graph-node-limit")?.addEventListener("change", (event) => {
     commitNodeLimitValue(state, event.target.value);
+    resetLayoutCache(state);
     rerender();
   });
   document.getElementById("graph-node-limit-max")?.addEventListener("pointerdown", () => {
@@ -1272,6 +1663,7 @@ function wireControls(state, rerender) {
     commitNodeLimitValue(state, "MAX");
     const input = document.getElementById("graph-node-limit");
     if (input instanceof HTMLInputElement) input.blur();
+    resetLayoutCache(state);
     rerender();
   });
   document.getElementById("graph-node-limit")?.addEventListener("blur", (event) => {
@@ -1280,6 +1672,7 @@ function wireControls(state, rerender) {
       return;
     }
     commitNodeLimitValue(state, event.target.value);
+    resetLayoutCache(state);
     rerender();
   });
   document.getElementById("graph-node-limit")?.addEventListener("keydown", (event) => {
@@ -1297,17 +1690,20 @@ function wireControls(state, rerender) {
   });
   document.getElementById("graph-ruleset")?.addEventListener("change", (event) => {
     state.selectedRuleset = event.target.value;
+    resetLayoutCache(state);
     rerender();
   });
   TYPE_ORDER.forEach((type) => {
     document.getElementById(`graph-type-${slugify(type)}`)?.addEventListener("change", () => {
       updateFilterDerivedState(state);
+      resetLayoutCache(state);
       rerender();
     });
   });
   EDGE_KINDS.forEach((kind) => {
     document.getElementById(`graph-edge-${slugify(kind.id)}`)?.addEventListener("change", () => {
       updateFilterDerivedState(state);
+      resetLayoutCache(state);
       rerender();
     });
   });
@@ -1321,9 +1717,7 @@ function wireControls(state, rerender) {
       document.getElementById("graph-history-back")?.click();
       return;
     }
-    if (event.key === "]") {
-      document.getElementById("graph-history-forward")?.click();
-    }
+    if (event.key === "]") document.getElementById("graph-history-forward")?.click();
   });
 }
 
@@ -1360,11 +1754,17 @@ export async function createGraphApp() {
     hitMap: [],
     lastLayout: null,
     lastRect: null,
-    lastProjected: null,
+    lastProjected: { nodes: [] },
     manualVisibleIds: urlState.manualVisibleIds,
     hiddenNodeIds: urlState.hiddenNodeIds,
     pinnedNodeIds: urlState.pinnedNodeIds,
     activePerspective: urlState.activePerspective,
+    layoutMode: urlState.layoutMode,
+    sizeMode: urlState.sizeMode,
+    colorMode: urlState.colorMode,
+    edgeDensityMode: urlState.edgeDensityMode,
+    hideIsolated: urlState.hideIsolated,
+    layoutCache: new Map(),
     history: [],
     historyIndex: -1,
     get enabledTypes() {
@@ -1376,14 +1776,15 @@ export async function createGraphApp() {
   };
 
   const canvas = document.getElementById("graph-canvas");
-  if (!(canvas instanceof HTMLCanvasElement)) {
-    throw new Error("Graph canvas missing.");
-  }
+  if (!(canvas instanceof HTMLCanvasElement)) throw new Error("Graph canvas missing.");
+
   replaceCheckboxSet("graph-type-", TYPE_ORDER, urlState.enabledTypes.size ? urlState.enabledTypes : new Set(TYPE_ORDER));
   replaceCheckboxSet(
     "graph-edge-",
     EDGE_KINDS.map((kind) => kind.id),
-    urlState.enabledEdgeKinds.size ? urlState.enabledEdgeKinds : new Set(EDGE_KINDS.filter((kind) => kind.checked).map((kind) => kind.id)),
+    urlState.enabledEdgeKinds.size
+      ? urlState.enabledEdgeKinds
+      : new Set(EDGE_KINDS.filter((kind) => kind.checked).map((kind) => kind.id)),
   );
   syncUiFromState(state);
   resetViewport(state);
@@ -1413,10 +1814,14 @@ export async function createGraphApp() {
       });
     if (!hit) return;
     state.selectedNodeId = hit.id;
+    resetLayoutCache(state);
     resetViewport(state);
     rerender();
   });
 
-  window.addEventListener("resize", () => rerender({ skipRecord: true }));
+  window.addEventListener("resize", () => {
+    resetLayoutCache(state);
+    rerender({ skipRecord: true });
+  });
   rerender();
 }

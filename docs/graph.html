@@ -101,6 +101,44 @@
             </div>
           </div>
           <div class="graph-control-row graph-control-row-compact">
+            <label class="graph-control" for="graph-layout-mode">
+              <span class="toolbar-label">Layout</span>
+              <select id="graph-layout-mode" class="qe-select">
+                <option value="orbit" selected>Orbit</option>
+                <option value="radial">Radial</option>
+                <option value="hierarchical">Hierarchical</option>
+                <option value="force-lite">Force Lite</option>
+              </select>
+            </label>
+            <label class="graph-control" for="graph-size-mode">
+              <span class="toolbar-label">Node Size</span>
+              <select id="graph-size-mode" class="qe-select">
+                <option value="degree" selected>Degree</option>
+                <option value="contexts">Contexts</option>
+                <option value="uniform">Uniform</option>
+              </select>
+            </label>
+            <label class="graph-control" for="graph-color-mode">
+              <span class="toolbar-label">Node Color</span>
+              <select id="graph-color-mode" class="qe-select">
+                <option value="type" selected>Type</option>
+                <option value="contexts">Contexts</option>
+              </select>
+            </label>
+            <label class="graph-control" for="graph-edge-density">
+              <span class="toolbar-label">Edge Density</span>
+              <select id="graph-edge-density" class="qe-select">
+                <option value="smart" selected>Smart</option>
+                <option value="full">Full</option>
+                <option value="focused">Focused</option>
+              </select>
+            </label>
+            <label class="source-toggle graph-toggle graph-toggle-inline">
+              <input type="checkbox" id="graph-hide-isolated">
+              <span>Hide isolated</span>
+            </label>
+          </div>
+          <div class="graph-control-row graph-control-row-compact">
             <div class="graph-filter-pack">
               <span class="toolbar-label">Types</span>
               <div class="graph-filter-row" id="graph-node-filters"></div>
