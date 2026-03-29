@@ -370,12 +370,15 @@ function averageNeighborPosition(nodeId, adjacency, positions) {
 
 function graphChromeMetrics() {
   const header = document.querySelector(".site-header .topbar");
+  const siteShell = document.querySelector(".site-header .site-shell");
   const sidebar = document.querySelector(".graph-sidebar");
   const headerBottom = header instanceof HTMLElement ? header.getBoundingClientRect().bottom : 0;
+  const shellRect = siteShell instanceof HTMLElement ? siteShell.getBoundingClientRect() : null;
   const sidebarRect =
     sidebar instanceof HTMLElement && !sidebar.hidden ? sidebar.getBoundingClientRect() : null;
   return {
     headerBottom,
+    shellLeft: shellRect ? shellRect.left : GRAPH_PADDING,
     sidebarLeft: sidebarRect ? sidebarRect.left : window.innerWidth - GRAPH_PADDING,
     sidebarWidth: sidebarRect ? sidebarRect.width : 0,
   };
@@ -383,11 +386,11 @@ function graphChromeMetrics() {
 
 function syncGraphViewportVars() {
   const root = document.documentElement;
-  const { headerBottom, sidebarLeft } = graphChromeMetrics();
+  const { headerBottom, shellLeft, sidebarLeft } = graphChromeMetrics();
   root.style.setProperty("--graph-frame-top", `${Math.round(headerBottom + GRAPH_PADDING * 0.5)}px`);
   root.style.setProperty("--graph-frame-right", `${Math.max(GRAPH_PADDING, Math.round(window.innerWidth - sidebarLeft + GRAPH_PADDING * 0.5))}px`);
   root.style.setProperty("--graph-frame-bottom", `${GRAPH_PADDING}px`);
-  root.style.setProperty("--graph-frame-left", `${GRAPH_PADDING}px`);
+  root.style.setProperty("--graph-frame-left", `${Math.max(GRAPH_PADDING, Math.round(shellLeft))}px`);
 }
 
 function graphLayoutFrame(width, height) {
