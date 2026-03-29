@@ -1099,10 +1099,10 @@ body:not([data-power-mode="on"]) .qe-results-body {
 
 .graph-controls {
   position: fixed;
-  top: calc(5.45rem + var(--graph-panel-offset));
-  left: var(--graph-panel-offset);
+  top: var(--graph-frame-top, calc(5.45rem + var(--graph-panel-offset)));
+  left: var(--graph-frame-left, var(--graph-panel-offset));
   width: max(20rem, var(--graph-controls-width));
-  max-width: calc(100vw - (var(--graph-panel-offset) * 2));
+  max-width: calc(100vw - var(--graph-frame-left, var(--graph-panel-offset)) - var(--graph-frame-right, var(--graph-panel-offset)) - 1.5rem);
   z-index: 30;
   margin-bottom: 0;
   background: rgba(248, 243, 225, 0.88);
@@ -1141,8 +1141,8 @@ body:not([data-power-mode="on"]) .qe-results-body {
 }
 
 .graph-controls.is-collapsed {
-  width: min(24rem, calc(100vw - (var(--graph-panel-offset) * 2)));
-  max-width: calc(100vw - (var(--graph-panel-offset) * 2));
+  width: min(24rem, calc(100vw - var(--graph-frame-left, var(--graph-panel-offset)) - var(--graph-frame-right, var(--graph-panel-offset)) - 1.5rem));
+  max-width: calc(100vw - var(--graph-frame-left, var(--graph-panel-offset)) - var(--graph-frame-right, var(--graph-panel-offset)) - 1.5rem);
   min-width: 0;
   padding: 0;
   border: 0;
@@ -1362,9 +1362,9 @@ body:not([data-power-mode="on"]) .qe-results-body {
 
 .graph-sidebar {
   position: fixed;
-  top: calc(5.45rem + var(--graph-panel-offset));
+  top: var(--graph-frame-top, calc(5.45rem + var(--graph-panel-offset)));
   right: var(--graph-panel-offset);
-  bottom: var(--graph-panel-offset);
+  bottom: var(--graph-frame-bottom, var(--graph-panel-offset));
   width: var(--graph-sidebar-width);
   z-index: 25;
   display: grid;
@@ -1398,11 +1398,11 @@ body:not([data-power-mode="on"]) .qe-results-body {
 
 .graph-stage-floating {
   position: fixed;
-  left: var(--graph-panel-offset);
-  bottom: var(--graph-panel-offset);
+  left: calc(var(--graph-frame-left, var(--graph-panel-offset)) + 0.55rem);
+  bottom: calc(var(--graph-frame-bottom, var(--graph-panel-offset)) + 0.55rem);
   z-index: 20;
   width: fit-content;
-  max-width: min(52rem, calc(100vw - (var(--graph-panel-offset) * 2)));
+  max-width: min(52rem, calc(100vw - var(--graph-frame-left, var(--graph-panel-offset)) - var(--graph-frame-right, var(--graph-panel-offset)) - 1.1rem));
   padding: 0.55rem 0.75rem;
   border: 2px solid var(--line);
   background: rgba(248, 243, 225, 0.78);
@@ -1416,9 +1416,9 @@ body:not([data-power-mode="on"]) .qe-results-body {
 
 .graph-stage-floating-zoom {
   left: auto;
-  right: calc(var(--graph-sidebar-width) + (var(--graph-panel-offset) * 2));
+  right: calc(var(--graph-frame-right, var(--graph-panel-offset)) + 0.55rem);
   z-index: 21;
-  max-width: calc(100vw - var(--graph-sidebar-width) - (var(--graph-panel-offset) * 4));
+  max-width: calc(100vw - var(--graph-frame-left, var(--graph-panel-offset)) - var(--graph-frame-right, var(--graph-panel-offset)) - 1.1rem);
   padding: 0;
   border: 0;
   background: transparent;
