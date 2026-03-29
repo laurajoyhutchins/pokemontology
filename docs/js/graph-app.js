@@ -1330,6 +1330,15 @@ function edgeStyle(edge, active, state) {
   return { strokeStyle: baseColor, lineWidth: edge.kind === "learnsMove" ? 0.95 : 1.1 };
 }
 
+function nodeFitsFrame(screen, radius, frame, inset = 6) {
+  return (
+    screen.x - radius >= frame.left + inset &&
+    screen.x + radius <= frame.right - inset &&
+    screen.y - radius >= frame.top + inset &&
+    screen.y + radius <= frame.bottom - inset
+  );
+}
+
 function drawGraph(canvas, projected, state) {
   const context = canvas.getContext("2d");
   if (!context) return;
@@ -1341,6 +1350,7 @@ function drawGraph(canvas, projected, state) {
   context.clearRect(0, 0, rect.width, rect.height);
 
   const positions = buildLayout(projected, state, rect.width, rect.height);
+  const frame = graphLayoutFrame(rect.width, rect.height);
   state.lastLayout = positions;
   state.lastRect = { width: rect.width, height: rect.height };
   const selectedNeighbors = projected.adjacency.get(state.selectedNodeId) || new Set();
@@ -1380,6 +1390,7 @@ function drawGraph(canvas, projected, state) {
     if (!point) return;
     const screen = toScreen(point);
     const radius = Math.max(2.2, nodeRadius(node, state) * state.zoom);
+    if (!nodeFitsFrame(screen, radius, frame)) return;
     const active =
       node.id === state.selectedNodeId ||
       selectedNeighbors.has(node.id) ||
@@ -1408,9 +1419,12 @@ function drawGraph(canvas, projected, state) {
     const point = positions.get(labelNode.id);
     if (point) {
       const screen = toScreen(point);
-      context.fillStyle = "#17322b";
-      context.font = '700 12px "IBM Plex Mono", monospace';
-      context.fillText(String(labelNode.label || ""), screen.x + 12, screen.y - 12);
+      const radius = Math.max(2.2, nodeRadius(labelNode, state) * state.zoom);
+      if (nodeFitsFrame(screen, radius, frame)) {
+        context.fillStyle = "#17322b";
+        context.font = '700 12px "IBM Plex Mono", monospace';
+        context.fillText(String(labelNode.label || ""), screen.x + 12, screen.y - 12);
+      }
     }
   }
 
@@ -1426,7 +1440,7 @@ function drawGraph(canvas, projected, state) {
         radius: Math.max(10, nodeRadius(node, state) * state.zoom + 4),
       };
     })
-    .filter(Boolean);
+    .filter((entry) => entry && nodeFitsFrame(entry, entry.radius, frame, 0));
 }
 
 function setupCanvasInteractions(canvas, state, rerender) {
