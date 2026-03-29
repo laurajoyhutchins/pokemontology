@@ -7,7 +7,7 @@
   <meta name="description" content="Browse Pokemon species, default variants, type assignments, and learnable moves from the published pokemontology dataset.">
   <link rel="stylesheet" href="./styles.css">
 </head>
-<body>
+<body class="pokedex-page">
   <header class="site-header">
     <div class="site-shell">
       <div class="topbar fade-up">
@@ -33,14 +33,14 @@
     </div>
   </header>
 
-  <main>
+  <main class="pokedex-main">
     <section class="pokedex-hero section-tight">
       <div class="site-shell pokedex-hero-grid">
         <div class="pokedex-intro fade-up">
-          <p class="eyebrow">Pokemontology / Species Browser</p>
+          <p class="eyebrow">Pokemontology / Field Guide</p>
           <h1 class="laurel-title">Ontology Pokedex</h1>
           <p class="laurel-lead">
-            Browse species and default variants directly from the published Turtle dataset, with type assignments and learnable moves resolved in-browser.
+            A browser for species, typing, abilities, base stats, and learnable moves resolved live from the published ontology and mechanics bundles.
           </p>
           <div class="pokedex-runbar">
             <label class="toolbar-label" for="pokedex-search">Search species or form</label>
@@ -59,29 +59,30 @@
             </div>
             <div class="stat-chip">
               <strong data-pokedex-count>0</strong>
-              <span>Default variants</span>
+              <span>Indexed species</span>
             </div>
             <div class="stat-chip">
               <strong data-pokedex-visible>0</strong>
-              <span>Visible results</span>
+              <span>Visible entries</span>
             </div>
           </div>
         </div>
 
-        <aside class="laurel-sidecar fade-up delay-1">
-          <div class="sidecar-card">
-            <p class="panel-kicker">Dataset Scope</p>
+        <aside class="pokedex-hero-sidecar fade-up delay-1">
+          <div class="pokedex-note-card">
+            <p class="panel-kicker">Source Pack</p>
             <p>
-              This page uses <code>ontology.ttl</code> and the canonical <code data-pokedex-mechanics-artifact>mechanics.ttl</code> dataset. Types and moves are live SPARQL results from the shipped docs artifacts.
+              Uses <code>ontology.ttl</code> plus the canonical <code data-pokedex-mechanics-artifact>mechanics.ttl</code> docs bundle. Types, abilities, moves, and rulesets are queried in-browser via shipped SPARQL workers.
             </p>
           </div>
-          <div class="sidecar-card">
-            <p class="panel-kicker">Returned Fields</p>
+          <div class="pokedex-note-card">
+            <p class="panel-kicker">Guide Scope</p>
             <div class="pokedex-meta-list">
-              <span>Species</span>
-              <span>Default variant</span>
+              <span>Species identity</span>
               <span>Typing</span>
-              <span>Learnable moves</span>
+              <span>Abilities</span>
+              <span>Base stats</span>
+              <span>Move preview</span>
               <span>Ruleset coverage</span>
             </div>
           </div>
@@ -110,7 +111,7 @@
         <aside class="pokedex-detail panel fade-up delay-2" aria-labelledby="pokedex-detail-heading">
           <div class="pokedex-panel-head">
             <div>
-              <p class="panel-kicker">Entry</p>
+              <p class="panel-kicker">Dossier</p>
               <h2 id="pokedex-detail-heading">Selected Pokemon</h2>
             </div>
             <span class="mini-badge" id="pokedex-entry-badge">No selection</span>

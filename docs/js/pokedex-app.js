@@ -190,10 +190,12 @@ function renderCatalog(entries, selectedSlug) {
       >
         <div class="pokedex-card-head">
           <span class="pokedex-dex">#${entry.dexNumber}</span>
-          <span class="pokedex-variant-tag">Species</span>
+          <span class="pokedex-variant-tag">Field Entry</span>
         </div>
-        <h3>${escapeHtml(entry.speciesName)}</h3>
-        <p>${escapeHtml(entry.identifier)}</p>
+        <div class="pokedex-card-copy">
+          <h3>${escapeHtml(entry.speciesName)}</h3>
+          <p>${escapeHtml(entry.identifier)}</p>
+        </div>
         <div class="pokedex-type-row">
           ${entry.typePairs.map((type) => typeBadgeHtml(type.name)).join("")}
         </div>
@@ -234,6 +236,8 @@ function renderDetail(entry, detail) {
   if (!target) return;
   if (badge) badge.textContent = `#${entry.dexNumber}`;
 
+  const typeRows = detail.types.length ? detail.types : entry.typePairs.map((type) => ({ typeName: type.name }));
+
   const stats = detail.stats.length
     ? `
       <section class="pokedex-section">
@@ -267,14 +271,38 @@ function renderDetail(entry, detail) {
     <article class="pokedex-entry">
       <div class="pokedex-entry-head">
         <div>
-          <p class="panel-kicker">Species</p>
+          <p class="panel-kicker">Species Record</p>
           <h3>${escapeHtml(entry.speciesName)}</h3>
-          <p class="pokedex-subhead">${escapeHtml(entry.speciesName)} · ${escapeHtml(entry.identifier)}</p>
+          <p class="pokedex-subhead">${escapeHtml(entry.identifier)}</p>
         </div>
-        <div class="pokedex-chip-row">
-          ${detail.types.map((row) => typeBadgeHtml(row.typeName)).join("")}
+        <div class="pokedex-entry-meta">
+          <span class="pokedex-record-id">Dex ${escapeHtml(entry.dexNumber)}</span>
         </div>
       </div>
+
+      <section class="pokedex-section pokedex-section-hero">
+        <div class="pokedex-chip-row">
+          ${typeRows.map((row) => typeBadgeHtml(row.typeName)).join("")}
+        </div>
+        <div class="pokedex-summary-grid">
+          <div class="pokedex-summary-card">
+            <span>Types</span>
+            <strong>${escapeHtml(typeRows.length)}</strong>
+          </div>
+          <div class="pokedex-summary-card">
+            <span>Moves</span>
+            <strong>${escapeHtml(detail.moves.length)}</strong>
+          </div>
+          <div class="pokedex-summary-card">
+            <span>Rulesets</span>
+            <strong>${escapeHtml(detail.rulesets.length)}</strong>
+          </div>
+          <div class="pokedex-summary-card">
+            <span>Abilities</span>
+            <strong>${escapeHtml(detail.abilities.length)}</strong>
+          </div>
+        </div>
+      </section>
 
       <section class="pokedex-section">
         <p class="panel-kicker">Move Preview</p>
