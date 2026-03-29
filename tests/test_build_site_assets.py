@@ -147,6 +147,9 @@ def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
     assert "build/mechanics.ttl" in bundled_query["query"]
     assert "build/pokeapi.ttl" not in bundled_query["query"]
     assert "build/mechanics.ttl" in bundled_query["command"]
+    assert "@prefix pkmi: <https://laurajoyhutchins.github.io/pokemontology/id/> ." in (
+        tmp_path / "build" / "mechanics.ttl"
+    ).read_text(encoding="utf-8")
     assert schema_index["prefixes"]
     assert schema_index["retrieval"]["top_k"] == 4
     assert schema_index["retrieval"]["minimum_scores"][0] == {

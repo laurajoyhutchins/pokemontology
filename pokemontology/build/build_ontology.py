@@ -933,6 +933,7 @@ def _merge_mechanics_data() -> None:
     with BUILD_MECHANICS.open("w", encoding="utf-8") as outfile:
         # Write prefix header once
         outfile.write("@prefix pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#> .\n")
+        outfile.write("@prefix pkmi: <https://laurajoyhutchins.github.io/pokemontology/id/> .\n")
         outfile.write("@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n")
         outfile.write("@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .\n\n")
 
