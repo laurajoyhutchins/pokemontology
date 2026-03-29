@@ -36,6 +36,10 @@ const DEFAULT_EDGE_DENSITY = "smart";
 const URL_STATE_VERSION = "2";
 const GRAPH_PADDING = 36;
 const CONTEXT_COLOR_STOPS = ["#d9d381", "#e8b850", "#d66d4d", "#5a88c8"];
+const DEFAULT_GRAPH_PROMPT = "Search or click a node to query locally";
+const SELECTED_GRAPH_PROMPT = "Click nodes to repivot the local graph";
+const DEFAULT_EDGE_KIND_IDS = EDGE_KINDS.map((kind) => kind.id);
+const DEFAULT_CHECKED_EDGE_KIND_IDS = EDGE_KINDS.filter((kind) => kind.checked).map((kind) => kind.id);
 const PERSPECTIVES = {
   typing: {
     label: "Typing",
@@ -808,6 +812,37 @@ function replaceCheckboxSet(prefix, allValues, selectedValues) {
   });
 }
 
+function setTypeFilters(selectedValues) {
+  replaceCheckboxSet("graph-type-", TYPE_ORDER, selectedValues);
+}
+
+function setEdgeFilters(selectedValues) {
+  replaceCheckboxSet("graph-edge-", DEFAULT_EDGE_KIND_IDS, selectedValues);
+}
+
+function defaultHoverMessage(state) {
+  return state.selectedNodeId ? SELECTED_GRAPH_PROMPT : DEFAULT_GRAPH_PROMPT;
+}
+
+function layoutLabel(layoutMode) {
+  return layoutMode === "force-lite"
+    ? "Force"
+    : layoutMode[0].toUpperCase() + layoutMode.slice(1);
+}
+
+function renderNodeCard(entry, cardClass = "graph-result-card") {
+  return `
+    <button class="${cardClass}" type="button" data-graph-node="${escapeHtml(entry.id)}">
+      <strong>${escapeHtml(entry.label)}</strong>
+      <span>${escapeHtml(entry.type)} · degree ${escapeHtml(entry.degree)}</span>
+    </button>
+  `;
+}
+
+function renderNodeCardList(entries, cardClass = "graph-result-card") {
+  return entries.map((entry) => renderNodeCard(entry, cardClass)).join("");
+}
+
 function decodeUrlState() {
   const params = new URLSearchParams(window.location.search);
   return {
@@ -888,12 +923,8 @@ function applySnapshotToUi(state, snapshot) {
   state.selectedNeighborhoodOnly = parseBooleanParam(snapshot.neighborhood || "");
   state.layoutCache = new Map();
   syncUiFromState(state);
-  replaceCheckboxSet("graph-type-", TYPE_ORDER, parseListParam(snapshot.types || encodeSet(new Set(TYPE_ORDER))));
-  replaceCheckboxSet(
-    "graph-edge-",
-    EDGE_KINDS.map((kind) => kind.id),
-    parseListParam(snapshot.edges || encodeSet(new Set(EDGE_KINDS.map((kind) => kind.id)))),
-  );
+  setTypeFilters(parseListParam(snapshot.types || encodeSet(new Set(TYPE_ORDER))));
+  setEdgeFilters(parseListParam(snapshot.edges || encodeSet(new Set(DEFAULT_EDGE_KIND_IDS))));
 }
 
 function syncPerspectiveButtons(state) {
@@ -927,17 +958,16 @@ function renderFocus(projected, state) {
   const hoverReadout = document.getElementById("graph-hover-readout");
   if (focusBadge) {
     const anchor = projected.nodes.find((node) => node.id === projected.anchorId);
-    const layoutLabel = state.layoutMode === "force-lite" ? "Force" : state.layoutMode[0].toUpperCase() + state.layoutMode.slice(1);
     if (state.manualVisibleIds.size) {
       focusBadge.textContent = anchor
-        ? `${anchor.label} · ${layoutLabel} scene`
-        : `Custom scene · ${layoutLabel}`;
+        ? `${anchor.label} · ${layoutLabel(state.layoutMode)} scene`
+        : `Custom scene · ${layoutLabel(state.layoutMode)}`;
     } else {
-      focusBadge.textContent = anchor ? `${anchor.label} · ${layoutLabel} query` : `Top-degree overview · ${layoutLabel}`;
+      focusBadge.textContent = anchor ? `${anchor.label} · ${layoutLabel(state.layoutMode)} query` : `Top-degree overview · ${layoutLabel(state.layoutMode)}`;
     }
   }
   if (hoverReadout && !hoverReadout.dataset.locked) {
-    hoverReadout.textContent = projected.anchorId ? "Click nodes to repivot the local graph" : "Search or click a node to query locally";
+    hoverReadout.textContent = projected.anchorId ? SELECTED_GRAPH_PROMPT : DEFAULT_GRAPH_PROMPT;
   }
 }
 
@@ -1159,16 +1189,7 @@ function renderDetail(projected, state) {
           <section class="graph-inspector-section">
             <p class="panel-kicker">Matches</p>
             <div class="graph-results">
-              ${matches
-                .map(
-                  (entry) => `
-                    <button class="graph-result-card" type="button" data-graph-node="${escapeHtml(entry.id)}">
-                      <strong>${escapeHtml(entry.label)}</strong>
-                      <span>${escapeHtml(entry.type)} · degree ${escapeHtml(entry.degree)}</span>
-                    </button>
-                  `,
-                )
-                .join("")}
+              ${renderNodeCardList(matches, "graph-result-card")}
             </div>
           </section>
         `
@@ -1280,14 +1301,7 @@ function renderDetail(projected, state) {
                         <div class="graph-neighbor-list graph-results">
                           ${group.neighbors
                             .slice(0, 4)
-                            .map(
-                              (entry) => `
-                                <button class="graph-neighbor-card" type="button" data-graph-node="${escapeHtml(entry.id)}">
-                                  <strong>${escapeHtml(entry.label)}</strong>
-                                  <span>${escapeHtml(entry.type)} · degree ${escapeHtml(entry.degree)}</span>
-                                </button>
-                              `,
-                            )
+                            .map((entry) => renderNodeCard(entry, "graph-neighbor-card"))
                             .join("")}
                         </div>
                       </section>
@@ -1303,17 +1317,7 @@ function renderDetail(projected, state) {
         <div class="graph-neighbor-list graph-results">
           ${
             neighbors.length
-              ? neighbors
-                  .slice(0, 8)
-                  .map(
-                    (entry) => `
-                      <button class="graph-neighbor-card" type="button" data-graph-node="${escapeHtml(entry.id)}">
-                        <strong>${escapeHtml(entry.label)}</strong>
-                        <span>${escapeHtml(entry.type)} · degree ${escapeHtml(entry.degree)}</span>
-                      </button>
-                    `,
-                  )
-                  .join("")
+              ? renderNodeCardList(neighbors.slice(0, 8), "graph-neighbor-card")
               : `<p class="pokedex-summary">No visible pivot candidates under the current query.</p>`
           }
         </div>
@@ -1513,12 +1517,8 @@ function applyPerspective(state, perspectiveId) {
   const perspective = PERSPECTIVES[perspectiveId];
   if (!perspective) return;
   state.activePerspective = perspectiveId;
-  replaceCheckboxSet("graph-type-", TYPE_ORDER, new Set(perspective.enabledTypes));
-  replaceCheckboxSet(
-    "graph-edge-",
-    EDGE_KINDS.map((kind) => kind.id),
-    new Set(perspective.enabledEdgeKinds),
-  );
+  setTypeFilters(new Set(perspective.enabledTypes));
+  setEdgeFilters(new Set(perspective.enabledEdgeKinds));
   clearSceneState(state);
   resetLayoutCache(state);
   resetViewport(state);
@@ -1715,7 +1715,7 @@ function setupCanvasInteractions(canvas, state, rerender) {
       const node = state.nodesById.get(hit.id);
       updateHoverReadout(state, `${node?.label || hit.id} · ${node?.type || ""}`);
     } else if (activePointers.size === 0) {
-      updateHoverReadout(state, state.selectedNodeId ? "Click nodes to repivot the local graph" : "Search or click a node to query locally");
+      updateHoverReadout(state, defaultHoverMessage(state));
     }
 
     if (!activePointers.has(event.pointerId)) return;
@@ -1744,7 +1744,7 @@ function setupCanvasInteractions(canvas, state, rerender) {
     activePointers.delete(event.pointerId);
     if (activePointers.size === 0) {
       state.hoverNodeId = "";
-      updateHoverReadout(state, state.selectedNodeId ? "Click nodes to repivot the local graph" : "Search or click a node to query locally");
+      updateHoverReadout(state, defaultHoverMessage(state));
     }
   });
   canvas.addEventListener("pointercancel", (event) => {
@@ -1826,12 +1826,8 @@ function wireControls(state, rerender) {
   });
   document.getElementById("graph-reset-query")?.addEventListener("click", () => {
     applyQueryValue(state, DEFAULT_SEARCH);
-    replaceCheckboxSet("graph-type-", TYPE_ORDER, new Set(TYPE_ORDER));
-    replaceCheckboxSet(
-      "graph-edge-",
-      EDGE_KINDS.map((kind) => kind.id),
-      new Set(EDGE_KINDS.filter((kind) => kind.checked).map((kind) => kind.id)),
-    );
+    setTypeFilters(new Set(TYPE_ORDER));
+    setEdgeFilters(new Set(DEFAULT_CHECKED_EDGE_KIND_IDS));
     state.selectedRuleset = "";
     state.layoutMode = DEFAULT_LAYOUT_MODE;
     state.sizeMode = DEFAULT_SIZE_MODE;
@@ -1941,12 +1937,8 @@ function wireControls(state, rerender) {
       if (state.activePerspective) {
         applyPerspective(state, state.activePerspective);
       } else {
-        replaceCheckboxSet("graph-type-", TYPE_ORDER, new Set(TYPE_ORDER));
-        replaceCheckboxSet(
-          "graph-edge-",
-          EDGE_KINDS.map((kind) => kind.id),
-          new Set(EDGE_KINDS.filter((kind) => kind.checked).map((kind) => kind.id)),
-        );
+        setTypeFilters(new Set(TYPE_ORDER));
+        setEdgeFilters(new Set(DEFAULT_CHECKED_EDGE_KIND_IDS));
         resetLayoutCache(state);
       }
       rerender();
@@ -2035,12 +2027,13 @@ function wireControls(state, rerender) {
     if (!kind || !value) return;
     if (kind === "type") {
       const next = state.enabledTypes.size === 1 && state.enabledTypes.has(value) ? new Set(TYPE_ORDER) : new Set([value]);
-      replaceCheckboxSet("graph-type-", TYPE_ORDER, next);
+      setTypeFilters(next);
       updateFilterDerivedState(state);
     } else if (kind === "edge") {
-      const allEdges = EDGE_KINDS.map((entry) => entry.id);
-      const next = state.enabledEdgeKinds.size === 1 && state.enabledEdgeKinds.has(value) ? new Set(allEdges) : new Set([value]);
-      replaceCheckboxSet("graph-edge-", allEdges, next);
+      const next = state.enabledEdgeKinds.size === 1 && state.enabledEdgeKinds.has(value)
+        ? new Set(DEFAULT_EDGE_KIND_IDS)
+        : new Set([value]);
+      setEdgeFilters(next);
       updateFilterDerivedState(state);
     } else if (kind === "ruleset") {
       state.selectedRuleset = state.selectedRuleset === value ? "" : value;
@@ -2110,14 +2103,8 @@ export async function createGraphApp() {
   const canvas = document.getElementById("graph-canvas");
   if (!(canvas instanceof HTMLCanvasElement)) throw new Error("Graph canvas missing.");
 
-  replaceCheckboxSet("graph-type-", TYPE_ORDER, urlState.enabledTypes.size ? urlState.enabledTypes : new Set(TYPE_ORDER));
-  replaceCheckboxSet(
-    "graph-edge-",
-    EDGE_KINDS.map((kind) => kind.id),
-    urlState.enabledEdgeKinds.size
-      ? urlState.enabledEdgeKinds
-      : new Set(EDGE_KINDS.filter((kind) => kind.checked).map((kind) => kind.id)),
-  );
+  setTypeFilters(urlState.enabledTypes.size ? urlState.enabledTypes : new Set(TYPE_ORDER));
+  setEdgeFilters(urlState.enabledEdgeKinds.size ? urlState.enabledEdgeKinds : new Set(DEFAULT_CHECKED_EDGE_KIND_IDS));
   syncUiFromState(state);
   resetViewport(state);
 
