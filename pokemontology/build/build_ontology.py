@@ -420,8 +420,18 @@ def _build_entity_index() -> dict[str, object]:
                             "identifiers": [],
                         },
                     )
-                    entity["labels"] = names
-                    entity["identifiers"] = identifiers
+                    entity["labels"] = sorted(
+                        {
+                            *entity.get("labels", []),
+                            *names,
+                        }
+                    )
+                    entity["identifiers"] = sorted(
+                        {
+                            *entity.get("identifiers", []),
+                            *identifiers,
+                        }
+                    )
                     if type_name == "Variant":
                         species_curie = curie_object(block, "belongsToSpecies")
                         if species_curie is not None:
@@ -561,7 +571,12 @@ def _build_graph_index() -> dict[str, object]:
                     identifiers = literal_values(block, "hasIdentifier")
                     if labels:
                         node["label"] = labels[0]
-                    node["identifiers"] = identifiers
+                    node["identifiers"] = sorted(
+                        {
+                            *node.get("identifiers", []),
+                            *identifiers,
+                        }
+                    )
                     if type_name == "Variant":
                         species_curie = curie_object(block, "belongsToSpecies")
                         if species_curie:
@@ -587,7 +602,10 @@ def _build_graph_index() -> dict[str, object]:
             move_curie = curie_object(block, "learnableMove")
             about_move_curie = curie_object(block, "aboutMove")
             move_type_curie = curie_object(block, "hasMoveType")
-            learnable_flag = re.search(r"pkm:isLearnableInRuleset\s+true\b", block)
+            learnable_flag = re.search(
+                r'pkm:isLearnableInRuleset\s+(?:"true"(?:\^\^[^ ;]+)?|true)(?=\s*[;.\n])',
+                block,
+            )
 
             if pokemon_curie and type_curie:
                 ensure_edge(pokemon_curie, type_curie, "hasType", context_curie)
@@ -637,6 +655,7 @@ def _build_graph_index() -> dict[str, object]:
                 item[0],
             ),
         )
+        if degree_by_node.get(subject_curie, 0) > 0
     ]
     return {
         "source": display_repo_path(BUILD_MECHANICS),
@@ -720,6 +739,10 @@ def _schema_pack(
         {
             "alias": "pkmi:",
             "iri": "https://laurajoyhutchins.github.io/pokemontology/id/",
+        },
+        {
+            "alias": "pkmb:",
+            "iri": "https://laurajoyhutchins.github.io/pokemontology/battle/",
         },
         {"alias": "rdf:", "iri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#"},
         {"alias": "rdfs:", "iri": "http://www.w3.org/2000/01/rdf-schema#"},
@@ -940,7 +963,7 @@ def _render_sparql_reference(
 
 def _merge_mechanics_data() -> None:
     # Use direct file concatenation for performance on large TTL files (~180MB)
-    sources = [BUILD_POKEAPI, BUILD_VEEKUN, BUILD_SHOWDOWN]
+    sources = [BUILD_POKEAPI, BUILD_VEEKUN]
     with BUILD_MECHANICS.open("w", encoding="utf-8") as outfile:
         # Write prefix header once
         outfile.write("@prefix pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#> .\n")

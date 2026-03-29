@@ -25,18 +25,23 @@ from dataclasses import dataclass, field
 from rdflib import Graph, Literal, Namespace, URIRef
 from rdflib.namespace import RDF, RDFS, XSD
 
-from pokemontology.ingest_common import bind_namespaces, serialize_turtle_to_path
+from pokemontology.ingest_common import (
+    PKMB,
+    bind_namespaces,
+    entity_iri,
+    serialize_turtle_to_path,
+)
 from pokemontology.replay.replay_parser import (
     PKM_PREFIX,
     actor_display_name,
     compact_species_name,
     discover_moves,
     discover_participants,
-    move_iri_local,
     parse_log,
     parse_player_slot,
     parse_replay_payload,
     parse_side_token,
+    pokeapi_move_id,
     pokeapi_species_id,
     sanitize_identifier,
 )
@@ -46,7 +51,38 @@ SITE_BASE = "https://laurajoyhutchins.github.io/pokemontology"
 
 
 def _species_iri(species_raw: str) -> URIRef:
-    return PKM[f"Species_{sanitize_identifier(pokeapi_species_id(species_raw))}"]
+    return entity_iri("Species", pokeapi_species_id(species_raw))
+
+
+def _move_iri(move_name: str) -> URIRef:
+    return entity_iri("Move", pokeapi_move_id(move_name))
+
+
+def _type_iri(type_name: str) -> URIRef:
+    return entity_iri("Type", type_name)
+
+
+def _ability_iri(ability_name: str) -> URIRef:
+    return entity_iri("Ability", ability_name)
+
+
+def _item_iri(item_name: str) -> URIRef:
+    return entity_iri("Item", item_name)
+
+
+def _stat_iri(stat_name: str) -> URIRef:
+    return entity_iri("Stat", stat_name)
+
+
+def _battle_iri(local_name: str) -> URIRef:
+    return PKMB[local_name]
+
+
+def _iri_token(iri: URIRef | str) -> str:
+    text = str(iri)
+    if "#" in text:
+        return text.rsplit("#", 1)[-1]
+    return text.rstrip("/").rsplit("/", 1)[-1]
 
 
 STAT_TOKEN_TO_NAME = {
@@ -173,9 +209,9 @@ def combatant_iri_for_token(token: str, p1_name: str, p2_name: str) -> URIRef:
         player_id = parse_side_token(token)
     trainer = p1_name if player_id == "p1" else p2_name
     actor_name = actor_display_name(token)
-    return PKM[
+    return _battle_iri(
         f"Combatant_{sanitize_identifier(trainer)}_{compact_species_name(actor_name)}"
-    ]
+    )
 
 
 def slot_key(token: str) -> str | None:
@@ -192,25 +228,25 @@ def combatant_iri_for_switch(
 ) -> URIRef:
     player_id, _slot = parse_player_slot(token)
     trainer = p1_name if player_id == "p1" else p2_name
-    return PKM[
+    return _battle_iri(
         f"Combatant_{sanitize_identifier(trainer)}_{compact_species_name(species_token)}"
-    ]
+    )
 
 
 def side_iri_for_token(token: str, p1_name: str, p2_name: str) -> URIRef:
     side_id = parse_side_token(token)
     trainer = p1_name if side_id == "p1" else p2_name
-    return PKM[f"Side_{sanitize_identifier(trainer)}"]
+    return _battle_iri(f"Side_{sanitize_identifier(trainer)}")
 
 
 def side_iri_for_player_id(player_id: str, p1_name: str, p2_name: str) -> URIRef:
     trainer = p1_name if player_id == "p1" else p2_name
-    return PKM[f"Side_{sanitize_identifier(trainer)}"]
+    return _battle_iri(f"Side_{sanitize_identifier(trainer)}")
 
 
 def stat_iri_for_token(token: str) -> URIRef:
     stat_name = STAT_TOKEN_TO_NAME.get(token, token)
-    return PKM[f"Stat_{sanitize_identifier(stat_name)}"]
+    return _stat_iri(stat_name)
 
 
 def ensure_named_entity(g: Graph, iri: URIRef, rdf_type: URIRef, name: str) -> None:
@@ -239,7 +275,7 @@ def maybe_status_iri(g: Graph, token: str) -> URIRef | None:
     status_name = STATUS_TOKEN_TO_NAME.get(token.strip())
     if status_name is None:
         return None
-    status_iri = PKM[f"StatusCondition_{sanitize_identifier(status_name)}"]
+    status_iri = _battle_iri(f"StatusCondition_{sanitize_identifier(status_name)}")
     ensure_named_entity(g, status_iri, PKM.StatusCondition, status_name)
     return status_iri
 
@@ -248,7 +284,9 @@ def maybe_volatile_iri(g: Graph, token: str) -> URIRef | None:
     volatile_name = VOLATILE_TOKEN_TO_NAME.get(token.strip())
     if volatile_name is None:
         return None
-    volatile_iri = PKM[f"VolatileCondition_{sanitize_identifier(volatile_name)}"]
+    volatile_iri = _battle_iri(
+        f"VolatileCondition_{sanitize_identifier(volatile_name)}"
+    )
     ensure_named_entity(g, volatile_iri, PKM.VolatileCondition, volatile_name)
     return volatile_iri
 
@@ -288,11 +326,11 @@ def emit_projected_state(
     order: int,
     event_sources: dict[str, dict[object, URIRef]],
 ) -> None:
-    instant_name = str(instant).rsplit("#", 1)[-1]
+    instant_name = _iri_token(instant)
 
     for combatant_iri, hp_value in state.current_hp.items():
-        label = str(combatant_iri).rsplit("#", 1)[-1]
-        assignment_iri = PKM[f"HP_{instant_name}_{label}"]
+        label = _iri_token(combatant_iri)
+        assignment_iri = _battle_iri(f"HP_{instant_name}_{label}")
         g.add((assignment_iri, RDF.type, PKM.CurrentHPAssignment))
         g.add((assignment_iri, PKM.aboutCombatant, combatant_iri))
         g.add((assignment_iri, PKM.hasContext, instant))
@@ -333,9 +371,9 @@ def emit_projected_state(
         state.current_stat_stages.items(),
         key=lambda item: (str(item[0][0]), str(item[0][1])),
     ):
-        label = str(combatant_iri).rsplit("#", 1)[-1]
-        stat_label = str(stat_iri).rsplit("#", 1)[-1]
-        assignment_iri = PKM[f"Stage_{instant_name}_{label}_{stat_label}"]
+        label = _iri_token(combatant_iri)
+        stat_label = _iri_token(stat_iri)
+        assignment_iri = _battle_iri(f"Stage_{instant_name}_{label}_{stat_label}")
         g.add((assignment_iri, RDF.type, PKM.StatStageAssignment))
         g.add((assignment_iri, PKM.aboutCombatant, combatant_iri))
         g.add((assignment_iri, PKM.aboutStat, stat_iri))
@@ -377,8 +415,8 @@ def emit_projected_state(
         )
 
     for combatant_iri, status_iri in state.current_status.items():
-        label = str(combatant_iri).rsplit("#", 1)[-1]
-        assignment_iri = PKM[f"StatusAssignment_{instant_name}_{label}"]
+        label = _iri_token(combatant_iri)
+        assignment_iri = _battle_iri(f"StatusAssignment_{instant_name}_{label}")
         g.add((assignment_iri, RDF.type, PKM.CurrentStatusAssignment))
         g.add((assignment_iri, PKM.aboutCombatant, combatant_iri))
         g.add((assignment_iri, PKM.hasStatusCondition, status_iri))
@@ -413,8 +451,8 @@ def emit_projected_state(
         )
 
     if state.current_weather is not None:
-        weather_name = str(state.current_weather).rsplit("#", 1)[-1]
-        assignment_iri = PKM[f"Weather_{instant_name}_{weather_name}"]
+        weather_name = _iri_token(state.current_weather)
+        assignment_iri = _battle_iri(f"Weather_{instant_name}_{weather_name}")
         g.add((assignment_iri, RDF.type, PKM.CurrentWeatherAssignment))
         g.add((assignment_iri, PKM.aboutField, battle_iri))
         g.add((assignment_iri, PKM.hasContext, instant))
@@ -446,8 +484,8 @@ def emit_projected_state(
         )
 
     if state.current_terrain is not None:
-        terrain_name = str(state.current_terrain).rsplit("#", 1)[-1]
-        assignment_iri = PKM[f"Terrain_{instant_name}_{terrain_name}"]
+        terrain_name = _iri_token(state.current_terrain)
+        assignment_iri = _battle_iri(f"Terrain_{instant_name}_{terrain_name}")
         g.add((assignment_iri, RDF.type, PKM.CurrentTerrainAssignment))
         g.add((assignment_iri, PKM.aboutField, battle_iri))
         g.add((assignment_iri, PKM.hasContext, instant))
@@ -481,9 +519,9 @@ def emit_projected_state(
     for side_iri, condition_iri in sorted(
         state.current_side_conditions, key=lambda item: (str(item[0]), str(item[1]))
     ):
-        assignment_iri = PKM[
-            f"SideCondition_{instant_name}_{str(side_iri).rsplit('#', 1)[-1]}_{str(condition_iri).rsplit('#', 1)[-1]}"
-        ]
+        assignment_iri = _battle_iri(
+            f"SideCondition_{instant_name}_{_iri_token(side_iri)}_{_iri_token(condition_iri)}"
+        )
         g.add((assignment_iri, RDF.type, PKM.SideConditionAssignment))
         g.add((assignment_iri, PKM.aboutSide, side_iri))
         g.add((assignment_iri, PKM.hasContext, instant))
@@ -520,9 +558,9 @@ def emit_projected_state(
     for combatant_iri, condition_iri in sorted(
         state.current_volatile_conditions, key=lambda item: (str(item[0]), str(item[1]))
     ):
-        assignment_iri = PKM[
-            f"Volatile_{instant_name}_{str(combatant_iri).rsplit('#', 1)[-1]}_{str(condition_iri).rsplit('#', 1)[-1]}"
-        ]
+        assignment_iri = _battle_iri(
+            f"Volatile_{instant_name}_{_iri_token(combatant_iri)}_{_iri_token(condition_iri)}"
+        )
         g.add((assignment_iri, RDF.type, PKM.VolatileStatusAssignment))
         g.add((assignment_iri, PKM.aboutCombatant, combatant_iri))
         g.add((assignment_iri, PKM.hasVolatileCondition, condition_iri))
@@ -557,9 +595,9 @@ def emit_projected_state(
         )
 
     for combatant_iri, transformation_iri in state.current_transformations.items():
-        assignment_iri = PKM[
-            f"Transformation_{instant_name}_{str(combatant_iri).rsplit('#', 1)[-1]}"
-        ]
+        assignment_iri = _battle_iri(
+            f"Transformation_{instant_name}_{_iri_token(combatant_iri)}"
+        )
         g.add((assignment_iri, RDF.type, PKM.CurrentTransformationAssignment))
         g.add((assignment_iri, PKM.aboutCombatant, combatant_iri))
         g.add((assignment_iri, PKM.hasTransformationState, transformation_iri))
@@ -594,8 +632,8 @@ def emit_projected_state(
         )
 
     for combatant_iri, item_iri in state.current_item.items():
-        label = str(combatant_iri).rsplit("#", 1)[-1]
-        assignment_iri = PKM[f"Item_{instant_name}_{label}"]
+        label = _iri_token(combatant_iri)
+        assignment_iri = _battle_iri(f"Item_{instant_name}_{label}")
         g.add((assignment_iri, RDF.type, PKM.CurrentItemAssignment))
         g.add((assignment_iri, PKM.aboutCombatant, combatant_iri))
         g.add((assignment_iri, PKM.hasCurrentItem, item_iri))
@@ -630,8 +668,8 @@ def emit_projected_state(
         )
 
     for combatant_iri, ability_iri in state.current_ability.items():
-        label = str(combatant_iri).rsplit("#", 1)[-1]
-        assignment_iri = PKM[f"Ability_{instant_name}_{label}"]
+        label = _iri_token(combatant_iri)
+        assignment_iri = _battle_iri(f"Ability_{instant_name}_{label}")
         g.add((assignment_iri, RDF.type, PKM.CurrentAbilityAssignment))
         g.add((assignment_iri, PKM.aboutCombatant, combatant_iri))
         g.add((assignment_iri, PKM.hasCurrentAbility, ability_iri))
@@ -666,7 +704,7 @@ def emit_projected_state(
         )
 
     for slot_name, combatant_iri in sorted(active_combatants_by_slot.items()):
-        assignment_iri = PKM[f"ActiveSlot_{instant_name}_{slot_name}"]
+        assignment_iri = _battle_iri(f"ActiveSlot_{instant_name}_{slot_name}")
         g.add((assignment_iri, RDF.type, PKM.ActiveSlotAssignment))
         g.add((assignment_iri, PKM.aboutCombatant, combatant_iri))
         g.add((assignment_iri, PKM.aboutSide, side_by_slot[slot_name]))
@@ -738,11 +776,11 @@ def target_iris_for_tokens(
 def resolution_iri_for(
     action_iri: URIRef, target_iri: URIRef, outcome: str, occurrence: int
 ) -> URIRef:
-    action_name = str(action_iri).rsplit("#", 1)[-1]
-    target_name = str(target_iri).rsplit("#", 1)[-1]
-    return PKM[
+    action_name = _iri_token(action_iri)
+    target_name = _iri_token(target_iri)
+    return _battle_iri(
         f"Resolution_{action_name}_{target_name}_{sanitize_identifier(outcome)}_N{occurrence}"
-    ]
+    )
 
 
 def emit_target_resolution(
@@ -880,11 +918,11 @@ def build_graph(payload: dict) -> Graph:
     moves = discover_moves(events)
 
     battle_slug = sanitize_identifier(replay_id)
-    artifact_iri = PKM[f"ReplayArtifact_{battle_slug}"]
-    battle_iri = PKM[f"Battle_{battle_slug}"]
-    side_p1_iri = PKM[f"Side_{sanitize_identifier(p1_name)}"]
-    side_p2_iri = PKM[f"Side_{sanitize_identifier(p2_name)}"]
-    ruleset_iri = PKM[f"Ruleset_{sanitize_identifier(fmt)}"]
+    artifact_iri = _battle_iri(f"ReplayArtifact_{battle_slug}")
+    battle_iri = _battle_iri(f"Battle_{battle_slug}")
+    side_p1_iri = _battle_iri(f"Side_{sanitize_identifier(p1_name)}")
+    side_p2_iri = _battle_iri(f"Side_{sanitize_identifier(p2_name)}")
+    ruleset_iri = _battle_iri(f"Ruleset_{sanitize_identifier(fmt)}")
 
     slice_uri = URIRef(f"{SITE_BASE}/data/replay-slice/{battle_slug}")
     g.add((slice_uri, RDFS.label, Literal(f"Replay-backed slice for {replay_id}")))
@@ -932,7 +970,7 @@ def build_graph(payload: dict) -> Graph:
 
     for iri, info in participants.items():
         side_iri = side_p1_iri if info["player_id"] == "p1" else side_p2_iri
-        combatant = PKM[iri]
+        combatant = _battle_iri(iri)
         g.add((combatant, RDF.type, PKM.BattleParticipant))
         g.add((combatant, RDF.type, PKM.TransientCombatant))
         g.add((combatant, PKM.participatesInBattle, battle_iri))
@@ -940,13 +978,14 @@ def build_graph(payload: dict) -> Graph:
         g.add((combatant, PKM.hasCombatantLabel, Literal(info["label"])))
         g.add((combatant, PKM.representsSpecies, _species_iri(info["species_raw"])))
 
-    for move_iri, move_name in moves.items():
-        g.add((PKM[move_iri], RDF.type, PKM.Move))
-        g.add((PKM[move_iri], PKM.hasName, Literal(move_name)))
+    for _move_key, move_name in moves.items():
+        move_iri = _move_iri(move_name)
+        g.add((move_iri, RDF.type, PKM.Move))
+        g.add((move_iri, PKM.hasName, Literal(move_name)))
 
     previous_instant = None
     for idx, ev in enumerate(events):
-        instant = PKM[f"I_{idx}"]
+        instant = _battle_iri(f"I_{idx}")
         g.add((instant, RDF.type, PKM.Instantaneous))
         g.add(
             (
@@ -1005,7 +1044,7 @@ def build_graph(payload: dict) -> Graph:
     current_action: ActionExecutionContext | None = None
     previous_materialized_instant: URIRef | None = None
     for idx, ev in enumerate(events):
-        instant = PKM[f"I_{idx}"]
+        instant = _battle_iri(f"I_{idx}")
         event_sources: dict[str, dict[object, URIRef]] = {
             "hp": {},
             "stage": {},
@@ -1055,9 +1094,9 @@ def build_graph(payload: dict) -> Graph:
                 parse_player_slot(ev.fields[0])[0], p1_name, p2_name
             )
 
-            event_iri = PKM[
+            event_iri = _battle_iri(
                 f"Switch_T{ev.turn}_{ev.order}_{sanitize_identifier(actor_display_name(ev.fields[0]))}_{sanitize_identifier(ev.kind)}"
-            ]
+            )
 
             g.add((event_iri, RDF.type, PKM.SwitchEvent))
             g.add((event_iri, PKM.affectsCombatant, combatant_iri))
@@ -1109,10 +1148,10 @@ def build_graph(payload: dict) -> Graph:
                 combatant_iri_for_token(actor_token, p1_name, p2_name),
             )
             actor_name = actor_display_name(actor_token)
-            move_iri_node = PKM[move_iri_local(move_name)]
-            action_iri = PKM[
+            move_iri_node = _move_iri(move_name)
+            action_iri = _battle_iri(
                 f"Action_T{ev.turn}_{ev.order}_{sanitize_identifier(move_name)}_{sanitize_identifier(actor_name)}"
-            ]
+            )
 
             g.add((action_iri, RDF.type, PKM.MoveUseAction))
             g.add((action_iri, PKM.actor, actor_iri))
@@ -1178,8 +1217,8 @@ def build_graph(payload: dict) -> Graph:
             )
 
             if idx + 1 < len(events):
-                transition = PKM[f"Transition_{transition_count}"]
-                next_instant = PKM[f"I_{idx + 1}"]
+                transition = _battle_iri(f"Transition_{transition_count}")
+                next_instant = _battle_iri(f"I_{idx + 1}")
                 g.add((transition, RDF.type, PKM.StateTransition))
                 g.add((transition, PKM.fromInstantaneous, instant))
                 g.add((transition, PKM.toInstantaneous, next_instant))
@@ -1208,9 +1247,9 @@ def build_graph(payload: dict) -> Graph:
                     if ev.kind == "-heal"
                     else PKM.Event
                 )
-                event_iri = PKM[
+                event_iri = _battle_iri(
                     f"{event_prefix}_T{ev.turn}_{ev.order}_{sanitize_identifier(actor_display_name(ev.fields[0]))}"
-                ]
+                )
 
                 g.add((event_iri, RDF.type, event_type))
                 g.add((event_iri, PKM.affectsCombatant, combatant_iri))
@@ -1273,9 +1312,9 @@ def build_graph(payload: dict) -> Graph:
                     )
                     partner_hp_value = parse_hp_value(ev.fields[3])
                     if partner_hp_value is not None:
-                        partner_event_iri = PKM[
+                        partner_event_iri = _battle_iri(
                             f"SetHP_T{ev.turn}_{ev.order}_{sanitize_identifier(actor_display_name(ev.fields[2]))}"
-                        ]
+                        )
                         g.add((partner_event_iri, RDF.type, PKM.Event))
                         g.add((partner_event_iri, PKM.affectsCombatant, partner_iri))
                         g.add((partner_event_iri, PKM.occursInInstantaneous, instant))
@@ -1322,9 +1361,9 @@ def build_graph(payload: dict) -> Graph:
             )
             status_iri = maybe_status_iri(g, ev.fields[1])
             if combatant_iri is not None and status_iri is not None:
-                event_iri = PKM[
+                event_iri = _battle_iri(
                     f"Status_T{ev.turn}_{ev.order}_{sanitize_identifier(actor_display_name(ev.fields[0]))}"
-                ]
+                )
                 causing_action = None
                 for field in reversed(ev.fields[2:]):
                     candidate = maybe_combatant_from_token(
@@ -1419,9 +1458,9 @@ def build_graph(payload: dict) -> Graph:
             ensure_named_entity(
                 g, stat_iri, PKM.Stat, STAT_TOKEN_TO_NAME.get(stat_token, stat_token)
             )
-            event_iri = PKM[
+            event_iri = _battle_iri(
                 f"StageChange_T{ev.turn}_{ev.order}_{sanitize_identifier(actor_display_name(ev.fields[0]))}_{sanitize_identifier(stat_token)}"
-            ]
+            )
             g.add((event_iri, RDF.type, PKM.StatStageChangeEvent))
             g.add((event_iri, PKM.affectsCombatant, combatant_iri))
             g.add((event_iri, PKM.aboutStat, stat_iri))
@@ -1480,9 +1519,9 @@ def build_graph(payload: dict) -> Graph:
                 for key in matching_keys:
                     _combatant_iri, stat_iri = key
                     prior_stage = state.current_stat_stages[key]
-                    event_iri = PKM[
-                        f"StageChange_T{ev.turn}_{ev.order}_{str(combatant_iri).rsplit('#', 1)[-1]}_{str(stat_iri).rsplit('#', 1)[-1]}_clear"
-                    ]
+                    event_iri = _battle_iri(
+                        f"StageChange_T{ev.turn}_{ev.order}_{_iri_token(combatant_iri)}_{_iri_token(stat_iri)}_clear"
+                    )
                     g.add((event_iri, RDF.type, PKM.StatStageChangeEvent))
                     g.add((event_iri, PKM.affectsCombatant, combatant_iri))
                     g.add((event_iri, PKM.aboutStat, stat_iri))
@@ -1523,9 +1562,9 @@ def build_graph(payload: dict) -> Graph:
             weather_token = ev.fields[0].strip()
             if weather_token == "none":
                 state.current_weather = None
-                event_sources["weather"]["battle"] = PKM[
+                event_sources["weather"]["battle"] = _battle_iri(
                     f"WeatherClear_T{ev.turn}_{ev.order}"
-                ]
+                )
                 g.add((event_sources["weather"]["battle"], RDF.type, PKM.Event))
                 g.add(
                     (
@@ -1564,12 +1603,14 @@ def build_graph(payload: dict) -> Graph:
                 )
             else:
                 weather_name = WEATHER_TOKEN_TO_NAME.get(weather_token, weather_token)
-                weather_iri = PKM[f"Weather_{sanitize_identifier(weather_name)}"]
+                weather_iri = _battle_iri(
+                    f"Weather_{sanitize_identifier(weather_name)}"
+                )
                 ensure_named_entity(g, weather_iri, PKM.WeatherCondition, weather_name)
 
-                event_iri = PKM[
+                event_iri = _battle_iri(
                     f"WeatherEvent_T{ev.turn}_{ev.order}_{sanitize_identifier(weather_name)}"
-                ]
+                )
                 g.add((event_iri, RDF.type, PKM.Event))
                 g.add((event_iri, PKM.occursInInstantaneous, instant))
                 g.add((event_iri, PKM.supportedByArtifact, artifact_iri))
@@ -1600,11 +1641,13 @@ def build_graph(payload: dict) -> Graph:
         elif ev.kind == "-fieldstart":
             terrain_name = TERRAIN_TOKEN_TO_NAME.get(ev.fields[0].strip())
             if terrain_name is not None:
-                terrain_iri = PKM[f"Terrain_{sanitize_identifier(terrain_name)}"]
+                terrain_iri = _battle_iri(
+                    f"Terrain_{sanitize_identifier(terrain_name)}"
+                )
                 ensure_named_entity(g, terrain_iri, PKM.TerrainCondition, terrain_name)
-                event_iri = PKM[
+                event_iri = _battle_iri(
                     f"TerrainEvent_T{ev.turn}_{ev.order}_{sanitize_identifier(terrain_name)}"
-                ]
+                )
                 g.add((event_iri, RDF.type, PKM.Event))
                 g.add((event_iri, PKM.occursInInstantaneous, instant))
                 g.add((event_iri, PKM.supportedByArtifact, artifact_iri))
@@ -1641,13 +1684,13 @@ def build_graph(payload: dict) -> Graph:
             side_iri = side_iri_for_token(ev.fields[0], p1_name, p2_name)
             condition_name = SIDE_CONDITION_TOKEN_TO_NAME.get(ev.fields[1].strip())
             if condition_name is not None:
-                condition_iri = PKM[
+                condition_iri = _battle_iri(
                     f"SideCondition_{sanitize_identifier(condition_name)}"
-                ]
+                )
                 ensure_named_entity(g, condition_iri, PKM.SideCondition, condition_name)
-                event_iri = PKM[
+                event_iri = _battle_iri(
                     f"SideConditionEvent_T{ev.turn}_{ev.order}_{sanitize_identifier(condition_name)}"
-                ]
+                )
                 g.add((event_iri, RDF.type, PKM.Event))
                 g.add((event_iri, PKM.occursInInstantaneous, instant))
                 g.add((event_iri, PKM.supportedByArtifact, artifact_iri))
@@ -1679,9 +1722,9 @@ def build_graph(payload: dict) -> Graph:
             side_iri = side_iri_for_token(ev.fields[0], p1_name, p2_name)
             condition_name = SIDE_CONDITION_TOKEN_TO_NAME.get(ev.fields[1].strip())
             if condition_name is not None:
-                condition_iri = PKM[
+                condition_iri = _battle_iri(
                     f"SideCondition_{sanitize_identifier(condition_name)}"
-                ]
+                )
                 state.current_side_conditions.discard((side_iri, condition_iri))
 
         elif ev.kind == "-terastallize":
@@ -1691,19 +1734,19 @@ def build_graph(payload: dict) -> Graph:
             )
             tera_type = ev.fields[1].strip()
             transformation_name = f"Terastallized {tera_type}"
-            transformation_iri = PKM[
+            transformation_iri = _battle_iri(
                 f"Transformation_{sanitize_identifier(transformation_name)}"
-            ]
+            )
             ensure_named_entity(
                 g, transformation_iri, PKM.TransformationState, transformation_name
             )
-            type_iri = PKM[f"Type_{sanitize_identifier(tera_type.lower())}"]
+            type_iri = _type_iri(tera_type)
             g.add((transformation_iri, PKM.hasTeraType, type_iri))
 
             state.current_transformations[combatant_iri] = transformation_iri
-            event_sources["transformation"][combatant_iri] = PKM[
+            event_sources["transformation"][combatant_iri] = _battle_iri(
                 f"TransformationEvent_T{ev.turn}_{ev.order}_{sanitize_identifier(actor_display_name(ev.fields[0]))}"
-            ]
+            )
             g.add((event_sources["transformation"][combatant_iri], RDF.type, PKM.Event))
             g.add(
                 (
@@ -1748,9 +1791,9 @@ def build_graph(payload: dict) -> Graph:
             )
             volatile_iri = maybe_volatile_iri(g, ev.fields[1])
             if volatile_iri is not None:
-                event_iri = PKM[
-                    f"VolatileEvent_T{ev.turn}_{ev.order}_{sanitize_identifier(actor_display_name(ev.fields[0]))}_{str(volatile_iri).rsplit('#', 1)[-1]}"
-                ]
+                event_iri = _battle_iri(
+                    f"VolatileEvent_T{ev.turn}_{ev.order}_{sanitize_identifier(actor_display_name(ev.fields[0]))}_{_iri_token(volatile_iri)}"
+                )
                 g.add((event_iri, RDF.type, PKM.Event))
                 g.add((event_iri, PKM.occursInInstantaneous, instant))
                 g.add((event_iri, PKM.supportedByArtifact, artifact_iri))
@@ -1794,11 +1837,11 @@ def build_graph(payload: dict) -> Graph:
                 combatant_iri_for_token(ev.fields[0], p1_name, p2_name),
             )
             item_name = ev.fields[1].strip()
-            item_iri = PKM[f"Item_{sanitize_identifier(item_name)}"]
+            item_iri = _item_iri(item_name)
             ensure_named_entity(g, item_iri, PKM.Item, item_name)
-            event_iri = PKM[
+            event_iri = _battle_iri(
                 f"ItemEvent_T{ev.turn}_{ev.order}_{sanitize_identifier(actor_display_name(ev.fields[0]))}"
-            ]
+            )
             g.add((event_iri, RDF.type, PKM.Event))
             g.add((event_iri, PKM.affectsCombatant, combatant_iri))
             g.add((event_iri, PKM.occursInInstantaneous, instant))
@@ -1840,11 +1883,11 @@ def build_graph(payload: dict) -> Graph:
                 combatant_iri_for_token(ev.fields[0], p1_name, p2_name),
             )
             ability_name = ev.fields[1].strip()
-            ability_iri = PKM[f"Ability_{sanitize_identifier(ability_name)}"]
+            ability_iri = _ability_iri(ability_name)
             ensure_named_entity(g, ability_iri, PKM.Ability, ability_name)
-            event_iri = PKM[
+            event_iri = _battle_iri(
                 f"AbilityEvent_T{ev.turn}_{ev.order}_{sanitize_identifier(actor_display_name(ev.fields[0]))}"
-            ]
+            )
             g.add((event_iri, RDF.type, PKM.Event))
             g.add((event_iri, PKM.affectsCombatant, combatant_iri))
             g.add((event_iri, PKM.occursInInstantaneous, instant))
@@ -1889,9 +1932,9 @@ def build_graph(payload: dict) -> Graph:
                 maybe_volatile_iri(g, ev.fields[1]) if len(ev.fields) > 1 else None
             )
             if combatant_iri is not None and volatile_iri is not None:
-                event_iri = PKM[
-                    f"VolatileEvent_T{ev.turn}_{ev.order}_{sanitize_identifier(actor_display_name(ev.fields[0]))}_{str(volatile_iri).rsplit('#', 1)[-1]}"
-                ]
+                event_iri = _battle_iri(
+                    f"VolatileEvent_T{ev.turn}_{ev.order}_{sanitize_identifier(actor_display_name(ev.fields[0]))}_{_iri_token(volatile_iri)}"
+                )
                 g.add((event_iri, RDF.type, PKM.Event))
                 g.add((event_iri, PKM.occursInInstantaneous, instant))
                 g.add((event_iri, PKM.supportedByArtifact, artifact_iri))
@@ -1928,9 +1971,9 @@ def build_graph(payload: dict) -> Graph:
                 maybe_volatile_iri(g, ev.fields[1]) if len(ev.fields) > 1 else None
             )
             if combatant_iri is not None and volatile_iri is not None:
-                event_iri = PKM[
-                    f"VolatileEvent_T{ev.turn}_{ev.order}_{sanitize_identifier(actor_display_name(ev.fields[0]))}_{str(volatile_iri).rsplit('#', 1)[-1]}"
-                ]
+                event_iri = _battle_iri(
+                    f"VolatileEvent_T{ev.turn}_{ev.order}_{sanitize_identifier(actor_display_name(ev.fields[0]))}_{_iri_token(volatile_iri)}"
+                )
                 g.add((event_iri, RDF.type, PKM.Event))
                 g.add((event_iri, PKM.occursInInstantaneous, instant))
                 g.add((event_iri, PKM.supportedByArtifact, artifact_iri))
@@ -1985,15 +2028,15 @@ def build_graph(payload: dict) -> Graph:
                     transformation_name = (
                         f"{ev.kind[1:].title()}: {actor_display_name(ev.fields[0])}"
                     )
-                transformation_iri = PKM[
+                transformation_iri = _battle_iri(
                     f"Transformation_{sanitize_identifier(transformation_name)}"
-                ]
+                )
                 ensure_named_entity(
                     g, transformation_iri, PKM.TransformationState, transformation_name
                 )
-                event_iri = PKM[
+                event_iri = _battle_iri(
                     f"FormChangeEvent_T{ev.turn}_{ev.order}_{sanitize_identifier(actor_display_name(ev.fields[0]))}"
-                ]
+                )
                 g.add((event_iri, RDF.type, PKM.Event))
                 g.add((event_iri, PKM.occursInInstantaneous, instant))
                 g.add((event_iri, PKM.supportedByArtifact, artifact_iri))
@@ -2035,9 +2078,9 @@ def build_graph(payload: dict) -> Graph:
             )
             current_stage = state.current_stat_stages.get((combatant_iri, stat_iri), 0)
             delta = target_stage - current_stage
-            event_iri = PKM[
+            event_iri = _battle_iri(
                 f"StageChange_T{ev.turn}_{ev.order}_{sanitize_identifier(actor_display_name(ev.fields[0]))}_{sanitize_identifier(stat_token)}_set"
-            ]
+            )
             g.add((event_iri, RDF.type, PKM.StatStageChangeEvent))
             g.add((event_iri, PKM.affectsCombatant, combatant_iri))
             g.add((event_iri, PKM.aboutStat, stat_iri))
@@ -2114,9 +2157,9 @@ def build_graph(payload: dict) -> Graph:
                         (source_iri, t_stage - s_stage),
                         (target_iri, s_stage - t_stage),
                     ]:
-                        ev_iri = PKM[
-                            f"StageChange_T{ev.turn}_{ev.order}_{str(affected_iri).rsplit('#', 1)[-1]}_{sanitize_identifier(stat_token)}_swap"
-                        ]
+                        ev_iri = _battle_iri(
+                            f"StageChange_T{ev.turn}_{ev.order}_{_iri_token(affected_iri)}_{sanitize_identifier(stat_token)}_swap"
+                        )
                         g.add((ev_iri, RDF.type, PKM.StatStageChangeEvent))
                         g.add((ev_iri, PKM.affectsCombatant, affected_iri))
                         g.add((ev_iri, PKM.aboutStat, stat_iri))
@@ -2166,9 +2209,9 @@ def build_graph(payload: dict) -> Graph:
             for key in matching_keys:
                 _c, stat_iri = key
                 prior_stage = state.current_stat_stages[key]
-                ev_iri = PKM[
-                    f"StageChange_T{ev.turn}_{ev.order}_{str(combatant_iri).rsplit('#', 1)[-1]}_{str(stat_iri).rsplit('#', 1)[-1]}_invert"
-                ]
+                ev_iri = _battle_iri(
+                    f"StageChange_T{ev.turn}_{ev.order}_{_iri_token(combatant_iri)}_{_iri_token(stat_iri)}_invert"
+                )
                 g.add((ev_iri, RDF.type, PKM.StatStageChangeEvent))
                 g.add((ev_iri, PKM.affectsCombatant, combatant_iri))
                 g.add((ev_iri, PKM.aboutStat, stat_iri))
@@ -2234,9 +2277,9 @@ def build_graph(payload: dict) -> Graph:
                     delta = source_stage - target_old
                     if delta == 0:
                         continue
-                    ev_iri = PKM[
-                        f"StageChange_T{ev.turn}_{ev.order}_{str(target_iri).rsplit('#', 1)[-1]}_{str(stat_iri).rsplit('#', 1)[-1]}_copy"
-                    ]
+                    ev_iri = _battle_iri(
+                        f"StageChange_T{ev.turn}_{ev.order}_{_iri_token(target_iri)}_{_iri_token(stat_iri)}_copy"
+                    )
                     g.add((ev_iri, RDF.type, PKM.StatStageChangeEvent))
                     g.add((ev_iri, PKM.affectsCombatant, target_iri))
                     g.add((ev_iri, PKM.aboutStat, stat_iri))
@@ -2296,9 +2339,9 @@ def build_graph(payload: dict) -> Graph:
                 for key in matching_keys:
                     _c, stat_iri = key
                     prior_stage = state.current_stat_stages[key]
-                    ev_iri = PKM[
-                        f"StageChange_T{ev.turn}_{ev.order}_{str(combatant_iri).rsplit('#', 1)[-1]}_{str(stat_iri).rsplit('#', 1)[-1]}_partialclear"
-                    ]
+                    ev_iri = _battle_iri(
+                        f"StageChange_T{ev.turn}_{ev.order}_{_iri_token(combatant_iri)}_{_iri_token(stat_iri)}_partialclear"
+                    )
                     g.add((ev_iri, RDF.type, PKM.StatStageChangeEvent))
                     g.add((ev_iri, PKM.affectsCombatant, combatant_iri))
                     g.add((ev_iri, PKM.aboutStat, stat_iri))
@@ -2343,7 +2386,7 @@ def build_graph(payload: dict) -> Graph:
                 player_id = None
             if player_id is not None:
                 side_participants = {
-                    PKM[iri]
+                    _battle_iri(iri)
                     for iri, info in participants.items()
                     if info["player_id"] == player_id
                 }
@@ -2415,9 +2458,9 @@ def build_graph(payload: dict) -> Graph:
         }:
             # Minor annotation events — emit an event node for provenance
             tag_label = ev.kind.lstrip("-")
-            event_iri = PKM[
+            event_iri = _battle_iri(
                 f"Event_{sanitize_identifier(tag_label)}_T{ev.turn}_{ev.order}"
-            ]
+            )
             g.add((event_iri, RDF.type, PKM.Event))
             g.add((event_iri, PKM.occursInInstantaneous, instant))
             g.add((event_iri, PKM.supportedByArtifact, artifact_iri))
@@ -2539,9 +2582,9 @@ def build_graph(payload: dict) -> Graph:
                 combatant_iri_for_token(fainted_token, p1_name, p2_name),
             )
             fainted_name = actor_display_name(fainted_token)
-            event_iri = PKM[
+            event_iri = _battle_iri(
                 f"Faint_T{ev.turn}_{ev.order}_{sanitize_identifier(fainted_name)}"
-            ]
+            )
             g.add((event_iri, RDF.type, PKM.FaintEvent))
             g.add((event_iri, PKM.affectsCombatant, fainted_iri))
             g.add((event_iri, PKM.occursInInstantaneous, instant))
@@ -2614,7 +2657,7 @@ def build_graph(payload: dict) -> Graph:
         finalize_action_context(
             g,
             current_action,
-            PKM[f"I_{len(events) - 1}"],
+            _battle_iri(f"I_{len(events) - 1}"),
             artifact_iri,
             events[-1].turn,
             events[-1].order,

@@ -142,7 +142,7 @@ def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
         "mechanics-learnsets-legacy.ttl",
     ]
     assert archive_source["checked"] is False
-    assert "pkm:Battle_test a pkm:Battle ." in (tmp_path / "build" / "mechanics.ttl").read_text(
+    assert "pkm:Battle_test a pkm:Battle ." not in (tmp_path / "build" / "mechanics.ttl").read_text(
         encoding="utf-8"
     )
     assert not any(
@@ -186,6 +186,7 @@ def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
     assert "belongsToSpecies" in graph_index["edge_kinds"]
     assert any(node["type"] == "Ruleset" for node in graph_index["nodes"])
     assert any(edge["kind"] == "availableIn" for edge in graph_index["edges"])
+    assert any(edge["kind"] == "learnsMove" for edge in graph_index["edges"])
     assert isinstance(entity_index["entity_count"], int)
     assert isinstance(entity_index["entities"], list)
     assert isinstance(entity_index["rulesets"], list)

@@ -9,6 +9,7 @@ from rdflib import Graph, Literal, Namespace
 from rdflib.namespace import OWL, RDF
 
 from pokemontology._script_loader import repo_path
+from pokemontology.ingest_common import PKMB, PKMI
 from pokemontology.replay.replay_parser import parse_log
 from pokemontology.replay.replay_to_ttl_builder import build_graph
 
@@ -20,6 +21,14 @@ REPLAY_JSON = (
     / "gen9vgc2025regjbo3-2414024536-ey54jc53vyjqy20sq0ww1l5nd3bq5qhpw.json"
 )
 PKM = Namespace("https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#")
+
+
+def _battle(local_name: str):
+    return PKMB[local_name]
+
+
+def _entity(path: str):
+    return PKMI[path]
 
 
 @pytest.fixture(scope="module")
@@ -150,7 +159,7 @@ def test_builder_emits_status_and_target_resolution_for_supported_minor_actions(
     thunder_wave_action = next(
         action
         for action in graph.subjects(RDF.type, PKM.MoveUseAction)
-        if (action, PKM.usesMove, PKM.Move_thunder_wave) in graph
+        if (action, PKM.usesMove, _entity("move/thunder-wave")) in graph
     )
     declared_targets = list(graph.objects(thunder_wave_action, PKM.hasDeclaredTarget))
     assert declared_targets
@@ -223,20 +232,20 @@ def test_builder_expands_spread_targets_and_tracks_mixed_outcomes() -> None:
     heat_wave_action = next(
         action
         for action in graph.subjects(RDF.type, PKM.MoveUseAction)
-        if (action, PKM.usesMove, PKM.Move_heat_wave) in graph
+        if (action, PKM.usesMove, _entity("move/heat-wave")) in graph
     )
     resolved_targets = set(graph.objects(heat_wave_action, PKM.hasResolvedTarget))
-    assert PKM.Combatant_Bob_Venusaur in resolved_targets
-    assert PKM.Combatant_Bob_Blastoise in resolved_targets
+    assert _battle("Combatant_Bob_Venusaur") in resolved_targets
+    assert _battle("Combatant_Bob_Blastoise") in resolved_targets
 
     resolutions = list(graph.subjects(RDF.type, PKM.TargetResolutionState))
     assert any(
-        (resolution, PKM.aboutTarget, PKM.Combatant_Bob_Venusaur) in graph
+        (resolution, PKM.aboutTarget, _battle("Combatant_Bob_Venusaur")) in graph
         and (resolution, PKM.hasResolutionOutcome, Literal("resolved")) in graph
         for resolution in resolutions
     )
     assert any(
-        (resolution, PKM.aboutTarget, PKM.Combatant_Bob_Blastoise) in graph
+        (resolution, PKM.aboutTarget, _battle("Combatant_Bob_Blastoise")) in graph
         and (resolution, PKM.hasResolutionOutcome, Literal("failed")) in graph
         for resolution in resolutions
     )
@@ -288,22 +297,22 @@ def test_builder_distinguishes_declared_and_resolved_targets_under_redirection()
     action = next(
         action
         for action in graph.subjects(RDF.type, PKM.MoveUseAction)
-        if (action, PKM.usesMove, PKM.Move_thunderbolt) in graph
+        if (action, PKM.usesMove, _entity("move/thunderbolt")) in graph
     )
     declared_targets = set(graph.objects(action, PKM.hasDeclaredTarget))
     resolved_targets = set(graph.objects(action, PKM.hasResolvedTarget))
 
-    assert declared_targets == {PKM.Combatant_Bob_Gyarados}
-    assert resolved_targets == {PKM.Combatant_Bob_Rhydon}
+    assert declared_targets == {_battle("Combatant_Bob_Gyarados")}
+    assert resolved_targets == {_battle("Combatant_Bob_Rhydon")}
 
     resolutions = list(graph.subjects(RDF.type, PKM.TargetResolutionState))
     assert any(
-        (resolution, PKM.aboutTarget, PKM.Combatant_Bob_Rhydon) in graph
+        (resolution, PKM.aboutTarget, _battle("Combatant_Bob_Rhydon")) in graph
         and (resolution, PKM.hasResolutionOutcome, Literal("resolved")) in graph
         for resolution in resolutions
     )
     assert not any(
-        (resolution, PKM.aboutTarget, PKM.Combatant_Bob_Gyarados) in graph
+        (resolution, PKM.aboutTarget, _battle("Combatant_Bob_Gyarados")) in graph
         and (resolution, PKM.hasResolutionOutcome, Literal("resolved")) in graph
         for resolution in resolutions
     )
@@ -459,34 +468,34 @@ def test_builder_projects_stat_stage_state_and_handles_sethp() -> None:
 
     assert any(
         (assignment, PKM.hasContext, boost_instant) in graph
-        and (assignment, PKM.aboutCombatant, PKM.Combatant_Alice_Pikachu) in graph
-        and (assignment, PKM.aboutStat, PKM.Stat_Special_Attack) in graph
+        and (assignment, PKM.aboutCombatant, _battle("Combatant_Alice_Pikachu")) in graph
+        and (assignment, PKM.aboutStat, _entity("stat/special-attack")) in graph
         and (assignment, PKM.hasStageValue, Literal(2)) in graph
         for assignment in graph.subjects(RDF.type, PKM.StatStageAssignment)
     )
     assert any(
         (assignment, PKM.hasContext, upkeep_instant) in graph
-        and (assignment, PKM.aboutCombatant, PKM.Combatant_Alice_Pikachu) in graph
-        and (assignment, PKM.aboutStat, PKM.Stat_Special_Attack) in graph
+        and (assignment, PKM.aboutCombatant, _battle("Combatant_Alice_Pikachu")) in graph
+        and (assignment, PKM.aboutStat, _entity("stat/special-attack")) in graph
         and (assignment, PKM.hasStageValue, Literal(2)) in graph
         for assignment in graph.subjects(RDF.type, PKM.StatStageAssignment)
     )
     assert any(
         (assignment, PKM.hasContext, clear_instant) in graph
-        and (assignment, PKM.aboutCombatant, PKM.Combatant_Alice_Pikachu) in graph
-        and (assignment, PKM.aboutStat, PKM.Stat_Special_Attack) in graph
+        and (assignment, PKM.aboutCombatant, _battle("Combatant_Alice_Pikachu")) in graph
+        and (assignment, PKM.aboutStat, _entity("stat/special-attack")) in graph
         and (assignment, PKM.hasStageValue, Literal(0)) in graph
         for assignment in graph.subjects(RDF.type, PKM.StatStageAssignment)
     )
     assert any(
         (assignment, PKM.hasContext, sethp_instant) in graph
-        and (assignment, PKM.aboutCombatant, PKM.Combatant_Alice_Pikachu) in graph
+        and (assignment, PKM.aboutCombatant, _battle("Combatant_Alice_Pikachu")) in graph
         and (assignment, PKM.hasCurrentHPValue, Literal(70)) in graph
         for assignment in graph.subjects(RDF.type, PKM.CurrentHPAssignment)
     )
     assert any(
         (assignment, PKM.hasContext, sethp_instant) in graph
-        and (assignment, PKM.aboutCombatant, PKM.Combatant_Bob_Bulbasaur) in graph
+        and (assignment, PKM.aboutCombatant, _battle("Combatant_Bob_Bulbasaur")) in graph
         and (assignment, PKM.hasCurrentHPValue, Literal(70)) in graph
         for assignment in graph.subjects(RDF.type, PKM.CurrentHPAssignment)
     )
@@ -514,7 +523,7 @@ def test_builder_emits_multiple_resolution_nodes_for_multi_hit_moves() -> None:
     resolutions = [
         resolution
         for resolution in graph.subjects(RDF.type, PKM.TargetResolutionState)
-        if (resolution, PKM.aboutTarget, PKM.Combatant_Bob_Tyranitar) in graph
+        if (resolution, PKM.aboutTarget, _battle("Combatant_Bob_Tyranitar")) in graph
         and (resolution, PKM.hasResolutionOutcome, Literal("resolved")) in graph
     ]
     assert len(resolutions) == 3
@@ -595,10 +604,10 @@ def test_builder_emits_item_and_ability_assignments_on_observation() -> None:
     assert ability_assignments, "expected at least one CurrentAbilityAssignment"
 
     item_iri = next(graph.objects(item_assignments[0], PKM.hasCurrentItem))
-    assert str(item_iri).endswith("Leftovers")
+    assert str(item_iri) == str(_entity("item/leftovers"))
 
     ability_iri = next(graph.objects(ability_assignments[0], PKM.hasCurrentAbility))
-    assert str(ability_iri).endswith("Overgrow")
+    assert str(ability_iri) == str(_entity("ability/overgrow"))
 
 
 def test_builder_clears_item_and_ability_on_end_events() -> None:
@@ -624,9 +633,9 @@ def test_builder_clears_item_and_ability_on_end_events() -> None:
     item_assignments = list(graph.subjects(RDF.type, PKM.CurrentItemAssignment))
     ability_assignments = list(graph.subjects(RDF.type, PKM.CurrentAbilityAssignment))
     # Assignments may exist on earlier instants but the last instant should have none
-    last_instant = PKM[
+    last_instant = _battle(
         f"I_{len(list(graph.subjects(RDF.type, PKM.Instantaneous))) - 1}"
-    ]
+    )
     assert not any(
         graph.value(a, PKM.hasContext) == last_instant for a in item_assignments
     ), "CurrentItemAssignment should not persist after -enditem"
@@ -709,8 +718,8 @@ def test_builder_handles_setboost_and_invertboost() -> None:
     # After setboost, Attack should be +6
     assert any(
         (a, PKM.hasContext, setboost_instant) in graph
-        and (a, PKM.aboutCombatant, PKM.Combatant_Alice_Pikachu) in graph
-        and (a, PKM.aboutStat, PKM.Stat_Attack) in graph
+        and (a, PKM.aboutCombatant, _battle("Combatant_Alice_Pikachu")) in graph
+        and (a, PKM.aboutStat, _entity("stat/attack")) in graph
         and (a, PKM.hasStageValue, Literal(6)) in graph
         for a in graph.subjects(RDF.type, PKM.StatStageAssignment)
     ), "Expected +6 Attack after setboost"
@@ -718,8 +727,8 @@ def test_builder_handles_setboost_and_invertboost() -> None:
     # After invertboost, Attack should be -6
     assert any(
         (a, PKM.hasContext, invert_instant) in graph
-        and (a, PKM.aboutCombatant, PKM.Combatant_Alice_Pikachu) in graph
-        and (a, PKM.aboutStat, PKM.Stat_Attack) in graph
+        and (a, PKM.aboutCombatant, _battle("Combatant_Alice_Pikachu")) in graph
+        and (a, PKM.aboutStat, _entity("stat/attack")) in graph
         and (a, PKM.hasStageValue, Literal(-6)) in graph
         for a in graph.subjects(RDF.type, PKM.StatStageAssignment)
     ), "Expected -6 Attack after invertboost"
@@ -787,16 +796,16 @@ def test_builder_emits_represents_species() -> None:
     }
     graph = build_graph(payload)
 
-    pikachu = PKM["Combatant_Alice_Pikachu"]
-    mr_mime = PKM["Combatant_Bob_MrMime"]
+    pikachu = _battle("Combatant_Alice_Pikachu")
+    mr_mime = _battle("Combatant_Bob_MrMime")
 
     pikachu_species = list(graph.objects(pikachu, PKM.representsSpecies))
     assert len(pikachu_species) == 1
-    assert str(pikachu_species[0]) == str(PKM["Species_pikachu"])
+    assert str(pikachu_species[0]) == str(_entity("species/pikachu"))
 
     mr_mime_species = list(graph.objects(mr_mime, PKM.representsSpecies))
     assert len(mr_mime_species) == 1
-    assert str(mr_mime_species[0]) == str(PKM["Species_mr_mime"])
+    assert str(mr_mime_species[0]) == str(_entity("species/mr-mime"))
 
 
 def test_builder_emits_has_tera_type() -> None:
@@ -815,10 +824,10 @@ def test_builder_emits_has_tera_type() -> None:
     }
     graph = build_graph(payload)
 
-    transformation_iri = PKM["Transformation_Terastallized_Electric"]
+    transformation_iri = _battle("Transformation_Terastallized_Electric")
     tera_types = list(graph.objects(transformation_iri, PKM.hasTeraType))
     assert len(tera_types) == 1
-    assert str(tera_types[0]) == str(PKM["Type_electric"])
+    assert str(tera_types[0]) == str(_entity("type/electric"))
 
 
 def test_builder_handles_cureteam() -> None:

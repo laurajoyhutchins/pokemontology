@@ -9,6 +9,10 @@
       "iri": "https://laurajoyhutchins.github.io/pokemontology/id/"
     },
     {
+      "alias": "pkmb:",
+      "iri": "https://laurajoyhutchins.github.io/pokemontology/battle/"
+    },
+    {
       "alias": "rdf:",
       "iri": "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
     },

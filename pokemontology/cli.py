@@ -20,7 +20,7 @@ from .chat import (
     generate_sparql,
     retrieve_matches,
 )
-from .ingest_common import PKMI, serialize_turtle_to_path
+from .ingest_common import PKMB, PKMI, serialize_turtle_to_path
 from .io_utils import display_repo_path, format_json_text, read_json_file
 from .laurel_eval import DEFAULT_SUITE, EvalConfig, describe_suite, evaluate_suite, load_suite
 from .laurel import summarize_results
@@ -62,6 +62,7 @@ PKMI_NAMESPACE = "https://laurajoyhutchins.github.io/pokemontology/id/"
 CURIE_PREFIXES = (
     ("pkm:", PKM_NAMESPACE),
     ("pkmi:", PKMI_NAMESPACE),
+    ("pkmb:", str(PKMB)),
     ("rdf:", str(RDF)),
     ("rdfs:", str(RDFS)),
     ("owl:", str(OWL)),

@@ -14,6 +14,7 @@ from ._script_loader import REPO_ROOT
 SITE_BASE = "https://laurajoyhutchins.github.io/pokemontology"
 PKM = Namespace(f"{SITE_BASE}/ontology.ttl#")
 PKMI = Namespace(f"{SITE_BASE}/id/")
+PKMB = Namespace(f"{SITE_BASE}/battle/")
 
 INSTANCE_KIND_BY_CLASS_NAME = {
     "Species": "species",
@@ -86,6 +87,7 @@ def assignment_iri(class_name: str, *segments: str) -> URIRef:
 def bind_namespaces(g: Graph) -> None:
     g.bind("pkm", PKM)
     g.bind("pkmi", PKMI)
+    g.bind("pkmb", PKMB)
     g.bind("rdf", RDF)
     g.bind("rdfs", RDFS)
     g.bind("xsd", XSD)
