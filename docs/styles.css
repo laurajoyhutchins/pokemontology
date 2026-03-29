@@ -1070,7 +1070,82 @@ body:not([data-power-mode="on"]) .qe-results-body {
   --graph-panel-offset: 1.4rem;
   --graph-sidebar-width: clamp(19rem, 24vw, 24rem);
   --graph-controls-width: min(68rem, calc(100vw - var(--graph-sidebar-width) - (var(--graph-panel-offset) * 3)));
+  --graph-surface: rgba(248, 243, 225, 0.86);
+  --graph-surface-strong: rgba(248, 243, 225, 0.92);
+  --graph-surface-soft: rgba(255, 255, 255, 0.14);
+  --graph-border-soft: rgba(47, 85, 71, 0.18);
+  --graph-border-strong: rgba(47, 85, 71, 0.4);
+  --graph-control-height: 2.7rem;
+  --graph-label-size: 0.72rem;
+  --graph-meta-size: 0.78rem;
+  --graph-body-size: 0.94rem;
+  --graph-heading-size: 1.08rem;
   font-size: 1.125rem;
+}
+
+:root[data-theme="dark"] .graph-page {
+  --graph-surface: rgba(21, 38, 33, 0.82);
+  --graph-surface-strong: rgba(25, 45, 39, 0.9);
+  --graph-surface-soft: rgba(255, 255, 255, 0.08);
+  --graph-border-soft: rgba(162, 185, 127, 0.18);
+  --graph-border-strong: rgba(162, 185, 127, 0.34);
+}
+
+.graph-page .qe-action-btn,
+.graph-page .source-toggle,
+.graph-page .qe-select,
+.graph-page .mini-badge,
+.graph-page .info-chip {
+  font-size: var(--graph-meta-size);
+  letter-spacing: 0.06em;
+}
+
+.graph-page .qe-action-btn,
+.graph-page .source-toggle,
+.graph-page .qe-select {
+  min-height: var(--graph-control-height);
+}
+
+.graph-page .qe-action-btn,
+.graph-page .source-toggle,
+.graph-page .qe-select,
+.graph-page .info-chip,
+.graph-page .mini-badge {
+  border-color: var(--graph-border-strong);
+}
+
+.graph-page .qe-action-btn,
+.graph-page .source-toggle,
+.graph-page .qe-select,
+.graph-page .info-chip {
+  background: var(--control-bg);
+}
+
+.graph-page .mini-badge {
+  padding: 0.34rem 0.62rem;
+  background: rgba(84, 121, 92, 0.11);
+}
+
+.graph-page .toolbar-label,
+.graph-page .panel-kicker,
+.graph-page .graph-facet-label,
+.graph-page .graph-stage-label,
+.graph-page .graph-neighbor-group-type {
+  font-size: var(--graph-label-size);
+}
+
+.graph-page .pokedex-search {
+  min-height: calc(var(--graph-control-height) + 0.15rem);
+  padding: 0.72rem 0.95rem;
+}
+
+.graph-page .pokedex-summary,
+.graph-page .graph-query-status,
+.graph-page .graph-hover-readout,
+.graph-page .graph-result-card span,
+.graph-page .graph-neighbor-card span,
+.graph-page .graph-detail-metric span {
+  font-size: var(--graph-body-size);
 }
 
 .graph-shell {
@@ -1105,12 +1180,12 @@ body:not([data-power-mode="on"]) .qe-results-body {
   max-width: calc(100vw - var(--graph-frame-left, var(--graph-panel-offset)) - var(--graph-frame-right, var(--graph-panel-offset)) - 1.95rem);
   z-index: 30;
   margin-bottom: 0;
-  background: rgba(248, 243, 225, 0.88);
+  background: var(--graph-surface);
   backdrop-filter: blur(10px);
 }
 
 :root[data-theme="dark"] .graph-controls {
-  background: rgba(21, 38, 33, 0.82);
+  background: var(--graph-surface);
 }
 
 .graph-controls-head {
@@ -1118,6 +1193,8 @@ body:not([data-power-mode="on"]) .qe-results-body {
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
+  padding-bottom: 0.2rem;
+  border-bottom: 1px solid var(--graph-border-soft);
 }
 
 .graph-controls-title {
@@ -1321,7 +1398,6 @@ body:not([data-power-mode="on"]) .qe-results-body {
 
 .graph-query-status {
   color: var(--ink);
-  font-size: 0.94rem;
   line-height: 1.5;
 }
 
@@ -1406,7 +1482,7 @@ body:not([data-power-mode="on"]) .qe-results-body {
   display: grid;
   gap: 0.8rem;
   align-content: start;
-  background: rgba(248, 243, 225, 0.88);
+  background: var(--graph-surface);
   backdrop-filter: blur(10px);
   overflow: auto;
   min-width: 0;
@@ -1417,7 +1493,7 @@ body:not([data-power-mode="on"]) .qe-results-body {
 }
 
 :root[data-theme="dark"] .graph-sidebar {
-  background: rgba(21, 38, 33, 0.82);
+  background: var(--graph-surface);
 }
 
 .graph-sidebar-block {
@@ -1425,6 +1501,11 @@ body:not([data-power-mode="on"]) .qe-results-body {
   gap: 0.55rem;
   min-height: 0;
   min-width: 0;
+}
+
+.graph-panel-head {
+  padding-bottom: 0.2rem;
+  border-bottom: 1px solid var(--graph-border-soft);
 }
 
 .graph-inspector-section {
@@ -1442,13 +1523,13 @@ body:not([data-power-mode="on"]) .qe-results-body {
   max-width: none;
   padding: 0.45rem;
   border: 2px solid var(--line);
-  background: rgba(248, 243, 225, 0.74);
+  background: var(--graph-surface);
   box-shadow: var(--pixel-frame), var(--shadow);
   backdrop-filter: blur(8px);
 }
 
 :root[data-theme="dark"] .graph-stage-floating {
-  background: rgba(21, 38, 33, 0.74);
+  background: var(--graph-surface);
 }
 
 .graph-results {
@@ -1471,12 +1552,12 @@ body:not([data-power-mode="on"]) .qe-results-body {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.7rem;
   padding: 0.7rem 0.8rem;
-  background: rgba(248, 243, 225, 0.84);
+  background: var(--graph-surface-strong);
   backdrop-filter: blur(10px);
 }
 
 :root[data-theme="dark"] .graph-facet-strip {
-  background: rgba(21, 38, 33, 0.82);
+  background: var(--graph-surface-strong);
 }
 
 .graph-facet-group {
@@ -1510,12 +1591,12 @@ body:not([data-power-mode="on"]) .qe-results-body {
   align-items: center;
   gap: 0.45rem;
   min-height: 2rem;
-  padding: 0.3rem 0.5rem;
-  border: 2px solid rgba(47, 85, 71, 0.2);
-  background: rgba(255, 255, 255, 0.18);
+  padding: 0.28rem 0.48rem;
+  border: 1px solid var(--graph-border-soft);
+  background: var(--graph-surface-soft);
   color: var(--ink);
   font-family: var(--font-ui);
-  font-size: 0.74rem;
+  font-size: var(--graph-label-size);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   box-shadow: var(--pixel-frame);
@@ -1527,7 +1608,7 @@ body:not([data-power-mode="on"]) .qe-results-body {
 
 .graph-facet-chip strong,
 .graph-facet-chip-static strong {
-  font-size: 0.82rem;
+  font-size: var(--graph-meta-size);
 }
 
 .graph-facet-chip.is-active,
@@ -1549,7 +1630,7 @@ body:not([data-power-mode="on"]) .qe-results-body {
   border: 2px solid var(--line);
   background: var(--control-bg);
   color: var(--ink);
-  padding: 0.75rem 0.85rem;
+  padding: 0.72rem 0.82rem;
   box-shadow: var(--pixel-frame), var(--shadow);
   cursor: pointer;
   position: relative;
@@ -1577,7 +1658,7 @@ body:not([data-power-mode="on"]) .qe-results-body {
 
 .graph-detail-card {
   display: grid;
-  gap: 0.9rem;
+  gap: 1rem;
   min-width: 0;
 }
 
@@ -1603,15 +1684,16 @@ body:not([data-power-mode="on"]) .qe-results-body {
 }
 
 .graph-detail-metric {
-  border: 2px solid rgba(47, 85, 71, 0.18);
-  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid var(--graph-border-soft);
+  background: var(--graph-surface-soft);
   padding: 0.7rem 0.8rem;
 }
 
 .graph-detail-metric strong {
   display: block;
   margin-top: 0.35rem;
-  font-size: 1.27rem;
+  font-size: 1.12rem;
+  line-height: 1.1;
 }
 
 .graph-neighbor-list {
@@ -1632,8 +1714,8 @@ body:not([data-power-mode="on"]) .qe-results-body {
   display: grid;
   gap: 0.5rem;
   padding: 0.65rem;
-  border: 2px solid rgba(47, 85, 71, 0.16);
-  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid var(--graph-border-soft);
+  background: var(--graph-surface-soft);
 }
 
 .graph-neighbor-group-head {
@@ -1655,6 +1737,15 @@ body:not([data-power-mode="on"]) .qe-results-body {
   display: grid;
   gap: 0.5rem;
   min-width: 0;
+}
+
+.graph-breakdown-row {
+  padding: 0.45rem 0;
+  border-bottom: 1px solid var(--graph-border-soft);
+}
+
+.graph-breakdown-row:last-child {
+  border-bottom: 0;
 }
 
 .graph-context-badges {
@@ -1690,7 +1781,6 @@ body:not([data-power-mode="on"]) .qe-results-body {
 .graph-hover-readout {
   flex: 1 1 auto;
   min-width: 0;
-  font-size: 0.9rem;
   color: var(--muted);
   white-space: nowrap;
   overflow: hidden;
