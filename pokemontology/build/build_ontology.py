@@ -57,9 +57,6 @@ TTL_PREFIX_HEADER = """@prefix pkm: <https://laurajoyhutchins.github.io/pokemont
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
 """
-# Maximum size for each auto-generated learnset shard, chosen to stay below the
-# 90 MiB CI hard limit even after the TTL prefix header is prepended.
-LEARNSET_SHARD_LIMIT = 85 * 1024 * 1024  # 85 MiB
 LOOKUP_TYPE_PRIORITY = {
     "Variant": 0,
     "Species": 1,
@@ -910,39 +907,58 @@ def _merge_mechanics_data() -> None:
                 outfile.write("\n")
 
 
+def _ruleset_slug_from_block(block: str) -> str:
+    """Return a normalised, filesystem-safe ruleset slug for a MoveLearnRecord block.
+
+    Tries each IRI encoding that appears in the ingested data in order:
+    full angle-bracket IRI, pkmi: CURIE, and legacy pkm:Ruleset_Foo form.
+    Falls back to "unknown" if none match.
+    """
+    m = re.search(
+        r"pkm:hasContext\s+<https://laurajoyhutchins\.github\.io/pokemontology/id/ruleset/([^>]+)>",
+        block,
+    )
+    if m:
+        slug = m.group(1)
+    else:
+        m = re.search(r"pkm:hasContext\s+pkmi:([A-Za-z0-9_\\/-]+)\s*;", block)
+        if m:
+            slug = m.group(1).replace("\\/", "/").removeprefix("ruleset/")
+        else:
+            m = re.search(r"pkm:hasContext pkm:Ruleset_([A-Za-z0-9_]+)\s*;", block)
+            slug = m.group(1).replace("_", "-") if m else "unknown"
+    # Normalise to a safe file-name component: lower-case, replace anything
+    # that is not alphanumeric or hyphen with a hyphen.
+    safe = re.sub(r"[^a-z0-9-]", "-", slug.lower()).strip("-")
+    return safe or "unknown"
+
+
 def _write_mechanics_web_slices() -> list[Path]:
-    """Write mechanics-base.ttl and auto-sized learnset shards.
+    """Write mechanics-base.ttl and one learnset shard per ruleset.
 
-    Learnset blocks are written sequentially into numbered shard files
-    (mechanics-learnsets-001.ttl, mechanics-learnsets-002.ttl, …).  A new shard
-    is opened whenever adding the next block would push the current file past
-    LEARNSET_SHARD_LIMIT, keeping every published artifact below the CI hard
-    limit without any manual token-list maintenance.
+    Each MoveLearnRecord block is routed to mechanics-learnsets-{ruleset}.ttl
+    where ``{ruleset}`` is the normalised slug extracted directly from the
+    block's pkm:hasContext value.  No token lists are needed; new rulesets
+    are discovered automatically from the data.
 
-    Any stale learnset shard files from a previous build (including the old
-    era-named shards) are removed before writing begins.
+    On a data-less build (CI, fresh checkout) the existing committed shard
+    files are left untouched and returned as-is.  When data sources are
+    present, stale shard files from any previous naming scheme are removed
+    before new ones are written.
 
-    Returns the ordered list of learnset shard paths that were written.
+    Returns the sorted list of learnset shard paths written (or preserved).
     """
     sources = [s for s in (BUILD_POKEAPI, BUILD_VEEKUN) if s.exists()]
     if not sources:
-        # No data sources available.  Leave whatever mechanics files are already
-        # on disk so that a data-less build (CI, fresh checkout) does not erase
-        # previously committed artifacts.
+        # No data: leave committed artifacts intact.
         return sorted(PAGES_DIR.glob("mechanics-learnsets-*.ttl"))
 
-    # Remove any stale shard files from a previous build or naming scheme
-    # before writing a fresh set.
+    # Remove stale shards from any previous build or naming scheme.
     for stale in PAGES_DIR.glob("mechanics-learnsets-*.ttl"):
         stale.unlink()
 
-    header_bytes = len(TTL_PREFIX_HEADER.encode("utf-8"))
-    shard_index = 1
-    current_shard_path = PAGES_DIR / f"mechanics-learnsets-{shard_index:03d}.ttl"
-    current_shard_fh = current_shard_path.open("w", encoding="utf-8")
-    current_shard_fh.write(TTL_PREFIX_HEADER)
-    current_shard_bytes = header_bytes
-    learnset_paths: list[Path] = [current_shard_path]
+    handles: dict[str, object] = {}   # slug -> open file handle
+    shard_paths: dict[str, Path] = {}
 
     try:
         with PAGES_MECHANICS_BASE.open("w", encoding="utf-8") as base_fh:
@@ -952,24 +968,19 @@ def _write_mechanics_web_slices() -> list[Path]:
                     if " a pkm:MoveLearnRecord" not in block:
                         base_fh.write(block)
                     else:
-                        block_bytes = len(block.encode("utf-8"))
-                        if (
-                            current_shard_bytes + block_bytes > LEARNSET_SHARD_LIMIT
-                            and current_shard_bytes > header_bytes
-                        ):
-                            current_shard_fh.close()
-                            shard_index += 1
-                            current_shard_path = PAGES_DIR / f"mechanics-learnsets-{shard_index:03d}.ttl"
-                            current_shard_fh = current_shard_path.open("w", encoding="utf-8")
-                            current_shard_fh.write(TTL_PREFIX_HEADER)
-                            current_shard_bytes = header_bytes
-                            learnset_paths.append(current_shard_path)
-                        current_shard_fh.write(block)
-                        current_shard_bytes += block_bytes
+                        slug = _ruleset_slug_from_block(block)
+                        if slug not in handles:
+                            path = PAGES_DIR / f"mechanics-learnsets-{slug}.ttl"
+                            fh = path.open("w", encoding="utf-8")
+                            fh.write(TTL_PREFIX_HEADER)
+                            handles[slug] = fh
+                            shard_paths[slug] = path
+                        handles[slug].write(block)  # type: ignore[union-attr]
     finally:
-        current_shard_fh.close()
+        for fh in handles.values():
+            fh.close()  # type: ignore[union-attr]
 
-    return learnset_paths
+    return sorted(shard_paths.values())
 
 
 def assemble_artifacts() -> tuple[str, str, dict[str, object]]:
