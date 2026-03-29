@@ -379,6 +379,7 @@ function graphChromeMetrics() {
   return {
     headerBottom,
     shellLeft: shellRect ? shellRect.left : GRAPH_PADDING,
+    shellWidth: shellRect ? shellRect.width : 0,
     sidebarLeft: sidebarRect ? sidebarRect.left : window.innerWidth - GRAPH_PADDING,
     sidebarWidth: sidebarRect ? sidebarRect.width : 0,
   };
@@ -386,11 +387,15 @@ function graphChromeMetrics() {
 
 function syncGraphViewportVars() {
   const root = document.documentElement;
-  const { headerBottom, shellLeft, sidebarLeft } = graphChromeMetrics();
+  const { headerBottom, shellLeft, shellWidth, sidebarLeft } = graphChromeMetrics();
+  const shellIsFluid = shellWidth > 0 && shellWidth < 1239;
   root.style.setProperty("--graph-frame-top", `${Math.round(headerBottom + GRAPH_PADDING * 0.5)}px`);
   root.style.setProperty("--graph-frame-right", `${Math.max(GRAPH_PADDING, Math.round(window.innerWidth - sidebarLeft + GRAPH_PADDING * 0.5))}px`);
   root.style.setProperty("--graph-frame-bottom", `${GRAPH_PADDING}px`);
-  root.style.setProperty("--graph-frame-left", `${Math.max(GRAPH_PADDING, Math.round(shellLeft))}px`);
+  root.style.setProperty(
+    "--graph-frame-left",
+    `${shellIsFluid ? Math.max(16, Math.round(shellLeft)) : GRAPH_PADDING}px`,
+  );
 }
 
 function graphLayoutFrame(width, height) {

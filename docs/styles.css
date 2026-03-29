@@ -1099,7 +1099,7 @@ body:not([data-power-mode="on"]) .qe-results-body {
 
 .graph-controls {
   position: fixed;
-  top: var(--graph-frame-top, calc(5.45rem + var(--graph-panel-offset)));
+  top: calc(var(--graph-frame-top, calc(5.45rem + var(--graph-panel-offset))) + 0.35rem);
   left: calc(var(--graph-frame-left, var(--graph-panel-offset)) + 0.45rem);
   width: max(20rem, var(--graph-controls-width));
   max-width: calc(100vw - var(--graph-frame-left, var(--graph-panel-offset)) - var(--graph-frame-right, var(--graph-panel-offset)) - 1.95rem);
