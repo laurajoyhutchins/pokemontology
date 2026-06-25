@@ -133,6 +133,34 @@ Notable query:
 
 **`queries/bundled/super_effective_moves.sparql`** — given a replay slice and mechanics data loaded together, returns which of your moves are super-effective against each revealed opponent, accounting for Tera type overrides. Requires `build/ontology.ttl` + `build/mechanics.ttl` + a replay TTL slice as sources.
 
+### Natural-language querying with Professor Laurel
+
+Professor Laurel is the local natural-language-to-SPARQL pipeline for asking mechanics questions against Pokemontology data. It uses the generated `docs/schema-index.json` schema pack to ground ontology terms, then translates a question into SPARQL and can optionally execute and summarize the result.
+
+By default, Laurel expects a local Ollama server with the `qwen2.5:1.5b` model available.
+
+Translate a question to SPARQL:
+
+```bash
+python3 -m pokemontology ask \
+  "Can Water-type Pokémon be burned?" \
+  build/mechanics.ttl
+```
+
+Run the full translate → execute → summarize pipeline:
+
+```bash
+python3 -m pokemontology laurel \
+  "Can Water-type Pokémon be burned?" \
+  build/mechanics.ttl
+```
+
+Run the Laurel evaluation suite:
+
+```bash
+python3 -m pokemontology evaluate-laurel
+```
+
 ## Data source coverage
 
 ### PokeAPI
