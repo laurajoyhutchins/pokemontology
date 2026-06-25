@@ -27,7 +27,7 @@ Core modeling areas:
 - ruleset-scoped mechanics: move learnability, type effectiveness, base typing, move properties
 - save-state entities: owned Pokémon, slots, IVs, EVs, inventory
 - battle participants, actions, events, and state transitions
-- instantaneous and materialized battle state
+- instant and materialized battle state
 - Tera type overrides and transformation states
 - provenance and evidence for externally sourced or replay-derived assertions
 

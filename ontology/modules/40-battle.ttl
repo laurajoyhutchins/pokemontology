@@ -84,22 +84,22 @@ pkm:BattleAction
 pkm:StateTransition
     a owl:Class ;
     rdfs:label "StateTransition" ;
-    rdfs:comment "A directed transition from one instantaneous battle state to the next, optionally triggered by an action." ;
+    rdfs:comment "A directed transition from one instant battle state to the next, optionally triggered by an action." ;
     owl:disjointWith pkm:Entity ;
     owl:disjointWith pkm:Context ;
     owl:disjointWith pkm:ContextualFact ;
     owl:disjointWith pkm:OwnedPokemon ;
     rdfs:subClassOf [
         a owl:Restriction ;
-        owl:onProperty pkm:fromInstantaneous ;
+        owl:onProperty pkm:fromInstant ;
         owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
-        owl:onClass pkm:Instantaneous
+        owl:onClass pkm:Instant
     ] ;
     rdfs:subClassOf [
         a owl:Restriction ;
-        owl:onProperty pkm:toInstantaneous ;
+        owl:onProperty pkm:toInstant ;
         owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
-        owl:onClass pkm:Instantaneous
+        owl:onClass pkm:Instant
     ] ;
     rdfs:subClassOf [
         a owl:Restriction ;
@@ -159,19 +159,19 @@ pkm:declaresAction
     rdfs:domain pkm:BattleParticipant ;
     rdfs:range pkm:BattleAction .
 
-pkm:fromInstantaneous
+pkm:fromInstant
     a owl:ObjectProperty ;
     a owl:FunctionalProperty ;
-    rdfs:label "fromInstantaneous" ;
+    rdfs:label "fromInstant" ;
     rdfs:domain pkm:StateTransition ;
-    rdfs:range pkm:Instantaneous .
+    rdfs:range pkm:Instant .
 
-pkm:toInstantaneous
+pkm:toInstant
     a owl:ObjectProperty ;
     a owl:FunctionalProperty ;
-    rdfs:label "toInstantaneous" ;
+    rdfs:label "toInstant" ;
     rdfs:domain pkm:StateTransition ;
-    rdfs:range pkm:Instantaneous .
+    rdfs:range pkm:Instant .
 
 pkm:triggeredByAction
     a owl:ObjectProperty ;

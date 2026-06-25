@@ -27,7 +27,7 @@
     "ontology/modules/30-save-state.ttl",
     "ontology/modules/40-battle.ttl",
     "ontology/modules/45-battle-resolution.ttl",
-    "ontology/modules/50-instantaneous-state.ttl",
+    "ontology/modules/50-instant-state.ttl",
     "ontology/modules/60-actions-events.ttl",
     "ontology/modules/70-provenance.ttl",
     "ontology/modules/80-materialized-state.ttl",

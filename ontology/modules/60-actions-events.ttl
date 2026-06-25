@@ -23,14 +23,14 @@ pkm:ItemUseAction
 
 # TargetResolutionState: per-target, per-step outcome fact.
 # Replaces the former per-action functional properties
-# resolvedInInstantaneous / failedInInstantaneous / abortedInInstantaneous,
+# resolvedInInstant / failedInInstant / abortedInInstant,
 # which could not model partial resolution across multiple targets (e.g. Earthquake).
 # Each spread move hit produces one TargetResolutionState individual per target per step.
 pkm:TargetResolutionState
     a owl:Class ;
     rdfs:label "TargetResolutionState" ;
     rdfs:subClassOf pkm:ContextualFact ;
-    rdfs:comment "Records the execution outcome of a BattleAction against one specific target at one Instantaneous step. Enables per-target resolution modeling for spread moves and multi-hit sequences." ;
+    rdfs:comment "Records the execution outcome of a BattleAction against one specific target at one Instant step. Enables per-target resolution modeling for spread moves and multi-hit sequences." ;
     rdfs:subClassOf [
         a owl:Restriction ;
         owl:onProperty pkm:aboutAction ;
@@ -53,7 +53,7 @@ pkm:TargetResolutionState
         a owl:Restriction ;
         owl:onProperty pkm:hasContext ;
         owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
-        owl:onClass pkm:Instantaneous
+        owl:onClass pkm:Instant
     ] .
 
 pkm:DamageEvent
@@ -134,25 +134,25 @@ pkm:usesItem
     rdfs:domain pkm:ItemUseAction ;
     rdfs:range pkm:Item .
 
-pkm:declaredInInstantaneous
+pkm:declaredInInstant
     a owl:ObjectProperty ;
     a owl:FunctionalProperty ;
-    rdfs:label "declaredInInstantaneous" ;
+    rdfs:label "declaredInInstant" ;
     rdfs:domain pkm:BattleAction ;
-    rdfs:range pkm:Instantaneous .
+    rdfs:range pkm:Instant .
 
-# initiatedInInstantaneous: replaces the former binary resolved/aborted
+# initiatedInInstant: replaces the former binary resolved/aborted
 # distinction on BattleAction. The action is marked initiated at the step
 # where execution begins. Subsequent step indices in the event log determine
 # whether the action completed, partially completed (multi-hit abort via
 # FaintEvent on attacker), or was aborted before any execution.
-pkm:initiatedInInstantaneous
+pkm:initiatedInInstant
     a owl:ObjectProperty ;
     a owl:FunctionalProperty ;
-    rdfs:label "initiatedInInstantaneous" ;
+    rdfs:label "initiatedInInstant" ;
     rdfs:domain pkm:BattleAction ;
-    rdfs:range pkm:Instantaneous ;
-    rdfs:comment "The Instantaneous state at which this action began execution. Use the event log at subsequent hasStepIndex values to determine completion vs. mid-execution abort." .
+    rdfs:range pkm:Instant ;
+    rdfs:comment "The Instant state at which this action began execution. Use the event log at subsequent hasStepIndex values to determine completion vs. mid-execution abort." .
 
 # TargetResolutionState properties
 pkm:aboutAction
@@ -191,9 +191,9 @@ pkm:affectsCombatant
     rdfs:domain pkm:Event ;
     rdfs:range pkm:BattleParticipant .
 
-pkm:occursInInstantaneous
+pkm:occursInInstant
     a owl:ObjectProperty ;
     a owl:FunctionalProperty ;
-    rdfs:label "occursInInstantaneous" ;
+    rdfs:label "occursInInstant" ;
     rdfs:domain pkm:Event ;
-    rdfs:range pkm:Instantaneous .
+    rdfs:range pkm:Instant .

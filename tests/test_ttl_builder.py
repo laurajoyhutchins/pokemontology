@@ -64,13 +64,13 @@ def test_graph_has_two_battle_sides(replay_graph: Graph) -> None:
     assert len(sides) >= 2
 
 
-def test_instantaneous_count_matches_events(
+def test_instant_count_matches_events(
     replay_payload: dict, replay_graph: Graph
 ) -> None:
     from rdflib import RDF
 
     events = parse_log(replay_payload["log"])
-    instants = list(replay_graph.subjects(predicate=RDF.type, object=PKM.Instantaneous))
+    instants = list(replay_graph.subjects(predicate=RDF.type, object=PKM.Instant))
     assert len(instants) == len(events)
 
 
@@ -95,8 +95,8 @@ def test_graph_serializes_valid_turtle(replay_graph: Graph) -> None:
 
 def test_state_transitions_use_declared_battle_predicates(replay_graph: Graph) -> None:
     for transition in replay_graph.subjects(RDF.type, PKM.StateTransition):
-        assert (transition, PKM.fromInstantaneous, None) in replay_graph
-        assert (transition, PKM.toInstantaneous, None) in replay_graph
+        assert (transition, PKM.fromInstant, None) in replay_graph
+        assert (transition, PKM.toInstant, None) in replay_graph
         assert (transition, PKM.triggeredByAction, None) in replay_graph
         assert (transition, PKM.transitionOccursInBattle, None) in replay_graph
         assert (transition, PKM.hasInputState, None) not in replay_graph
@@ -107,9 +107,9 @@ def test_state_transitions_use_declared_battle_predicates(replay_graph: Graph) -
 def test_faint_events_use_declared_event_predicates(replay_graph: Graph) -> None:
     for event in replay_graph.subjects(RDF.type, PKM.FaintEvent):
         assert (event, PKM.affectsCombatant, None) in replay_graph
-        assert (event, PKM.occursInInstantaneous, None) in replay_graph
+        assert (event, PKM.occursInInstant, None) in replay_graph
         assert (event, PKM.aboutCombatant, None) not in replay_graph
-        assert (event, PKM.occursAtInstantaneous, None) not in replay_graph
+        assert (event, PKM.occursAtInstant, None) not in replay_graph
 
 
 def test_builder_materializes_replay_observed_assignments(replay_graph: Graph) -> None:
@@ -347,32 +347,32 @@ def test_builder_projects_persistent_state_and_applies_teardown_events() -> None
 
     upkeep_instant = next(
         instant
-        for instant in graph.subjects(RDF.type, PKM.Instantaneous)
+        for instant in graph.subjects(RDF.type, PKM.Instant)
         if (instant, PKM.hasReplayStepLabel, Literal("upkeep-t2-e0")) in graph
     )
     cure_instant = next(
         instant
-        for instant in graph.subjects(RDF.type, PKM.Instantaneous)
+        for instant in graph.subjects(RDF.type, PKM.Instant)
         if (instant, PKM.hasReplayStepLabel, Literal("-curestatus-t2-e1")) in graph
     )
     weather_clear_instant = next(
         instant
-        for instant in graph.subjects(RDF.type, PKM.Instantaneous)
+        for instant in graph.subjects(RDF.type, PKM.Instant)
         if (instant, PKM.hasReplayStepLabel, Literal("-weather-t2-e2")) in graph
     )
     field_end_instant = next(
         instant
-        for instant in graph.subjects(RDF.type, PKM.Instantaneous)
+        for instant in graph.subjects(RDF.type, PKM.Instant)
         if (instant, PKM.hasReplayStepLabel, Literal("-fieldend-t2-e3")) in graph
     )
     side_end_instant = next(
         instant
-        for instant in graph.subjects(RDF.type, PKM.Instantaneous)
+        for instant in graph.subjects(RDF.type, PKM.Instant)
         if (instant, PKM.hasReplayStepLabel, Literal("-sideend-t2-e4")) in graph
     )
     volatile_end_instant = next(
         instant
-        for instant in graph.subjects(RDF.type, PKM.Instantaneous)
+        for instant in graph.subjects(RDF.type, PKM.Instant)
         if (instant, PKM.hasReplayStepLabel, Literal("-end-t2-e5")) in graph
     )
 
@@ -447,22 +447,22 @@ def test_builder_projects_stat_stage_state_and_handles_sethp() -> None:
 
     boost_instant = next(
         instant
-        for instant in graph.subjects(RDF.type, PKM.Instantaneous)
+        for instant in graph.subjects(RDF.type, PKM.Instant)
         if (instant, PKM.hasReplayStepLabel, Literal("-boost-t1-e3")) in graph
     )
     upkeep_instant = next(
         instant
-        for instant in graph.subjects(RDF.type, PKM.Instantaneous)
+        for instant in graph.subjects(RDF.type, PKM.Instant)
         if (instant, PKM.hasReplayStepLabel, Literal("upkeep-t2-e0")) in graph
     )
     sethp_instant = next(
         instant
-        for instant in graph.subjects(RDF.type, PKM.Instantaneous)
+        for instant in graph.subjects(RDF.type, PKM.Instant)
         if (instant, PKM.hasReplayStepLabel, Literal("-sethp-t2-e2")) in graph
     )
     clear_instant = next(
         instant
-        for instant in graph.subjects(RDF.type, PKM.Instantaneous)
+        for instant in graph.subjects(RDF.type, PKM.Instant)
         if (instant, PKM.hasReplayStepLabel, Literal("-clearboost-t2-e3")) in graph
     )
 
@@ -634,7 +634,7 @@ def test_builder_clears_item_and_ability_on_end_events() -> None:
     ability_assignments = list(graph.subjects(RDF.type, PKM.CurrentAbilityAssignment))
     # Assignments may exist on earlier instants but the last instant should have none
     last_instant = _battle(
-        f"I_{len(list(graph.subjects(RDF.type, PKM.Instantaneous))) - 1}"
+        f"I_{len(list(graph.subjects(RDF.type, PKM.Instant))) - 1}"
     )
     assert not any(
         graph.value(a, PKM.hasContext) == last_instant for a in item_assignments
@@ -667,12 +667,12 @@ def test_builder_tracks_volatile_start_and_clears_on_end() -> None:
     # After -start, VolatileStatusAssignment should be present before the -end
     start_instant = next(
         i
-        for i in graph.subjects(RDF.type, PKM.Instantaneous)
+        for i in graph.subjects(RDF.type, PKM.Instant)
         if (i, PKM.hasReplayStepLabel, Literal("-start-t1-e3")) in graph
     )
     end_instant = next(
         i
-        for i in graph.subjects(RDF.type, PKM.Instantaneous)
+        for i in graph.subjects(RDF.type, PKM.Instant)
         if (i, PKM.hasReplayStepLabel, Literal("-end-t2-e1")) in graph
     )
 
@@ -706,12 +706,12 @@ def test_builder_handles_setboost_and_invertboost() -> None:
 
     setboost_instant = next(
         i
-        for i in graph.subjects(RDF.type, PKM.Instantaneous)
+        for i in graph.subjects(RDF.type, PKM.Instant)
         if (i, PKM.hasReplayStepLabel, Literal("-setboost-t1-e3")) in graph
     )
     invert_instant = next(
         i
-        for i in graph.subjects(RDF.type, PKM.Instantaneous)
+        for i in graph.subjects(RDF.type, PKM.Instant)
         if (i, PKM.hasReplayStepLabel, Literal("-invertboost-t1-e5")) in graph
     )
 
@@ -852,12 +852,12 @@ def test_builder_handles_cureteam() -> None:
     # Status should be present after -status event
     status_instant = next(
         i
-        for i in graph.subjects(RDF.type, PKM.Instantaneous)
+        for i in graph.subjects(RDF.type, PKM.Instant)
         if (i, PKM.hasReplayStepLabel, Literal("-status-t1-e2")) in graph
     )
     cure_instant = next(
         i
-        for i in graph.subjects(RDF.type, PKM.Instantaneous)
+        for i in graph.subjects(RDF.type, PKM.Instant)
         if (i, PKM.hasReplayStepLabel, Literal("-cureteam-t1-e4")) in graph
     )
 

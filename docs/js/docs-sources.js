@@ -1,12 +1,7 @@
 const DEFAULT_ARTIFACTS = {
   ontology: { label: "ontology.ttl", path: "ontology.ttl" },
   shapes: { label: "shapes.ttl", path: "shapes.ttl" },
-  mechanicsSlices: [
-    "mechanics-base.ttl",
-    "mechanics-learnsets-current.ttl",
-    "mechanics-learnsets-modern.ttl",
-    "mechanics-learnsets-legacy.ttl",
-  ],
+  mechanicsBase: "mechanics-base.ttl",
   debug: { label: "pokeapi-demo.ttl (debug)", path: "pokeapi-demo.ttl" },
 };
 
@@ -43,14 +38,14 @@ export function getQuerySourceDefinitions(siteData) {
       label: "canonical mechanics core",
       checked: true,
       role: "mechanics",
-      paths: DEFAULT_ARTIFACTS.mechanicsSlices.slice(0, 2),
+      paths: [DEFAULT_ARTIFACTS.mechanicsBase],
     },
     {
-      id: "src-mechanics-archive",
-      label: "historical learnset archive",
+      id: "src-mechanics-learnsets",
+      label: "learnset archive",
       checked: false,
       role: "archive",
-      paths: DEFAULT_ARTIFACTS.mechanicsSlices.slice(2),
+      paths: [],
     },
     {
       id: "src-pokeapi-demo",

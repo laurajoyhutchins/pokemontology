@@ -82,27 +82,27 @@ pkm:Weather_HarshSunlight a pkm:WeatherCondition ; pkm:hasName "Harsh Sunlight" 
 pkm:SideCondition_Tailwind a pkm:SideCondition ; pkm:hasName "Tailwind" .
 
 # -----------------------------------------------------------------------------
-# Instantaneous checkpoints, one per modeled replay step
+# Instant checkpoints, one per modeled replay step
 # -----------------------------------------------------------------------------
 
-pkm:I_0 a pkm:Instantaneous ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasTurnIndex 1 ; pkm:hasStepIndex 0 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 1 ; pkm:hasReplayEventOrder 0 ; pkm:hasReplayStepLabel "turn-1-pre-expanding-force" .
-pkm:I_1 a pkm:Instantaneous ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstantaneous pkm:I_0 ; pkm:hasTurnIndex 1 ; pkm:hasStepIndex 1 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 1 ; pkm:hasReplayEventOrder 1 ; pkm:hasReplayStepLabel "turn-1-after-expanding-force" .
-pkm:I_2 a pkm:Instantaneous ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstantaneous pkm:I_1 ; pkm:hasTurnIndex 1 ; pkm:hasStepIndex 2 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 1 ; pkm:hasReplayEventOrder 2 ; pkm:hasReplayStepLabel "turn-1-after-calm-mind" .
-pkm:I_3 a pkm:Instantaneous ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstantaneous pkm:I_2 ; pkm:hasTurnIndex 1 ; pkm:hasStepIndex 3 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 1 ; pkm:hasReplayEventOrder 3 ; pkm:hasReplayStepLabel "turn-1-after-fiery-dance" .
-pkm:I_4 a pkm:Instantaneous ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstantaneous pkm:I_3 ; pkm:hasTurnIndex 2 ; pkm:hasStepIndex 0 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 2 ; pkm:hasReplayEventOrder 0 ; pkm:hasReplayStepLabel "turn-2-pre-protects" .
-pkm:I_5 a pkm:Instantaneous ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstantaneous pkm:I_4 ; pkm:hasTurnIndex 2 ; pkm:hasStepIndex 1 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 2 ; pkm:hasReplayEventOrder 1 ; pkm:hasReplayStepLabel "turn-2-after-deoxys-protect" .
-pkm:I_6 a pkm:Instantaneous ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstantaneous pkm:I_5 ; pkm:hasTurnIndex 2 ; pkm:hasStepIndex 2 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 2 ; pkm:hasReplayEventOrder 2 ; pkm:hasReplayStepLabel "turn-2-after-arceus-protect-fail" .
-pkm:I_7 a pkm:Instantaneous ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstantaneous pkm:I_6 ; pkm:hasTurnIndex 3 ; pkm:hasStepIndex 0 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 3 ; pkm:hasReplayEventOrder 0 ; pkm:hasReplayStepLabel "turn-3-pre-actions" .
-pkm:I_8 a pkm:Instantaneous ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstantaneous pkm:I_7 ; pkm:hasTurnIndex 3 ; pkm:hasStepIndex 1 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 3 ; pkm:hasReplayEventOrder 1 ; pkm:hasReplayStepLabel "turn-3-after-arceus-protect" .
-pkm:I_9 a pkm:Instantaneous ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstantaneous pkm:I_8 ; pkm:hasTurnIndex 3 ; pkm:hasStepIndex 2 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 3 ; pkm:hasReplayEventOrder 2 ; pkm:hasReplayStepLabel "turn-3-after-psycho-boost" .
-pkm:I_10 a pkm:Instantaneous ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstantaneous pkm:I_9 ; pkm:hasTurnIndex 3 ; pkm:hasStepIndex 3 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 3 ; pkm:hasReplayEventOrder 3 ; pkm:hasReplayStepLabel "turn-3-after-u-turn-and-koraidon-switch" .
-pkm:I_11 a pkm:Instantaneous ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstantaneous pkm:I_10 ; pkm:hasTurnIndex 4 ; pkm:hasStepIndex 0 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 4 ; pkm:hasReplayEventOrder 0 ; pkm:hasReplayStepLabel "turn-4-pre-actions" .
-pkm:I_12 a pkm:Instantaneous ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstantaneous pkm:I_11 ; pkm:hasTurnIndex 4 ; pkm:hasStepIndex 1 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 4 ; pkm:hasReplayEventOrder 1 ; pkm:hasReplayStepLabel "turn-4-after-tailwind" .
-pkm:I_13 a pkm:Instantaneous ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstantaneous pkm:I_12 ; pkm:hasTurnIndex 4 ; pkm:hasStepIndex 2 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 4 ; pkm:hasReplayEventOrder 2 ; pkm:hasReplayStepLabel "turn-4-after-psychic" .
-pkm:I_14 a pkm:Instantaneous ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstantaneous pkm:I_13 ; pkm:hasTurnIndex 4 ; pkm:hasStepIndex 3 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 4 ; pkm:hasReplayEventOrder 3 ; pkm:hasReplayStepLabel "turn-4-after-flame-charge" .
-pkm:I_15 a pkm:Instantaneous ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstantaneous pkm:I_14 ; pkm:hasTurnIndex 4 ; pkm:hasStepIndex 4 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 4 ; pkm:hasReplayEventOrder 4 ; pkm:hasReplayStepLabel "turn-4-after-heat-wave" .
-pkm:I_16 a pkm:Instantaneous ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstantaneous pkm:I_15 ; pkm:hasTurnIndex 5 ; pkm:hasStepIndex 0 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 5 ; pkm:hasReplayEventOrder 0 ; pkm:hasReplayStepLabel "turn-5-pre-flare-blitz" .
-pkm:I_17 a pkm:Instantaneous ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstantaneous pkm:I_16 ; pkm:hasTurnIndex 5 ; pkm:hasStepIndex 1 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 5 ; pkm:hasReplayEventOrder 1 ; pkm:hasReplayStepLabel "turn-5-after-flare-blitz" .
+pkm:I_0 a pkm:Instant ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasTurnIndex 1 ; pkm:hasStepIndex 0 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 1 ; pkm:hasReplayEventOrder 0 ; pkm:hasReplayStepLabel "turn-1-pre-expanding-force" .
+pkm:I_1 a pkm:Instant ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstant pkm:I_0 ; pkm:hasTurnIndex 1 ; pkm:hasStepIndex 1 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 1 ; pkm:hasReplayEventOrder 1 ; pkm:hasReplayStepLabel "turn-1-after-expanding-force" .
+pkm:I_2 a pkm:Instant ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstant pkm:I_1 ; pkm:hasTurnIndex 1 ; pkm:hasStepIndex 2 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 1 ; pkm:hasReplayEventOrder 2 ; pkm:hasReplayStepLabel "turn-1-after-calm-mind" .
+pkm:I_3 a pkm:Instant ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstant pkm:I_2 ; pkm:hasTurnIndex 1 ; pkm:hasStepIndex 3 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 1 ; pkm:hasReplayEventOrder 3 ; pkm:hasReplayStepLabel "turn-1-after-fiery-dance" .
+pkm:I_4 a pkm:Instant ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstant pkm:I_3 ; pkm:hasTurnIndex 2 ; pkm:hasStepIndex 0 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 2 ; pkm:hasReplayEventOrder 0 ; pkm:hasReplayStepLabel "turn-2-pre-protects" .
+pkm:I_5 a pkm:Instant ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstant pkm:I_4 ; pkm:hasTurnIndex 2 ; pkm:hasStepIndex 1 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 2 ; pkm:hasReplayEventOrder 1 ; pkm:hasReplayStepLabel "turn-2-after-deoxys-protect" .
+pkm:I_6 a pkm:Instant ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstant pkm:I_5 ; pkm:hasTurnIndex 2 ; pkm:hasStepIndex 2 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 2 ; pkm:hasReplayEventOrder 2 ; pkm:hasReplayStepLabel "turn-2-after-arceus-protect-fail" .
+pkm:I_7 a pkm:Instant ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstant pkm:I_6 ; pkm:hasTurnIndex 3 ; pkm:hasStepIndex 0 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 3 ; pkm:hasReplayEventOrder 0 ; pkm:hasReplayStepLabel "turn-3-pre-actions" .
+pkm:I_8 a pkm:Instant ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstant pkm:I_7 ; pkm:hasTurnIndex 3 ; pkm:hasStepIndex 1 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 3 ; pkm:hasReplayEventOrder 1 ; pkm:hasReplayStepLabel "turn-3-after-arceus-protect" .
+pkm:I_9 a pkm:Instant ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstant pkm:I_8 ; pkm:hasTurnIndex 3 ; pkm:hasStepIndex 2 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 3 ; pkm:hasReplayEventOrder 2 ; pkm:hasReplayStepLabel "turn-3-after-psycho-boost" .
+pkm:I_10 a pkm:Instant ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstant pkm:I_9 ; pkm:hasTurnIndex 3 ; pkm:hasStepIndex 3 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 3 ; pkm:hasReplayEventOrder 3 ; pkm:hasReplayStepLabel "turn-3-after-u-turn-and-koraidon-switch" .
+pkm:I_11 a pkm:Instant ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstant pkm:I_10 ; pkm:hasTurnIndex 4 ; pkm:hasStepIndex 0 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 4 ; pkm:hasReplayEventOrder 0 ; pkm:hasReplayStepLabel "turn-4-pre-actions" .
+pkm:I_12 a pkm:Instant ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstant pkm:I_11 ; pkm:hasTurnIndex 4 ; pkm:hasStepIndex 1 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 4 ; pkm:hasReplayEventOrder 1 ; pkm:hasReplayStepLabel "turn-4-after-tailwind" .
+pkm:I_13 a pkm:Instant ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstant pkm:I_12 ; pkm:hasTurnIndex 4 ; pkm:hasStepIndex 2 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 4 ; pkm:hasReplayEventOrder 2 ; pkm:hasReplayStepLabel "turn-4-after-psychic" .
+pkm:I_14 a pkm:Instant ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstant pkm:I_13 ; pkm:hasTurnIndex 4 ; pkm:hasStepIndex 3 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 4 ; pkm:hasReplayEventOrder 3 ; pkm:hasReplayStepLabel "turn-4-after-flame-charge" .
+pkm:I_15 a pkm:Instant ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstant pkm:I_14 ; pkm:hasTurnIndex 4 ; pkm:hasStepIndex 4 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 4 ; pkm:hasReplayEventOrder 4 ; pkm:hasReplayStepLabel "turn-4-after-heat-wave" .
+pkm:I_16 a pkm:Instant ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstant pkm:I_15 ; pkm:hasTurnIndex 5 ; pkm:hasStepIndex 0 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 5 ; pkm:hasReplayEventOrder 0 ; pkm:hasReplayStepLabel "turn-5-pre-flare-blitz" .
+pkm:I_17 a pkm:Instant ; pkm:hasProjectionProfile pkm:ProjectionProfile_PartialMaterializedBattleState ; pkm:occursInBattle pkm:Battle_Lycopoky_Finals_Game1 ; pkm:hasPreviousInstant pkm:I_16 ; pkm:hasTurnIndex 5 ; pkm:hasStepIndex 1 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 5 ; pkm:hasReplayEventOrder 1 ; pkm:hasReplayStepLabel "turn-5-after-flare-blitz" .
 
 # -----------------------------------------------------------------------------
 # Transformation assignments directly visible in the replay
@@ -135,8 +135,8 @@ pkm:CTA_Koraidon_TeraFire
 pkm:Action_T1_ExpandingForce a pkm:MoveUseAction ;
     pkm:actor pkm:Combatant_kilenget_DeoxysA ;
     pkm:usesMove pkm:MoveExpandingForce ;
-    pkm:declaredInInstantaneous pkm:I_0 ;
-    pkm:initiatedInInstantaneous pkm:I_1 ;
+    pkm:declaredInInstant pkm:I_0 ;
+    pkm:initiatedInInstant pkm:I_1 ;
     pkm:hasPriorityBracket 0 ;
     pkm:hasResolutionIndex 0 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
@@ -147,8 +147,8 @@ pkm:Action_T1_ExpandingForce a pkm:MoveUseAction ;
 pkm:Action_T1_CalmMind a pkm:MoveUseAction ;
     pkm:actor pkm:Combatant_Lycopoky_ArceusFire ;
     pkm:usesMove pkm:MoveCalmMind ;
-    pkm:declaredInInstantaneous pkm:I_0 ;
-    pkm:initiatedInInstantaneous pkm:I_2 ;
+    pkm:declaredInInstant pkm:I_0 ;
+    pkm:initiatedInInstant pkm:I_2 ;
     pkm:hasPriorityBracket 0 ;
     pkm:hasResolutionIndex 1 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
@@ -159,8 +159,8 @@ pkm:Action_T1_CalmMind a pkm:MoveUseAction ;
 pkm:Action_T1_FieryDance a pkm:MoveUseAction ;
     pkm:actor pkm:Combatant_Lycopoky_Volcarona ;
     pkm:usesMove pkm:MoveFieryDance ;
-    pkm:declaredInInstantaneous pkm:I_0 ;
-    pkm:initiatedInInstantaneous pkm:I_3 ;
+    pkm:declaredInInstant pkm:I_0 ;
+    pkm:initiatedInInstant pkm:I_3 ;
     pkm:hasPriorityBracket 0 ;
     pkm:hasResolutionIndex 2 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
@@ -171,8 +171,8 @@ pkm:Action_T1_FieryDance a pkm:MoveUseAction ;
 pkm:Action_T2_DeoxysProtect a pkm:MoveUseAction ;
     pkm:actor pkm:Combatant_kilenget_DeoxysA ;
     pkm:usesMove pkm:MoveProtect ;
-    pkm:declaredInInstantaneous pkm:I_4 ;
-    pkm:initiatedInInstantaneous pkm:I_5 ;
+    pkm:declaredInInstant pkm:I_4 ;
+    pkm:initiatedInInstant pkm:I_5 ;
     pkm:hasPriorityBracket 4 ;
     pkm:hasResolutionIndex 0 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
@@ -183,8 +183,8 @@ pkm:Action_T2_DeoxysProtect a pkm:MoveUseAction ;
 pkm:Action_T2_ArceusProtectFail a pkm:MoveUseAction ;
     pkm:actor pkm:Combatant_Lycopoky_ArceusFire ;
     pkm:usesMove pkm:MoveProtect ;
-    pkm:declaredInInstantaneous pkm:I_4 ;
-    pkm:initiatedInInstantaneous pkm:I_6 ;
+    pkm:declaredInInstant pkm:I_4 ;
+    pkm:initiatedInInstant pkm:I_6 ;
     pkm:hasPriorityBracket 4 ;
     pkm:hasResolutionIndex 1 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
@@ -195,8 +195,8 @@ pkm:Action_T2_ArceusProtectFail a pkm:MoveUseAction ;
 pkm:Action_T3_ArceusProtect a pkm:MoveUseAction ;
     pkm:actor pkm:Combatant_Lycopoky_ArceusFire ;
     pkm:usesMove pkm:MoveProtect ;
-    pkm:declaredInInstantaneous pkm:I_8 ;
-    pkm:initiatedInInstantaneous pkm:I_8 ;
+    pkm:declaredInInstant pkm:I_8 ;
+    pkm:initiatedInInstant pkm:I_8 ;
     pkm:hasPriorityBracket 4 ;
     pkm:hasResolutionIndex 0 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
@@ -207,8 +207,8 @@ pkm:Action_T3_ArceusProtect a pkm:MoveUseAction ;
 pkm:Action_T3_PsychoBoost a pkm:MoveUseAction ;
     pkm:actor pkm:Combatant_kilenget_DeoxysA ;
     pkm:usesMove pkm:MovePsychoBoost ;
-    pkm:declaredInInstantaneous pkm:I_8 ;
-    pkm:initiatedInInstantaneous pkm:I_9 ;
+    pkm:declaredInInstant pkm:I_8 ;
+    pkm:initiatedInInstant pkm:I_9 ;
     pkm:hasPriorityBracket 0 ;
     pkm:hasResolutionIndex 1 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
@@ -219,8 +219,8 @@ pkm:Action_T3_PsychoBoost a pkm:MoveUseAction ;
 pkm:Action_T3_UTurn a pkm:MoveUseAction ;
     pkm:actor pkm:Combatant_Lycopoky_Rillaboom ;
     pkm:usesMove pkm:MoveUTurn ;
-    pkm:declaredInInstantaneous pkm:I_8 ;
-    pkm:initiatedInInstantaneous pkm:I_10 ;
+    pkm:declaredInInstant pkm:I_8 ;
+    pkm:initiatedInInstant pkm:I_10 ;
     pkm:hasPriorityBracket 0 ;
     pkm:hasResolutionIndex 2 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
@@ -231,8 +231,8 @@ pkm:Action_T3_UTurn a pkm:MoveUseAction ;
 pkm:Action_T4_Tailwind a pkm:MoveUseAction ;
     pkm:actor pkm:Combatant_kilenget_Whimsicott ;
     pkm:usesMove pkm:MoveTailwind ;
-    pkm:declaredInInstantaneous pkm:I_12 ;
-    pkm:initiatedInInstantaneous pkm:I_12 ;
+    pkm:declaredInInstant pkm:I_12 ;
+    pkm:initiatedInInstant pkm:I_12 ;
     pkm:hasPriorityBracket 1 ;
     pkm:hasResolutionIndex 0 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
@@ -243,8 +243,8 @@ pkm:Action_T4_Tailwind a pkm:MoveUseAction ;
 pkm:Action_T4_Psychic a pkm:MoveUseAction ;
     pkm:actor pkm:Combatant_kilenget_IndeedeeF ;
     pkm:usesMove pkm:MovePsychic ;
-    pkm:declaredInInstantaneous pkm:I_12 ;
-    pkm:initiatedInInstantaneous pkm:I_13 ;
+    pkm:declaredInInstant pkm:I_12 ;
+    pkm:initiatedInInstant pkm:I_13 ;
     pkm:hasPriorityBracket 0 ;
     pkm:hasResolutionIndex 1 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
@@ -255,8 +255,8 @@ pkm:Action_T4_Psychic a pkm:MoveUseAction ;
 pkm:Action_T4_FlameCharge a pkm:MoveUseAction ;
     pkm:actor pkm:Combatant_Lycopoky_Koraidon ;
     pkm:usesMove pkm:MoveFlameCharge ;
-    pkm:declaredInInstantaneous pkm:I_12 ;
-    pkm:initiatedInInstantaneous pkm:I_14 ;
+    pkm:declaredInInstant pkm:I_12 ;
+    pkm:initiatedInInstant pkm:I_14 ;
     pkm:hasPriorityBracket 0 ;
     pkm:hasResolutionIndex 2 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
@@ -267,8 +267,8 @@ pkm:Action_T4_FlameCharge a pkm:MoveUseAction ;
 pkm:Action_T4_HeatWave a pkm:MoveUseAction ;
     pkm:actor pkm:Combatant_Lycopoky_ArceusFire ;
     pkm:usesMove pkm:MoveHeatWave ;
-    pkm:declaredInInstantaneous pkm:I_12 ;
-    pkm:initiatedInInstantaneous pkm:I_15 ;
+    pkm:declaredInInstant pkm:I_12 ;
+    pkm:initiatedInInstant pkm:I_15 ;
     pkm:hasPriorityBracket 0 ;
     pkm:hasResolutionIndex 3 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
@@ -279,8 +279,8 @@ pkm:Action_T4_HeatWave a pkm:MoveUseAction ;
 pkm:Action_T5_FlareBlitz a pkm:MoveUseAction ;
     pkm:actor pkm:Combatant_Lycopoky_Koraidon ;
     pkm:usesMove pkm:MoveFlareBlitz ;
-    pkm:declaredInInstantaneous pkm:I_16 ;
-    pkm:initiatedInInstantaneous pkm:I_17 ;
+    pkm:declaredInInstant pkm:I_16 ;
+    pkm:initiatedInInstant pkm:I_17 ;
     pkm:hasPriorityBracket 0 ;
     pkm:hasResolutionIndex 0 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
@@ -316,19 +316,19 @@ pkm:TRS_T5_FlareBlitz_Landorus a pkm:TargetResolutionState ; pkm:aboutAction pkm
 # Replay-visible event layer
 # -----------------------------------------------------------------------------
 
-pkm:Event_T1_CalmMind_SpAtk a pkm:StatStageChangeEvent ; pkm:occursInInstantaneous pkm:I_2 ; pkm:causedByAction pkm:Action_T1_CalmMind ; pkm:affectsCombatant pkm:Combatant_Lycopoky_ArceusFire ; pkm:aboutStat pkm:StatSpAtk ; pkm:hasStageDelta 1 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 1 ; pkm:hasReplayEventOrder 2 .
-pkm:Event_T1_CalmMind_SpDef a pkm:StatStageChangeEvent ; pkm:occursInInstantaneous pkm:I_2 ; pkm:causedByAction pkm:Action_T1_CalmMind ; pkm:affectsCombatant pkm:Combatant_Lycopoky_ArceusFire ; pkm:aboutStat pkm:StatSpDef ; pkm:hasStageDelta 1 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 1 ; pkm:hasReplayEventOrder 2 .
-pkm:Event_T1_FieryDance_SpAtkBoost a pkm:StatStageChangeEvent ; pkm:occursInInstantaneous pkm:I_3 ; pkm:causedByAction pkm:Action_T1_FieryDance ; pkm:affectsCombatant pkm:Combatant_Lycopoky_Volcarona ; pkm:aboutStat pkm:StatSpAtk ; pkm:hasStageDelta 1 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 1 ; pkm:hasReplayEventOrder 3 .
-pkm:Event_T3_PsychoBoost_SpAtkDrop a pkm:StatStageChangeEvent ; pkm:occursInInstantaneous pkm:I_9 ; pkm:causedByAction pkm:Action_T3_PsychoBoost ; pkm:affectsCombatant pkm:Combatant_kilenget_DeoxysA ; pkm:aboutStat pkm:StatSpAtk ; pkm:hasStageDelta -2 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 3 ; pkm:hasReplayEventOrder 2 .
-pkm:Event_T4_FlameCharge_SpeedBoost a pkm:StatStageChangeEvent ; pkm:occursInInstantaneous pkm:I_14 ; pkm:causedByAction pkm:Action_T4_FlameCharge ; pkm:affectsCombatant pkm:Combatant_Lycopoky_Koraidon ; pkm:aboutStat pkm:StatSpeed ; pkm:hasStageDelta 1 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 4 ; pkm:hasReplayEventOrder 3 .
+pkm:Event_T1_CalmMind_SpAtk a pkm:StatStageChangeEvent ; pkm:occursInInstant pkm:I_2 ; pkm:causedByAction pkm:Action_T1_CalmMind ; pkm:affectsCombatant pkm:Combatant_Lycopoky_ArceusFire ; pkm:aboutStat pkm:StatSpAtk ; pkm:hasStageDelta 1 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 1 ; pkm:hasReplayEventOrder 2 .
+pkm:Event_T1_CalmMind_SpDef a pkm:StatStageChangeEvent ; pkm:occursInInstant pkm:I_2 ; pkm:causedByAction pkm:Action_T1_CalmMind ; pkm:affectsCombatant pkm:Combatant_Lycopoky_ArceusFire ; pkm:aboutStat pkm:StatSpDef ; pkm:hasStageDelta 1 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 1 ; pkm:hasReplayEventOrder 2 .
+pkm:Event_T1_FieryDance_SpAtkBoost a pkm:StatStageChangeEvent ; pkm:occursInInstant pkm:I_3 ; pkm:causedByAction pkm:Action_T1_FieryDance ; pkm:affectsCombatant pkm:Combatant_Lycopoky_Volcarona ; pkm:aboutStat pkm:StatSpAtk ; pkm:hasStageDelta 1 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 1 ; pkm:hasReplayEventOrder 3 .
+pkm:Event_T3_PsychoBoost_SpAtkDrop a pkm:StatStageChangeEvent ; pkm:occursInInstant pkm:I_9 ; pkm:causedByAction pkm:Action_T3_PsychoBoost ; pkm:affectsCombatant pkm:Combatant_kilenget_DeoxysA ; pkm:aboutStat pkm:StatSpAtk ; pkm:hasStageDelta -2 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 3 ; pkm:hasReplayEventOrder 2 .
+pkm:Event_T4_FlameCharge_SpeedBoost a pkm:StatStageChangeEvent ; pkm:occursInInstant pkm:I_14 ; pkm:causedByAction pkm:Action_T4_FlameCharge ; pkm:affectsCombatant pkm:Combatant_Lycopoky_Koraidon ; pkm:aboutStat pkm:StatSpeed ; pkm:hasStageDelta 1 ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 4 ; pkm:hasReplayEventOrder 3 .
 
-pkm:Event_T3_Deoxys_Faints a pkm:FaintEvent ; pkm:occursInInstantaneous pkm:I_10 ; pkm:causedByAction pkm:Action_T3_UTurn ; pkm:affectsCombatant pkm:Combatant_kilenget_DeoxysA ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 3 ; pkm:hasReplayEventOrder 3 .
-pkm:Event_T4_Whimsicott_Faints a pkm:FaintEvent ; pkm:occursInInstantaneous pkm:I_15 ; pkm:causedByAction pkm:Action_T4_HeatWave ; pkm:affectsCombatant pkm:Combatant_kilenget_Whimsicott ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 4 ; pkm:hasReplayEventOrder 4 .
-pkm:Event_T4_Indeedee_Faints a pkm:FaintEvent ; pkm:occursInInstantaneous pkm:I_15 ; pkm:causedByAction pkm:Action_T4_HeatWave ; pkm:affectsCombatant pkm:Combatant_kilenget_IndeedeeF ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 4 ; pkm:hasReplayEventOrder 4 .
-pkm:Event_T5_Landorus_Faints a pkm:FaintEvent ; pkm:occursInInstantaneous pkm:I_17 ; pkm:causedByAction pkm:Action_T5_FlareBlitz ; pkm:affectsCombatant pkm:Combatant_kilenget_Landorus ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 5 ; pkm:hasReplayEventOrder 1 .
+pkm:Event_T3_Deoxys_Faints a pkm:FaintEvent ; pkm:occursInInstant pkm:I_10 ; pkm:causedByAction pkm:Action_T3_UTurn ; pkm:affectsCombatant pkm:Combatant_kilenget_DeoxysA ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 3 ; pkm:hasReplayEventOrder 3 .
+pkm:Event_T4_Whimsicott_Faints a pkm:FaintEvent ; pkm:occursInInstant pkm:I_15 ; pkm:causedByAction pkm:Action_T4_HeatWave ; pkm:affectsCombatant pkm:Combatant_kilenget_Whimsicott ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 4 ; pkm:hasReplayEventOrder 4 .
+pkm:Event_T4_Indeedee_Faints a pkm:FaintEvent ; pkm:occursInInstant pkm:I_15 ; pkm:causedByAction pkm:Action_T4_HeatWave ; pkm:affectsCombatant pkm:Combatant_kilenget_IndeedeeF ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 4 ; pkm:hasReplayEventOrder 4 .
+pkm:Event_T5_Landorus_Faints a pkm:FaintEvent ; pkm:occursInInstant pkm:I_17 ; pkm:causedByAction pkm:Action_T5_FlareBlitz ; pkm:affectsCombatant pkm:Combatant_kilenget_Landorus ; pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ; pkm:hasReplayTurnIndex 5 ; pkm:hasReplayEventOrder 1 .
 
 pkm:Event_T2_Deoxys_Protecting a pkm:Event ;
-    pkm:occursInInstantaneous pkm:I_5 ;
+    pkm:occursInInstant pkm:I_5 ;
     pkm:causedByAction pkm:Action_T2_DeoxysProtect ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 2 ;
@@ -336,7 +336,7 @@ pkm:Event_T2_Deoxys_Protecting a pkm:Event ;
     pkm:hasReplayStepLabel "turn-2-deoxys-protect-effect" .
 
 pkm:Event_T3_Arceus_Protecting a pkm:Event ;
-    pkm:occursInInstantaneous pkm:I_8 ;
+    pkm:occursInInstant pkm:I_8 ;
     pkm:causedByAction pkm:Action_T3_ArceusProtect ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 3 ;
@@ -344,7 +344,7 @@ pkm:Event_T3_Arceus_Protecting a pkm:Event ;
     pkm:hasReplayStepLabel "turn-3-arceus-protect-effect" .
 
 pkm:Event_T4_Tailwind_Active a pkm:Event ;
-    pkm:occursInInstantaneous pkm:I_12 ;
+    pkm:occursInInstant pkm:I_12 ;
     pkm:causedByAction pkm:Action_T4_Tailwind ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 4 ;
@@ -359,7 +359,7 @@ pkm:Event_T4_Tailwind_Active a pkm:Event ;
 # -----------------------------------------------------------------------------
 
 pkm:ReplayStatProjectionPolicy
-    rdfs:comment "This replay slice materializes selected stat stages as a query surface. The stage layer is intentionally partial: it covers query-critical visible combatants and stats, but is not exhaustive for every combatant/stat pair at every Instantaneous." .
+    rdfs:comment "This replay slice materializes selected stat stages as a query surface. The stage layer is intentionally partial: it covers query-critical visible combatants and stats, but is not exhaustive for every combatant/stat pair at every Instant." .
 
 pkm:SSA_ArceusFire_SpAtk_I_0 a pkm:StatStageAssignment ;
     pkm:aboutCombatant pkm:Combatant_Lycopoky_ArceusFire ;
@@ -384,7 +384,7 @@ pkm:SSA_ArceusFire_SpAtk_I_1 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpAtk ;
     pkm:hasContext pkm:I_1 ;
     pkm:hasStageValue 0 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_0 ;
+    pkm:materializedFromPreviousInstant pkm:I_0 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 1 ;
     pkm:hasReplayEventOrder 1 .
@@ -394,7 +394,7 @@ pkm:SSA_ArceusFire_SpDef_I_1 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpDef ;
     pkm:hasContext pkm:I_1 ;
     pkm:hasStageValue 0 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_0 ;
+    pkm:materializedFromPreviousInstant pkm:I_0 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 1 ;
     pkm:hasReplayEventOrder 1 .
@@ -424,7 +424,7 @@ pkm:SSA_ArceusFire_SpAtk_I_3 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpAtk ;
     pkm:hasContext pkm:I_3 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_2 ;
+    pkm:materializedFromPreviousInstant pkm:I_2 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 1 ;
     pkm:hasReplayEventOrder 3 .
@@ -434,7 +434,7 @@ pkm:SSA_ArceusFire_SpDef_I_3 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpDef ;
     pkm:hasContext pkm:I_3 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_2 ;
+    pkm:materializedFromPreviousInstant pkm:I_2 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 1 ;
     pkm:hasReplayEventOrder 3 .
@@ -444,7 +444,7 @@ pkm:SSA_ArceusFire_SpAtk_I_4 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpAtk ;
     pkm:hasContext pkm:I_4 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_3 ;
+    pkm:materializedFromPreviousInstant pkm:I_3 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 2 ;
     pkm:hasReplayEventOrder 0 .
@@ -454,7 +454,7 @@ pkm:SSA_ArceusFire_SpDef_I_4 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpDef ;
     pkm:hasContext pkm:I_4 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_3 ;
+    pkm:materializedFromPreviousInstant pkm:I_3 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 2 ;
     pkm:hasReplayEventOrder 0 .
@@ -464,7 +464,7 @@ pkm:SSA_ArceusFire_SpAtk_I_5 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpAtk ;
     pkm:hasContext pkm:I_5 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_4 ;
+    pkm:materializedFromPreviousInstant pkm:I_4 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 2 ;
     pkm:hasReplayEventOrder 1 .
@@ -474,7 +474,7 @@ pkm:SSA_ArceusFire_SpDef_I_5 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpDef ;
     pkm:hasContext pkm:I_5 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_4 ;
+    pkm:materializedFromPreviousInstant pkm:I_4 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 2 ;
     pkm:hasReplayEventOrder 1 .
@@ -484,7 +484,7 @@ pkm:SSA_ArceusFire_SpAtk_I_6 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpAtk ;
     pkm:hasContext pkm:I_6 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_5 ;
+    pkm:materializedFromPreviousInstant pkm:I_5 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 2 ;
     pkm:hasReplayEventOrder 2 .
@@ -494,7 +494,7 @@ pkm:SSA_ArceusFire_SpDef_I_6 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpDef ;
     pkm:hasContext pkm:I_6 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_5 ;
+    pkm:materializedFromPreviousInstant pkm:I_5 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 2 ;
     pkm:hasReplayEventOrder 2 .
@@ -504,7 +504,7 @@ pkm:SSA_ArceusFire_SpAtk_I_7 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpAtk ;
     pkm:hasContext pkm:I_7 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_6 ;
+    pkm:materializedFromPreviousInstant pkm:I_6 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 3 ;
     pkm:hasReplayEventOrder 0 .
@@ -514,7 +514,7 @@ pkm:SSA_ArceusFire_SpDef_I_7 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpDef ;
     pkm:hasContext pkm:I_7 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_6 ;
+    pkm:materializedFromPreviousInstant pkm:I_6 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 3 ;
     pkm:hasReplayEventOrder 0 .
@@ -524,7 +524,7 @@ pkm:SSA_ArceusFire_SpAtk_I_8 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpAtk ;
     pkm:hasContext pkm:I_8 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_7 ;
+    pkm:materializedFromPreviousInstant pkm:I_7 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 3 ;
     pkm:hasReplayEventOrder 1 .
@@ -534,7 +534,7 @@ pkm:SSA_ArceusFire_SpDef_I_8 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpDef ;
     pkm:hasContext pkm:I_8 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_7 ;
+    pkm:materializedFromPreviousInstant pkm:I_7 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 3 ;
     pkm:hasReplayEventOrder 1 .
@@ -544,7 +544,7 @@ pkm:SSA_ArceusFire_SpAtk_I_9 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpAtk ;
     pkm:hasContext pkm:I_9 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_8 ;
+    pkm:materializedFromPreviousInstant pkm:I_8 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 3 ;
     pkm:hasReplayEventOrder 2 .
@@ -554,7 +554,7 @@ pkm:SSA_ArceusFire_SpDef_I_9 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpDef ;
     pkm:hasContext pkm:I_9 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_8 ;
+    pkm:materializedFromPreviousInstant pkm:I_8 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 3 ;
     pkm:hasReplayEventOrder 2 .
@@ -564,7 +564,7 @@ pkm:SSA_ArceusFire_SpAtk_I_10 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpAtk ;
     pkm:hasContext pkm:I_10 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_9 ;
+    pkm:materializedFromPreviousInstant pkm:I_9 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 3 ;
     pkm:hasReplayEventOrder 3 .
@@ -574,7 +574,7 @@ pkm:SSA_ArceusFire_SpDef_I_10 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpDef ;
     pkm:hasContext pkm:I_10 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_9 ;
+    pkm:materializedFromPreviousInstant pkm:I_9 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 3 ;
     pkm:hasReplayEventOrder 3 .
@@ -584,7 +584,7 @@ pkm:SSA_ArceusFire_SpAtk_I_11 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpAtk ;
     pkm:hasContext pkm:I_11 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_10 ;
+    pkm:materializedFromPreviousInstant pkm:I_10 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasReplayEventOrder 0 .
@@ -594,7 +594,7 @@ pkm:SSA_ArceusFire_SpDef_I_11 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpDef ;
     pkm:hasContext pkm:I_11 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_10 ;
+    pkm:materializedFromPreviousInstant pkm:I_10 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasReplayEventOrder 0 .
@@ -604,7 +604,7 @@ pkm:SSA_ArceusFire_SpAtk_I_12 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpAtk ;
     pkm:hasContext pkm:I_12 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_11 ;
+    pkm:materializedFromPreviousInstant pkm:I_11 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasReplayEventOrder 1 .
@@ -614,7 +614,7 @@ pkm:SSA_ArceusFire_SpDef_I_12 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpDef ;
     pkm:hasContext pkm:I_12 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_11 ;
+    pkm:materializedFromPreviousInstant pkm:I_11 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasReplayEventOrder 1 .
@@ -624,7 +624,7 @@ pkm:SSA_ArceusFire_SpAtk_I_13 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpAtk ;
     pkm:hasContext pkm:I_13 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_12 ;
+    pkm:materializedFromPreviousInstant pkm:I_12 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasReplayEventOrder 2 .
@@ -634,7 +634,7 @@ pkm:SSA_ArceusFire_SpDef_I_13 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpDef ;
     pkm:hasContext pkm:I_13 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_12 ;
+    pkm:materializedFromPreviousInstant pkm:I_12 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasReplayEventOrder 2 .
@@ -644,7 +644,7 @@ pkm:SSA_ArceusFire_SpAtk_I_14 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpAtk ;
     pkm:hasContext pkm:I_14 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_13 ;
+    pkm:materializedFromPreviousInstant pkm:I_13 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasReplayEventOrder 3 .
@@ -654,7 +654,7 @@ pkm:SSA_ArceusFire_SpDef_I_14 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpDef ;
     pkm:hasContext pkm:I_14 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_13 ;
+    pkm:materializedFromPreviousInstant pkm:I_13 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasReplayEventOrder 3 .
@@ -664,7 +664,7 @@ pkm:SSA_ArceusFire_SpAtk_I_15 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpAtk ;
     pkm:hasContext pkm:I_15 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_14 ;
+    pkm:materializedFromPreviousInstant pkm:I_14 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasReplayEventOrder 4 .
@@ -674,7 +674,7 @@ pkm:SSA_ArceusFire_SpDef_I_15 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpDef ;
     pkm:hasContext pkm:I_15 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_14 ;
+    pkm:materializedFromPreviousInstant pkm:I_14 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasReplayEventOrder 4 .
@@ -684,7 +684,7 @@ pkm:SSA_ArceusFire_SpAtk_I_16 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpAtk ;
     pkm:hasContext pkm:I_16 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_15 ;
+    pkm:materializedFromPreviousInstant pkm:I_15 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 5 ;
     pkm:hasReplayEventOrder 0 .
@@ -694,7 +694,7 @@ pkm:SSA_ArceusFire_SpDef_I_16 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpDef ;
     pkm:hasContext pkm:I_16 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_15 ;
+    pkm:materializedFromPreviousInstant pkm:I_15 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 5 ;
     pkm:hasReplayEventOrder 0 .
@@ -704,7 +704,7 @@ pkm:SSA_ArceusFire_SpAtk_I_17 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpAtk ;
     pkm:hasContext pkm:I_17 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_16 ;
+    pkm:materializedFromPreviousInstant pkm:I_16 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 5 ;
     pkm:hasReplayEventOrder 1 .
@@ -714,7 +714,7 @@ pkm:SSA_ArceusFire_SpDef_I_17 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpDef ;
     pkm:hasContext pkm:I_17 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_16 ;
+    pkm:materializedFromPreviousInstant pkm:I_16 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 5 ;
     pkm:hasReplayEventOrder 1 .
@@ -733,7 +733,7 @@ pkm:SSA_Volcarona_SpAtk_I_1 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpAtk ;
     pkm:hasContext pkm:I_1 ;
     pkm:hasStageValue 0 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_0 ;
+    pkm:materializedFromPreviousInstant pkm:I_0 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 1 ;
     pkm:hasReplayEventOrder 1 .
@@ -743,7 +743,7 @@ pkm:SSA_Volcarona_SpAtk_I_2 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpAtk ;
     pkm:hasContext pkm:I_2 ;
     pkm:hasStageValue 0 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_1 ;
+    pkm:materializedFromPreviousInstant pkm:I_1 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 1 ;
     pkm:hasReplayEventOrder 2 .
@@ -763,7 +763,7 @@ pkm:SSA_Volcarona_SpAtk_I_4 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpAtk ;
     pkm:hasContext pkm:I_4 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_3 ;
+    pkm:materializedFromPreviousInstant pkm:I_3 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 2 ;
     pkm:hasReplayEventOrder 0 .
@@ -773,7 +773,7 @@ pkm:SSA_Volcarona_SpAtk_I_5 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpAtk ;
     pkm:hasContext pkm:I_5 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_4 ;
+    pkm:materializedFromPreviousInstant pkm:I_4 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 2 ;
     pkm:hasReplayEventOrder 1 .
@@ -783,7 +783,7 @@ pkm:SSA_Volcarona_SpAtk_I_6 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpAtk ;
     pkm:hasContext pkm:I_6 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_5 ;
+    pkm:materializedFromPreviousInstant pkm:I_5 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 2 ;
     pkm:hasReplayEventOrder 2 .
@@ -793,7 +793,7 @@ pkm:SSA_Volcarona_SpAtk_I_7 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpAtk ;
     pkm:hasContext pkm:I_7 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_6 ;
+    pkm:materializedFromPreviousInstant pkm:I_6 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 3 ;
     pkm:hasReplayEventOrder 0 .
@@ -803,7 +803,7 @@ pkm:SSA_Volcarona_SpAtk_I_8 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpAtk ;
     pkm:hasContext pkm:I_8 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_7 ;
+    pkm:materializedFromPreviousInstant pkm:I_7 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 3 ;
     pkm:hasReplayEventOrder 1 .
@@ -813,7 +813,7 @@ pkm:SSA_Volcarona_SpAtk_I_9 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpAtk ;
     pkm:hasContext pkm:I_9 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_8 ;
+    pkm:materializedFromPreviousInstant pkm:I_8 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 3 ;
     pkm:hasReplayEventOrder 2 .
@@ -823,7 +823,7 @@ pkm:SSA_Volcarona_SpAtk_I_10 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpAtk ;
     pkm:hasContext pkm:I_10 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_9 ;
+    pkm:materializedFromPreviousInstant pkm:I_9 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 3 ;
     pkm:hasReplayEventOrder 3 .
@@ -833,7 +833,7 @@ pkm:SSA_Volcarona_SpAtk_I_11 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpAtk ;
     pkm:hasContext pkm:I_11 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_10 ;
+    pkm:materializedFromPreviousInstant pkm:I_10 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasReplayEventOrder 0 .
@@ -843,7 +843,7 @@ pkm:SSA_Volcarona_SpAtk_I_12 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpAtk ;
     pkm:hasContext pkm:I_12 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_11 ;
+    pkm:materializedFromPreviousInstant pkm:I_11 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasReplayEventOrder 1 .
@@ -853,7 +853,7 @@ pkm:SSA_Volcarona_SpAtk_I_13 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpAtk ;
     pkm:hasContext pkm:I_13 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_12 ;
+    pkm:materializedFromPreviousInstant pkm:I_12 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasReplayEventOrder 2 .
@@ -863,7 +863,7 @@ pkm:SSA_Volcarona_SpAtk_I_14 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpAtk ;
     pkm:hasContext pkm:I_14 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_13 ;
+    pkm:materializedFromPreviousInstant pkm:I_13 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasReplayEventOrder 3 .
@@ -873,7 +873,7 @@ pkm:SSA_Volcarona_SpAtk_I_15 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpAtk ;
     pkm:hasContext pkm:I_15 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_14 ;
+    pkm:materializedFromPreviousInstant pkm:I_14 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasReplayEventOrder 4 .
@@ -883,7 +883,7 @@ pkm:SSA_Volcarona_SpAtk_I_16 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpAtk ;
     pkm:hasContext pkm:I_16 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_15 ;
+    pkm:materializedFromPreviousInstant pkm:I_15 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 5 ;
     pkm:hasReplayEventOrder 0 .
@@ -893,7 +893,7 @@ pkm:SSA_Volcarona_SpAtk_I_17 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpAtk ;
     pkm:hasContext pkm:I_17 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_16 ;
+    pkm:materializedFromPreviousInstant pkm:I_16 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 5 ;
     pkm:hasReplayEventOrder 1 .
@@ -912,7 +912,7 @@ pkm:SSA_DeoxysA_SpAtk_I_1 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpAtk ;
     pkm:hasContext pkm:I_1 ;
     pkm:hasStageValue 0 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_0 ;
+    pkm:materializedFromPreviousInstant pkm:I_0 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 1 ;
     pkm:hasReplayEventOrder 1 .
@@ -922,7 +922,7 @@ pkm:SSA_DeoxysA_SpAtk_I_2 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpAtk ;
     pkm:hasContext pkm:I_2 ;
     pkm:hasStageValue 0 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_1 ;
+    pkm:materializedFromPreviousInstant pkm:I_1 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 1 ;
     pkm:hasReplayEventOrder 2 .
@@ -932,7 +932,7 @@ pkm:SSA_DeoxysA_SpAtk_I_3 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpAtk ;
     pkm:hasContext pkm:I_3 ;
     pkm:hasStageValue 0 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_2 ;
+    pkm:materializedFromPreviousInstant pkm:I_2 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 1 ;
     pkm:hasReplayEventOrder 3 .
@@ -942,7 +942,7 @@ pkm:SSA_DeoxysA_SpAtk_I_4 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpAtk ;
     pkm:hasContext pkm:I_4 ;
     pkm:hasStageValue 0 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_3 ;
+    pkm:materializedFromPreviousInstant pkm:I_3 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 2 ;
     pkm:hasReplayEventOrder 0 .
@@ -952,7 +952,7 @@ pkm:SSA_DeoxysA_SpAtk_I_5 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpAtk ;
     pkm:hasContext pkm:I_5 ;
     pkm:hasStageValue 0 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_4 ;
+    pkm:materializedFromPreviousInstant pkm:I_4 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 2 ;
     pkm:hasReplayEventOrder 1 .
@@ -962,7 +962,7 @@ pkm:SSA_DeoxysA_SpAtk_I_6 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpAtk ;
     pkm:hasContext pkm:I_6 ;
     pkm:hasStageValue 0 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_5 ;
+    pkm:materializedFromPreviousInstant pkm:I_5 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 2 ;
     pkm:hasReplayEventOrder 2 .
@@ -972,7 +972,7 @@ pkm:SSA_DeoxysA_SpAtk_I_7 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpAtk ;
     pkm:hasContext pkm:I_7 ;
     pkm:hasStageValue 0 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_6 ;
+    pkm:materializedFromPreviousInstant pkm:I_6 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 3 ;
     pkm:hasReplayEventOrder 0 .
@@ -982,7 +982,7 @@ pkm:SSA_DeoxysA_SpAtk_I_8 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpAtk ;
     pkm:hasContext pkm:I_8 ;
     pkm:hasStageValue 0 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_7 ;
+    pkm:materializedFromPreviousInstant pkm:I_7 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 3 ;
     pkm:hasReplayEventOrder 1 .
@@ -1002,7 +1002,7 @@ pkm:SSA_DeoxysA_SpAtk_I_10 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpAtk ;
     pkm:hasContext pkm:I_10 ;
     pkm:hasStageValue -2 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_9 ;
+    pkm:materializedFromPreviousInstant pkm:I_9 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 3 ;
     pkm:hasReplayEventOrder 3 .
@@ -1021,7 +1021,7 @@ pkm:SSA_Koraidon_Speed_I_12 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpeed ;
     pkm:hasContext pkm:I_12 ;
     pkm:hasStageValue 0 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_11 ;
+    pkm:materializedFromPreviousInstant pkm:I_11 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasReplayEventOrder 1 .
@@ -1031,7 +1031,7 @@ pkm:SSA_Koraidon_Speed_I_13 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpeed ;
     pkm:hasContext pkm:I_13 ;
     pkm:hasStageValue 0 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_12 ;
+    pkm:materializedFromPreviousInstant pkm:I_12 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasReplayEventOrder 2 .
@@ -1051,7 +1051,7 @@ pkm:SSA_Koraidon_Speed_I_15 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpeed ;
     pkm:hasContext pkm:I_15 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_14 ;
+    pkm:materializedFromPreviousInstant pkm:I_14 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasReplayEventOrder 4 .
@@ -1061,7 +1061,7 @@ pkm:SSA_Koraidon_Speed_I_16 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpeed ;
     pkm:hasContext pkm:I_16 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_15 ;
+    pkm:materializedFromPreviousInstant pkm:I_15 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 5 ;
     pkm:hasReplayEventOrder 0 .
@@ -1071,7 +1071,7 @@ pkm:SSA_Koraidon_Speed_I_17 a pkm:StatStageAssignment ;
     pkm:aboutStat pkm:StatSpeed ;
     pkm:hasContext pkm:I_17 ;
     pkm:hasStageValue 1 ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_16 ;
+    pkm:materializedFromPreviousInstant pkm:I_16 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 ;
     pkm:hasReplayTurnIndex 5 ;
     pkm:hasReplayEventOrder 1 .
@@ -1122,7 +1122,7 @@ pkm:HP_T5_Landorus_Zero a pkm:CurrentHPAssignment ;
 pkm:SR_T1_FieryDance_SecondaryBoost
     a pkm:StochasticResolution ;
     pkm:stochasticOccursInBattle pkm:Battle_Lycopoky_Finals_Game1 ;
-    pkm:realizedInInstantaneous pkm:I_3 ;
+    pkm:realizedInInstant pkm:I_3 ;
     pkm:associatedWithAction pkm:Action_T1_FieryDance ;
     pkm:hasRandomMechanic pkm:RandomMechanic_SecondaryEffectCheck ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredCompleteBranchSet ;
@@ -1169,7 +1169,7 @@ pkm:Terrain_PsychicTerrain_I_1 a pkm:CurrentTerrainAssignment ;
     pkm:hasContext pkm:I_1 ;
     pkm:hasReplayTurnIndex 1 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_0 ;
+    pkm:materializedFromPreviousInstant pkm:I_0 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:Terrain_PsychicTerrain_I_2 a pkm:CurrentTerrainAssignment ;
@@ -1178,7 +1178,7 @@ pkm:Terrain_PsychicTerrain_I_2 a pkm:CurrentTerrainAssignment ;
     pkm:hasContext pkm:I_2 ;
     pkm:hasReplayTurnIndex 1 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_1 ;
+    pkm:materializedFromPreviousInstant pkm:I_1 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:Terrain_PsychicTerrain_I_3 a pkm:CurrentTerrainAssignment ;
@@ -1187,7 +1187,7 @@ pkm:Terrain_PsychicTerrain_I_3 a pkm:CurrentTerrainAssignment ;
     pkm:hasContext pkm:I_3 ;
     pkm:hasReplayTurnIndex 1 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_2 ;
+    pkm:materializedFromPreviousInstant pkm:I_2 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:Terrain_PsychicTerrain_I_4 a pkm:CurrentTerrainAssignment ;
@@ -1196,7 +1196,7 @@ pkm:Terrain_PsychicTerrain_I_4 a pkm:CurrentTerrainAssignment ;
     pkm:hasContext pkm:I_4 ;
     pkm:hasReplayTurnIndex 2 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_3 ;
+    pkm:materializedFromPreviousInstant pkm:I_3 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:Terrain_PsychicTerrain_I_5 a pkm:CurrentTerrainAssignment ;
@@ -1205,7 +1205,7 @@ pkm:Terrain_PsychicTerrain_I_5 a pkm:CurrentTerrainAssignment ;
     pkm:hasContext pkm:I_5 ;
     pkm:hasReplayTurnIndex 2 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_4 ;
+    pkm:materializedFromPreviousInstant pkm:I_4 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:Terrain_PsychicTerrain_I_6 a pkm:CurrentTerrainAssignment ;
@@ -1214,7 +1214,7 @@ pkm:Terrain_PsychicTerrain_I_6 a pkm:CurrentTerrainAssignment ;
     pkm:hasContext pkm:I_6 ;
     pkm:hasReplayTurnIndex 2 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_5 ;
+    pkm:materializedFromPreviousInstant pkm:I_5 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:Terrain_PsychicTerrain_I_7 a pkm:CurrentTerrainAssignment ;
@@ -1223,7 +1223,7 @@ pkm:Terrain_PsychicTerrain_I_7 a pkm:CurrentTerrainAssignment ;
     pkm:hasContext pkm:I_7 ;
     pkm:hasReplayTurnIndex 3 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_6 ;
+    pkm:materializedFromPreviousInstant pkm:I_6 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:Terrain_PsychicTerrain_I_8 a pkm:CurrentTerrainAssignment ;
@@ -1232,7 +1232,7 @@ pkm:Terrain_PsychicTerrain_I_8 a pkm:CurrentTerrainAssignment ;
     pkm:hasContext pkm:I_8 ;
     pkm:hasReplayTurnIndex 3 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_7 ;
+    pkm:materializedFromPreviousInstant pkm:I_7 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:Terrain_PsychicTerrain_I_9 a pkm:CurrentTerrainAssignment ;
@@ -1241,7 +1241,7 @@ pkm:Terrain_PsychicTerrain_I_9 a pkm:CurrentTerrainAssignment ;
     pkm:hasContext pkm:I_9 ;
     pkm:hasReplayTurnIndex 3 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_8 ;
+    pkm:materializedFromPreviousInstant pkm:I_8 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:Terrain_PsychicTerrain_I_10 a pkm:CurrentTerrainAssignment ;
@@ -1250,7 +1250,7 @@ pkm:Terrain_PsychicTerrain_I_10 a pkm:CurrentTerrainAssignment ;
     pkm:hasContext pkm:I_10 ;
     pkm:hasReplayTurnIndex 3 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_9 ;
+    pkm:materializedFromPreviousInstant pkm:I_9 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:Terrain_PsychicTerrain_I_11 a pkm:CurrentTerrainAssignment ;
@@ -1259,7 +1259,7 @@ pkm:Terrain_PsychicTerrain_I_11 a pkm:CurrentTerrainAssignment ;
     pkm:hasContext pkm:I_11 ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_10 ;
+    pkm:materializedFromPreviousInstant pkm:I_10 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:Terrain_PsychicTerrain_I_12 a pkm:CurrentTerrainAssignment ;
@@ -1268,7 +1268,7 @@ pkm:Terrain_PsychicTerrain_I_12 a pkm:CurrentTerrainAssignment ;
     pkm:hasContext pkm:I_12 ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_11 ;
+    pkm:materializedFromPreviousInstant pkm:I_11 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:Terrain_PsychicTerrain_I_13 a pkm:CurrentTerrainAssignment ;
@@ -1277,7 +1277,7 @@ pkm:Terrain_PsychicTerrain_I_13 a pkm:CurrentTerrainAssignment ;
     pkm:hasContext pkm:I_13 ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_12 ;
+    pkm:materializedFromPreviousInstant pkm:I_12 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:Terrain_PsychicTerrain_I_14 a pkm:CurrentTerrainAssignment ;
@@ -1286,7 +1286,7 @@ pkm:Terrain_PsychicTerrain_I_14 a pkm:CurrentTerrainAssignment ;
     pkm:hasContext pkm:I_14 ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_13 ;
+    pkm:materializedFromPreviousInstant pkm:I_13 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:Terrain_PsychicTerrain_I_15 a pkm:CurrentTerrainAssignment ;
@@ -1295,7 +1295,7 @@ pkm:Terrain_PsychicTerrain_I_15 a pkm:CurrentTerrainAssignment ;
     pkm:hasContext pkm:I_15 ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_14 ;
+    pkm:materializedFromPreviousInstant pkm:I_14 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:Terrain_PsychicTerrain_I_16 a pkm:CurrentTerrainAssignment ;
@@ -1304,7 +1304,7 @@ pkm:Terrain_PsychicTerrain_I_16 a pkm:CurrentTerrainAssignment ;
     pkm:hasContext pkm:I_16 ;
     pkm:hasReplayTurnIndex 5 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_15 ;
+    pkm:materializedFromPreviousInstant pkm:I_15 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:Terrain_PsychicTerrain_I_17 a pkm:CurrentTerrainAssignment ;
@@ -1313,7 +1313,7 @@ pkm:Terrain_PsychicTerrain_I_17 a pkm:CurrentTerrainAssignment ;
     pkm:hasContext pkm:I_17 ;
     pkm:hasReplayTurnIndex 5 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_16 ;
+    pkm:materializedFromPreviousInstant pkm:I_16 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:Weather_HarshSunlight_I_10 a pkm:CurrentWeatherAssignment ;
@@ -1330,7 +1330,7 @@ pkm:Weather_HarshSunlight_I_11 a pkm:CurrentWeatherAssignment ;
     pkm:hasContext pkm:I_11 ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_10 ;
+    pkm:materializedFromPreviousInstant pkm:I_10 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:Weather_HarshSunlight_I_12 a pkm:CurrentWeatherAssignment ;
@@ -1339,7 +1339,7 @@ pkm:Weather_HarshSunlight_I_12 a pkm:CurrentWeatherAssignment ;
     pkm:hasContext pkm:I_12 ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_11 ;
+    pkm:materializedFromPreviousInstant pkm:I_11 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:Weather_HarshSunlight_I_13 a pkm:CurrentWeatherAssignment ;
@@ -1348,7 +1348,7 @@ pkm:Weather_HarshSunlight_I_13 a pkm:CurrentWeatherAssignment ;
     pkm:hasContext pkm:I_13 ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_12 ;
+    pkm:materializedFromPreviousInstant pkm:I_12 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:Weather_HarshSunlight_I_14 a pkm:CurrentWeatherAssignment ;
@@ -1357,7 +1357,7 @@ pkm:Weather_HarshSunlight_I_14 a pkm:CurrentWeatherAssignment ;
     pkm:hasContext pkm:I_14 ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_13 ;
+    pkm:materializedFromPreviousInstant pkm:I_13 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:Weather_HarshSunlight_I_15 a pkm:CurrentWeatherAssignment ;
@@ -1366,7 +1366,7 @@ pkm:Weather_HarshSunlight_I_15 a pkm:CurrentWeatherAssignment ;
     pkm:hasContext pkm:I_15 ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_14 ;
+    pkm:materializedFromPreviousInstant pkm:I_14 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:Weather_HarshSunlight_I_16 a pkm:CurrentWeatherAssignment ;
@@ -1375,7 +1375,7 @@ pkm:Weather_HarshSunlight_I_16 a pkm:CurrentWeatherAssignment ;
     pkm:hasContext pkm:I_16 ;
     pkm:hasReplayTurnIndex 5 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_15 ;
+    pkm:materializedFromPreviousInstant pkm:I_15 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:Weather_HarshSunlight_I_17 a pkm:CurrentWeatherAssignment ;
@@ -1384,7 +1384,7 @@ pkm:Weather_HarshSunlight_I_17 a pkm:CurrentWeatherAssignment ;
     pkm:hasContext pkm:I_17 ;
     pkm:hasReplayTurnIndex 5 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_16 ;
+    pkm:materializedFromPreviousInstant pkm:I_16 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:SideCond_Tailwind_kilenget_I_12 a pkm:SideConditionAssignment ;
@@ -1404,7 +1404,7 @@ pkm:SideCond_Tailwind_kilenget_I_13 a pkm:SideConditionAssignment ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasRemainingDuration 5 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_12 ;
+    pkm:materializedFromPreviousInstant pkm:I_12 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:SideCond_Tailwind_kilenget_I_14 a pkm:SideConditionAssignment ;
@@ -1414,7 +1414,7 @@ pkm:SideCond_Tailwind_kilenget_I_14 a pkm:SideConditionAssignment ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasRemainingDuration 4 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_13 ;
+    pkm:materializedFromPreviousInstant pkm:I_13 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:SideCond_Tailwind_kilenget_I_15 a pkm:SideConditionAssignment ;
@@ -1424,7 +1424,7 @@ pkm:SideCond_Tailwind_kilenget_I_15 a pkm:SideConditionAssignment ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasRemainingDuration 3 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_14 ;
+    pkm:materializedFromPreviousInstant pkm:I_14 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:SideCond_Tailwind_kilenget_I_16 a pkm:SideConditionAssignment ;
@@ -1434,7 +1434,7 @@ pkm:SideCond_Tailwind_kilenget_I_16 a pkm:SideConditionAssignment ;
     pkm:hasReplayTurnIndex 5 ;
     pkm:hasRemainingDuration 2 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_15 ;
+    pkm:materializedFromPreviousInstant pkm:I_15 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:SideCond_Tailwind_kilenget_I_17 a pkm:SideConditionAssignment ;
@@ -1444,7 +1444,7 @@ pkm:SideCond_Tailwind_kilenget_I_17 a pkm:SideConditionAssignment ;
     pkm:hasReplayTurnIndex 5 ;
     pkm:hasRemainingDuration 1 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_16 ;
+    pkm:materializedFromPreviousInstant pkm:I_16 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:Volatile_Protecting_DeoxysA_I_5 a pkm:VolatileStatusAssignment ;
@@ -1508,7 +1508,7 @@ pkm:ActiveSlot_kilenget_DeoxysA_I_1_S1 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_1 ;
     pkm:hasReplayTurnIndex 1 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_0 ;
+    pkm:materializedFromPreviousInstant pkm:I_0 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_kilenget_IndeedeeF_I_1_S2 a pkm:ActiveSlotAssignment ;
@@ -1518,7 +1518,7 @@ pkm:ActiveSlot_kilenget_IndeedeeF_I_1_S2 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_1 ;
     pkm:hasReplayTurnIndex 1 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_0 ;
+    pkm:materializedFromPreviousInstant pkm:I_0 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_Lycopoky_ArceusFire_I_1_S1 a pkm:ActiveSlotAssignment ;
@@ -1528,7 +1528,7 @@ pkm:ActiveSlot_Lycopoky_ArceusFire_I_1_S1 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_1 ;
     pkm:hasReplayTurnIndex 1 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_0 ;
+    pkm:materializedFromPreviousInstant pkm:I_0 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_Lycopoky_Volcarona_I_1_S2 a pkm:ActiveSlotAssignment ;
@@ -1538,7 +1538,7 @@ pkm:ActiveSlot_Lycopoky_Volcarona_I_1_S2 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_1 ;
     pkm:hasReplayTurnIndex 1 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_0 ;
+    pkm:materializedFromPreviousInstant pkm:I_0 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_kilenget_DeoxysA_I_2_S1 a pkm:ActiveSlotAssignment ;
@@ -1548,7 +1548,7 @@ pkm:ActiveSlot_kilenget_DeoxysA_I_2_S1 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_2 ;
     pkm:hasReplayTurnIndex 1 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_1 ;
+    pkm:materializedFromPreviousInstant pkm:I_1 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_kilenget_IndeedeeF_I_2_S2 a pkm:ActiveSlotAssignment ;
@@ -1558,7 +1558,7 @@ pkm:ActiveSlot_kilenget_IndeedeeF_I_2_S2 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_2 ;
     pkm:hasReplayTurnIndex 1 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_1 ;
+    pkm:materializedFromPreviousInstant pkm:I_1 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_Lycopoky_ArceusFire_I_2_S1 a pkm:ActiveSlotAssignment ;
@@ -1568,7 +1568,7 @@ pkm:ActiveSlot_Lycopoky_ArceusFire_I_2_S1 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_2 ;
     pkm:hasReplayTurnIndex 1 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_1 ;
+    pkm:materializedFromPreviousInstant pkm:I_1 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_Lycopoky_Volcarona_I_2_S2 a pkm:ActiveSlotAssignment ;
@@ -1578,7 +1578,7 @@ pkm:ActiveSlot_Lycopoky_Volcarona_I_2_S2 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_2 ;
     pkm:hasReplayTurnIndex 1 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_1 ;
+    pkm:materializedFromPreviousInstant pkm:I_1 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_kilenget_DeoxysA_I_3_S1 a pkm:ActiveSlotAssignment ;
@@ -1588,7 +1588,7 @@ pkm:ActiveSlot_kilenget_DeoxysA_I_3_S1 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_3 ;
     pkm:hasReplayTurnIndex 1 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_2 ;
+    pkm:materializedFromPreviousInstant pkm:I_2 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_kilenget_IndeedeeF_I_3_S2 a pkm:ActiveSlotAssignment ;
@@ -1598,7 +1598,7 @@ pkm:ActiveSlot_kilenget_IndeedeeF_I_3_S2 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_3 ;
     pkm:hasReplayTurnIndex 1 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_2 ;
+    pkm:materializedFromPreviousInstant pkm:I_2 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_Lycopoky_ArceusFire_I_3_S1 a pkm:ActiveSlotAssignment ;
@@ -1608,7 +1608,7 @@ pkm:ActiveSlot_Lycopoky_ArceusFire_I_3_S1 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_3 ;
     pkm:hasReplayTurnIndex 1 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_2 ;
+    pkm:materializedFromPreviousInstant pkm:I_2 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_Lycopoky_Volcarona_I_3_S2 a pkm:ActiveSlotAssignment ;
@@ -1618,7 +1618,7 @@ pkm:ActiveSlot_Lycopoky_Volcarona_I_3_S2 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_3 ;
     pkm:hasReplayTurnIndex 1 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_2 ;
+    pkm:materializedFromPreviousInstant pkm:I_2 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_kilenget_DeoxysA_I_4_S1 a pkm:ActiveSlotAssignment ;
@@ -1628,7 +1628,7 @@ pkm:ActiveSlot_kilenget_DeoxysA_I_4_S1 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_4 ;
     pkm:hasReplayTurnIndex 2 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_3 ;
+    pkm:materializedFromPreviousInstant pkm:I_3 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_kilenget_IndeedeeF_I_4_S2 a pkm:ActiveSlotAssignment ;
@@ -1638,7 +1638,7 @@ pkm:ActiveSlot_kilenget_IndeedeeF_I_4_S2 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_4 ;
     pkm:hasReplayTurnIndex 2 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_3 ;
+    pkm:materializedFromPreviousInstant pkm:I_3 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_Lycopoky_ArceusFire_I_4_S1 a pkm:ActiveSlotAssignment ;
@@ -1648,7 +1648,7 @@ pkm:ActiveSlot_Lycopoky_ArceusFire_I_4_S1 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_4 ;
     pkm:hasReplayTurnIndex 2 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_3 ;
+    pkm:materializedFromPreviousInstant pkm:I_3 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_Lycopoky_Volcarona_I_4_S2 a pkm:ActiveSlotAssignment ;
@@ -1658,7 +1658,7 @@ pkm:ActiveSlot_Lycopoky_Volcarona_I_4_S2 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_4 ;
     pkm:hasReplayTurnIndex 2 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_3 ;
+    pkm:materializedFromPreviousInstant pkm:I_3 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_kilenget_DeoxysA_I_5_S1 a pkm:ActiveSlotAssignment ;
@@ -1668,7 +1668,7 @@ pkm:ActiveSlot_kilenget_DeoxysA_I_5_S1 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_5 ;
     pkm:hasReplayTurnIndex 2 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_4 ;
+    pkm:materializedFromPreviousInstant pkm:I_4 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_kilenget_IndeedeeF_I_5_S2 a pkm:ActiveSlotAssignment ;
@@ -1678,7 +1678,7 @@ pkm:ActiveSlot_kilenget_IndeedeeF_I_5_S2 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_5 ;
     pkm:hasReplayTurnIndex 2 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_4 ;
+    pkm:materializedFromPreviousInstant pkm:I_4 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_Lycopoky_ArceusFire_I_5_S1 a pkm:ActiveSlotAssignment ;
@@ -1688,7 +1688,7 @@ pkm:ActiveSlot_Lycopoky_ArceusFire_I_5_S1 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_5 ;
     pkm:hasReplayTurnIndex 2 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_4 ;
+    pkm:materializedFromPreviousInstant pkm:I_4 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_Lycopoky_Volcarona_I_5_S2 a pkm:ActiveSlotAssignment ;
@@ -1698,7 +1698,7 @@ pkm:ActiveSlot_Lycopoky_Volcarona_I_5_S2 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_5 ;
     pkm:hasReplayTurnIndex 2 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_4 ;
+    pkm:materializedFromPreviousInstant pkm:I_4 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_kilenget_DeoxysA_I_6_S1 a pkm:ActiveSlotAssignment ;
@@ -1708,7 +1708,7 @@ pkm:ActiveSlot_kilenget_DeoxysA_I_6_S1 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_6 ;
     pkm:hasReplayTurnIndex 2 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_5 ;
+    pkm:materializedFromPreviousInstant pkm:I_5 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_kilenget_IndeedeeF_I_6_S2 a pkm:ActiveSlotAssignment ;
@@ -1718,7 +1718,7 @@ pkm:ActiveSlot_kilenget_IndeedeeF_I_6_S2 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_6 ;
     pkm:hasReplayTurnIndex 2 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_5 ;
+    pkm:materializedFromPreviousInstant pkm:I_5 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_Lycopoky_ArceusFire_I_6_S1 a pkm:ActiveSlotAssignment ;
@@ -1728,7 +1728,7 @@ pkm:ActiveSlot_Lycopoky_ArceusFire_I_6_S1 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_6 ;
     pkm:hasReplayTurnIndex 2 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_5 ;
+    pkm:materializedFromPreviousInstant pkm:I_5 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_Lycopoky_Volcarona_I_6_S2 a pkm:ActiveSlotAssignment ;
@@ -1738,7 +1738,7 @@ pkm:ActiveSlot_Lycopoky_Volcarona_I_6_S2 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_6 ;
     pkm:hasReplayTurnIndex 2 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_5 ;
+    pkm:materializedFromPreviousInstant pkm:I_5 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_kilenget_DeoxysA_I_7_S1 a pkm:ActiveSlotAssignment ;
@@ -1748,7 +1748,7 @@ pkm:ActiveSlot_kilenget_DeoxysA_I_7_S1 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_7 ;
     pkm:hasReplayTurnIndex 3 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_6 ;
+    pkm:materializedFromPreviousInstant pkm:I_6 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_kilenget_IndeedeeF_I_7_S2 a pkm:ActiveSlotAssignment ;
@@ -1758,7 +1758,7 @@ pkm:ActiveSlot_kilenget_IndeedeeF_I_7_S2 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_7 ;
     pkm:hasReplayTurnIndex 3 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_6 ;
+    pkm:materializedFromPreviousInstant pkm:I_6 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_Lycopoky_ArceusFire_I_7_S1 a pkm:ActiveSlotAssignment ;
@@ -1768,7 +1768,7 @@ pkm:ActiveSlot_Lycopoky_ArceusFire_I_7_S1 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_7 ;
     pkm:hasReplayTurnIndex 3 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_6 ;
+    pkm:materializedFromPreviousInstant pkm:I_6 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_Lycopoky_Volcarona_I_7_S2 a pkm:ActiveSlotAssignment ;
@@ -1778,7 +1778,7 @@ pkm:ActiveSlot_Lycopoky_Volcarona_I_7_S2 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_7 ;
     pkm:hasReplayTurnIndex 3 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_6 ;
+    pkm:materializedFromPreviousInstant pkm:I_6 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_kilenget_DeoxysA_I_8_S1 a pkm:ActiveSlotAssignment ;
@@ -1788,7 +1788,7 @@ pkm:ActiveSlot_kilenget_DeoxysA_I_8_S1 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_8 ;
     pkm:hasReplayTurnIndex 3 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_7 ;
+    pkm:materializedFromPreviousInstant pkm:I_7 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_kilenget_IndeedeeF_I_8_S2 a pkm:ActiveSlotAssignment ;
@@ -1798,7 +1798,7 @@ pkm:ActiveSlot_kilenget_IndeedeeF_I_8_S2 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_8 ;
     pkm:hasReplayTurnIndex 3 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_7 ;
+    pkm:materializedFromPreviousInstant pkm:I_7 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_Lycopoky_ArceusFire_I_8_S1 a pkm:ActiveSlotAssignment ;
@@ -1808,7 +1808,7 @@ pkm:ActiveSlot_Lycopoky_ArceusFire_I_8_S1 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_8 ;
     pkm:hasReplayTurnIndex 3 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_7 ;
+    pkm:materializedFromPreviousInstant pkm:I_7 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_Lycopoky_Volcarona_I_8_S2 a pkm:ActiveSlotAssignment ;
@@ -1818,7 +1818,7 @@ pkm:ActiveSlot_Lycopoky_Volcarona_I_8_S2 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_8 ;
     pkm:hasReplayTurnIndex 3 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_7 ;
+    pkm:materializedFromPreviousInstant pkm:I_7 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_kilenget_DeoxysA_I_9_S1 a pkm:ActiveSlotAssignment ;
@@ -1828,7 +1828,7 @@ pkm:ActiveSlot_kilenget_DeoxysA_I_9_S1 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_9 ;
     pkm:hasReplayTurnIndex 3 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_8 ;
+    pkm:materializedFromPreviousInstant pkm:I_8 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_kilenget_IndeedeeF_I_9_S2 a pkm:ActiveSlotAssignment ;
@@ -1838,7 +1838,7 @@ pkm:ActiveSlot_kilenget_IndeedeeF_I_9_S2 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_9 ;
     pkm:hasReplayTurnIndex 3 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_8 ;
+    pkm:materializedFromPreviousInstant pkm:I_8 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_Lycopoky_ArceusFire_I_9_S1 a pkm:ActiveSlotAssignment ;
@@ -1848,7 +1848,7 @@ pkm:ActiveSlot_Lycopoky_ArceusFire_I_9_S1 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_9 ;
     pkm:hasReplayTurnIndex 3 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_8 ;
+    pkm:materializedFromPreviousInstant pkm:I_8 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_Lycopoky_Volcarona_I_9_S2 a pkm:ActiveSlotAssignment ;
@@ -1858,7 +1858,7 @@ pkm:ActiveSlot_Lycopoky_Volcarona_I_9_S2 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_9 ;
     pkm:hasReplayTurnIndex 3 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_8 ;
+    pkm:materializedFromPreviousInstant pkm:I_8 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_kilenget_IndeedeeF_I_10_S2 a pkm:ActiveSlotAssignment ;
@@ -1931,7 +1931,7 @@ pkm:ActiveSlot_kilenget_Whimsicott_I_12_S1 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_12 ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_11 ;
+    pkm:materializedFromPreviousInstant pkm:I_11 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_kilenget_IndeedeeF_I_12_S2 a pkm:ActiveSlotAssignment ;
@@ -1941,7 +1941,7 @@ pkm:ActiveSlot_kilenget_IndeedeeF_I_12_S2 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_12 ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_11 ;
+    pkm:materializedFromPreviousInstant pkm:I_11 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_Lycopoky_ArceusFire_I_12_S1 a pkm:ActiveSlotAssignment ;
@@ -1951,7 +1951,7 @@ pkm:ActiveSlot_Lycopoky_ArceusFire_I_12_S1 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_12 ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_11 ;
+    pkm:materializedFromPreviousInstant pkm:I_11 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_Lycopoky_Koraidon_I_12_S2 a pkm:ActiveSlotAssignment ;
@@ -1961,7 +1961,7 @@ pkm:ActiveSlot_Lycopoky_Koraidon_I_12_S2 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_12 ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_11 ;
+    pkm:materializedFromPreviousInstant pkm:I_11 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_kilenget_Whimsicott_I_13_S1 a pkm:ActiveSlotAssignment ;
@@ -1971,7 +1971,7 @@ pkm:ActiveSlot_kilenget_Whimsicott_I_13_S1 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_13 ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_12 ;
+    pkm:materializedFromPreviousInstant pkm:I_12 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_kilenget_IndeedeeF_I_13_S2 a pkm:ActiveSlotAssignment ;
@@ -1981,7 +1981,7 @@ pkm:ActiveSlot_kilenget_IndeedeeF_I_13_S2 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_13 ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_12 ;
+    pkm:materializedFromPreviousInstant pkm:I_12 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_Lycopoky_ArceusFire_I_13_S1 a pkm:ActiveSlotAssignment ;
@@ -1991,7 +1991,7 @@ pkm:ActiveSlot_Lycopoky_ArceusFire_I_13_S1 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_13 ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_12 ;
+    pkm:materializedFromPreviousInstant pkm:I_12 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_Lycopoky_Koraidon_I_13_S2 a pkm:ActiveSlotAssignment ;
@@ -2001,7 +2001,7 @@ pkm:ActiveSlot_Lycopoky_Koraidon_I_13_S2 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_13 ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_12 ;
+    pkm:materializedFromPreviousInstant pkm:I_12 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_kilenget_Whimsicott_I_14_S1 a pkm:ActiveSlotAssignment ;
@@ -2011,7 +2011,7 @@ pkm:ActiveSlot_kilenget_Whimsicott_I_14_S1 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_14 ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_13 ;
+    pkm:materializedFromPreviousInstant pkm:I_13 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_kilenget_IndeedeeF_I_14_S2 a pkm:ActiveSlotAssignment ;
@@ -2021,7 +2021,7 @@ pkm:ActiveSlot_kilenget_IndeedeeF_I_14_S2 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_14 ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_13 ;
+    pkm:materializedFromPreviousInstant pkm:I_13 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_Lycopoky_ArceusFire_I_14_S1 a pkm:ActiveSlotAssignment ;
@@ -2031,7 +2031,7 @@ pkm:ActiveSlot_Lycopoky_ArceusFire_I_14_S1 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_14 ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_13 ;
+    pkm:materializedFromPreviousInstant pkm:I_13 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_Lycopoky_Koraidon_I_14_S2 a pkm:ActiveSlotAssignment ;
@@ -2041,7 +2041,7 @@ pkm:ActiveSlot_Lycopoky_Koraidon_I_14_S2 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_14 ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_13 ;
+    pkm:materializedFromPreviousInstant pkm:I_13 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_kilenget_Whimsicott_I_15_S1 a pkm:ActiveSlotAssignment ;
@@ -2051,7 +2051,7 @@ pkm:ActiveSlot_kilenget_Whimsicott_I_15_S1 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_15 ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_14 ;
+    pkm:materializedFromPreviousInstant pkm:I_14 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_kilenget_IndeedeeF_I_15_S2 a pkm:ActiveSlotAssignment ;
@@ -2061,7 +2061,7 @@ pkm:ActiveSlot_kilenget_IndeedeeF_I_15_S2 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_15 ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_14 ;
+    pkm:materializedFromPreviousInstant pkm:I_14 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_Lycopoky_ArceusFire_I_15_S1 a pkm:ActiveSlotAssignment ;
@@ -2071,7 +2071,7 @@ pkm:ActiveSlot_Lycopoky_ArceusFire_I_15_S1 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_15 ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_14 ;
+    pkm:materializedFromPreviousInstant pkm:I_14 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_Lycopoky_Koraidon_I_15_S2 a pkm:ActiveSlotAssignment ;
@@ -2081,7 +2081,7 @@ pkm:ActiveSlot_Lycopoky_Koraidon_I_15_S2 a pkm:ActiveSlotAssignment ;
     pkm:hasContext pkm:I_15 ;
     pkm:hasReplayTurnIndex 4 ;
     pkm:hasKnowledgeStatus pkm:KnowledgeStatus_InferredPartialBranchSet ;
-    pkm:materializedFromPreviousInstantaneous pkm:I_14 ;
+    pkm:materializedFromPreviousInstant pkm:I_14 ;
     pkm:supportedByArtifact pkm:ReplayArtifact_Lycopoky_Finals_Game1 .
 
 pkm:ActiveSlot_kilenget_Landorus_I_16_S1 a pkm:ActiveSlotAssignment ;

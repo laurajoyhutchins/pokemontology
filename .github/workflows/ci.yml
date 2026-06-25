@@ -69,10 +69,12 @@ jobs:
             docs/shapes.ttl \
             docs/site-data.json \
             docs/schema-index.json \
-            docs/mechanics-base.ttl \
-            docs/mechanics-learnsets-current.ttl \
-            docs/mechanics-learnsets-modern.ttl \
-            docs/mechanics-learnsets-legacy.ttl
+            docs/mechanics-base.ttl
+          if git status --porcelain -- 'docs/mechanics-learnsets-*.ttl' | grep -q .; then
+            echo "::error::Learnset shard files are out of date — run 'python -m pokemontology build' and commit the result"
+            git status --short -- 'docs/mechanics-learnsets-*.ttl'
+            exit 1
+          fi
       - name: Enforce published TTL size budget
         run: |
           warn_limit=$((50 * 1024 * 1024))
