@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "id": "synthetic-battle-001",
+  "format": "Synthetic doubles fixture",
+  "players": [
+    "ExamplePlayerOne",
+    "ExamplePlayerTwo"
+  ],
+  "log": "|gametype|doubles\n|player|p1|ExamplePlayerOne|\n|player|p2|ExamplePlayerTwo|\n|poke|p1|ExampleMonAlpha, L50|\n|poke|p2|ExampleMonBeta, L50|\n|start\n|switch|p1a: Alpha|ExampleMonAlpha, L50|100/100\n|switch|p2a: Beta|ExampleMonBeta, L50|100/100\n|turn|1\n|move|p1a: Alpha|ExampleMove|p2a: Beta\n|-damage|p2a: Beta|50/100\n|win|ExamplePlayerOne\n",
+  "synthetic": true,
+  "provenance": {
+    "author": "Pokemontology project",
+    "created": "2026-07-21",
+    "source": "invented test data; no replay or game dump"
+  }
+}
