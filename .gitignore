@@ -17,11 +17,34 @@ queries/*
 !queries/scratch/
 queries/scratch/*
 !queries/scratch/README.md
+
+# External inputs and local/generated data
 data/pokeapi/raw/
 data/veekun/
 data/replays/
 data/ingested/
+examples/replays/
+*.sqlite
+*.sqlite3
+*.db
+*.ndjson
 *.zip
+*.tar
+*.tar.gz
+*.7z
+*.pre-*-backup.*
+*.bak
+
+# Credentials, local state, and browser/tool profiles
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.auth/
+.cache/
+playwright-report/
+test-results/
 .DS_Store
 *.egg-info/
 uv.lock
