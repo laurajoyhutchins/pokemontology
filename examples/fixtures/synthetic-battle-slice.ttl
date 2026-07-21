@@ -1,0 +1,21 @@
+# GENERATED FILE — DO NOT EDIT.
+# Source: examples/fixtures/synthetic-battle.json
+# Command: python3 -m pokemontology build-slice examples/fixtures/synthetic-battle.json -o examples/fixtures/synthetic-battle-slice.ttl
+# Tool: pokemontology 0.1.0; fixture schema 1
+# Redistribution: project-authored synthetic fixture, MIT subject to LICENSE boundary.
+
+@prefix pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+pkm:SyntheticReplayArtifact001
+    a pkm:ReplayArtifact, prov:Entity ;
+    pkm:hasReplayIdentifier "synthetic-battle-001" ;
+    pkm:hasName "Project-authored synthetic battle fixture" ;
+    prov:generatedAtTime "2026-07-21T00:00:00Z"^^xsd:dateTime ;
+    prov:wasAttributedTo pkm:PokemontologyProject .
+
+pkm:SyntheticBattle001
+    a pkm:Battle ;
+    pkm:supportedByArtifact pkm:SyntheticReplayArtifact001 ;
+    pkm:hasName "Synthetic battle for parser and provenance tests" .
