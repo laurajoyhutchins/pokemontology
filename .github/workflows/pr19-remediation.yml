@@ -51,10 +51,12 @@ jobs:
         run: python -m pip install .
       - name: Rebuild generated artifacts
         run: python -m pokemontology build
-      - name: Verify remediation
+      - name: Validate publication policy
+        run: python scripts/validate_publication.py
+      - name: Run replay and publication tests
+        run: python -m pytest -q tests/test_cli.py tests/test_replay_dataset.py tests/test_publication_policy.py
+      - name: Check current replay paths
         run: |
-          python scripts/validate_publication.py
-          python -m pytest -q tests/test_cli.py tests/test_replay_dataset.py tests/test_publication_policy.py
           if git grep -n '/ "replays"' -- tests/test_cli.py tests/test_replay_dataset.py; then
             echo "Legacy replay fixture path remains in current tests" >&2
             exit 1
