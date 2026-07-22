@@ -106,20 +106,7 @@ jobs:
           fi
       - name: Stage regenerated artifacts
         run: |
-          git add \
-            tests/test_cli.py \
-            pokemontology/replay/replay_dataset.py \
-            build/ontology.ttl \
-            build/shapes.ttl \
-            build/schema-index.json \
-            docs/ontology.ttl \
-            docs/shapes.ttl \
-            docs/site-data.json \
-            docs/schema-index.json \
-            docs/mechanics-base.ttl \
-            docs/mechanics-learnsets-current.ttl \
-            docs/mechanics-learnsets-modern.ttl \
-            docs/mechanics-learnsets-legacy.ttl
+          git add -u
           git diff --cached --check
       - name: Commit remediation
         run: |
