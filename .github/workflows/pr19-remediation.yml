@@ -104,10 +104,8 @@ jobs:
             echo "Legacy replay fixture path remains in current tests" >&2
             exit 1
           fi
-      - name: Commit regenerated artifacts
+      - name: Stage regenerated artifacts
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add \
             tests/test_cli.py \
             pokemontology/replay/replay_dataset.py \
@@ -123,5 +121,10 @@ jobs:
             docs/mechanics-learnsets-modern.ttl \
             docs/mechanics-learnsets-legacy.ttl
           git diff --cached --check
+      - name: Commit remediation
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "fix: complete publication remediation"
-          git push origin HEAD:chore/public-repository-ip-provenance
+      - name: Push remediation
+        run: git push origin HEAD:chore/public-repository-ip-provenance
