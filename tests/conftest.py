@@ -19,11 +19,16 @@ SYNTHETIC_SLICE = REPO / "examples" / "fixtures" / "synthetic-battle-slice.ttl"
 def pytest_collection_modifyitems() -> None:
     """Redirect legacy replay-test constants to the project-authored fixture.
 
-    The affected test modules historically named a private third-party replay directly.
-    Keeping this compatibility hook avoids weakening the regression suite while the
-    historical identifier is removed from those larger test modules in a follow-up.
+    Pytest may import the same test file either as ``tests.test_cli`` or
+    ``test_cli`` depending on invocation and import mode. Support both forms until
+    the old constants are removed directly under issue #17.
     """
-    for module_name in ("tests.test_cli", "tests.test_replay_dataset"):
+    for module_name in (
+        "tests.test_cli",
+        "test_cli",
+        "tests.test_replay_dataset",
+        "test_replay_dataset",
+    ):
         module = sys.modules.get(module_name)
         if module is not None and hasattr(module, "REPLAY_JSON"):
             module.REPLAY_JSON = SYNTHETIC_REPLAY
