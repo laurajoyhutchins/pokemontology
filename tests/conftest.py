@@ -2,12 +2,31 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+import sys
+
 import pytest
 from rdflib import Graph
 
 from pokemontology.build import build_ontology
 from tests.support import REPO
 
+
+SYNTHETIC_REPLAY = REPO / "examples" / "fixtures" / "synthetic-battle.json"
+SYNTHETIC_SLICE = REPO / "examples" / "fixtures" / "synthetic-battle-slice.ttl"
+
+
+def pytest_collection_modifyitems() -> None:
+    """Redirect legacy replay-test constants to the project-authored fixture.
+
+    The affected test modules historically named a private third-party replay directly.
+    Keeping this compatibility hook avoids weakening the regression suite while the
+    historical identifier is removed from those larger test modules in a follow-up.
+    """
+    for module_name in ("tests.test_cli", "tests.test_replay_dataset"):
+        module = sys.modules.get(module_name)
+        if module is not None and hasattr(module, "REPLAY_JSON"):
+            module.REPLAY_JSON = SYNTHETIC_REPLAY
 
 
 @pytest.fixture(scope="session")
@@ -60,10 +79,7 @@ def shapes_graph(built_shapes_text: str) -> Graph:
 @pytest.fixture(scope="session")
 def slice_graph() -> Graph:
     graph = Graph()
-    graph.parse(
-        REPO / "examples" / "slices" / "showdown-finals-game1-slice.ttl",
-        format="turtle",
-    )
+    graph.parse(SYNTHETIC_SLICE, format="turtle")
     return graph
 
 
