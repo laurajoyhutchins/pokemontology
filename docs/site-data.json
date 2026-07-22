@@ -1,9 +1,10 @@
 {
   "site": {
     "title": "Pokemontology",
-    "tagline": "A public ontology for Pokemon battle mechanics, replay-backed state, and validation.",
+    "tagline": "An unofficial ontology and data-engineering research toolkit.",
     "repository_url": "https://github.com/laurajoyhutchins/pokemontology",
-    "pages_base_url": "https://laurajoyhutchins.github.io/pokemontology/"
+    "pages_base_url": "https://laurajoyhutchins.github.io/pokemontology/",
+    "disclaimer": "Unofficial independent fan, research, and data-engineering project; not affiliated with, endorsed by, sponsored by, or approved by Nintendo, Game Freak, Creatures Inc., or The Pokémon Company, and not an official source of franchise facts, rules, terminology, or game data."
   },
   "artifacts": [
     {
@@ -37,12 +38,6 @@
       "description": "Historical learnset archive for 3DS and Switch-era games prior to the current generation."
     },
     {
-      "label": "Legacy Learnsets",
-      "path": "mechanics-learnsets-legacy.ttl",
-      "iri": "https://laurajoyhutchins.github.io/pokemontology/mechanics-learnsets-legacy.ttl#",
-      "description": "Older learnset archive for pre-3DS generations and side-game rulesets."
-    },
-    {
       "label": "Graph Projection Index",
       "path": "graph-index.json",
       "iri": "https://laurajoyhutchins.github.io/pokemontology/graph-index.json",
@@ -71,10 +66,9 @@
     },
     {
       "id": "src-mechanics-archive",
-      "label": "historical learnset archive",
+      "label": "review-pending modern learnset archive",
       "paths": [
-        "mechanics-learnsets-modern.ttl",
-        "mechanics-learnsets-legacy.ttl"
+        "mechanics-learnsets-modern.ttl"
       ],
       "checked": false,
       "role": "archive"
@@ -147,7 +141,7 @@
   "pipelines": [
     {
       "name": "Replay ingestion",
-      "summary": "Acquire public Showdown replays, curate a competitive corpus, and transform JSON logs into ontology slices.",
+      "summary": "Transform user-supplied replay JSON into ontology slices after privacy, source, and redistribution review.",
       "command": "python3 -m pokemontology replay transform --output-dir build/replays"
     },
     {
@@ -163,28 +157,28 @@
   ],
   "examples": [
     {
-      "name": "Replay-backed battle slice",
-      "path": "examples/slices/showdown-finals-game1-slice.ttl",
-      "kind": "Turtle slice",
-      "summary": "A worked example of a replay-derived battle graph with events, assignments, and validation coverage."
+      "name": "Synthetic replay JSON",
+      "path": "examples/fixtures/synthetic-battle.json",
+      "kind": "Project-authored synthetic fixture",
+      "summary": "Invented replay-shaped input used for parser and privacy-safe regression coverage."
+    },
+    {
+      "name": "Synthetic battle slice",
+      "path": "examples/fixtures/synthetic-battle-slice.ttl",
+      "kind": "Project-authored synthetic Turtle fixture",
+      "summary": "A small provenance-marked graph that does not reproduce a third-party replay."
     },
     {
       "name": "Seed fixture",
       "path": "examples/fixtures/froakie-caterpie-seed.ttl",
       "kind": "Fixture data",
-      "summary": "Compact seed data for ontology tests and examples around owned combatants, moves, and save-state entities."
-    },
-    {
-      "name": "Replay JSON source",
-      "path": "examples/replays/gen9vgc2025regjbo3-2414024536-ey54jc53vyjqy20sq0ww1l5nd3bq5qhpw.json",
-      "kind": "Replay JSON",
-      "summary": "A cached Showdown replay used as a source document for parsing, summarization, and slice generation."
+      "summary": "Compact research fixture retained for ontology tests; third-party terminology remains subject to the repository license boundary."
     },
     {
       "name": "PokeAPI seed config",
       "path": "examples/pokeapi/seed-config.json",
-      "kind": "Ingest config",
-      "summary": "A sample seed file for fetching and transforming a narrow, ontology-safe subset of PokeAPI data."
+      "kind": "Retrieval configuration",
+      "summary": "A configuration reference for user-directed local retrieval; it is not a bundled dataset."
     }
   ],
   "query_examples": [
@@ -193,7 +187,7 @@
       "label": "super effective moves",
       "source_path": "queries/bundled/super_effective_moves.sparql",
       "summary": "Super-effective move query",
-      "query": "# Super-effective move query\n# Requires: build/ontology.ttl + build/mechanics.ttl + a replay slice TTL\n# Returns: move name, move type, opponent, effective defender type, multiplier\n#\n# For terastallized opponents, uses the Tera type as the sole defending type.\n# For non-terastallized opponents, uses all base species types (dual-type compounding\n# must be handled outside SPARQL or via repeated type joins).\n\nPREFIX pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#>\n\nSELECT ?myMoveLabel ?moveTypeName ?opponentLabel ?effectiveTypeName ?factor\nWHERE {\n  # Moves used by my side in the replay\n  ?action a pkm:MoveUseAction ;\n          pkm:actor ?myPokemon ;\n          pkm:usesMove ?moveEntity .\n  ?moveEntity pkm:hasName ?myMoveLabel .\n\n  # Move type from PokeAPI data\n  ?mpa a pkm:MovePropertyAssignment ;\n       pkm:aboutMove ?moveEntity ;\n       pkm:hasContext <https://laurajoyhutchins.github.io/pokemontology/id/ruleset/pokeapi-default> ;\n       pkm:hasMoveType ?moveType .\n  ?moveType pkm:hasName ?moveTypeName .\n\n  # Opponent's revealed Pok\u00e9mon\n  ?opponent a pkm:BattleParticipant ;\n            pkm:hasCombatantLabel ?opponentLabel .\n  FILTER(?myPokemon != ?opponent)\n\n  # Effective typing: tera overrides base\n  {\n    # Terastallized: single tera type\n    ?cta a pkm:CurrentTransformationAssignment ;\n         pkm:aboutCombatant ?opponent ;\n         pkm:hasTransformationState ?ts .\n    ?ts pkm:hasTeraType ?effectiveType .\n  }\n  UNION\n  {\n    # Not terastallized: base species types\n    FILTER NOT EXISTS {\n      ?anyCta a pkm:CurrentTransformationAssignment ;\n              pkm:aboutCombatant ?opponent ;\n              pkm:hasTransformationState/pkm:hasTeraType [] .\n    }\n    ?opponent pkm:representsSpecies ?species .\n    ?ta a pkm:TypingAssignment ;\n        pkm:aboutPokemon ?species ;\n        pkm:hasContext <https://laurajoyhutchins.github.io/pokemontology/id/ruleset/pokeapi-default> ;\n        pkm:aboutType ?effectiveType .\n  }\n  ?effectiveType pkm:hasName ?effectiveTypeName .\n\n  # Type chart \u2014 super effective only\n  ?tea a pkm:TypeEffectivenessAssignment ;\n       pkm:attackerType ?moveType ;\n       pkm:defenderType ?effectiveType ;\n       pkm:hasContext <https://laurajoyhutchins.github.io/pokemontology/id/ruleset/pokeapi-default> ;\n       pkm:hasDamageFactor ?factor .\n  FILTER(?factor > 1.0)\n}\nORDER BY DESC(?factor) ?opponentLabel ?myMoveLabel",
+      "query": "# Super-effective move query\n# Requires: build/ontology.ttl + build/mechanics.ttl + a replay slice TTL\n# Returns: move name, move type, opponent, effective defender type, multiplier\n#\n# For terastallized opponents, uses the Tera type as the sole defending type.\n# For non-terastallized opponents, uses all base species types (dual-type compounding\n# must be handled outside SPARQL or via repeated type joins).\n\nPREFIX pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#>\n\nSELECT ?myMoveLabel ?moveTypeName ?opponentLabel ?effectiveTypeName ?factor\nWHERE {\n  # Moves used by my side in the replay\n  ?action a pkm:MoveUseAction ;\n          pkm:actor ?myPokemon ;\n          pkm:usesMove ?moveEntity .\n  ?moveEntity pkm:hasName ?myMoveLabel .\n\n  # Move type from PokeAPI data\n  ?mpa a pkm:MovePropertyAssignment ;\n       pkm:aboutMove ?moveEntity ;\n       pkm:hasContext <https://laurajoyhutchins.github.io/pokemontology/id/ruleset/pokeapi-default> ;\n       pkm:hasMoveType ?moveType .\n  ?moveType pkm:hasName ?moveTypeName .\n\n  # Opponent's revealed Pokémon\n  ?opponent a pkm:BattleParticipant ;\n            pkm:hasCombatantLabel ?opponentLabel .\n  FILTER(?myPokemon != ?opponent)\n\n  # Effective typing: tera overrides base\n  {\n    # Terastallized: single tera type\n    ?cta a pkm:CurrentTransformationAssignment ;\n         pkm:aboutCombatant ?opponent ;\n         pkm:hasTransformationState ?ts .\n    ?ts pkm:hasTeraType ?effectiveType .\n  }\n  UNION\n  {\n    # Not terastallized: base species types\n    FILTER NOT EXISTS {\n      ?anyCta a pkm:CurrentTransformationAssignment ;\n              pkm:aboutCombatant ?opponent ;\n              pkm:hasTransformationState/pkm:hasTeraType [] .\n    }\n    ?opponent pkm:representsSpecies ?species .\n    ?ta a pkm:TypingAssignment ;\n        pkm:aboutPokemon ?species ;\n        pkm:hasContext <https://laurajoyhutchins.github.io/pokemontology/id/ruleset/pokeapi-default> ;\n        pkm:aboutType ?effectiveType .\n  }\n  ?effectiveType pkm:hasName ?effectiveTypeName .\n\n  # Type chart — super effective only\n  ?tea a pkm:TypeEffectivenessAssignment ;\n       pkm:attackerType ?moveType ;\n       pkm:defenderType ?effectiveType ;\n       pkm:hasContext <https://laurajoyhutchins.github.io/pokemontology/id/ruleset/pokeapi-default> ;\n       pkm:hasDamageFactor ?factor .\n  FILTER(?factor > 1.0)\n}\nORDER BY DESC(?factor) ?opponentLabel ?myMoveLabel",
       "command": "python3 -m pokemontology query queries/bundled/super_effective_moves.sparql build/ontology.ttl build/mechanics.ttl <data.ttl>"
     }
   ],
