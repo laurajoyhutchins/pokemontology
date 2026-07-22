@@ -1,0 +1,79 @@
+name: PR 19 publication remediation
+
+on:
+  push:
+    branches:
+      - chore/public-repository-ip-provenance
+    paths:
+      - .github/workflows/pr19-remediation.yml
+
+permissions:
+  contents: write
+
+jobs:
+  remediate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: chore/public-repository-ip-provenance
+          fetch-depth: 0
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Use the synthetic replay fixture directly
+        run: |
+          python - <<'PY'
+          import ast
+          from pathlib import Path
+
+          path = Path("tests/test_cli.py")
+          source = path.read_text(encoding="utf-8")
+          tree = ast.parse(source)
+          assignment = None
+          for node in tree.body:
+              if not isinstance(node, ast.Assign):
+                  continue
+              if any(isinstance(target, ast.Name) and target.id == "REPLAY_JSON" for target in node.targets):
+                  assignment = node
+                  break
+          if assignment is None or assignment.end_lineno is None:
+              raise SystemExit("REPLAY_JSON assignment was not found")
+          lines = source.splitlines(keepends=True)
+          replacement = 'REPLAY_JSON = REPO / "examples" / "fixtures" / "synthetic-battle.json"\n'
+          lines[assignment.lineno - 1 : assignment.end_lineno] = [replacement]
+          path.write_text("".join(lines), encoding="utf-8")
+          PY
+      - name: Install project dependencies
+        run: python -m pip install .
+      - name: Rebuild generated artifacts
+        run: python -m pokemontology build
+      - name: Verify remediation
+        run: |
+          python scripts/validate_publication.py
+          python -m pytest -q tests/test_cli.py tests/test_replay_dataset.py tests/test_publication_policy.py
+          if git grep -n '/ "replays"' -- tests/test_cli.py tests/test_replay_dataset.py; then
+            echo "Legacy replay fixture path remains in current tests" >&2
+            exit 1
+          fi
+      - name: Commit regenerated artifacts
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            tests/test_cli.py \
+            build/ontology.ttl \
+            build/shapes.ttl \
+            build/schema-index.json \
+            docs/ontology.ttl \
+            docs/shapes.ttl \
+            docs/site-data.json \
+            docs/schema-index.json \
+            docs/mechanics-base.ttl \
+            docs/mechanics-learnsets-current.ttl \
+            docs/mechanics-learnsets-modern.ttl \
+            docs/mechanics-learnsets-legacy.ttl
+          git diff --cached --check
+          git commit -m "fix: complete publication remediation"
+          git push origin HEAD:chore/public-repository-ip-provenance
