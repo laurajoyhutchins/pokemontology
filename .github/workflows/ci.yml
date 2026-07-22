@@ -109,23 +109,46 @@ jobs:
             docs/mechanics-learnsets-current.ttl \
             docs/mechanics-learnsets-modern.ttl \
             docs/mechanics-learnsets-legacy.ttl
-      - name: Enforce published TTL size budget
+
+  published-ttl-size:
+    name: Published TTL size (${{ matrix.path }})
+    runs-on: ubuntu-latest
+    needs: changes
+    if: >
+      github.event_name != 'pull_request' ||
+      needs.changes.outputs.ontology == 'true' ||
+      needs.changes.outputs.docs == 'true' ||
+      needs.changes.outputs.python == 'true' ||
+      needs.changes.outputs.workflows == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        path:
+          - docs/ontology.ttl
+          - docs/shapes.ttl
+          - docs/mechanics-base.ttl
+          - docs/mechanics-learnsets-current.ttl
+          - docs/mechanics-learnsets-modern.ttl
+          - docs/mechanics-learnsets-legacy.ttl
+          - docs/pokeapi-demo.ttl
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Enforce size budget for ${{ matrix.path }}
+        env:
+          ARTIFACT_PATH: ${{ matrix.path }}
         run: |
-          warn_limit=$((50 * 1024 * 1024))
-          fail_limit=$((90 * 1024 * 1024))
-          status=0
-          for path in docs/*.ttl; do
-            size=$(stat -c%s "$path")
-            if [ "$size" -gt "$warn_limit" ]; then
-              mib=$(python -c 'import sys; print(f"{int(sys.argv[1]) / (1024 * 1024):.2f}")' "$size")
-              echo "::warning file=$path::Published Turtle artifact is ${mib} MiB"
-            fi
-            if [ "$size" -gt "$fail_limit" ]; then
-              echo "::error file=$path::Published Turtle artifact exceeds hard limit of 90 MiB"
-              status=1
-            fi
-          done
-          exit "$status"
+          size=$(stat -c%s "$ARTIFACT_PATH")
+          mib=$(python -c 'import sys; print(f"{int(sys.argv[1]) / (1024 * 1024):.2f}")' "$size")
+          echo "$ARTIFACT_PATH: ${mib} MiB"
+          if [ "$size" -gt $((90 * 1024 * 1024)) ]; then
+            echo "::error file=$ARTIFACT_PATH::Published Turtle artifact exceeds hard limit of 90 MiB (${mib} MiB)"
+            exit 1
+          fi
+          if [ "$size" -gt $((50 * 1024 * 1024)) ]; then
+            echo "::warning file=$ARTIFACT_PATH::Published Turtle artifact exceeds warning limit of 50 MiB (${mib} MiB)"
+          fi
 
   fast-regressions:
     runs-on: ubuntu-latest
@@ -147,11 +170,13 @@ jobs:
           cache: "pip"
       - name: Install project dependencies
         run: python -m pip install .
-      - name: Run fast regression suite
-        run: >
-          python -m pytest
-          tests/test_cli.py
-          tests/test_turn_order.py
-          tests/test_build_site_assets.py
-          tests/test_docs_query_engine.py
-          tests/test_e2e.py
+      - name: CLI regressions
+        run: python -m pytest --tb=short tests/test_cli.py
+      - name: Turn-order regressions
+        run: python -m pytest --tb=short tests/test_turn_order.py
+      - name: Site-asset regressions
+        run: python -m pytest --tb=short tests/test_build_site_assets.py
+      - name: Query-engine regressions
+        run: python -m pytest --tb=short tests/test_docs_query_engine.py
+      - name: End-to-end regressions
+        run: python -m pytest --tb=short tests/test_e2e.py
