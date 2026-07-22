@@ -68,6 +68,8 @@ python3 -m pokemontology veekun ingest \
 
 Do not commit downloaded archives, API responses, game data, private replay payloads, credentials, access URLs, or generated corpora. Replays may contain usernames, chat, teams, private access tokens, or other user-supplied information. Automated tests must use synthetic fixtures unless a source and redistribution basis are documented.
 
+The bulk legacy learnset archive is intentionally excluded from the ordinary public build because its exact inputs and public redistribution basis have not been established. It may be generated locally from independently acquired inputs, but must not be committed or published without a completed source review. The remaining generated mechanics/site artifacts are explicitly marked for file-level owner review in [issue #18](https://github.com/laurajoyhutchins/pokemontology/issues/18).
+
 ## Provenance and generated artifacts
 
 Every generated artifact must identify:
