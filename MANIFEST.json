@@ -112,6 +112,19 @@
       "redistribution_status": "included"
     },
     {
+      "path": "docs/mechanics-learnsets-legacy.ttl",
+      "classification": "quarantined-generated-external-data",
+      "inputs": [
+        "pokeapi",
+        "veekun"
+      ],
+      "command": "local source-specific ingest followed by python3 -m pokemontology build",
+      "tool_and_schema_version": "pokemontology 0.1.0; exact historical inputs not established",
+      "checked_in": false,
+      "generated": true,
+      "redistribution_status": "quarantined"
+    },
+    {
       "path": "docs/ontology.ttl",
       "classification": "generated-publication-copy",
       "inputs": [
@@ -161,8 +174,9 @@
     }
   ],
   "forbidden_public_patterns": [
-    "examples/replays/*.json",
     "data/**/raw/**",
+    "docs/mechanics-learnsets-legacy.ttl",
+    "examples/replays/*.json",
     "**/*.sqlite",
     "**/*.sqlite3",
     "**/*.db",
