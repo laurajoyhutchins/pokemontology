@@ -1,9 +1,11 @@
 name: PR 19 publication remediation
 
 on:
-  push:
+  pull_request:
     branches:
-      - chore/public-repository-ip-provenance
+      - main
+    types:
+      - synchronize
     paths:
       - .github/workflows/pr19-remediation.yml
 
