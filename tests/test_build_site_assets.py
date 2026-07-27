@@ -19,22 +19,54 @@ def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(build_ontology, "PAGES_POKEAPI", tmp_path / "pokeapi.ttl")
     monkeypatch.setattr(build_ontology, "PAGES_MECHANICS", tmp_path / "mechanics.ttl")
     monkeypatch.setattr(build_ontology, "PAGES_MECHANICS_BASE", tmp_path / "mechanics-base.ttl")
-    monkeypatch.setattr(build_ontology, "PAGES_MECHANICS_CURRENT", tmp_path / "mechanics-learnsets-current.ttl")
-    monkeypatch.setattr(build_ontology, "PAGES_MECHANICS_MODERN", tmp_path / "mechanics-learnsets-modern.ttl")
-    monkeypatch.setattr(build_ontology, "PAGES_MECHANICS_LEGACY", tmp_path / "mechanics-learnsets-legacy.ttl")
+    monkeypatch.setattr(
+        build_ontology,
+        "PAGES_MECHANICS_CURRENT",
+        tmp_path / "mechanics-learnsets-current.ttl",
+    )
+    monkeypatch.setattr(
+        build_ontology,
+        "PAGES_MECHANICS_MODERN",
+        tmp_path / "mechanics-learnsets-modern.ttl",
+    )
+    monkeypatch.setattr(
+        build_ontology,
+        "PAGES_MECHANICS_LEGACY",
+        tmp_path / "mechanics-learnsets-legacy.ttl",
+    )
     monkeypatch.setattr(build_ontology, "PAGES_SITE_DATA", tmp_path / "site-data.json")
     monkeypatch.setattr(build_ontology, "PAGES_SCHEMA_INDEX", tmp_path / "schema-index.json")
     monkeypatch.setattr(build_ontology, "PAGES_GRAPH_INDEX", tmp_path / "graph-index.json")
-    monkeypatch.setattr(build_ontology, "PAGES_SPARQL_REFERENCE", tmp_path / "sparql-reference.md")
+    monkeypatch.setattr(
+        build_ontology,
+        "PAGES_SPARQL_REFERENCE",
+        tmp_path / "sparql-reference.md",
+    )
     monkeypatch.setattr(build_ontology, "BUILD_DIR", tmp_path / "build")
     monkeypatch.setattr(build_ontology, "OUTPUT", tmp_path / "build" / "ontology.ttl")
-    monkeypatch.setattr(build_ontology, "BUILD_SHAPES", tmp_path / "build" / "shapes.ttl")
-    monkeypatch.setattr(build_ontology, "BUILD_SPARQL_REFERENCE", tmp_path / "build" / "sparql-reference.md")
+    monkeypatch.setattr(
+        build_ontology,
+        "BUILD_SHAPES",
+        tmp_path / "build" / "shapes.ttl",
+    )
+    monkeypatch.setattr(
+        build_ontology,
+        "BUILD_SPARQL_REFERENCE",
+        tmp_path / "build" / "sparql-reference.md",
+    )
     monkeypatch.setattr(build_ontology, "BUILD_POKEAPI", tmp_path / "build" / "pokeapi.ttl")
     monkeypatch.setattr(build_ontology, "BUILD_VEEKUN", tmp_path / "build" / "veekun.ttl")
     monkeypatch.setattr(build_ontology, "BUILD_SHOWDOWN", tmp_path / "build" / "showdown.ttl")
-    monkeypatch.setattr(build_ontology, "BUILD_MECHANICS", tmp_path / "build" / "mechanics.ttl")
-    monkeypatch.setattr(build_ontology, "BUILD_ENTITY_INDEX", tmp_path / "build" / "entity-index.json")
+    monkeypatch.setattr(
+        build_ontology,
+        "BUILD_MECHANICS",
+        tmp_path / "build" / "mechanics.ttl",
+    )
+    monkeypatch.setattr(
+        build_ontology,
+        "BUILD_ENTITY_INDEX",
+        tmp_path / "build" / "entity-index.json",
+    )
     monkeypatch.setattr(build_ontology, "BUNDLED_QUERIES_DIR", queries_dir)
 
     (tmp_path / "build").mkdir()
@@ -107,7 +139,9 @@ def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
     site_data = json.loads((tmp_path / "site-data.json").read_text(encoding="utf-8"))
     schema_index = json.loads((tmp_path / "schema-index.json").read_text(encoding="utf-8"))
     graph_index = json.loads((tmp_path / "graph-index.json").read_text(encoding="utf-8"))
-    entity_index = json.loads((tmp_path / "build" / "entity-index.json").read_text(encoding="utf-8"))
+    entity_index = json.loads(
+        (tmp_path / "build" / "entity-index.json").read_text(encoding="utf-8")
+    )
     sparql_reference = (tmp_path / "sparql-reference.md").read_text(encoding="utf-8")
     bundled_query = next(
         example
@@ -122,11 +156,29 @@ def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
     assert (tmp_path / "mechanics-base.ttl").exists()
     assert (tmp_path / "mechanics-learnsets-current.ttl").exists()
     assert (tmp_path / "mechanics-learnsets-modern.ttl").exists()
-    assert (tmp_path / "mechanics-learnsets-legacy.ttl").exists()
-    assert any(artifact["path"] == "mechanics-base.ttl" for artifact in site_data["artifacts"])
-    assert any(artifact["path"] == "graph-index.json" for artifact in site_data["artifacts"])
-    assert any(source["id"] == "src-mechanics" for source in site_data["query_sources"])
-    mechanics_source = next(source for source in site_data["query_sources"] if source["id"] == "src-mechanics")
+    assert not (tmp_path / "mechanics-learnsets-legacy.ttl").exists()
+    assert "Unofficial independent fan" in site_data["site"]["disclaimer"]
+    assert any(
+        artifact["path"] == "mechanics-base.ttl"
+        for artifact in site_data["artifacts"]
+    )
+    assert not any(
+        artifact["path"] == "mechanics-learnsets-legacy.ttl"
+        for artifact in site_data["artifacts"]
+    )
+    assert any(
+        artifact["path"] == "graph-index.json"
+        for artifact in site_data["artifacts"]
+    )
+    assert any(
+        source["id"] == "src-mechanics"
+        for source in site_data["query_sources"]
+    )
+    mechanics_source = next(
+        source
+        for source in site_data["query_sources"]
+        if source["id"] == "src-mechanics"
+    )
     assert mechanics_source["paths"] == [
         "mechanics-base.ttl",
         "mechanics-learnsets-current.ttl",
@@ -137,16 +189,22 @@ def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
         for source in site_data["query_sources"]
         if source["id"] == "src-mechanics-archive"
     )
-    assert archive_source["paths"] == [
-        "mechanics-learnsets-modern.ttl",
-        "mechanics-learnsets-legacy.ttl",
-    ]
+    assert archive_source["paths"] == ["mechanics-learnsets-modern.ttl"]
     assert archive_source["checked"] is False
-    assert "pkm:Battle_test a pkm:Battle ." not in (tmp_path / "build" / "mechanics.ttl").read_text(
-        encoding="utf-8"
+    assert all(
+        "examples/replays/" not in example["path"]
+        for example in site_data["examples"]
     )
+    assert any(
+        example["path"] == "examples/fixtures/synthetic-battle.json"
+        for example in site_data["examples"]
+    )
+    assert "pkm:Battle_test a pkm:Battle ." not in (
+        tmp_path / "build" / "mechanics.ttl"
+    ).read_text(encoding="utf-8")
     assert not any(
-        entity["curie"] == "pkm:Battle_test" for entity in entity_index["entities"]
+        entity["curie"] == "pkm:Battle_test"
+        for entity in entity_index["entities"]
     )
     assert "build/mechanics.ttl" in bundled_query["query"]
     assert "build/pokeapi.ttl" not in bundled_query["query"]
@@ -173,7 +231,10 @@ def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
     assert schema_index["response"]["list_preview_limit"] == 5
     assert schema_index["inference"]["webllm_model"]
     assert any(item["label"] == "Species" for item in schema_index["items"])
-    assert any(item["label"] == "TypingAssignment pattern" for item in schema_index["items"])
+    assert any(
+        item["label"] == "TypingAssignment pattern"
+        for item in schema_index["items"]
+    )
     assert schema_example
     assert "build/mechanics.ttl" in schema_example["query"]
     assert "build/pokeapi.ttl" not in schema_example["query"]
@@ -198,7 +259,9 @@ def test_write_artifacts_emits_schema_index(tmp_path, monkeypatch) -> None:
 
 
 def test_published_graph_index_uses_current_entity_ids() -> None:
-    graph_index = json.loads((REPO / "docs" / "graph-index.json").read_text(encoding="utf-8"))
+    graph_index = json.loads(
+        (REPO / "docs" / "graph-index.json").read_text(encoding="utf-8")
+    )
     node_ids = {node["id"] for node in graph_index["nodes"]}
 
     assert graph_index["source"].endswith("build/mechanics.ttl")

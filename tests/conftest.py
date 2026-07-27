@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 from rdflib import Graph
 
 from pokemontology.build import build_ontology
 from tests.support import REPO
 
+
+SYNTHETIC_SLICE = REPO / "examples" / "fixtures" / "synthetic-battle-slice.ttl"
 
 
 @pytest.fixture(scope="session")
@@ -60,10 +64,7 @@ def shapes_graph(built_shapes_text: str) -> Graph:
 @pytest.fixture(scope="session")
 def slice_graph() -> Graph:
     graph = Graph()
-    graph.parse(
-        REPO / "examples" / "slices" / "showdown-finals-game1-slice.ttl",
-        format="turtle",
-    )
+    graph.parse(SYNTHETIC_SLICE, format="turtle")
     return graph
 
 

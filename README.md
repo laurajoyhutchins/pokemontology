@@ -1,230 +1,95 @@
 # Pokemontology
 
-Pokemontology is an RDF/OWL + SHACL project for representing Pokémon battle mechanics as explicit, replay-backed state transitions.
+> **Unofficial project.** Pokemontology is an independent fan, research, and data-engineering project. It is not affiliated with, endorsed by, sponsored by, or approved by Nintendo, Game Freak, Creatures Inc., or The Pokémon Company. It is not an official source of Pokémon facts, rules, terminology, or game data. Pokémon and related names and marks belong to their respective owners. This notice does not grant permission to copy or redistribute third-party material.
 
-It combines:
-- a published ontology namespace
-- published SHACL validation shapes
-- replay parsing and TTL slice generation
-- provenance-aware ingestion pipelines for external Pokémon data sources
-- a live in-browser SPARQL query engine on the public site
+Pokemontology is an RDF/OWL and SHACL toolkit for studying how battle-mechanics claims, replay observations, source assertions, and project inferences can be represented as an inspectable knowledge graph.
 
-## Public artifacts
+## Status and scope
 
-| Resource | URL |
-|----------|-----|
-| Site + query engine | `https://laurajoyhutchins.github.io/pokemontology/` |
-| Ontology | `https://laurajoyhutchins.github.io/pokemontology/ontology.ttl` |
-| SHACL shapes | `https://laurajoyhutchins.github.io/pokemontology/shapes.ttl` |
+The project is experimental research software, currently version `0.1.0`. Its ontology, validation shapes, source adapters, build scripts, queries, and documentation are project-authored. Results derived from external sources may be partial, outdated, normalized, inferred, or wrong. They are not official franchise semantics.
 
-The public site is the canonical namespace for the built ontology and shapes. It includes an in-browser SPARQL query engine — load the page, pick a source, and run queries against the live ontology without any local setup.
+The repository is designed around **small fixtures and reproducible transforms**, not as a complete franchise-data mirror. Large or restricted source datasets should be retrieved by users from their original sources only when their terms allow it. See [DATA_SOURCES.md](DATA_SOURCES.md), [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md), and [ASSET_PROVENANCE.md](ASSET_PROVENANCE.md).
 
-## What this models
+## Architecture
 
-Pokemontology targets the mechanics layer of Pokémon, not just a static encyclopedia.
+- `ontology/modules/`: project-authored OWL/Turtle modeling modules.
+- `shapes/modules/`: project-authored SHACL validation rules.
+- `pokemontology/`: project-authored Python package and command-line interface.
+- `scripts/`: build, ingestion, replay, and validation entry points.
+- `queries/bundled/`: project-authored SPARQL queries used by tests and documentation.
+- `examples/`: small synthetic or explicitly documented fixtures.
+- `build/`: deterministic generated artifacts for local consumption.
+- `docs/`: GitHub Pages application and generated publication copies.
+- `MANIFEST.json`: machine-readable source, artifact, and redistribution manifest.
 
-Core modeling areas:
-- ruleset-scoped mechanics: move learnability, type effectiveness, base typing, move properties
-- save-state entities: owned Pokémon, slots, IVs, EVs, inventory
-- battle participants, actions, events, and state transitions
-- instantaneous and materialized battle state
-- Tera type overrides and transformation states
-- provenance and evidence for externally sourced or replay-derived assertions
+The ontology distinguishes source assertions from project inferences. Source artifacts and external references are represented explicitly; normalized relationships are not presented as official franchise semantics. Detailed identifier, alias, language-tag, provenance, versioning, and deprecation rules are in [docs/ontology-guidelines.md](docs/ontology-guidelines.md). System boundaries and data flow are in [docs/architecture.md](docs/architecture.md).
 
-## Quick start
+## Install, build, and validate
 
-Install the project:
+Requires Python 3.11 or newer.
 
 ```bash
 python3 -m pip install .
-```
-
-Build the published ontology and shapes:
-
-```bash
 python3 -m pokemontology build
-```
-
-Run the test suite:
-
-```bash
 python3 -m pytest
+python3 scripts/validate_publication.py
 ```
 
-## Common workflows
+The build command assembles the ontology and SHACL modules into deterministic consumer artifacts. Generated outputs must not be edited manually. CI rebuilds them and fails when tracked outputs differ.
 
-### Build a replay-backed TTL slice
-
-Parse a replay:
-
-```bash
-python3 -m pokemontology parse-replay \
-  examples/replays/gen9vgc2025regjbo3-2414024536-ey54jc53vyjqy20sq0ww1l5nd3bq5qhpw.json \
-  --pretty
-```
-
-Summarize a replay:
-
-```bash
-python3 -m pokemontology summarize-replay \
-  examples/replays/gen9vgc2025regjbo3-2414024536-ey54jc53vyjqy20sq0ww1l5nd3bq5qhpw.json
-```
-
-Generate a Turtle slice:
-
-```bash
-python3 -m pokemontology build-slice \
-  examples/replays/gen9vgc2025regjbo3-2414024536-ey54jc53vyjqy20sq0ww1l5nd3bq5qhpw.json \
-  -o examples/slices/generated-slice.ttl
-```
-
-Validate ontology, shapes, and data together:
+To validate ontology, shapes, and an example graph:
 
 ```bash
 python3 -m pokemontology check-ttl \
   build/ontology.ttl \
   build/shapes.ttl \
-  examples/slices/showdown-finals-game1-slice.ttl
+  examples/fixtures/synthetic-battle-slice.ttl
 ```
 
-### Acquire and transform replay corpora
+To run a bundled query, load the built ontology plus an independently acquired mechanics graph into a SPARQL 1.1 engine, then run a query from `queries/bundled/`.
+
+## External data and replay workflows
+
+Source adapters are intentionally separate from the ontology model. Acquisition is opt-in and should write raw downloads only to ignored local directories.
 
 ```bash
-# Fetch search/index pages
-python3 -m pokemontology replay fetch-index \
-  --format gen9vgc2025reggbo3 --max-pages 3
-
-# Curate a competitive subset
-python3 -m pokemontology replay curate \
-  --format gen9vgc2025reggbo3 --min-rating 1600
-
-# Fetch replay payloads, then transform to TTL
-python3 -m pokemontology replay fetch
-python3 -m pokemontology replay transform --output-dir build/replays
-```
-
-### Ingest PokeAPI data
-
-```bash
+# User-supplied PokeAPI inputs
 python3 -m pokemontology pokeapi ingest \
   examples/pokeapi/seed-config.json \
   --raw-dir data/pokeapi/raw \
   --output build/pokeapi.ttl
-```
 
-This emits type effectiveness, base typing, move properties (type, base power, accuracy, PP, priority), learnsets, and canonical entity definitions — all anchored to a synthetic `pkm:Ruleset_PokeAPI_Default` context node for current-gen data.
-
-### Ingest Veekun data
-
-```bash
+# User-supplied Veekun checkout/export
 python3 -m pokemontology veekun ingest \
   --raw-dir data/veekun/raw \
   --source-dir data/veekun/export \
   --output build/veekun.ttl
 ```
 
-Add `--include-learnsets` if you want move learn records as well. That produces a much larger dataset.
+Do not commit downloaded archives, API responses, game data, private replay payloads, credentials, access URLs, or generated corpora. Replays may contain usernames, chat, teams, private access tokens, or other user-supplied information. Automated tests must use synthetic fixtures unless a source and redistribution basis are documented.
 
-## Querying
+The bulk legacy learnset archive is intentionally excluded from the ordinary public build because its exact inputs and public redistribution basis have not been established. It may be generated locally from independently acquired inputs, but must not be committed or published without a completed source review. The remaining generated mechanics/site artifacts are explicitly marked for file-level owner review in [issue #18](https://github.com/laurajoyhutchins/pokemontology/issues/18).
 
-Codebase-consumed SPARQL queries live in `queries/bundled/`. Put local experiments in `queries/scratch/`. Load `build/ontology.ttl` plus `build/mechanics.ttl` into any SPARQL 1.1 endpoint and run the bundled queries, or use the live query engine on the public site.
+## Provenance and generated artifacts
 
-Notable query:
+Every generated artifact must identify:
 
-**`queries/bundled/super_effective_moves.sparql`** — given a replay slice and mechanics data loaded together, returns which of your moves are super-effective against each revealed opponent, accounting for Tera type overrides. Requires `build/ontology.ttl` + `build/mechanics.ttl` + a replay TTL slice as sources.
+1. source inputs;
+2. the transformation command;
+3. tool and schema versions;
+4. whether the output is checked in;
+5. its redistribution status and uncertainty.
 
-### Natural-language querying with Professor Laurel
+`MANIFEST.json` is the authoritative machine-readable inventory. `python3 scripts/validate_publication.py` checks required source fields, file classifications, forbidden public-file patterns, and deterministic manifest ordering.
 
-Professor Laurel is the local natural-language-to-SPARQL pipeline for asking mechanics questions against Pokemontology data. It uses the generated `docs/schema-index.json` schema pack to ground ontology terms, then translates a question into SPARQL and can optionally execute and summarize the result.
+## Licensing boundaries
 
-By default, Laurel expects a local Ollama server with the `qwen2.5:1.5b` model available.
+The MIT license in [LICENSE](LICENSE) applies only to project-authored material for which the repository author has the right to grant that license, such as original source code, ontology modeling, SHACL shapes, queries, and documentation, unless a file says otherwise.
 
-Translate a question to SPARQL:
+It does **not** license or grant rights in Pokémon names, characters, artwork, sprites, logos, game text, game data, replay content, trademarks, or any other third-party material. A software repository license cannot expand the permissions granted by an upstream source. Review [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and [DATA_SOURCES.md](DATA_SOURCES.md) before reusing data or generated outputs.
 
-```bash
-python3 -m pokemontology ask \
-  "Can Water-type Pokémon be burned?" \
-  build/mechanics.ttl
-```
+## Contributing and reporting
 
-Run the full translate → execute → summarize pipeline:
+See [CONTRIBUTING.md](CONTRIBUTING.md) before submitting code, ontology changes, data, or assets. New sources and assets require provenance, license/terms, retrieval version or date, transformations, and redistribution status.
 
-```bash
-python3 -m pokemontology laurel \
-  "Can Water-type Pokémon be burned?" \
-  build/mechanics.ttl
-```
-
-Run the Laurel evaluation suite:
-
-```bash
-python3 -m pokemontology evaluate-laurel
-```
-
-## Data source coverage
-
-### PokeAPI
-
-Mapping scope:
-
-| PokeAPI resource | Ontology output |
-|-----------------|-----------------|
-| `pokemon-species` | `pkm:Species` |
-| `pokemon` | `pkm:Variant` + `pkm:TypingAssignment` |
-| `type` | `pkm:Type` + `pkm:TypeEffectivenessAssignment` |
-| `move` | `pkm:Move` + `pkm:MovePropertyAssignment` (type, base power, accuracy, PP, priority) |
-| `ability` | `pkm:Ability` |
-| `stat` | `pkm:Stat` |
-| `version-group` | `pkm:VersionGroup` + linked `pkm:Ruleset` |
-| *(learnsets)* | `pkm:MoveLearnRecord` |
-
-Type effectiveness entries for neutral (×1.0) matchups are omitted — only super-effective (×2.0), not-very-effective (×0.5), and immune (×0.0) pairs are emitted, which is sufficient for the SPARQL queries.
-
-### Veekun
-
-The Veekun pipeline fetches the upstream `veekun/pokedex` CSV snapshot, normalizes the tables used by pokemontology, then emits version-group-scoped mechanics facts. Outputs include `pkm:TypingAssignment`, `pkm:AbilityAssignment`, `pkm:StatAssignment`, `pkm:MovePropertyAssignment`, optional `pkm:MoveLearnRecord`, and `pkm:TypeEffectivenessAssignment`.
-
-## External data policy
-
-External-source integrations follow a consistent contract:
-
-1. Acquire or cache source data without ontology assumptions
-2. Normalize to a stable source-local format
-3. Transform only the subset that maps cleanly into pokemontology
-
-All ingesters:
-- emit one `pkm:EvidenceArtifact` per upstream source
-- emit `pkm:ExternalEntityReference` nodes for local-to-upstream links
-- use `pkm:refersToEntity`, `pkm:describedByArtifact`, `pkm:hasExternalIRI`
-- avoid `owl:sameAs` by default
-- emit contextual facts only when the source provides real context
-
-Shared helper code lives in `pokemontology/ingest_common.py`.
-
-## Repository layout
-
-```
-pokemontology/
-├── ontology/modules/      modular ontology source (OWL/Turtle)
-├── shapes/modules/        SHACL source
-├── build/                 generated consumer artifacts
-├── docs/                  GitHub Pages site, published TTL, and query engine
-├── examples/              fixtures, replay JSON, example slices
-├── queries/bundled/       tracked SPARQL queries used by docs, tests, and examples
-├── queries/scratch/       local scratch queries and TTL fixtures not consumed by the build
-├── scripts/build/         build and validation scripts
-├── scripts/ingest/        external data acquisition and transform
-├── scripts/replay/        replay parsing and dataset tooling
-└── tests/                 regression coverage
-```
-
-## Notes
-
-- The built ontology is assembled from `ontology/modules/` by `python3 -m pokemontology build`.
-- Replay-backed TTL slices are partial reconstructions from the observable replay log — they do not capture hidden information or dense full-state snapshots.
-- Each `BattleParticipant` in a replay slice carries a `pkm:representsSpecies` link so it can be joined against PokeAPI-derived type data in SPARQL queries.
-- Terastallized `TransformationState` individuals carry a `pkm:hasTeraType` link used by the super-effective move query.
-
-## License
-
-MIT License. See `LICENSE`.
+Report vulnerabilities privately using [SECURITY.md](SECURITY.md). Use repository issues for reproducible bugs, ontology ambiguities, provenance defects, and documentation problems. Do not post secrets, private replay URLs, personal data, or copyrighted source material in an issue.

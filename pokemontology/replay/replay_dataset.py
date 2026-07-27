@@ -271,18 +271,27 @@ def fetch_replays(
 
 def _write_bundle_from_slices(bundle_path: Path, slice_paths: list[Path]) -> None:
     bundle_path.parent.mkdir(parents=True, exist_ok=True)
+    prefixes: set[str] = set()
+    bodies: list[str] = []
+
+    for slice_path in slice_paths:
+        body_lines: list[str] = []
+        with slice_path.open("r", encoding="utf-8") as infile:
+            for line in infile:
+                if line.startswith("@prefix"):
+                    prefixes.add(line.rstrip("\n"))
+                else:
+                    body_lines.append(line)
+        bodies.append("".join(body_lines).rstrip())
+
     with bundle_path.open("w", encoding="utf-8") as outfile:
-        outfile.write(
-            "@prefix pkm: <https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#> .\n"
-        )
-        outfile.write("@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n")
-        outfile.write("@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .\n\n")
-        for slice_path in slice_paths:
-            with slice_path.open("r", encoding="utf-8") as infile:
-                for line in infile:
-                    if not line.startswith("@prefix"):
-                        outfile.write(line)
-            outfile.write("\n")
+        for prefix in sorted(prefixes):
+            outfile.write(f"{prefix}\n")
+        outfile.write("\n")
+        for body in bodies:
+            if body:
+                outfile.write(body)
+                outfile.write("\n\n")
 
 
 def transform_replays(

@@ -12,12 +12,7 @@ from pokemontology.replay import replay_dataset
 from tests.support import REPO, read_json, write_json
 
 
-REPLAY_JSON = (
-    REPO
-    / "examples"
-    / "replays"
-    / "gen9vgc2025regjbo3-2414024536-ey54jc53vyjqy20sq0ww1l5nd3bq5qhpw.json"
-)
+REPLAY_JSON = REPO / "examples" / "fixtures" / "synthetic-battle.json"
 PKM = Namespace("https://laurajoyhutchins.github.io/pokemontology/ontology.ttl#")
 
 

@@ -1,0 +1,53 @@
+name: Data source or asset proposal
+description: Propose a source only when provenance and redistribution terms can be documented
+title: "[Source]: "
+labels: ["provenance"]
+body:
+  - type: input
+    id: source
+    attributes:
+      label: Source name
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: Source URL or repository
+    validations:
+      required: true
+  - type: textarea
+    id: terms
+    attributes:
+      label: License or stated usage terms
+      description: Link to the exact license/terms and explain whether they cover the proposed material.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version, commit, release, or retrieval date
+    validations:
+      required: true
+  - type: textarea
+    id: transform
+    attributes:
+      label: Proposed transformation and files
+    validations:
+      required: true
+  - type: dropdown
+    id: redistribution
+    attributes:
+      label: Proposed redistribution status
+      options:
+        - reference-only
+        - local-only
+        - included
+        - owner-review-required
+    validations:
+      required: true
+  - type: textarea
+    id: uncertainty
+    attributes:
+      label: Restrictions and uncertainty
+    validations:
+      required: true
