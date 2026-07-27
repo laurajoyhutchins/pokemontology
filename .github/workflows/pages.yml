@@ -30,7 +30,7 @@ jobs:
         run: python3 -m pip install .
       - name: Build published ontology artifacts
         run: python3 -m pokemontology build
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: docs
 
