@@ -11,7 +11,7 @@ from pokemontology.ingest_common import (
     add_dataset_header,
     add_external_reference,
     bind_namespaces,
-    iri_for,
+    entity_iri,
     sanitize_identifier,
 )
 
@@ -29,18 +29,18 @@ def test_add_external_reference_emits_standard_pattern() -> None:
         graph, PKM.DatasetArtifact_PokeAPI, "PokeAPI", "https://pokeapi.co/api/v2/"
     )
 
-    entity_iri = iri_for("Move", "bubble")
-    graph.add((entity_iri, RDF.type, PKM.Move))
+    entity = entity_iri("Move", "bubble")
+    graph.add((entity, RDF.type, PKM.Move))
     ref_iri = add_external_reference(
         graph,
         source_slug="PokeAPI",
         resource="move",
         identifier="bubble",
-        entity_iri=entity_iri,
+        entity_iri=entity,
         artifact_iri=PKM.DatasetArtifact_PokeAPI,
         external_iri="https://pokeapi.co/api/v2/move/145/",
     )
 
     assert (ref_iri, RDF.type, PKM.ExternalEntityReference) in graph
-    assert (ref_iri, PKM.refersToEntity, entity_iri) in graph
+    assert (ref_iri, PKM.refersToEntity, entity) in graph
     assert (ref_iri, PKM.describedByArtifact, PKM.DatasetArtifact_PokeAPI) in graph

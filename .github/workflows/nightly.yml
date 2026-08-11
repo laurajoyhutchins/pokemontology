@@ -12,15 +12,29 @@ jobs:
   full-regressions:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
         with:
           python-version: "3.12"
           cache: "pip"
       - name: Install project dependencies
         run: python -m pip install .
+      - name: Record exact regression head
+        run: git rev-parse HEAD | tee full-regressions-head.txt
       - name: Run full pytest suite
-        run: python -m pytest -m ''
+        run: python -m pytest -m '' --tb=short --junitxml=full-regressions-junit.xml
+      - name: Upload full-regression evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: full-regressions-${{ github.sha }}
+          path: |
+            full-regressions-head.txt
+            full-regressions-junit.xml
+          if-no-files-found: warn
+          retention-days: 14
 
   laurel-evaluation:
     runs-on: ubuntu-latest
@@ -28,13 +42,18 @@ jobs:
     env:
       OLLAMA_HOST: ${{ secrets.OLLAMA_BASE_URL }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
         with:
           python-version: "3.12"
           cache: "pip"
       - name: Install project dependencies
         run: python -m pip install .
+      - name: Laurel evaluation unavailable
+        if: ${{ env.OLLAMA_HOST == '' }}
+        run: echo "OLLAMA_BASE_URL is absent; skipping optional Laurel evaluation only."
       - name: Run Laurel evaluation
         if: ${{ env.OLLAMA_HOST != '' }}
         run: python -m pokemontology evaluate-laurel
